@@ -72,8 +72,8 @@ export const SEED_PEOPLE: Person[] = [
     familyRelations: [
       { relatedPersonId: "p1", relationType: "父亲" },
       { relatedPersonId: "p3", relationType: "母亲" },
-      { relatedPersonId: "p_father", relationType: "爷爷" },
-      { relatedPersonId: "p_mother", relationType: "奶奶" }
+      { relatedPersonId: "p_father", relationType: "祖父母" },
+      { relatedPersonId: "p_mother", relationType: "祖父母" }
     ]
   },
   {

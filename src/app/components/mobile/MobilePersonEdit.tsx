@@ -10,7 +10,7 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { db } from '../../services/db';
-import { Person } from '../../types/core';
+import { Person, PersonType } from '../../types/core';
 import { tagStore } from '../../utils/tagStore';
 
 interface MobilePersonEditProps {
@@ -34,7 +34,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
     name: '',
     phone: '',
     address: '',
-    type: '户籍' as const,
+    type: '户籍' as PersonType,
     nation: '',
     education: '',
     // 详细信息

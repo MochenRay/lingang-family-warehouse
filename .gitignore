@@ -16,6 +16,13 @@ tmp/
 *.log
 *.tsbuildinfo
 
+# Python / backend
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
+__pycache__/
+*.pyc
+
 # OS / editor noise
 .DS_Store
 **/.DS_Store

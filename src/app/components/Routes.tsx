@@ -1,5 +1,4 @@
 // 路由页面组件
-import { DashboardPage } from './pages/DashboardPage';
 import { PopulationManagement } from './pages/PopulationManagement';
 import { HousingManagement } from './pages/HousingManagement';
 import { RelationshipManagement } from './pages/RelationshipManagement';
