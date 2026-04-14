@@ -4,6 +4,7 @@ from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlmodel import Session, SQLModel, create_engine
 
+import app.models  # noqa: F401
 from app.config import get_settings
 
 settings = get_settings()
