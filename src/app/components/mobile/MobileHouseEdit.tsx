@@ -7,7 +7,7 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card } from '../ui/card';
 import { db } from '../../services/db';
-import { House } from '../../types/core';
+import { House, HouseType } from '../../types/core';
 
 interface MobileHouseEditProps {
   id: string;
@@ -20,7 +20,7 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
   const [formData, setFormData] = useState({
     ownerName: '',
     area: '',
-    type: '自住' as const,
+    type: '自住' as HouseType,
     address: '',
   });
 
@@ -105,7 +105,7 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
 
             <div>
               <Label className="text-sm font-medium mb-2 block">房屋状态</Label>
-              <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
+              <Select value={formData.type} onValueChange={(value: HouseType) => setFormData({ ...formData, type: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

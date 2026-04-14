@@ -13,15 +13,15 @@ import {
   Ellipsis
 } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
-import { Input } from '@/app/components/ui/input';
-import { Badge } from '@/app/components/ui/badge';
+import { Input } from '../ui/input';
+import { Badge } from '../ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
-} from "@/app/components/ui/dropdown-menu";
+} from '../ui/dropdown-menu';
 
 interface MobileUpdateHistoryProps {
   onBack: () => void;

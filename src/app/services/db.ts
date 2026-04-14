@@ -156,3 +156,4 @@ class DBService {
 }
 
 export const db = new DBService();
+export type { Grid, House, Notification, Person, VisitRecord, HousingHistory, ConflictRecord } from '../types/core';

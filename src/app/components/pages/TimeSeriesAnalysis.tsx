@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, TrendingUp, Download, Activity } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -30,7 +30,7 @@ export function TimeSeriesAnalysis() {
   const [indicator, setIndicator] = useState('population');
   const [granularity, setGranularity] = useState('month');
 
-  useState(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
 

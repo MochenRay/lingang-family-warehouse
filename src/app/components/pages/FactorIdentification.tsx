@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Target, Download, BarChart3, Zap } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -195,7 +195,7 @@ export function FactorIdentification() {
     { metric: 'AIC', value: '438.5', description: '信息准则' }
   ];
 
-  useState(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
 
