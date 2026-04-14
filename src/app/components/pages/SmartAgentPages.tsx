@@ -1,0 +1,331 @@
+import { useState, useRef, useEffect } from 'react';
+import { 
+  Sparkles, 
+  Send, 
+  Paperclip, 
+  Bot, 
+  FileText, 
+  Search, 
+  BarChart, 
+  FileEdit,
+  BookOpen,
+  PenTool,
+  PieChart
+} from 'lucide-react';
+import { Button } from '../ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { ScrollArea } from '../ui/scroll-area';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
+
+// --- Shared Types & Mock Data ---
+
+interface Message {
+  id: number;
+  role: 'ai' | 'user';
+  content: string;
+}
+
+interface SmartChatProps {
+  title: string;
+  description: string;
+  sidebarContent: React.ReactNode;
+  suggestedQuestions: string[];
+  initialMessages: Message[];
+  placeholder: string;
+  agentName?: string;
+}
+
+// --- Base Component ---
+
+function BaseSmartChat({ 
+  title, 
+  description, 
+  sidebarContent, 
+  suggestedQuestions, 
+  initialMessages,
+  placeholder,
+  agentName = "智能助手"
+}: SmartChatProps) {
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const scrollBottomRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (scrollBottomRef.current) {
+      scrollBottomRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isTyping]);
+
+  const handleSendMessage = (text: string = inputMessage) => {
+    if (!text.trim()) return;
+    
+    const newUserMsg: Message = { id: Date.now(), role: 'user', content: text };
+    setMessages(prev => [...prev, newUserMsg]);
+    setInputMessage('');
+    setIsTyping(true);
+
+    // Simulate AI response
+    setTimeout(() => {
+      setIsTyping(false);
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        role: 'ai',
+        content: `收到您的请求：“${text}”。\n\n（这里是${agentName}的模拟回复。在实际系统中，这里将连接后端大模型API，根据上下文生成针对性的回答。）`
+      }]);
+    }, 1500);
+  };
+
+  return (
+    <div className="h-[calc(100vh-100px)] flex flex-col gap-6">
+      {/* 页面标题 */}
+      <div className="flex items-center justify-between shrink-0">
+        <div>
+          <h1 className="text-2xl font-semibold text-[var(--color-neutral-11)]">{title}</h1>
+          <p className="text-sm text-[var(--color-neutral-08)] mt-1">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-hidden flex gap-6">
+        {/* 左侧侧边栏 */}
+        <div className="w-64 flex flex-col gap-4 shrink-0">
+          {sidebarContent}
+          
+          <Card className="flex-1 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+            <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
+              <CardTitle className="text-sm font-medium text-[var(--color-neutral-11)]">推荐问题</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <div className="space-y-2">
+                {suggestedQuestions.map((q, i) => (
+                  <div 
+                    key={i} 
+                    className="text-xs p-2 bg-[var(--color-neutral-03)] rounded hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] cursor-pointer text-[var(--color-neutral-10)] transition-colors"
+                    onClick={() => handleSendMessage(q)}
+                  >
+                    {q}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* 右侧聊天区域 */}
+        <Card className="flex-1 flex flex-col overflow-hidden border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-md rounded-md">
+          <ScrollArea className="flex-1 p-4 bg-[var(--color-neutral-01)]">
+            <div className="space-y-6">
+              {messages.map((msg) => (
+                <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                  <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[rgba(78,134,223,0.15)]' : 'bg-[var(--color-neutral-03)]'}`}>
+                    {msg.role === 'ai' ? (
+                      <AvatarFallback className="bg-transparent"><Bot className="w-5 h-5 text-[#4E86DF]" /></AvatarFallback>
+                    ) : (
+                      <AvatarFallback className="bg-transparent text-[var(--color-neutral-10)]"><span className="text-xs">我</span></AvatarFallback>
+                    )}
+                  </Avatar>
+                  <div className={`flex flex-col max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                    <div className={`px-4 py-3 rounded-lg text-sm leading-relaxed shadow-sm ${
+                      msg.role === 'user' 
+                        ? 'bg-[#2761CB] text-white rounded-tr-sm' 
+                        : 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-03)] rounded-tl-sm'
+                    }`}>
+                      <div className="whitespace-pre-wrap">{msg.content}</div>
+                    </div>
+                    <span className="text-xs text-[var(--color-neutral-08)] mt-1 px-1">
+                      {new Date(msg.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                    </span>
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex gap-3">
+                  <Avatar className="w-8 h-8 bg-[rgba(78,134,223,0.15)]">
+                    <AvatarFallback className="bg-transparent"><Bot className="w-5 h-5 text-[#4E86DF]" /></AvatarFallback>
+                  </Avatar>
+                  <div className="bg-[var(--color-neutral-02)] px-4 py-3 rounded-lg rounded-tl-sm border border-[var(--color-neutral-03)] shadow-sm flex items-center gap-1">
+                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
+                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
+                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
+                  </div>
+                </div>
+              )}
+              <div ref={scrollBottomRef} />
+            </div>
+          </ScrollArea>
+
+          <div className="p-4 bg-[var(--color-neutral-02)] border-t border-[var(--color-neutral-03)]">
+            <div className="relative">
+              <Textarea 
+                placeholder={placeholder}
+                className="min-h-[60px] max-h-[120px] pr-24 resize-none bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+              <div className="absolute right-2 bottom-2 flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]">
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+                <Button 
+                  size="icon" 
+                  className="h-8 w-8 bg-[#2761CB] hover:bg-[#4E86DF] text-white border-0"
+                  onClick={() => handleSendMessage()}
+                  disabled={!inputMessage.trim()}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+// --- Specific Pages ---
+
+export function PolicyInterpretation() {
+  const sidebar = (
+    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
+        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
+          <BookOpen className="w-4 h-4 text-[#4E86DF]" /> 
+          热门政策领域
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2 pt-4">
+        {['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'].map(tag => (
+          <Badge 
+            key={tag} 
+            variant="outline" 
+            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] hover:border-[#4E86DF] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          >
+            {tag}
+          </Badge>
+        ))}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <BaseSmartChat
+      title="政策解读"
+      description="基于本地政策库的智能检索与解读助手"
+      agentName="政策专家"
+      sidebarContent={sidebar}
+      placeholder="请输入您想查询的政策问题，例如：最新的高龄津贴发放标准是什么？"
+      initialMessages={[{
+        id: 1,
+        role: 'ai',
+        content: '您好！我是政策解读助手。我已学习了最新的民政、社保、医保等领域政策文件，可以为您提供精准的政策依据和解读。'
+      }]}
+      suggestedQuestions={[
+        "临港区最新的低保申请条件是什么？",
+        "残疾人两项补贴的具体标准是多少？",
+        "退役军人优待证如何办理？",
+        "大病救助的报销比例是多少？"
+      ]}
+    />
+  );
+}
+
+export function OfficialDocumentWriting() {
+  const sidebar = (
+    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
+        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
+          <PenTool className="w-4 h-4 text-[#19B172]" /> 
+          常用文体模板
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2 pt-4">
+         {['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'].map(tag => (
+          <Badge 
+            key={tag} 
+            variant="outline" 
+            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(25,177,114,0.08)] hover:text-[#19B172] hover:border-[#19B172] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          >
+            {tag}
+          </Badge>
+        ))}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <BaseSmartChat
+      title="公文写作"
+      description="辅助生成各类社区工作文档、报告与通知"
+      agentName="写作助手"
+      sidebarContent={sidebar}
+      placeholder="请输入您的写作需求，例如：帮我写一份关于社区环境整治的总结报告。"
+      initialMessages={[{
+        id: 1,
+        role: 'ai',
+        content: '您好！我是公文写作助手。请告诉我您需要撰写的文稿类型、主要内容要点，我可以为您生成初稿或润色文章。'
+      }]}
+      suggestedQuestions={[
+        "生成一份季度社区网格化管理工作总结",
+        "起草一份关于开展社区义诊活动的通知",
+        "帮我润色这篇民情日记，使其更正式",
+        "写一份关于解决邻里纠纷的情况汇报"
+      ]}
+    />
+  );
+}
+
+export function SmartQuery() {
+  const sidebar = (
+    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
+        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
+          <PieChart className="w-4 h-4 text-[#8B3BCC]" /> 
+          核心数据领域
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-2 pt-4">
+         {['人口数据', '房屋网格', '特殊人群', '矛盾纠纷', '活动参与'].map(tag => (
+          <Badge 
+            key={tag} 
+            variant="outline" 
+            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(139,59,204,0.08)] hover:text-[#8B3BCC] hover:border-[#8B3BCC] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          >
+            {tag}
+          </Badge>
+        ))}
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <BaseSmartChat
+      title="智能问数"
+      description="通过自然语言查询、统计和分析辖区数据"
+      agentName="数据分析师"
+      sidebarContent={sidebar}
+      placeholder="请输入您想分析的数据问题，例如：统计本月新增流动人口数量。"
+      initialMessages={[{
+        id: 1,
+        role: 'ai',
+        content: '您好！我是数据分析助手。我已连接家庭数仓核心数据库，您可以直接问我数据统计、趋势分析等问题。'
+      }]}
+      suggestedQuestions={[
+        "统计辖区内60岁以上老人的总数及占比",
+        "分析最近三个月矛盾纠纷的主要类型",
+        "列出本月入户走访完成率最低的网格",
+        "对比去年同期，常住人口有什么变化？"
+      ]}
+    />
+  );
+}

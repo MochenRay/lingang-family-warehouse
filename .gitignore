@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.next/
+coverage/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Temporary files
+tmp/
+*.log
+*.tsbuildinfo
+
+# OS / editor noise
+.DS_Store
+**/.DS_Store
+.vscode/
+.idea/
+
+# Local tool state
+.claude/
+.obsidian/

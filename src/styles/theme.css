@@ -1,0 +1,482 @@
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --font-size: 16px;
+  --background: #ffffff;
+  --foreground: oklch(0.145 0 0);
+  --card: #ffffff;
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: #030213;
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.95 0.0058 264.53);
+  --secondary-foreground: #030213;
+  --muted: #ececf0;
+  --muted-foreground: #717182;
+  --accent: #e9ebef;
+  --accent-foreground: #030213;
+  --destructive: #d4183d;
+  --destructive-foreground: #ffffff;
+  --border: rgba(0, 0, 0, 0.1);
+  --input: transparent;
+  --input-background: #f3f3f5;
+  --switch-background: #cbced4;
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  --ring: oklch(0.708 0 0);
+  --chart-1: #2761CB;  /* Blue-06 主色 */
+  --chart-2: #413DD4;  /* Violet-06 紫罗兰 */
+  --chart-3: #8B3BCC;  /* Purple-06 紫色 */
+  --chart-4: #2AA3CF;  /* Light-blue-06 浅蓝 */
+  --chart-5: #D6730D;  /* Orange-06 橙色 */
+  --chart-6: #19B172;  /* Green-06 绿色 */
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: #030213;
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+
+  /* ========================================== */
+  /* SENSORO 设计规范 - 色彩系统 */
+  /* 来源: /reference/QUICK_VALUES.md */
+  /* ========================================== */
+  
+  /* 主色调 - Blue-06/07/05 */
+  --color-brand-primary: #2761CB;         /* Blue-06 主色 */
+  --color-brand-primary-hover: #4E86DF;   /* Blue-07 Hover */
+  --color-brand-primary-active: #2251A8;  /* Blue-05 Click */
+  
+  /* 功能色 */
+  --color-status-success: #19B172;  /* Green-06 成功 */
+  --color-status-warning: #D6730D;  /* Orange-06 警告 */
+  --color-status-error: #D52132;    /* Red-06 错误 */
+  --color-status-info: #2AA3CF;     /* Light-blue-06 信息 */
+  
+  /* 中性色 - 背景层级 */
+  --color-neutral-00: #131623;  /* 侧边栏（极深蓝黑） */
+  --color-neutral-01: #1d2336;  /* 内容区背景（深蓝） */
+  --color-neutral-02: #2c334d;  /* 卡片背景（明显更亮） */
+  --color-neutral-03: #3d4663;  /* 三阶卡片/边框（拉开差距） */
+  --color-neutral-04: #4e587a;  /* 四阶卡片（最亮层级） */
+  
+  /* 中性色 - 文字层级 */
+  --color-neutral-06: #6b7599;  /* 辅助文字、禁用（减少灰度） */
+  --color-neutral-08: #9ba8cc;  /* 次要文字、占位符（更清晰） */
+  --color-neutral-10: #d0daf0;  /* 主要文字（高对比度） */
+  --color-neutral-11: #ffffff;  /* 标题文字（纯白，最清晰） */
+  
+  /* ========================================== */
+  /* SENSORO 设计规范 - 圆角系统 */
+  /* 来源: /reference/design-files/specs/border-radius.md */
+  /* ========================================== */
+  --radius-xs: 2px;      /* 按钮、输入框、Tag */
+  --radius-s: 4px;       /* 卡片、菜单、Tooltip */
+  --radius-m: 8px;       /* 对话框、工具栏容器 */
+  --radius-circle: 50%;  /* 头像 */
+  --radius-pill: 9999px; /* Badge、Switch */
+  
+  /* ========================================== */
+  /* SENSORO 设计规范 - 阴影系统 */
+  /* 来源: /reference/design-files/specs/shadow.md */
+  /* ========================================== */
+  --shadow-01: 0px 2px 8px rgba(10, 27, 57, 0.15);   /* Dropdown、Tooltip 浮层元素 */
+  --shadow-02: 0px 4px 16px rgba(10, 27, 57, 0.2);   /* Card Hover 悬浮卡片 */
+  --shadow-03: 0px 6px 30px rgba(10, 27, 57, 0.3);   /* Modal、Drawer 模态窗 */
+  
+  /* ========================================== */
+  /* SENSORO 设计规范 - 字体排版系统 */
+  /* 来源: /reference/design-files/specs/typography.md */
+  /* 公式: 行高 = 字号 + 8px */
+  /* ========================================== */
+  
+  /* 字号档位 */
+  --text-xs: 12px;   --line-xs: 20px;  /* Font-01 辅助文字、标签 */
+  --text-sm: 14px;   --line-sm: 22px;  /* Font-02 正文、表单 */
+  --text-base: 16px; --line-base: 24px; /* Font-03 标题三级、重要文字 */
+  --text-md: 18px;   --line-md: 26px;  /* Font-04 标题二级 */
+  --text-lg: 20px;   --line-lg: 28px;  /* Font-05 标题一级 */
+  --text-xl: 24px;   --line-xl: 32px;  /* Font-06 大标题 */
+  --text-2xl: 32px;  --line-2xl: 40px; /* Font-07 特大标题 */
+  --text-3xl: 46px;  --line-3xl: 54px; /* Font-08 数据大屏 */
+  
+  /* 字重档位 */
+  --font-weight-light: 300;   /* 辅助信息 */
+  --font-weight-regular: 400; /* 正文（默认） */
+  --font-weight-medium: 500;  /* 小标题、强调 */
+  --font-weight-semibold: 600; /* 大标题、数字 */
+  
+  /* ========================================== */
+  /* SENSORO 设计规范 - 间距系统 */
+  /* 来源: /reference/design-files/specs/spacing.md */
+  /* 原则: 遵循 8n 原则（4的倍数） */
+  /* ========================================== */
+  --spacing-xs: 4px;   /* 图标与文字、标签内边距 */
+  --spacing-sm: 8px;   /* 按钮间距、列表项间距、Tag间距 */
+  --spacing-md: 12px;  /* 按钮内边距（小）、面板内边距 */
+  --spacing-lg: 16px;  /* 卡片内边距、表单字段间距 */
+  --spacing-xl: 24px;  /* 区块间距、页面边距、栅格Gutter */
+}
+
+.dark {
+  --background: var(--color-neutral-01);  /* 内容区使用稍亮的背景 */
+  --foreground: var(--color-neutral-11);  /* 标题文字 */
+  --card: var(--color-neutral-02);        /* 二阶卡片 */
+  --card-foreground: var(--color-neutral-10);  /* 主要文字 */
+  --popover: var(--color-neutral-02);
+  --popover-foreground: var(--color-neutral-10);
+  --primary: var(--color-brand-primary);  /* Blue-06 主色 */
+  --primary-foreground: var(--color-neutral-11);
+  --secondary: var(--color-neutral-03);   /* 三阶卡片 */
+  --secondary-foreground: var(--color-neutral-10);
+  --muted: var(--color-neutral-03);
+  --muted-foreground: var(--color-neutral-08);  /* 次要文字 */
+  --accent: var(--color-neutral-03);
+  --accent-foreground: var(--color-neutral-10);
+  --destructive: var(--color-status-error);     /* Red-06 错误色 */
+  --destructive-foreground: var(--color-neutral-11);
+  --border: var(--color-neutral-03);      /* 三阶卡片作为边框色 */
+  --input: var(--color-neutral-03);
+  --ring: var(--color-brand-primary);     /* Blue-06 作为聚焦环 */
+  --font-weight-medium: 500;
+  --font-weight-normal: 400;
+  
+  /* 图表配色保持 SENSORO 规范 */
+  --chart-1: var(--color-brand-primary);        /* Blue-06 */
+  --chart-2: #413DD4;  /* Violet-06 */
+  --chart-3: #8B3BCC;  /* Purple-06 */
+  --chart-4: var(--color-status-info);          /* Light-blue-06 */
+  --chart-5: var(--color-status-warning);       /* Orange-06 */
+  --chart-6: var(--color-status-success);       /* Green-06 */
+  
+  /* 侧边栏配色 */
+  --sidebar: var(--color-neutral-00);           /* 使用最深的背景色 */
+  --sidebar-foreground: var(--color-neutral-10);
+  --sidebar-primary: var(--color-brand-primary);
+  --sidebar-primary-foreground: var(--color-neutral-11);
+  --sidebar-accent: var(--color-neutral-02);
+  --sidebar-accent-foreground: var(--color-neutral-10);
+  --sidebar-border: var(--color-neutral-03);
+  --sidebar-ring: var(--color-brand-primary);
+  
+  /* 优化阴影效果 - 暗色模式下增强对比度 */
+  --shadow-01: 0px 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-02: 0px 4px 16px rgba(0, 0, 0, 0.4);
+  --shadow-03: 0px 6px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* ========================================== */
+/* 全局深色模式适配 */
+/* ========================================== */
+
+.dark {
+  /* 覆盖硬编码的Tailwind颜色类 */
+  color-scheme: dark;
+}
+
+/* 标题文字深色适配 */
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: var(--color-neutral-11);
+}
+
+/* 段落和普通文字深色适配 */
+.dark p {
+  color: var(--color-neutral-10);
+}
+
+/* 链接深色适配 */
+.dark a {
+  color: var(--color-brand-primary-hover);
+}
+
+.dark a:hover {
+  color: var(--color-brand-primary);
+}
+
+/* 输入框背景深色适配 */
+.dark input:not([type="checkbox"]):not([type="radio"]),
+.dark textarea,
+.dark select {
+  background-color: var(--color-neutral-02);
+  color: var(--color-neutral-10);
+  border-color: var(--color-neutral-03);
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: var(--color-neutral-08);
+}
+
+/* 卡片和容器深色适配 */
+.dark .bg-gray-50 {
+  background-color: var(--color-neutral-01) !important;
+}
+
+.dark .bg-gray-100 {
+  background-color: var(--color-neutral-02) !important;
+}
+
+.dark .bg-white {
+  background-color: var(--color-neutral-02) !important;
+}
+
+/* 文字颜色深色适配 */
+.dark .text-gray-900 {
+  color: var(--color-neutral-11) !important;
+}
+
+.dark .text-gray-800 {
+  color: var(--color-neutral-11) !important;
+}
+
+.dark .text-gray-700 {
+  color: var(--color-neutral-10) !important;
+}
+
+.dark .text-gray-600 {
+  color: var(--color-neutral-10) !important;
+}
+
+.dark .text-gray-500 {
+  color: var(--color-neutral-08) !important;
+}
+
+.dark .text-gray-400 {
+  color: var(--color-neutral-08) !important;  /* 使用更亮的次要文字色 */
+}
+
+/* 边框颜色深色适配 */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--color-neutral-03) !important;
+}
+
+/* 悬停状态深色适配 */
+.dark .hover\:bg-gray-50:hover {
+  background-color: var(--color-neutral-02) !important;
+}
+
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .hover\:text-gray-900:hover {
+  color: var(--color-neutral-11) !important;
+}
+
+/* 分隔线深色适配 */
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--color-neutral-03) !important;
+}
+
+/* 禁用状态深色适配 - 提高对比度以改善可读性 */
+.dark [disabled] {
+  color: var(--color-neutral-08) !important;  /* 使用更亮的次要文字色 */
+  opacity: 0.7;  /* 添加透明度表明禁用状态 */
+}
+
+.dark button:disabled,
+.dark button[disabled] {
+  color: var(--color-neutral-08) !important;  /* 使用更亮的次要文字色 */
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* 禁用按钮内的图标也需要同样处理 */
+.dark button:disabled svg,
+.dark button[disabled] svg {
+  opacity: 1;  /* 图标不额外降低透明度，由父元素统一控制 */
+}
+
+/* Badge 和标签深色适配 */
+.dark .bg-blue-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .bg-green-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .bg-orange-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .bg-red-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .bg-purple-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+.dark .bg-yellow-50 {
+  background-color: var(--color-neutral-03) !important;
+}
+
+/* 表格深色适配 */
+.dark table {
+  border-color: var(--color-neutral-03);
+}
+
+.dark thead {
+  background-color: var(--color-neutral-02);
+  color: var(--color-neutral-10);
+}
+
+.dark tbody tr {
+  border-color: var(--color-neutral-03);
+}
+
+.dark tbody tr:hover {
+  background-color: var(--color-neutral-02);
+}
+
+/* 对话框和弹窗深色适配 */
+.dark [role="dialog"],
+.dark [role="alertdialog"] {
+  background-color: var(--color-neutral-02);
+  color: var(--color-neutral-10);
+}
+
+/* 下拉菜单深色适配 */
+.dark [role="menu"],
+.dark [role="listbox"] {
+  background-color: var(--color-neutral-02);
+  border-color: var(--color-neutral-03);
+}
+
+/* Tooltip 深色适配 */
+.dark [role="tooltip"] {
+  background-color: var(--color-neutral-03);
+  color: var(--color-neutral-11);
+}
+
+/* 图表深色适配 */
+.dark .recharts-cartesian-grid-horizontal line,
+.dark .recharts-cartesian-grid-vertical line {
+  stroke: var(--color-neutral-03);
+}
+
+.dark .recharts-text {
+  fill: var(--color-neutral-08);
+}
+
+/* Skeleton 加载状态深色适配 */
+.dark .animate-pulse {
+  background-color: var(--color-neutral-03);
+}
+
+/* 渐变背景深色适配 */
+.dark .bg-gradient-to-r.from-blue-50,
+.dark .bg-gradient-to-br.from-blue-50 {
+  --tw-gradient-from: var(--color-neutral-02) !important;
+}
+
+.dark .bg-gradient-to-r.to-indigo-50,
+.dark .bg-gradient-to-br.to-purple-50 {
+  --tw-gradient-to: var(--color-neutral-03) !important;
+}
+
+/* 保留蓝色主题的渐变 */
+.dark .bg-gradient-to-r.from-blue-600 {
+  --tw-gradient-from: var(--color-brand-primary) !important;
+}
+
+.dark .bg-gradient-to-r.to-blue-700,
+.dark .bg-gradient-to-r.to-blue-500 {
+  --tw-gradient-to: var(--color-brand-primary-hover) !important;
+}
+
+.dark .bg-gradient-to-br.to-indigo-700 {
+  --tw-gradient-to: #413DD4 !important; /* Violet-06 */
+}
+
+/* BehaviorSupervision 城市大脑卡片特殊处理 */
+.dark .border-blue-100 {
+  border-color: var(--color-brand-primary) !important;
+}
+
+.dark .text-blue-100 {
+  color: var(--color-neutral-10) !important;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-input-background: var(--input-background);
+  --color-switch-background: var(--switch-background);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* ========================================== */
+  /* SENSORO 设计规范 - Tailwind 主题扩展 */
+  /* 步骤 1.6: 创建 Tailwind 自定义配置 */
+  /* ========================================== */
+  
+  /* 主色调映射 - 使用 blue 作为品牌色 */
+  --color-blue-DEFAULT: var(--color-brand-primary);
+  --color-blue-hover: var(--color-brand-primary-hover);
+  --color-blue-active: var(--color-brand-primary-active);
+  
+  /* 功能色映射 */
+  --color-success: var(--color-status-success);
+  --color-warning: var(--color-status-warning);
+  --color-error: var(--color-status-error);
+  --color-info: var(--color-status-info);
+  
+  /* 中性色映射 - 背景层级 */
+  --color-bg-0: var(--color-neutral-00);
+  --color-bg-1: var(--color-neutral-01);
+  --color-bg-2: var(--color-neutral-02);
+  --color-bg-3: var(--color-neutral-03);
+  --color-bg-4: var(--color-neutral-04);
+  
+  /* 中性色映射 - 文字层级 */
+  --color-text-disabled: var(--color-neutral-06);
+  --color-text-secondary: var(--color-neutral-08);
+  --color-text-primary: var(--color-neutral-10);
+  --color-text-title: var(--color-neutral-11);
+}
