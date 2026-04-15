@@ -24,6 +24,7 @@ export interface PersonQuery {
 }
 
 type PersonFilter = PersonQuery | ((person: Person) => boolean);
+type PersonCreateInput = Omit<Person, 'id'> & { id?: string };
 
 function matchesPersonQuery(person: Person, query: PersonQuery): boolean {
   const keyword = (query.q ?? query.search ?? '').trim();
@@ -99,9 +100,24 @@ export const personRepository = {
     );
   },
 
-  async addPerson(person: Person): Promise<Person> {
-    db.addPerson(person);
-    return person;
+  async addPerson(person: PersonCreateInput): Promise<Person> {
+    return callWithFallback(
+      () => {
+        const { id: _id, ...payload } = person;
+        return fetchJson<Person>('/people', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      },
+      () => {
+        const nextPerson: Person = {
+          ...person,
+          id: person.id ?? `person_${Date.now()}`,
+        };
+        db.addPerson(nextPerson);
+        return nextPerson;
+      },
+    );
   },
 
   async updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined> {
@@ -114,6 +130,19 @@ export const personRepository = {
       () => {
         db.updatePerson(id, updates);
         return db.getPerson(id);
+      },
+    );
+  },
+
+  async deletePerson(id: string): Promise<void> {
+    return callWithFallback(
+      async () => {
+        await fetchJson<{ ok: true } | null>(`/people/${id}`, {
+          method: 'DELETE',
+        });
+      },
+      () => {
+        db.deletePerson(id);
       },
     );
   },

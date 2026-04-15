@@ -76,6 +76,10 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
     throw new Error(`API ${response.status}: ${detail || response.statusText}`);
   }
 
+  if (response.status === 204) {
+    return null as T;
+  }
+
   return response.json() as Promise<T>;
 }
 

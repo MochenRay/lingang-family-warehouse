@@ -1,11 +1,11 @@
-from typing import Any
+from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models.person import Person
-from app.schemas.person import PersonRead
+from app.schemas.person import PersonCreate, PersonRead, PersonUpdate
 from sqlmodel import SQLModel
 
 router = APIRouter(prefix="/people", tags=["people"])
@@ -68,25 +68,43 @@ def get_person(person_id: str, session: Session = Depends(get_session)) -> Perso
     return PersonRead.model_validate(person)
 
 
+@router.post("", response_model=PersonRead, status_code=status.HTTP_201_CREATED)
+def create_person(payload: PersonCreate, session: Session = Depends(get_session)) -> PersonRead:
+    person = Person(
+        id=f"person_{uuid4().hex[:12]}",
+        **payload.model_dump(),
+    )
+    session.add(person)
+    session.commit()
+    session.refresh(person)
+    return PersonRead.model_validate(person)
+
+
 @router.patch("/{person_id}", response_model=PersonRead)
 def update_person(
     person_id: str,
-    payload: dict[str, Any] = Body(...),
+    payload: PersonUpdate,
     session: Session = Depends(get_session),
 ) -> PersonRead:
     person = session.get(Person, person_id)
     if person is None:
         raise HTTPException(status_code=404, detail=f"Person '{person_id}' not found")
 
-    allowed_fields = set(Person.model_fields.keys()) - {"id"}
-    unknown_fields = sorted(set(payload.keys()) - allowed_fields)
-    if unknown_fields:
-        raise HTTPException(status_code=400, detail=f"Unsupported fields: {', '.join(unknown_fields)}")
-
-    for field, value in payload.items():
+    for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(person, field, value)
 
     session.add(person)
     session.commit()
     session.refresh(person)
     return PersonRead.model_validate(person)
+
+
+@router.delete("/{person_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_person(person_id: str, session: Session = Depends(get_session)) -> Response:
+    person = session.get(Person, person_id)
+    if person is None:
+        raise HTTPException(status_code=404, detail=f"Person '{person_id}' not found")
+
+    session.delete(person)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

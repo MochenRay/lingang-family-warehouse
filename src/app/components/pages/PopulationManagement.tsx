@@ -75,8 +75,10 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
 import { tagStore } from "../../utils/tagStore";
-import { db } from "../../services/db";
-import { Person, PersonType } from "../../types/core";
+import { houseRepository } from "../../services/repositories/houseRepository";
+import { personRepository } from "../../services/repositories/personRepository";
+import { visitRepository } from "../../services/repositories/visitRepository";
+import { Grid, House, Person, PersonType, VisitRecord } from "../../types/core";
 
 // 复用行政区划数据结构
 const REGIONS = {
@@ -112,6 +114,9 @@ interface Population extends Person {
   gridCommunity?: string;
 }
 
+const HIGH_RISK_KEYWORDS = ["矫正", "信访", "涉诉", "精神障碍", "吸毒", "邪教"];
+const MEDIUM_RISK_KEYWORDS = ["独居", "失业", "残疾", "低保", "困境", "留守"];
+
 const extractInfoFromIdCard = (idCard: string) => {
   if (!idCard || idCard.length !== 18) return null;
   
@@ -141,6 +146,119 @@ const extractInfoFromIdCard = (idCard: string) => {
   return { age, gender };
 };
 
+const inferPopulationStatus = (person: Person): Population["status"] => {
+  const tags = [...(person.tags ?? []), ...((person.careLabels ?? []) as string[])].join("|");
+  if (tags.includes("已迁出") || tags.includes("迁出")) {
+    return "迁出";
+  }
+  if (tags.includes("已故") || tags.includes("死亡")) {
+    return "死亡";
+  }
+  return "正常";
+};
+
+const inferRiskLevel = (tags: string[] = [], careLabels?: string[]): Population["risk"] => {
+  const allLabels = [...tags, ...(careLabels ?? [])];
+  if (allLabels.some((label) => HIGH_RISK_KEYWORDS.some((keyword) => label.includes(keyword)))) {
+    return "High";
+  }
+  if (allLabels.some((label) => MEDIUM_RISK_KEYWORDS.some((keyword) => label.includes(keyword)))) {
+    return "Medium";
+  }
+  return "Low";
+};
+
+const inferRegionByGrid = (grid?: Grid): Pick<Population, "district" | "street" | "community"> => {
+  if (!grid) {
+    return {};
+  }
+
+  for (const [district, streets] of Object.entries(REGIONS)) {
+    for (const [street, communities] of Object.entries(streets)) {
+      if (!grid.name.includes(street)) {
+        continue;
+      }
+
+      const matchedCommunity = communities.find((community) => grid.name.includes(community));
+      return {
+        district,
+        street,
+        community: matchedCommunity,
+      };
+    }
+  }
+
+  return {};
+};
+
+const mapPersonToPopulation = (person: Person, grid?: Grid): Population => {
+  const extracted = extractInfoFromIdCard(person.idCard);
+
+  return {
+    ...person,
+    age: extracted?.age ?? person.age,
+    gender: (extracted?.gender as "男" | "女" | undefined) ?? person.gender,
+    status: inferPopulationStatus(person),
+    createTime: person.updatedAt,
+    ...inferRegionByGrid(grid),
+  };
+};
+
+const getLastVisitDate = (visits: VisitRecord[]) => visits[0]?.date;
+
+const buildRecommendedActions = (
+  person: Population,
+  visits: VisitRecord[],
+  housemates: Population[],
+): string[] => {
+  const actions: string[] = [];
+  const labels = [...(person.tags ?? []), ...((person.careLabels ?? []) as string[])];
+  const lastVisitDate = getLastVisitDate(visits);
+
+  if (!lastVisitDate) {
+    actions.push("补一次首访，完善基本信息、关爱标签和诉求记录。");
+  }
+
+  if (person.risk === "High") {
+    actions.push("安排本周重点回访，并同步生成风险研判摘要。");
+  } else if (person.risk === "Medium") {
+    actions.push("在下一次网格巡查中优先复核其家庭和居住状态。");
+  }
+
+  if (labels.some((label) => label.includes("独居"))) {
+    actions.push("核查独居场景下的紧急联系人、用药和日常照护情况。");
+  }
+
+  if (housemates.length >= 3) {
+    actions.push("结合同住关系复核居住密度和人房一致性。");
+  }
+
+  if (actions.length === 0) {
+    actions.push("维持常态走访频率，补齐最新联系信息与活动参与记录。");
+  }
+
+  return actions.slice(0, 3);
+};
+
+const getRiskSummary = (person: Population, visits: VisitRecord[]) => {
+  const labels = [...(person.tags ?? []), ...((person.careLabels ?? []) as string[])];
+  const lastVisitDate = getLastVisitDate(visits);
+
+  if (person.risk === "High") {
+    return "当前属于高风险重点对象，建议联动矛盾调解与走访任务持续跟踪。";
+  }
+  if (person.risk === "Medium") {
+    return "当前存在持续关注信号，建议在近期走访中复核风险变化和家庭诉求。";
+  }
+  if (labels.length > 0) {
+    return `当前以“${labels.slice(0, 2).join(" / ")}”为主标签，暂无高风险信号。`;
+  }
+  if (lastVisitDate) {
+    return `当前风险较低，最近一次走访时间为 ${lastVisitDate}。`;
+  }
+  return "当前风险较低，但尚缺最近走访记录，建议补一轮基础核验。";
+};
+
 export function PopulationManagement() {
   const [populations, setPopulations] = useState<Population[]>([]);
   const [searchKeyword, setSearchKeyword] = useState("");
@@ -165,6 +283,12 @@ export function PopulationManagement() {
   const [formData, setFormData] = useState<Partial<Population>>({});
   const [selectedRows, setSelectedRows] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [grids, setGrids] = useState<Grid[]>([]);
+  const [houses, setHouses] = useState<House[]>([]);
+  const [selectedPopulationVisits, setSelectedPopulationVisits] = useState<VisitRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   
   // 标签管理状态
   const [recommendedTags, setRecommendedTags] = useState<string[]>([]); // 推荐的标签名称
@@ -240,10 +364,6 @@ export function PopulationManagement() {
       });
     }
   }, [formData.age, formData.type, isAddDialogOpen, isEditDialogOpen]);
-
-  // 获取网格和房屋列表用于选择器
-  const grids = db.getGrids();
-  const houses = db.getHouses();
 
   // 房屋级联选择相关函数
   const getAvailableCommunities = () => {
@@ -357,55 +477,76 @@ export function PopulationManagement() {
     setIsGridSelectDialogOpen(false);
   };
 
-  // Load data from DB
-  const loadData = () => {
-    const people = db.getPeople();
-    // Map Person to Population (adding UI specific fields)
-    const mappedPopulations: Population[] = people.map((p, index) => {
-      // 自动修正年龄和性别（基于身份证号）
-      let computedAge = p.age;
-      let computedGender = p.gender;
-      
-      const extracted = extractInfoFromIdCard(p.idCard);
-      if (extracted) {
-        computedAge = extracted.age;
-        computedGender = extracted.gender as "男" | "女";
-      }
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [people, nextGrids, nextHouses] = await Promise.all([
+        personRepository.getPeople(),
+        personRepository.getGrids(),
+        houseRepository.getHouses(),
+      ]);
+      const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
+      const mappedPopulations = people.map((person) => mapPersonToPopulation(person, gridMap.get(person.gridId)));
 
-      // 模拟一些非正常状态数据用于演示
-      let status: "正常" | "迁出" | "死亡" | "作废" = "正常";
-      // 让部分数据呈现不同状态
-      if (p.tags && p.tags.includes('已迁出')) status = "迁出";
-      else if (index % 10 === 3) status = "迁出"; // 模拟约10%迁出
-      else if (index % 20 === 7) status = "死亡"; // 模拟少量死亡
-      
-      return {
-        ...p,
-        age: computedAge,
-        gender: computedGender,
-        status, 
-        district: "环翠区", 
-        street: "竹岛街道", 
-        community: p.gridId === 'g1' ? '海源社区' : '翠竹社区', 
-        createTime: p.updatedAt
-      };
-    });
-    setPopulations(mappedPopulations);
+      setGrids(nextGrids);
+      setHouses(nextHouses);
+      setPopulations(mappedPopulations);
+      setSelectedPopulation((prev) => {
+        if (!prev) {
+          return null;
+        }
+        return mappedPopulations.find((person) => person.id === prev.id) ?? null;
+      });
+    } catch (error) {
+      console.error("Failed to load population management data", error);
+      alert("人口数据加载失败，请稍后重试。");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
-    loadData();
-    window.addEventListener('db-change', loadData);
-    return () => window.removeEventListener('db-change', loadData);
+    void loadData();
   }, []);
 
-  // 计算人员风险等级
-  const getPersonRiskLevel = (tags?: string[]) => {
-    // If risk is already computed in Person, use it. But here we might want to recompute based on tagStore definitions
-    // if the tags changed. For now, rely on what's in the object or recompute.
-    // The core Person has 'risk' field.
-    return 'Low'; // We will use p.risk directly in the UI instead of recomputing
-  };
+  useEffect(() => {
+    if (!isViewDialogOpen || !selectedPopulation) {
+      setSelectedPopulationVisits([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadVisitHistory = async () => {
+      setIsDetailLoading(true);
+      try {
+        const visits = await visitRepository.getVisits({
+          targetId: selectedPopulation.id,
+          targetType: "person",
+          order: "desc",
+          limit: 20,
+        });
+        if (!cancelled) {
+          setSelectedPopulationVisits(visits);
+        }
+      } catch (error) {
+        console.error("Failed to load population visit history", error);
+        if (!cancelled) {
+          setSelectedPopulationVisits([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsDetailLoading(false);
+        }
+      }
+    };
+
+    void loadVisitHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isViewDialogOpen, selectedPopulation?.id]);
 
   // 获取可选的街道列表
   const getStreets = (district: string) => {
@@ -491,13 +632,24 @@ export function PopulationManagement() {
     setIsEditDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
-    if (confirm("确定要将此人口信息标记为作废吗？")) {
-      // In a real app we might set status='作废'. 
-      // For now, let's just delete from DB or update status if we had that field in DB.
-      // DB doesn't have status, so let's just remove it for this demo or ignore.
-      // Actually, let's just alert.
-      alert("演示模式：数据库不持逻辑删除状态，暂��前端移除");
+  const handleDelete = async (id: string) => {
+    if (!confirm("确定要删除这条人口信息吗？删除后将从当前演示数据中移除。")) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await personRepository.deletePerson(id);
+      if (selectedPopulation?.id === id) {
+        setIsViewDialogOpen(false);
+        setSelectedPopulation(null);
+      }
+      await loadData();
+    } catch (error) {
+      console.error("Failed to delete person", error);
+      alert("删除人口信息失败，请稍后重试。");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -506,6 +658,7 @@ export function PopulationManagement() {
       status: "正常", 
       type: "户籍", 
       tags: [],
+      gridId: grids[0]?.id,
       houseCommunity: undefined,
       houseBuilding: undefined,
       houseUnit: undefined,
@@ -516,10 +669,10 @@ export function PopulationManagement() {
     setIsAddDialogOpen(true);
   };
 
-  const handleSaveAdd = () => {
-    const newPerson: Person = {
-      id: Date.now().toString(),
-      gridId: formData.gridId || 'g1',
+  const handleSaveAdd = async () => {
+    const risk = inferRiskLevel(selectedPersonTags, formData.careLabels);
+    const newPerson = {
+      gridId: formData.gridId || grids[0]?.id || 'g1',
       name: formData.name || "",
       idCard: formData.idCard || "",
       gender: formData.gender || "男",
@@ -528,7 +681,7 @@ export function PopulationManagement() {
       address: formData.address || "",
       type: formData.type || "户籍",
       tags: selectedPersonTags,
-      risk: "Low",
+      risk,
       nation: formData.nation,
       education: formData.education,
       houseId: formData.houseId,
@@ -552,59 +705,79 @@ export function PopulationManagement() {
       healthRecord: formData.healthRecord || undefined,
       importantEvents: formData.importantEvents || undefined,
     };
-    db.addPerson(newPerson);
-    setIsAddDialogOpen(false);
-    setFormData({});
-    setRecommendedTags([]);
-    setSelectedPersonTags([]);
-  };
 
-  const handleSaveEdit = () => {
-    if (selectedPopulation) {
-      db.updatePerson(selectedPopulation.id, {
-        name: formData.name,
-        idCard: formData.idCard,
-        phone: formData.phone,
-        address: formData.address,
-        nation: formData.nation,
-        education: formData.education,
-        gender: formData.gender,
-        age: formData.age,
-        type: formData.type,
-        gridId: formData.gridId,
-        houseId: formData.houseId,
-        tags: selectedPersonTags,
-        // 新增字段
-        birthDate: formData.birthDate,
-        birthplace: formData.birthplace,
-        maritalStatus: formData.maritalStatus,
-        religion: formData.religion,
-        politicalStatus: formData.politicalStatus,
-        militaryService: formData.militaryService,
-        graduationInfo: formData.graduationInfo,
-        workplace: formData.workplace,
-        communityVolunteer: formData.communityVolunteer,
-        skills: formData.skills,
-        pets: formData.pets,
-        careLabels: formData.careLabels,
-        categoryLabels: formData.categoryLabels,
-        biography: formData.biography,
-        activityParticipation: formData.activityParticipation,
-        healthRecord: formData.healthRecord,
-        importantEvents: formData.importantEvents,
-      });
-      setIsEditDialogOpen(false);
-      setSelectedPopulation(null);
+    setIsSaving(true);
+    try {
+      await personRepository.addPerson(newPerson);
+      await loadData();
+      setIsAddDialogOpen(false);
       setFormData({});
       setRecommendedTags([]);
       setSelectedPersonTags([]);
-      setExpandedSections({
-        detail: false,
-        biography: false,
-        activity: false,
-        health: false,
-        events: false,
-      });
+    } catch (error) {
+      console.error("Failed to add person", error);
+      alert("新增人口失败，请稍后重试。");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveEdit = async () => {
+    if (selectedPopulation) {
+      setIsSaving(true);
+      try {
+        await personRepository.updatePerson(selectedPopulation.id, {
+          name: formData.name,
+          idCard: formData.idCard,
+          phone: formData.phone,
+          address: formData.address,
+          nation: formData.nation,
+          education: formData.education,
+          gender: formData.gender,
+          age: formData.age,
+          type: formData.type,
+          gridId: formData.gridId,
+          houseId: formData.houseId,
+          tags: selectedPersonTags,
+          risk: inferRiskLevel(selectedPersonTags, formData.careLabels),
+          updatedAt: new Date().toISOString(),
+          birthDate: formData.birthDate,
+          birthplace: formData.birthplace,
+          maritalStatus: formData.maritalStatus,
+          religion: formData.religion,
+          politicalStatus: formData.politicalStatus,
+          militaryService: formData.militaryService,
+          graduationInfo: formData.graduationInfo,
+          workplace: formData.workplace,
+          communityVolunteer: formData.communityVolunteer,
+          skills: formData.skills,
+          pets: formData.pets,
+          careLabels: formData.careLabels,
+          categoryLabels: formData.categoryLabels,
+          biography: formData.biography,
+          activityParticipation: formData.activityParticipation,
+          healthRecord: formData.healthRecord,
+          importantEvents: formData.importantEvents,
+        });
+        await loadData();
+        setIsEditDialogOpen(false);
+        setSelectedPopulation(null);
+        setFormData({});
+        setRecommendedTags([]);
+        setSelectedPersonTags([]);
+        setExpandedSections({
+          detail: false,
+          biography: false,
+          activity: false,
+          health: false,
+          events: false,
+        });
+      } catch (error) {
+        console.error("Failed to update person", error);
+        alert("更新人口信息失败，请稍后重试。");
+      } finally {
+        setIsSaving(false);
+      }
     }
   };
 
@@ -639,6 +812,32 @@ export function PopulationManagement() {
       setSelectedRows(filteredPopulations.map((pop) => pop.id));
     }
   };
+
+  const selectedHousemates = selectedPopulation?.houseId
+    ? populations.filter(
+        (person) => person.houseId === selectedPopulation.houseId && person.id !== selectedPopulation.id,
+      )
+    : [];
+
+  const selectedFamilyMembers = selectedPopulation?.familyRelations
+    ? selectedPopulation.familyRelations.reduce<Array<{ person: Population; relationType: string }>>(
+        (items, relation) => {
+          const person = populations.find((item) => item.id === relation.relatedPersonId);
+          if (person) {
+            items.push({ person, relationType: relation.relationType });
+          }
+          return items;
+        },
+        [],
+      )
+    : [];
+
+  const selectedRiskSummary = selectedPopulation
+    ? getRiskSummary(selectedPopulation, selectedPopulationVisits)
+    : "";
+  const selectedRecommendedActions = selectedPopulation
+    ? buildRecommendedActions(selectedPopulation, selectedPopulationVisits, selectedHousemates)
+    : [];
 
   const stats = {
     total: populations.length,
@@ -1022,10 +1221,10 @@ export function PopulationManagement() {
                             <Button variant="ghost" size="sm" onClick={() => handleView(pop)}>
                               <Eye className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleEdit(pop)} disabled={pop.status === "作废"}>
+                            <Button variant="ghost" size="sm" onClick={() => handleEdit(pop)} disabled={isSaving}>
                               <Edit className="w-4 h-4" />
                             </Button>
-                            <Button variant="ghost" size="sm" onClick={() => handleDelete(pop.id)} disabled={pop.status === "作废"}>
+                            <Button variant="ghost" size="sm" onClick={() => void handleDelete(pop.id)} disabled={isSaving}>
                               <Trash2 className="w-4 h-4 text-red-500" />
                             </Button>
                           </div>
@@ -1035,7 +1234,9 @@ export function PopulationManagement() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">暂无数据</TableCell>
+                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
+                      {isLoading ? "正在加载人口数据..." : "暂无数据"}
+                    </TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -1123,12 +1324,66 @@ export function PopulationManagement() {
                     </CardHeader>
                     <CardContent>
                       <div className="flex gap-2 flex-wrap">
-                        {getPopulationTags(selectedPopulation.tags).map((tag: any) => (
-                          <Badge key={tag.id} variant="outline" className="text-sm">{tag.name}</Badge>
-                        ))}
+                        {getPopulationTags(selectedPopulation.tags).length > 0 ? (
+                          getPopulationTags(selectedPopulation.tags).map((tag: any) => (
+                            <Badge key={tag.id} variant="outline" className="text-sm">{tag.name}</Badge>
+                          ))
+                        ) : (
+                          <span className="text-sm text-gray-500">暂无人员标签</span>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
+
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Shield className="w-4 h-4 text-amber-600" />
+                          风险摘要
+                        </CardTitle>
+                        <CardDescription>基于当前对象字段、标签和历史走访生成</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            className={
+                              selectedPopulation.risk === "High"
+                                ? "bg-red-100 text-red-700"
+                                : selectedPopulation.risk === "Medium"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-green-100 text-green-700"
+                            }
+                          >
+                            {selectedPopulation.risk}
+                          </Badge>
+                          <span className="text-sm text-gray-500">
+                            最近走访：{getLastVisitDate(selectedPopulationVisits) ?? "暂无记录"}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-6 text-gray-700">{selectedRiskSummary}</p>
+                      </CardContent>
+                    </Card>
+
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-blue-600" />
+                          推荐动作
+                        </CardTitle>
+                        <CardDescription>为数据画像智能体预留的业务嵌入位</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {selectedRecommendedActions.map((action, index) => (
+                            <div key={index} className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+                              {action}
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
 
                   {/* 详细信息 */}
                   {(selectedPopulation.birthDate || selectedPopulation.birthplace || selectedPopulation.maritalStatus ||
@@ -1366,38 +1621,21 @@ export function PopulationManagement() {
                 </TabsContent>
 
                 <TabsContent value="relation" className="space-y-4">
-                  {(() => {
-                    // 获取所有人员数据
-                    const allPeople = db.getPeople();
-                    // 同住人员（住在同一房间）
-                    const housemates = selectedPopulation.houseId 
-                      ? allPeople.filter(p => p.houseId === selectedPopulation.houseId && p.id !== selectedPopulation.id)
-                      : [];
-                    
-                    // 血缘关系人员
-                    const familyMembers = selectedPopulation.familyRelations
-                      ? selectedPopulation.familyRelations.map(rel => {
-                          const person = allPeople.find(p => p.id === rel.relatedPersonId);
-                          return person ? { person, relationType: rel.relationType } : null;
-                        }).filter(Boolean)
-                      : [];
-
-                    return (
-                      <>
+                  <>
                         {/* 同住关系 */}
                         <Card>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
                               <Home className="w-4 h-4 text-blue-600" />
                               同住关系
-                              <Badge variant="secondary" className="ml-1">{housemates.length}</Badge>
+                              <Badge variant="secondary" className="ml-1">{selectedHousemates.length}</Badge>
                             </CardTitle>
                             <CardDescription>与{selectedPopulation.name}居住在同一房间的人员</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {housemates.length > 0 ? (
+                            {selectedHousemates.length > 0 ? (
                               <div className="space-y-3">
-                                {housemates.map((person: any) => (
+                                {selectedHousemates.map((person) => (
                                   <div key={person.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                     <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
@@ -1429,14 +1667,14 @@ export function PopulationManagement() {
                             <CardTitle className="text-base flex items-center gap-2">
                               <Heart className="w-4 h-4 text-red-600" />
                               血缘关系
-                              <Badge variant="secondary" className="ml-1">{familyMembers.length}</Badge>
+                              <Badge variant="secondary" className="ml-1">{selectedFamilyMembers.length}</Badge>
                             </CardTitle>
                             <CardDescription>与{selectedPopulation.name}有血缘或婚姻关系的人员</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {familyMembers.length > 0 ? (
+                            {selectedFamilyMembers.length > 0 ? (
                               <div className="space-y-3">
-                                {familyMembers.map((item: any, idx: number) => (
+                                {selectedFamilyMembers.map((item, idx: number) => (
                                   <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
                                     <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
@@ -1487,10 +1725,10 @@ export function PopulationManagement() {
 
                               {(() => {
                                 // 合并关系数据，确保每个人只出现一次
-                                const relationMap = new Map();
+                                const relationMap = new Map<string, { person: Population; relations: Array<{ type: 'family' | 'housemate'; label: string }> }>();
                                 
                                 // 添加血缘关系
-                                familyMembers.forEach((item: any) => {
+                                selectedFamilyMembers.forEach((item) => {
                                   const personId = item.person.id;
                                   if (!relationMap.has(personId)) {
                                     relationMap.set(personId, {
@@ -1505,7 +1743,7 @@ export function PopulationManagement() {
                                 });
                                 
                                 // 添加同住关系
-                                housemates.forEach((person: any) => {
+                                selectedHousemates.forEach((person) => {
                                   const personId = person.id;
                                   if (!relationMap.has(personId)) {
                                     relationMap.set(personId, {
@@ -1613,9 +1851,7 @@ export function PopulationManagement() {
                             </div>
                           </CardContent>
                         </Card>
-                      </>
-                    );
-                  })()}
+                  </>
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-4">
@@ -1625,7 +1861,34 @@ export function PopulationManagement() {
                       <CardDescription>最近的入户访问和服务记录</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-gray-500 text-sm text-center py-8">暂无历史记录</p>
+                      {isDetailLoading ? (
+                        <p className="text-gray-500 text-sm text-center py-8">正在加载历史走访...</p>
+                      ) : selectedPopulationVisits.length > 0 ? (
+                        <div className="space-y-3">
+                          {selectedPopulationVisits.map((visit) => (
+                            <div key={visit.id} className="rounded-lg border border-gray-200 p-4">
+                              <div className="flex items-center justify-between gap-3">
+                                <div>
+                                  <p className="font-medium text-gray-900">{visit.visitorName}</p>
+                                  <p className="text-xs text-gray-500">{visit.date}</p>
+                                </div>
+                                {visit.tags && visit.tags.length > 0 && (
+                                  <div className="flex flex-wrap justify-end gap-1">
+                                    {visit.tags.slice(0, 3).map((tag, index) => (
+                                      <Badge key={index} variant="secondary" className="text-xs">
+                                        {tag}
+                                      </Badge>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700">{visit.content}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-gray-500 text-sm text-center py-8">暂无历史记录</p>
+                      )}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -2085,7 +2348,9 @@ export function PopulationManagement() {
           </ScrollArea>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); setIsEditDialogOpen(false); }}>取消</Button>
-            <Button onClick={isAddDialogOpen ? handleSaveAdd : handleSaveEdit}>保存</Button>
+            <Button onClick={() => void (isAddDialogOpen ? handleSaveAdd() : handleSaveEdit())} disabled={isSaving}>
+              {isSaving ? "保存中..." : "保存"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
