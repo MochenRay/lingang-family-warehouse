@@ -71,6 +71,11 @@ class DBService {
     this.setItem(STORAGE_KEYS.PEOPLE, people);
   }
 
+  deletePerson(id: string) {
+    const people = this.getPeople().filter(p => p.id !== id);
+    this.setItem(STORAGE_KEYS.PEOPLE, people);
+  }
+
   updatePerson(id: string, updates: Partial<Person>) {
     const people = this.getPeople();
     const index = people.findIndex(p => p.id === id);
