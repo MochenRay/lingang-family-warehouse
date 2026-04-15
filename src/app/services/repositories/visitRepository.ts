@@ -13,6 +13,9 @@ export interface VisitQuery {
   offset?: number;
 }
 
+export type VisitCreateInput = Omit<VisitRecord, 'id'>;
+export type PersonVisitCreateInput = Omit<VisitCreateInput, 'targetId' | 'targetType'>;
+
 function matchesVisitQuery(visit: VisitRecord, query: VisitQuery): boolean {
   if (query.gridId && visit.gridId !== query.gridId) {
     return false;
@@ -52,18 +55,49 @@ export const visitRepository = {
     );
   },
 
-  async addVisit(visit: VisitRecord): Promise<VisitRecord> {
+  async addVisit(visit: VisitCreateInput): Promise<VisitRecord> {
     return callWithFallback(
-      () => {
-        const { id: _id, ...payload } = visit;
-        return fetchJson<VisitRecord>('/visits', {
+      () =>
+        fetchJson<VisitRecord>('/visits', {
           method: 'POST',
-          body: JSON.stringify(payload),
-        });
-      },
+          body: JSON.stringify(visit),
+        }),
       () => {
-        db.addVisit(visit);
-        return visit;
+        const nextVisit: VisitRecord = {
+          ...visit,
+          id: `visit_${Date.now()}`,
+        };
+        db.addVisit(nextVisit);
+        return nextVisit;
+      },
+    );
+  },
+
+  async addPersonVisit(personId: string, visit: PersonVisitCreateInput): Promise<VisitRecord> {
+    return callWithFallback(
+      () =>
+        fetchJson<VisitRecord>(`/people/${personId}/visits`, {
+          method: 'POST',
+          body: JSON.stringify(visit),
+        }),
+      () => {
+        const person = db.getPerson(personId);
+        const nextVisit: VisitRecord = {
+          id: `visit_${Date.now()}`,
+          targetId: personId,
+          targetType: 'person',
+          gridId: visit.gridId,
+          visitorName: visit.visitorName,
+          date: visit.date,
+          content: visit.content,
+          images: visit.images,
+          tags: visit.tags,
+        };
+        db.addVisit(nextVisit);
+        if (person) {
+          db.updatePerson(personId, { updatedAt: visit.date });
+        }
+        return nextVisit;
       },
     );
   },

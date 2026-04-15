@@ -5,7 +5,9 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models.person import Person
+from app.models.visit import VisitRecord
 from app.schemas.person import PersonCreate, PersonRead, PersonUpdate
+from app.schemas.visit import PersonVisitCreate, VisitRecordRead
 from sqlmodel import SQLModel
 
 router = APIRouter(prefix="/people", tags=["people"])
@@ -66,6 +68,36 @@ def get_person(person_id: str, session: Session = Depends(get_session)) -> Perso
     if person is None:
         raise HTTPException(status_code=404, detail=f"Person '{person_id}' not found")
     return PersonRead.model_validate(person)
+
+
+@router.post("/{person_id}/visits", response_model=VisitRecordRead, status_code=status.HTTP_201_CREATED)
+def create_person_visit(
+    person_id: str,
+    payload: PersonVisitCreate,
+    session: Session = Depends(get_session),
+) -> VisitRecordRead:
+    person = session.get(Person, person_id)
+    if person is None:
+        raise HTTPException(status_code=404, detail=f"Person '{person_id}' not found")
+
+    visit = VisitRecord(
+        id=f"visit_{uuid4().hex[:12]}",
+        targetId=person.id,
+        targetType="person",
+        gridId=person.gridId,
+        visitorName=payload.visitorName,
+        date=payload.date,
+        content=payload.content,
+        images=payload.images,
+        tags=payload.tags,
+    )
+    person.updatedAt = payload.date
+
+    session.add(visit)
+    session.add(person)
+    session.commit()
+    session.refresh(visit)
+    return VisitRecordRead.model_validate(visit)
 
 
 @router.post("", response_model=PersonRead, status_code=status.HTTP_201_CREATED)

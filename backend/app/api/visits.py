@@ -1,12 +1,11 @@
-from typing import Any
 from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
-from sqlmodel import Field, Session, SQLModel, select
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlmodel import Session, SQLModel, select
 
 from app.database import get_session
 from app.models.visit import VisitRecord
-from app.schemas.visit import VisitRecordRead
+from app.schemas.visit import VisitRecordCreate, VisitRecordRead, VisitRecordUpdate
 
 router = APIRouter(prefix="/visits", tags=["visits"])
 
@@ -14,17 +13,6 @@ router = APIRouter(prefix="/visits", tags=["visits"])
 class VisitsListResponse(SQLModel):
     items: list[VisitRecordRead]
     total: int
-
-
-class VisitCreate(SQLModel):
-    targetId: str
-    targetType: str
-    gridId: str
-    visitorName: str
-    date: str
-    content: str
-    images: list[str] = Field(default_factory=list)
-    tags: list[str] | None = None
 
 
 @router.get("", response_model=VisitsListResponse)
@@ -69,7 +57,7 @@ def get_visit(visit_id: str, session: Session = Depends(get_session)) -> VisitRe
 
 
 @router.post("", response_model=VisitRecordRead, status_code=201)
-def create_visit(payload: VisitCreate, session: Session = Depends(get_session)) -> VisitRecordRead:
+def create_visit(payload: VisitRecordCreate, session: Session = Depends(get_session)) -> VisitRecordRead:
     visit = VisitRecord(
         id=f"visit_{uuid4().hex[:12]}",
         **payload.model_dump(),
@@ -83,19 +71,14 @@ def create_visit(payload: VisitCreate, session: Session = Depends(get_session)) 
 @router.patch("/{visit_id}", response_model=VisitRecordRead)
 def update_visit(
     visit_id: str,
-    payload: dict[str, Any] = Body(...),
+    payload: VisitRecordUpdate,
     session: Session = Depends(get_session),
 ) -> VisitRecordRead:
     visit = session.get(VisitRecord, visit_id)
     if visit is None:
         raise HTTPException(status_code=404, detail=f"Visit '{visit_id}' not found")
 
-    allowed_fields = set(VisitRecord.model_fields.keys()) - {"id"}
-    unknown_fields = sorted(set(payload.keys()) - allowed_fields)
-    if unknown_fields:
-        raise HTTPException(status_code=400, detail=f"Unsupported fields: {', '.join(unknown_fields)}")
-
-    for field, value in payload.items():
+    for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(visit, field, value)
 
     session.add(visit)

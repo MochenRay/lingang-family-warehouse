@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, User, Phone, MapPin, Tag, Users, Edit, Clock, Network, History, AlertCircle, Home, Heart, Briefcase, Award, Activity, FileText, Calendar, Shield } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, User, Phone, MapPin, Tag, Users, Clock, Network, History, AlertCircle, Home, Heart, Activity, FileText, Shield, Sparkles, Loader2 } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { db } from '../../services/db';
 import { Person, VisitRecord } from '../../types/core';
+import { personRepository } from '../../services/repositories/personRepository';
+import { visitRepository } from '../../services/repositories/visitRepository';
+import { houseRepository } from '../../services/repositories/houseRepository';
+import { toast } from 'sonner';
 
 interface MobilePersonDetailProps {
   id: string;
@@ -20,39 +23,92 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
   const [relatedPeople, setRelatedPeople] = useState<Person[]>([]);
   const [cohabitants, setCohabitants] = useState<Person[]>([]);
   const [visits, setVisits] = useState<VisitRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const loadPerson = () => {
-      const personData = db.getPerson(id);
-      if (personData) {
-        setPerson(personData);
-        
-        // 加载关系人员（血缘关系）
-        if (personData.familyRelations && personData.familyRelations.length > 0) {
-          const related = personData.familyRelations
-            .map(rel => db.getPerson(rel.relatedPersonId))
-            .filter((p): p is Person => p !== undefined);
-          setRelatedPeople(related);
-        }
-        
-        // 加载同住人员（同一房屋）
-        if (personData.houseId) {
-          const houseMates = db.getPeople().filter(
-            p => p.houseId === personData.houseId && p.id !== personData.id
-          );
-          setCohabitants(houseMates);
+    let alive = true;
+
+    const loadPerson = async () => {
+      setIsLoading(true);
+
+      try {
+        const personData = await personRepository.getPerson(id);
+        if (!alive) {
+          return;
         }
 
-        // 加载走访记录
-        const visitRecords = db.getVisits(v => v.targetId === id);
+        if (!personData) {
+          setPerson(null);
+          setRelatedPeople([]);
+          setCohabitants([]);
+          setVisits([]);
+          return;
+        }
+
+        const [related, houseMates, visitRecords] = await Promise.all([
+          personData.familyRelations && personData.familyRelations.length > 0
+            ? Promise.all(
+                personData.familyRelations.map(async (relation) => {
+                  const nextPerson = await personRepository.getPerson(relation.relatedPersonId);
+                  return nextPerson ?? null;
+                }),
+              ).then((items) => items.filter((item): item is Person => item !== null))
+            : Promise.resolve([] as Person[]),
+          personData.houseId
+            ? houseRepository
+                .getHouseResidents(personData.houseId)
+                .then((items) => items.filter((item) => item.id !== personData.id))
+            : Promise.resolve([] as Person[]),
+          visitRepository
+            .getVisits({ targetId: personData.id, targetType: 'person', limit: 100 })
+            .then((items) => [...items].sort((left, right) => right.date.localeCompare(left.date))),
+        ]);
+
+        if (!alive) {
+          return;
+        }
+
+        setPerson(personData);
+        setRelatedPeople(related);
+        setCohabitants(houseMates);
         setVisits(visitRecords);
+      } catch (error) {
+        console.error('Failed to load mobile person detail', error);
+        if (!alive) {
+          return;
+        }
+        setPerson(null);
+        setRelatedPeople([]);
+        setCohabitants([]);
+        setVisits([]);
+      } finally {
+        if (alive) {
+          setIsLoading(false);
+        }
       }
     };
 
-    loadPerson();
-    window.addEventListener('db-change', loadPerson);
-    return () => window.removeEventListener('db-change', loadPerson);
+    void loadPerson();
+    const handleRefresh = () => {
+      void loadPerson();
+    };
+    window.addEventListener('db-change', handleRefresh);
+    return () => {
+      alive = false;
+      window.removeEventListener('db-change', handleRefresh);
+    };
   }, [id]);
+
+  if (isLoading) {
+    return (
+      <div className="h-full bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-3" />
+          <p className="text-sm text-gray-500">正在加载人员档案...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!person) {
     return (
@@ -77,6 +133,20 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
     if (risk === 'Medium') return '中风险';
     return '低风险';
   };
+
+  const visitPrep = [
+    person.age >= 60 ? '重点确认近期健康状况、慢病用药和居家安全情况。' : null,
+    person.tags.length > 0 ? `本次走访优先核验标签信息：${person.tags.slice(0, 3).join('、')}。` : null,
+    cohabitants.length > 0 ? `同住人员 ${cohabitants.length} 人，建议同步了解家庭关系与照护分工。` : null,
+    visits[0] ? `最近一次走访在 ${visits[0].date}，建议先跟进上次承诺事项。` : '暂无历史走访，优先补齐基础档案和联系方式。',
+  ].filter((item): item is string => Boolean(item));
+
+  const todoSuggestions = [
+    person.risk === 'High' ? '建议生成高风险回访待办，并同步给网格长复核。' : null,
+    person.careLabels?.length ? `建议核验关爱对象政策落实情况：${person.careLabels.slice(0, 2).join('、')}。` : null,
+    !person.phone ? '建议补齐联系电话，避免后续回访失联。' : null,
+    visits.length < 2 ? '建议在本周内完成二次回访，补齐连续走访记录。' : '建议根据本次记录更新下次回访计划和提醒时间。',
+  ].filter((item): item is string => Boolean(item));
 
   return (
     <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
@@ -240,6 +310,50 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       {getRiskLabel(person.risk)}
                     </Badge>
                   </div>
+                </div>
+              </div>
+            </Card>
+
+            <Card className="border-none shadow-sm">
+              <div className="bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-blue-600" />
+                    走访前准备
+                  </h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    社工助手
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  {visitPrep.map((item) => (
+                    <div key={item} className="flex gap-2 text-sm text-gray-700">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                      <span className="leading-relaxed">{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </Card>
+
+            <Card className="border-none shadow-sm">
+              <div className="bg-white p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-amber-600" />
+                    待办建议
+                  </h3>
+                  <Badge variant="secondary" className="text-[10px]">
+                    AI 推荐
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  {todoSuggestions.map((item) => (
+                    <div key={item} className="flex gap-2 text-sm text-gray-700">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                      <span className="leading-relaxed">{item}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </Card>
@@ -697,7 +811,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                                 <div className="text-xs text-gray-500">{relation.relationType} · {relatedPerson.age}岁</div>
                               </div>
                             </div>
-                            <Button variant="ghost" size="sm" className="text-xs text-blue-600">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-blue-600"
+                              onClick={() => onRouteChange?.(`person-detail/${relatedPerson.id}`)}
+                            >
                               查看
                             </Button>
                           </div>
@@ -736,7 +855,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                           <div className="text-xs text-gray-500">{cohabitant.gender} · {cohabitant.age}岁</div>
                         </div>
                       </div>
-                      <Button variant="ghost" size="sm" className="text-xs text-blue-600">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-xs text-blue-600"
+                        onClick={() => onRouteChange?.(`person-detail/${cohabitant.id}`)}
+                      >
                         查看
                       </Button>
                     </div>
@@ -833,7 +957,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         >
           添加走访记录
         </Button>
-        <Button className="flex-1 h-11 bg-blue-600 hover:bg-blue-700">
+        <Button
+          className="flex-1 h-11 bg-blue-600 hover:bg-blue-700"
+          onClick={() => toast.info('请通过人员编辑或专项采集页发起信息变更')}
+        >
           信息采集变更
         </Button>
       </div>
