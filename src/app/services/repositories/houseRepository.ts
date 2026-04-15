@@ -14,6 +14,16 @@ export interface HouseQuery {
 }
 
 type HouseFilter = HouseQuery | ((house: House) => boolean);
+type HouseCreateInput = Omit<House, 'id'> & { id?: string };
+
+interface GridStatsResponse {
+  grids: Array<{
+    id: string;
+    name: string;
+    parentId?: string | null;
+    managerName?: string | null;
+  }>;
+}
 
 function matchesHouseQuery(house: House, query: HouseQuery): boolean {
   const keyword = (query.q ?? query.search ?? '').trim();
@@ -82,9 +92,24 @@ export const houseRepository = {
     );
   },
 
-  async addHouse(house: House): Promise<House> {
-    db.addHouse(house);
-    return house;
+  async addHouse(house: HouseCreateInput): Promise<House> {
+    return callWithFallback(
+      () => {
+        const { id: _id, ...payload } = house;
+        return fetchJson<House>('/houses', {
+          method: 'POST',
+          body: JSON.stringify(payload),
+        });
+      },
+      () => {
+        const nextHouse: House = {
+          ...house,
+          id: house.id ?? `house_${Date.now()}`,
+        };
+        db.addHouse(nextHouse);
+        return nextHouse;
+      },
+    );
   },
 
   async updateHouse(id: string, updates: Partial<House>): Promise<House | undefined> {
@@ -115,7 +140,39 @@ export const houseRepository = {
     );
   },
 
+  async deleteHouse(id: string): Promise<void> {
+    return callWithFallback(
+      async () => {
+        await fetchJson<{ ok: true } | null>(`/houses/${id}`, {
+          method: 'DELETE',
+        });
+      },
+      () => {
+        const residents = db.getPeople((person) => person.houseId === id);
+        const history = db.getHousingHistory((item) => item.houseId === id);
+        if (residents.length > 0 || history.length > 0) {
+          throw new Error('House still has bound data');
+        }
+        const houses = db.getHouses();
+        const nextHouses = houses.filter((house) => house.id !== id);
+        window.localStorage.setItem('app_data_houses', JSON.stringify(nextHouses));
+        window.dispatchEvent(new Event('db-change'));
+      },
+    );
+  },
+
   async getGrids(): Promise<Grid[]> {
-    return db.getGrids();
+    return callWithFallback(
+      async () => {
+        const response = await fetchJson<GridStatsResponse>('/stats/grids');
+        return response.grids.map((grid) => ({
+          id: grid.id,
+          name: grid.name,
+          parentId: grid.parentId ?? undefined,
+          managerName: grid.managerName ?? undefined,
+        }));
+      },
+      () => db.getGrids(),
+    );
   },
 };

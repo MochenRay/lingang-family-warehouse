@@ -1,12 +1,12 @@
-from typing import Any
+from uuid import uuid4
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models.house import House, HousingHistory
 from app.models.person import Person
-from app.schemas.house import HouseRead, HousingHistoryRead
+from app.schemas.house import HouseCreate, HouseRead, HouseUpdate, HousingHistoryRead
 from app.schemas.person import PersonRead
 from sqlmodel import SQLModel
 
@@ -66,6 +66,18 @@ def get_house(house_id: str, session: Session = Depends(get_session)) -> HouseRe
     return HouseRead.model_validate(house)
 
 
+@router.post("", response_model=HouseRead, status_code=status.HTTP_201_CREATED)
+def create_house(payload: HouseCreate, session: Session = Depends(get_session)) -> HouseRead:
+    house = House(
+        id=f"house_{uuid4().hex[:12]}",
+        **payload.model_dump(),
+    )
+    session.add(house)
+    session.commit()
+    session.refresh(house)
+    return HouseRead.model_validate(house)
+
+
 @router.get("/{house_id}/residents", response_model=list[PersonRead])
 def get_house_residents(house_id: str, session: Session = Depends(get_session)) -> list[PersonRead]:
     house = session.get(House, house_id)
@@ -90,22 +102,36 @@ def get_house_history(house_id: str, session: Session = Depends(get_session)) ->
 @router.patch("/{house_id}", response_model=HouseRead)
 def update_house(
     house_id: str,
-    payload: dict[str, Any] = Body(...),
+    payload: HouseUpdate,
     session: Session = Depends(get_session),
 ) -> HouseRead:
     house = session.get(House, house_id)
     if house is None:
         raise HTTPException(status_code=404, detail=f"House '{house_id}' not found")
 
-    allowed_fields = set(House.model_fields.keys()) - {"id"}
-    unknown_fields = sorted(set(payload.keys()) - allowed_fields)
-    if unknown_fields:
-        raise HTTPException(status_code=400, detail=f"Unsupported fields: {', '.join(unknown_fields)}")
-
-    for field, value in payload.items():
+    for field, value in payload.model_dump(exclude_unset=True).items():
         setattr(house, field, value)
 
     session.add(house)
     session.commit()
     session.refresh(house)
     return HouseRead.model_validate(house)
+
+
+@router.delete("/{house_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_house(house_id: str, session: Session = Depends(get_session)) -> Response:
+    house = session.get(House, house_id)
+    if house is None:
+        raise HTTPException(status_code=404, detail=f"House '{house_id}' not found")
+
+    residents = list(session.exec(select(Person).where(Person.houseId == house_id)))
+    if residents:
+        raise HTTPException(status_code=400, detail="House still has bound residents")
+
+    history_records = list(session.exec(select(HousingHistory).where(HousingHistory.houseId == house_id)))
+    if history_records:
+        raise HTTPException(status_code=400, detail="House still has housing history records")
+
+    session.delete(house)
+    session.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -31,8 +31,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
-import { db } from '../../services/db';
-import { House, Person, HousingHistory } from '../../types/core';
+import { houseRepository } from '../../services/repositories/houseRepository';
+import { Grid, House, Person, HousingHistory } from '../../types/core';
 import { toast } from 'sonner';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 
@@ -89,10 +89,13 @@ export function HousingManagement() {
 
   // 数据状态
   const [houses, setHouses] = useState<House[]>([]);
+  const [grids, setGrids] = useState<Grid[]>([]);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedHouse, setSelectedHouse] = useState<House | null>(null);
   const [selectedHouseResidents, setSelectedHouseResidents] = useState<Person[]>([]);
   const [selectedHouseHistory, setSelectedHouseHistory] = useState<HousingHistory[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   
   // 对话框状态
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -123,14 +126,24 @@ export function HousingManagement() {
   // 加载数据
   useEffect(() => {
     setMounted(true);
-    loadData();
-    window.addEventListener('db-change', loadData);
-    return () => window.removeEventListener('db-change', loadData);
+    void loadData();
   }, []);
 
-  const loadData = () => {
-    const allHouses = db.getHouses();
-    setHouses(allHouses);
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const [allHouses, nextGrids] = await Promise.all([
+        houseRepository.getHouses(),
+        houseRepository.getGrids(),
+      ]);
+      setHouses(allHouses);
+      setGrids(nextGrids);
+    } catch (error) {
+      console.error('Failed to load housing data', error);
+      toast.error('房屋数据加载失败，请稍后重试');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // 获取当前层级
@@ -225,27 +238,77 @@ export function HousingManagement() {
   };
 
   // 查看详情
-  const handleViewDetail = (house: House) => {
+  const handleViewDetail = async (house: House) => {
     setSelectedHouse(house);
-    // 加载居住人员
-    const residents = db.getPeople().filter(p => p.houseId === house.id);
-    setSelectedHouseResidents(residents);
-    // 加载居住历史
-    const history = db.getHousingHistory().filter(h => h.houseId === house.id);
-    setSelectedHouseHistory(history);
-    setIsDetailDialogOpen(true);
+    try {
+      const [residents, history] = await Promise.all([
+        houseRepository.getHouseResidents(house.id),
+        houseRepository.getHousingHistory(house.id),
+      ]);
+      setSelectedHouseResidents(residents);
+      setSelectedHouseHistory(history);
+      setIsDetailDialogOpen(true);
+    } catch (error) {
+      console.error('Failed to load house detail', error);
+      toast.error('房屋详情加载失败，请稍后重试');
+    }
   };
 
   // 删除房屋
-  const handleDelete = (id: string) => {
-    if (confirm('确定要删除此房屋吗？')) {
-      toast.success('删除成功');
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除此房屋吗？仅允许删除没有住户和历史记录的空房屋。')) {
+      return;
+    }
+    setIsSaving(true);
+    try {
+      await houseRepository.deleteHouse(id);
+      toast.success('房屋删除成功');
+      await loadData();
+    } catch (error) {
+      console.error('Failed to delete house', error);
+      toast.error(error instanceof Error ? error.message : '房屋删除失败');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   // 直接查看房屋列表
   const handleViewList = () => {
     setIsListDialogOpen(true);
+  };
+
+  const handleStructureCreate = (entityName: '街道' | '社区' | '网格') => {
+    toast.info(`当前版本暂不直接维护${entityName}层级，请先聚焦房屋与人房关系数据。`);
+  };
+
+  const handleEditPlaceholder = () => {
+    toast.info('房屋编辑将在后续迁居流程中接入，当前版本先提供真实查看与新增。');
+  };
+
+  const getRelationToOwner = (person: Person) => {
+    if (!selectedHouse) {
+      return '-';
+    }
+    if (person.name === selectedHouse.ownerName) {
+      return '户主';
+    }
+
+    const ownerResident = selectedHouseResidents.find(
+      (resident) => resident.name === selectedHouse.ownerName,
+    );
+    const directRelation =
+      person.familyRelations?.find((relation) => relation.relatedPersonId === ownerResident?.id)?.relationType ??
+      ownerResident?.familyRelations?.find((relation) => relation.relatedPersonId === person.id)?.relationType;
+
+    if (directRelation) {
+      return directRelation;
+    }
+
+    if (selectedHouse.type === '出租') {
+      return '租客';
+    }
+
+    return '同住';
   };
 
   // 渲染Hero区（统计概览）
@@ -330,7 +393,7 @@ export function HousingManagement() {
                   onClick={() => {
                     if (currentLevel.level === 'district') setIsCreateStreetDialogOpen(true);
                     else if (currentLevel.level === 'street') setIsCreateCommunityDialogOpen(true);
-                    else if (currentLevel.level === 'community') setIsCreateHouseDialogOpen(true);
+                    else if (currentLevel.level === 'community') setIsCreateGridDialogOpen(true);
                     else if (currentLevel.level === 'grid') setIsCreateHouseDialogOpen(true);
                   }}
                   className="bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-hover)] h-10"
@@ -338,7 +401,7 @@ export function HousingManagement() {
                   <Plus className="w-4 h-4 mr-2" />
                   {currentLevel.level === 'district' && '新建乡镇/街道'}
                   {currentLevel.level === 'street' && '新建社区'}
-                  {currentLevel.level === 'community' && '新建房屋'}
+                  {currentLevel.level === 'community' && '新建网格'}
                   {currentLevel.level === 'grid' && '新建房屋'}
                 </Button>
               )}
@@ -477,7 +540,6 @@ export function HousingManagement() {
           });
           const districtHouses = houses.filter(h => allCommunities.includes(h.communityName));
           const stats = calculateStats(districtHouses);
-          const grids = db.getGrids();
           const districtGrids = grids.filter(g => {
             return allCommunities.some(comm => g.name.includes(comm));
           });
@@ -586,8 +648,6 @@ export function HousingManagement() {
     if (!district) return null;
 
     const streets = Object.keys(REGIONS[district] || {});
-    const grids = db.getGrids();
-
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {streets.map(street => {
@@ -685,8 +745,6 @@ export function HousingManagement() {
     if (!district || !street) return null;
 
     const communities = REGIONS[district]?.[street] || [];
-    const grids = db.getGrids();
-
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {communities.map(community => {
@@ -964,7 +1022,7 @@ export function HousingManagement() {
                                               <div
                                                 key={house.id}
                                                 className={`p-3 rounded-lg border ${TYPE_COLORS_BG[house.type]} ${TYPE_COLORS_BORDER[house.type]} hover:border-[var(--color-brand-primary)] hover:shadow-md transition-all cursor-pointer group`}
-                                                onClick={() => handleViewDetail(house)}
+                                                onClick={() => void handleViewDetail(house)}
                                               >
                                                 <div className="flex items-center gap-2 mb-2">
                                                   <Home className={`w-4 h-4 ${TYPE_COLORS_TEXT[house.type]}`} />
@@ -1004,11 +1062,11 @@ export function HousingManagement() {
     const community = getSelectedRegion('community');
     if (!community) return null;
 
-    const grids = db.getGrids().filter(g => g.name.includes(community));
+    const currentGrids = grids.filter(g => g.name.includes(community));
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {grids.map(grid => {
+        {currentGrids.map(grid => {
           const gridHouses = houses.filter(h => h.gridId === grid.id);
           const stats = calculateStats(gridHouses);
 
@@ -1160,7 +1218,7 @@ export function HousingManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleViewDetail(house)}
+                          onClick={() => void handleViewDetail(house)}
                           className="hover:bg-blue-50 hover:text-blue-600"
                         >
                           <Eye className="w-4 h-4" />
@@ -1168,6 +1226,7 @@ export function HousingManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
+                          onClick={handleEditPlaceholder}
                           className="hover:bg-gray-100"
                         >
                           <Edit className="w-4 h-4" />
@@ -1175,8 +1234,9 @@ export function HousingManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete(house.id)}
+                          onClick={() => void handleDelete(house.id)}
                           className="hover:bg-red-50 hover:text-red-600"
+                          disabled={isSaving}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -1316,12 +1376,7 @@ export function HousingManagement() {
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {person.familyRelations && person.familyRelations.length > 0 
-                                ? person.familyRelations.find(r => 
-                                    db.getPerson(r.relatedPersonId)?.name === selectedHouse.ownerName
-                                  )?.relationType || '-'
-                                : '-'
-                              }
+                              {getRelationToOwner(person)}
                             </TableCell>
                             <TableCell>
                               <div className="flex flex-wrap gap-1">
@@ -1451,7 +1506,7 @@ export function HousingManagement() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          handleViewDetail(house);
+                          void handleViewDetail(house);
                           setIsListDialogOpen(false);
                         }}
                       >
@@ -1494,7 +1549,7 @@ export function HousingManagement() {
                 toast.error('请输入街道名称');
                 return;
               }
-              toast.success('街道创建成功');
+              handleStructureCreate('街道');
               setStreetForm({ name: '' });
               setIsCreateStreetDialogOpen(false);
             }}>
@@ -1531,7 +1586,7 @@ export function HousingManagement() {
                 toast.error('请输入社区名称');
                 return;
               }
-              toast.success('社区创建成功');
+              handleStructureCreate('社区');
               setCommunityForm({ name: '' });
               setIsCreateCommunityDialogOpen(false);
             }}>
@@ -1576,7 +1631,7 @@ export function HousingManagement() {
                 toast.error('请填写完整信息');
                 return;
               }
-              toast.success('网格创建成功');
+              handleStructureCreate('网格');
               setGridForm({ name: '', managerName: '' });
               setIsCreateGridDialogOpen(false);
             }}>
@@ -1666,15 +1721,18 @@ export function HousingManagement() {
             <Button variant="outline" onClick={() => setIsCreateHouseDialogOpen(false)}>
               取消
             </Button>
-            <Button onClick={() => {
+            <Button onClick={async () => {
               if (!houseForm.building || !houseForm.unit || !houseForm.room || !houseForm.area) {
                 toast.error('请填写完整的必填信息');
                 return;
               }
               const community = getSelectedRegion('community');
               const gridId = getSelectedRegion('grid');
-              const newHouse: House = {
-                id: `h_${Date.now()}`,
+              const occupancyStatus: House['occupancyStatus'] =
+                houseForm.memberCount > 0 ? '人在户在' : '人不在户不在';
+              const residenceType: House['residenceType'] =
+                houseForm.type === '出租' ? '租住' : houseForm.type === '空置' ? '闲置' : '自住';
+              const newHouse = {
                 gridId: gridId || '',
                 communityName: community || '',
                 building: houseForm.building,
@@ -1686,20 +1744,32 @@ export function HousingManagement() {
                 area: houseForm.area,
                 memberCount: houseForm.memberCount,
                 tags: [],
-                updatedAt: new Date().toISOString().split('T')[0]
+                updatedAt: new Date().toISOString().split('T')[0],
+                occupancyStatus,
+                residenceType,
+                houseType: '普通住宅' as const,
               };
-              db.addHouse(newHouse);
-              toast.success('房屋添加成功');
-              setHouseForm({
-                building: '',
-                unit: '',
-                room: '',
-                ownerName: '',
-                area: '',
-                type: '自住',
-                memberCount: 0
-              });
-              setIsCreateHouseDialogOpen(false);
+              setIsSaving(true);
+              try {
+                await houseRepository.addHouse(newHouse);
+                toast.success('房屋添加成功');
+                setHouseForm({
+                  building: '',
+                  unit: '',
+                  room: '',
+                  ownerName: '',
+                  area: '',
+                  type: '自住',
+                  memberCount: 0
+                });
+                setIsCreateHouseDialogOpen(false);
+                await loadData();
+              } catch (error) {
+                console.error('Failed to add house', error);
+                toast.error('房屋添加失败，请稍后重试');
+              } finally {
+                setIsSaving(false);
+              }
             }}>
               确定
             </Button>
