@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ArrowLeft, Calendar, User, FileText, Camera, MapPin, Clock, Home, Users, CheckCircle2, AlertCircle, Lightbulb, Mic, Square, Loader2, Sparkles, RefreshCw, Pencil } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowLeft, Calendar, User, Camera, MapPin, Home, CheckCircle2, AlertCircle, Lightbulb, Mic, Square, Loader2, Sparkles, RefreshCw, Clock } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
@@ -7,9 +7,10 @@ import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { db } from '../../services/db';
 import { Person, VisitRecord } from '../../types/core';
 import { toast } from 'sonner';
+import { personRepository } from '../../services/repositories/personRepository';
+import { visitRepository } from '../../services/repositories/visitRepository';
 
 interface MobileVisitFormProps {
   personId: string;
@@ -29,14 +30,17 @@ const MOCK_SPEECH_SEGMENTS = [
 
 export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
   const [person, setPerson] = useState<Person | null>(null);
+  const [recentVisits, setRecentVisits] = useState<VisitRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   // 录音相关状态
   const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcript, setTranscript] = useState('');
-  const [timerInterval, setTimerInterval] = useState<NodeJS.Timeout | null>(null);
-  const [speechInterval, setSpeechInterval] = useState<NodeJS.Timeout | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const speechIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // 表单数据
   const [formData, setFormData] = useState({
@@ -66,11 +70,61 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
   });
 
   useEffect(() => {
-    const personData = db.getPerson(personId);
-    if (personData) {
-      setPerson(personData);
-    }
+    let alive = true;
+
+    const loadContext = async () => {
+      setIsLoading(true);
+
+      try {
+        const [personData, visitData] = await Promise.all([
+          personRepository.getPerson(personId),
+          visitRepository.getVisits({ targetId: personId, targetType: 'person', limit: 20 }),
+        ]);
+
+        if (!alive) {
+          return;
+        }
+
+        setPerson(personData ?? null);
+        setRecentVisits([...visitData].sort((left, right) => right.date.localeCompare(left.date)));
+      } catch (error) {
+        console.error('Failed to load mobile visit form context', error);
+        if (!alive) {
+          return;
+        }
+        setPerson(null);
+        setRecentVisits([]);
+      } finally {
+        if (alive) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    void loadContext();
+    const handleRefresh = () => {
+      void loadContext();
+    };
+    window.addEventListener('db-change', handleRefresh);
+    return () => {
+      alive = false;
+      window.removeEventListener('db-change', handleRefresh);
+    };
   }, [personId]);
+
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+      if (speechIntervalRef.current) {
+        clearInterval(speechIntervalRef.current);
+      }
+      if (processingTimeoutRef.current) {
+        clearTimeout(processingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // 录音逻辑
   const startRecording = () => {
@@ -82,7 +136,7 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     const timer = setInterval(() => {
       setRecordingTime(prev => prev + 1);
     }, 1000);
-    setTimerInterval(timer);
+    timerIntervalRef.current = timer;
 
     // 模拟实时语音转文字
     let segmentIndex = 0;
@@ -93,16 +147,23 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
         segmentIndex++;
       }
     }, 1500);
-    setSpeechInterval(speech);
+    speechIntervalRef.current = speech;
   };
 
   const stopRecording = () => {
-    if (timerInterval) clearInterval(timerInterval);
-    if (speechInterval) clearInterval(speechInterval);
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    if (speechIntervalRef.current) {
+      clearInterval(speechIntervalRef.current);
+      speechIntervalRef.current = null;
+    }
     setRecordingStatus('processing');
 
     // 模拟AI分析过程
-    setTimeout(() => {
+    processingTimeoutRef.current = setTimeout(() => {
+      processingTimeoutRef.current = null;
       setRecordingStatus('done');
       // 填充模拟的分析结果
       setFormData(prev => ({
@@ -123,7 +184,6 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     setRecordingStatus('idle');
     setTranscript('');
     setRecordingTime(0);
-    // 清空已生成的字段（可选，这里选择保留以便对比，或者清空）
   };
 
   const formatTime = (seconds: number) => {
@@ -170,7 +230,7 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     return guidance;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     // 验证必填项
     if (!formData.visitPurpose) {
       toast.error('请填写走访目的');
@@ -202,27 +262,41 @@ ${formData.otherInfo ? `【其他信息】${formData.otherInfo}` : ''}
 ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
     `.trim();
 
-    const visitRecord: VisitRecord = {
-      id: `v_${Date.now()}`,
-      targetId: personId,
-      targetType: 'person',
-      gridId: person?.gridId || 'g1',
-      visitorName: formData.visitorName,
-      date: `${formData.visitDate} ${formData.visitTime}`,
-      content,
-      images: formData.images,
-      tags: [formData.visitType]
-    };
-
-    // 保存到数据库
-    db.addVisit(visitRecord);
-
-    setTimeout(() => {
-      setIsSubmitting(false);
+    try {
+      await visitRepository.addPersonVisit(personId, {
+        gridId: person?.gridId || 'g1',
+        visitorName: formData.visitorName,
+        date: `${formData.visitDate} ${formData.visitTime}`,
+        content,
+        images: formData.images,
+        tags: [formData.visitType, ...(formData.houseRisk ? ['房屋隐患'] : [])],
+      });
       toast.success('走访记录已保存');
       onBack();
-    }, 500);
+    } catch (error) {
+      console.error('Failed to submit visit record', error);
+      toast.error('走访记录保存失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
+
+  const todoSuggestions = [
+    person?.risk === 'High' ? '建议提交后自动生成高风险回访任务，并同步给网格长。' : null,
+    recentVisits[0] ? `最近一次走访在 ${recentVisits[0].date}，本次重点跟进上次未闭环事项。` : '暂无历史走访，建议本次同步补齐联系电话、居住状态和主要诉求。',
+    formData.isHome === 'no' ? '建议补一条未见面走访说明，并安排再次上门时间。' : '若发现隐患或救助需求，提交后同步生成待办和回访计划。',
+  ].filter((item): item is string => Boolean(item));
+
+  if (isLoading) {
+    return (
+      <div className="h-full bg-[var(--color-bg-primary)] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-2" />
+          <p className="text-[var(--color-text-tertiary)]">正在加载走访对象信息...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!person) {
     return (
@@ -365,13 +439,18 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           </div>
         </Card>
 
-        {/* 走访指导 */}
+        {/* 走访前准备 */}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
-            <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Lightbulb className="w-4 h-4 text-amber-500" />
-              走访指导
-            </h3>
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-amber-500" />
+                走访前准备
+              </h3>
+              <span className="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                社工助手
+              </span>
+            </div>
           </div>
           <div className="p-4">
             <ul className="space-y-2">
@@ -382,6 +461,56 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 </li>
               ))}
             </ul>
+          </div>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
+          <div className="p-4 border-b border-[var(--color-border-primary)]">
+            <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
+              <Clock className="w-4 h-4 text-blue-600" />
+              近期走访摘要
+            </h3>
+          </div>
+          <div className="p-4 space-y-3">
+            {recentVisits.length > 0 ? (
+              recentVisits.slice(0, 3).map((visit) => (
+                <div key={visit.id} className="rounded-lg border border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-[var(--color-text-primary)]">{visit.visitorName}</span>
+                    <span className="text-xs text-[var(--color-text-tertiary)]">{visit.date}</span>
+                  </div>
+                  <p className="mt-2 text-sm leading-relaxed text-[var(--color-text-secondary)] line-clamp-3">
+                    {visit.content}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-[var(--color-text-tertiary)]">
+                暂无历史走访记录，本次建议优先补齐基础信息和诉求摘要。
+              </p>
+            )}
+          </div>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
+          <div className="p-4 border-b border-[var(--color-border-primary)]">
+            <div className="flex items-center justify-between">
+              <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-purple-600" />
+                待办建议
+              </h3>
+              <span className="text-[10px] px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+                AI 推荐
+              </span>
+            </div>
+          </div>
+          <div className="p-4 space-y-2">
+            {todoSuggestions.map((item) => (
+              <div key={item} className="flex gap-2 text-sm text-[var(--color-text-primary)]">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-purple-500" />
+                <span className="leading-relaxed">{item}</span>
+              </div>
+            ))}
           </div>
         </Card>
 
