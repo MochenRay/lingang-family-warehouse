@@ -24,9 +24,9 @@ import {
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MobileLayout } from './MobileLayout';
-import { db } from '../../services/db';
 import { Person, PersonType, RiskLevel, Grid } from '../../types/core';
 import { tagStore } from '../../utils/tagStore';
+import { personRepository } from '../../services/repositories/personRepository';
 
 interface MobilePeopleProps {
   onRouteChange: (route: string) => void;
@@ -45,18 +45,34 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
-    // Initial fetch
-    setPeople(db.getPeople());
-    setGrids(db.getGrids());
+    let active = true;
+
+    const load = async () => {
+      const [nextPeople, nextGrids] = await Promise.all([
+        personRepository.getPeople(),
+        personRepository.getGrids(),
+      ]);
+
+      if (!active) {
+        return;
+      }
+
+      setPeople(nextPeople);
+      setGrids(nextGrids);
+    };
+
+    void load();
 
     // Listen for changes
     const handleDbChange = () => {
-      setPeople(db.getPeople());
-      setGrids(db.getGrids());
+      void load();
     };
     
     window.addEventListener('db-change', handleDbChange);
-    return () => window.removeEventListener('db-change', handleDbChange);
+    return () => {
+      active = false;
+      window.removeEventListener('db-change', handleDbChange);
+    };
   }, []);
 
   const filteredPeople = people

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { db } from '../../services/db';
 import { Users, Home, TrendingUp, Activity, Database, ArrowRight, AlertTriangle, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -9,6 +8,7 @@ import {
   PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { statsRepository } from '../../services/repositories/statsRepository';
 
 // Custom Tooltip for dark mode
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -27,12 +27,15 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export function StatisticsOverview() {
   const [mounted, setMounted] = useState(false);
+  const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'quarter'>('month');
   const [totalPopulation, setTotalPopulation] = useState(0);
   const [totalHouses, setTotalHouses] = useState(0);
   const [genderData, setGenderData] = useState<{name: string, value: number, color: string}[]>([]);
   const [ageData, setAgeData] = useState<{name: string, value: number, fill: string}[]>([]);
   const [riskTagsSummary, setRiskTagsSummary] = useState<{name: string, count: number, level: string, delta: string}[]>([]);
   const [trendData, setTrendData] = useState<{month: string, value: number}[]>([]);
+  const [dataCompleteness, setDataCompleteness] = useState(0);
+  const [gridCoverage, setGridCoverage] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,98 +44,49 @@ export function StatisticsOverview() {
       setMounted(true);
     }, 100);
 
-    const load = () => {
-      const people = db.getPeople();
-      const houses = db.getHouses();
-      const history = db.getHousingHistory();
-      
-      setTotalPopulation(people.length);
-      setTotalHouses(houses.length);
+    let active = true;
 
-      // Trend Data (Last 6 months)
-      const months: {month: string, value: number}[] = [];
-      const now = new Date();
-      let currentTotal = people.length || 0;
-      
-      // Basic mock trend if history is sparse
-      for (let i = 0; i < 6; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        // Add some random variance for visual effect if no history
-        const variance = Math.floor(Math.random() * 5); 
-        
-        months.unshift({
-          month: `${d.getMonth() + 1}月`,
-          value: currentTotal
-        });
-        currentTotal = Math.max(0, currentTotal - variance); // Go back in time
+    const load = async () => {
+      setLoading(true);
+      try {
+        const dashboard = await statsRepository.getDashboard(selectedRange);
+        if (!active) {
+          return;
+        }
+
+        setTotalPopulation(dashboard.totalPopulation);
+        setTotalHouses(dashboard.totalHouses);
+        setTrendData(dashboard.trendData);
+        setGenderData(dashboard.genderData);
+        setAgeData(dashboard.ageData);
+        setRiskTagsSummary(dashboard.riskTagsSummary);
+        setDataCompleteness(dashboard.housingStats.completionRate);
+        setGridCoverage(dashboard.metadata.totalGrids > 0 ? 100 : 0);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
-      setTrendData(months);
-
-      // Gender Data
-      const males = people.filter(p => p.gender === '男').length;
-      const females = people.filter(p => p.gender === '女').length;
-      setGenderData([
-        { name: '男性', value: males, color: '#3b82f6' },
-        { name: '女性', value: females, color: '#ec4899' },
-      ]);
-
-      // Age Data
-      const ageGroups = {
-        '0-18岁': 0,
-        '19-35岁': 0,
-        '36-60岁': 0,
-        '60岁以上': 0
-      };
-      people.forEach(p => {
-        if (!p.age) return;
-        if (p.age <= 18) ageGroups['0-18岁']++;
-        else if (p.age <= 35) ageGroups['19-35岁']++;
-        else if (p.age <= 60) ageGroups['36-60岁']++;
-        else ageGroups['60岁以上']++;
-      });
-      setAgeData([
-        { name: '0-18岁', value: ageGroups['0-18岁'], fill: '#8b5cf6' },
-        { name: '19-35岁', value: ageGroups['19-35岁'], fill: '#3b82f6' },
-        { name: '36-60岁', value: ageGroups['36-60岁'], fill: '#10b981' },
-        { name: '60岁以上', value: ageGroups['60岁以上'], fill: '#f59e0b' },
-      ]);
-
-      // Risk Tags Data
-      const trackedTags = [
-        { name: "独居老人", level: "高" },
-        { name: "严重精神障碍", level: "高" },
-        { name: "社区矫正", level: "中" },
-        { name: "群租", level: "中" },
-        { name: "信访", level: "低" }
-      ];
-
-      const riskStats = trackedTags.map(t => {
-        const count = people.filter(p => p.tags && p.tags.some(tag => tag.includes(t.name))).length;
-        const delta = Math.floor(Math.random() * 5) * (Math.random() > 0.5 ? 1 : -1); 
-        return {
-          name: t.name,
-          count,
-          level: t.level,
-          delta: delta > 0 ? `+${delta}` : `${delta}`
-        };
-      });
-      setRiskTagsSummary(riskStats);
-      setLoading(false);
     };
 
-    load();
-    window.addEventListener('db-change', load);
+    void load();
+    const handleDbChange = () => {
+      void load();
+    };
+
+    window.addEventListener('db-change', handleDbChange);
     return () => {
+      active = false;
       clearTimeout(timer);
-      window.removeEventListener('db-change', load);
+      window.removeEventListener('db-change', handleDbChange);
     };
-  }, []);
+  }, [selectedRange]);
 
   const coreMetrics = [
     { label: "总人口数", value: totalPopulation, unit: "人", trend: "+2.3%", icon: Users, color: "text-blue-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
     { label: "房屋总数", value: totalHouses, unit: "套", trend: "+1.5%", icon: Home, color: "text-indigo-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
-    { label: "网格覆盖率", value: 98.5, unit: "%", trend: "+0.5%", icon: Activity, color: "text-green-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
-    { label: "数据完整度", value: 92.3, unit: "%", trend: "优", icon: Database, color: "text-orange-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "网格覆盖率", value: gridCoverage, unit: "%", trend: "+0.5%", icon: Activity, color: "text-green-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "数据完整度", value: dataCompleteness, unit: "%", trend: "优", icon: Database, color: "text-orange-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
   ];
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
@@ -146,7 +100,7 @@ export function StatisticsOverview() {
           <p className="text-muted-foreground">辖区人口、房屋及风险态势的一站式数据概览。</p>
         </div>
         <div className="flex gap-2">
-           <Select defaultValue="month">
+           <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
              <SelectTrigger className="w-[120px]">
                <SelectValue placeholder="时间范围" />
              </SelectTrigger>
