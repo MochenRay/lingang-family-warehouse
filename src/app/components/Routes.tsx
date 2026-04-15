@@ -40,7 +40,7 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
   switch (currentRoute) {
     // 统计分析
     case 'statistics-overview':
-      return <StatisticsOverview />;
+      return <StatisticsOverview onRouteChange={onRouteChange} />;
     case 'demographics-analysis':
       return <DemographicsAnalysis />;
     case 'population-tags':
@@ -53,6 +53,8 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
       return <DataComparison />;
     case 'housing-statistics':
       return <HousingStatistics />;
+    case 'heatmap':
+      return <WarningMap />;
     // 数据管理
     case 'population':
       return <PopulationManagement />;

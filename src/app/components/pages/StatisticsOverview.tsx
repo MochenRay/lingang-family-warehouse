@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Users, Home, TrendingUp, Activity, Database, ArrowRight, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, Home, Activity, Database, ArrowRight, AlertTriangle, Loader2, Sparkles, Smartphone, MapPinned, ShieldAlert } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Badge } from '../ui/badge';
 import {
-  PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+  PieChart, Pie, Cell, AreaChart, Area,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-import { statsRepository } from '../../services/repositories/statsRepository';
+import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 
 // Custom Tooltip for dark mode
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -25,7 +25,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export function StatisticsOverview() {
+interface StatisticsOverviewProps {
+  onRouteChange?: (route: string) => void;
+}
+
+export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'quarter'>('month');
   const [totalPopulation, setTotalPopulation] = useState(0);
@@ -36,6 +40,9 @@ export function StatisticsOverview() {
   const [trendData, setTrendData] = useState<{month: string, value: number}[]>([]);
   const [dataCompleteness, setDataCompleteness] = useState(0);
   const [gridCoverage, setGridCoverage] = useState(0);
+  const [gridItems, setGridItems] = useState<DashboardStatsResponse['grids']>([]);
+  const [conflictStats, setConflictStats] = useState<DashboardStatsResponse['conflictStats'] | null>(null);
+  const [visitCount, setVisitCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,6 +69,9 @@ export function StatisticsOverview() {
         setRiskTagsSummary(dashboard.riskTagsSummary);
         setDataCompleteness(dashboard.housingStats.completionRate);
         setGridCoverage(dashboard.metadata.totalGrids > 0 ? 100 : 0);
+        setGridItems(dashboard.grids);
+        setConflictStats(dashboard.conflictStats);
+        setVisitCount(dashboard.metadata.totalVisits);
       } finally {
         if (active) {
           setLoading(false);
@@ -83,10 +93,61 @@ export function StatisticsOverview() {
   }, [selectedRange]);
 
   const coreMetrics = [
-    { label: "总人口数", value: totalPopulation, unit: "人", trend: "+2.3%", icon: Users, color: "text-blue-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
-    { label: "房屋总数", value: totalHouses, unit: "套", trend: "+1.5%", icon: Home, color: "text-indigo-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
-    { label: "网格覆盖率", value: gridCoverage, unit: "%", trend: "+0.5%", icon: Activity, color: "text-green-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
-    { label: "数据完整度", value: dataCompleteness, unit: "%", trend: "优", icon: Database, color: "text-orange-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "总人口数", value: totalPopulation, unit: "人", note: "当前在册人口", icon: Users, color: "text-blue-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "房屋总数", value: totalHouses, unit: "套", note: "当前台账房屋", icon: Home, color: "text-indigo-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "网格覆盖率", value: gridCoverage, unit: "%", note: `已纳入 ${gridCoverage > 0 ? '统一网格骨架' : '待补充'}`, icon: Activity, color: "text-green-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+    { label: "数据完整度", value: dataCompleteness, unit: "%", note: "房屋基础字段完成度", icon: Database, color: "text-orange-400", bg: "bg-[var(--color-neutral-02)]", iconBg: "bg-[var(--color-neutral-03)]" },
+  ];
+
+  const dashboardPressure = [...riskTagsSummary].sort((left, right) => right.count - left.count);
+  const highestPressureTag = dashboardPressure[0];
+  const secondaryPressureTag = dashboardPressure[1];
+  const busiestGrid = [...gridItems].sort(
+    (left, right) => (right.conflictCount + right.visitCount) - (left.conflictCount + left.visitCount),
+  )[0];
+  const aiSummary = [
+    highestPressureTag
+      ? `当前 ${highestPressureTag.count} 名${highestPressureTag.name}对象需要优先关注。`
+      : '当前暂无重点标签异常波动。',
+    secondaryPressureTag
+      ? `${secondaryPressureTag.name} 紧随其后，建议与人口画像页联动筛查。`
+      : '风险标签分布相对平稳，可继续观察。',
+    `现有 ${totalPopulation} 名人口、${totalHouses} 套房屋、累计 ${visitCount} 次走访已纳入统一台账，移动端可直接承接一线核查。`,
+  ];
+
+  const routeCards = [
+    {
+      title: '特征分析',
+      description: '学历、职业、户籍地等详细画像分析。',
+      icon: Users,
+      iconColor: 'text-blue-400',
+      arrowColor: 'text-blue-400',
+      route: 'demographics-analysis',
+    },
+    {
+      title: '标签画像',
+      description: '重点标签分层与高关注人群筛查。',
+      icon: Activity,
+      iconColor: 'text-indigo-400',
+      arrowColor: 'text-indigo-400',
+      route: 'population-tags',
+    },
+    {
+      title: '空间可视化',
+      description: '查看网格热力分布与风险落点。',
+      icon: MapPinned,
+      iconColor: 'text-green-400',
+      arrowColor: 'text-green-400',
+      route: 'heatmap',
+    },
+    {
+      title: '报表中心',
+      description: '导出月报、专报与阶段性分析。',
+      icon: Database,
+      iconColor: 'text-orange-400',
+      arrowColor: 'text-orange-400',
+      route: 'data-reports',
+    },
   ];
 
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
@@ -100,6 +161,7 @@ export function StatisticsOverview() {
           <p className="text-muted-foreground">辖区人口、房屋及风险态势的一站式数据概览。</p>
         </div>
         <div className="flex gap-2">
+           <Button onClick={() => onRouteChange?.('mobile')}>进入移动端工作台</Button>
            <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
              <SelectTrigger className="w-[120px]">
                <SelectValue placeholder="时间范围" />
@@ -125,9 +187,8 @@ export function StatisticsOverview() {
                   <span className="text-2xl font-bold text-[var(--color-neutral-11)]">{metric.value.toLocaleString()}</span>
                   <span className="text-xs text-[var(--color-neutral-08)]">{metric.unit}</span>
                 </div>
-                <div className="flex items-center gap-1 mt-2 text-xs text-green-400 font-medium">
-                   <TrendingUp className="w-3 h-3" />
-                   {metric.trend} <span className="text-[var(--color-neutral-06)] font-normal">较上期</span>
+                <div className="mt-2 text-xs text-[var(--color-neutral-07)] font-medium">
+                  {metric.note}
                 </div>
               </div>
               <div className={`p-3 rounded-lg ${metric.iconBg}`}>
@@ -136,6 +197,87 @@ export function StatisticsOverview() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <Card className="xl:col-span-2 border border-[var(--color-neutral-03)]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-4 h-4 text-[#4E86DF]" />
+              AI 治理摘要
+            </CardTitle>
+            <CardDescription>基于当前统一台账自动生成的重点提示与执行建议。</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {aiSummary.map((item, index) => (
+              <div key={index} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3 text-sm text-[var(--color-neutral-10)]">
+                {item}
+              </div>
+            ))}
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button variant="outline" onClick={() => onRouteChange?.('population-tags')}>
+                查看重点标签
+              </Button>
+              <Button variant="outline" onClick={() => onRouteChange?.('conflict-management')}>
+                查看矛盾调解
+              </Button>
+              <Button onClick={() => onRouteChange?.('mobile')}>
+                去移动端执行
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border border-[var(--color-neutral-03)]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 text-orange-400" />
+              当期治理焦点
+            </CardTitle>
+            <CardDescription>优先关注风险、人群与移动端执行入口。</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+              <div className="text-xs text-[var(--color-neutral-08)] mb-1">重点标签</div>
+              <div className="text-lg font-semibold text-[var(--color-neutral-11)]">
+                {highestPressureTag ? `${highestPressureTag.name} ${highestPressureTag.count} 人` : '暂无异常波动'}
+              </div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+              <div className="text-xs text-[var(--color-neutral-08)] mb-1">矛盾压力</div>
+              <div className="text-lg font-semibold text-[var(--color-neutral-11)]">
+                当前待化解 {conflictStats?.active ?? 0} 起矛盾
+              </div>
+              <div className="text-xs text-[var(--color-neutral-08)] mt-1">
+                建议联动矛盾调解与移动端任务清单处理。
+              </div>
+            </div>
+            <div className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+              <div className="text-xs text-[var(--color-neutral-08)] mb-1">重点网格</div>
+              <div className="text-lg font-semibold text-[var(--color-neutral-11)]">
+                {busiestGrid ? busiestGrid.name : '暂无重点网格'}
+              </div>
+              <div className="text-xs text-[var(--color-neutral-08)] mt-1">
+                {busiestGrid
+                  ? `走访 ${busiestGrid.visitCount} 次，矛盾 ${busiestGrid.conflictCount} 起。`
+                  : '等待网格统计汇总。'}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => onRouteChange?.('mobile')}
+              className="w-full rounded-lg border border-[rgba(78,134,223,0.25)] bg-[rgba(78,134,223,0.08)] px-4 py-3 text-left transition-colors hover:bg-[rgba(78,134,223,0.12)]"
+            >
+              <div className="flex items-center gap-2 text-[var(--color-neutral-11)] font-semibold">
+                <Smartphone className="w-4 h-4 text-[#4E86DF]" />
+                移动端工作台
+              </div>
+              <div className="mt-1 text-xs text-[var(--color-neutral-08)]">
+                从驾驶舱直接进入移动端执行链路。
+              </div>
+            </button>
+          </CardContent>
+        </Card>
       </div>
 
       {/* 2. 主图表区域：人口结构与趋势 */}
@@ -253,8 +395,8 @@ export function StatisticsOverview() {
                  <AlertTriangle className="w-4 h-4 text-orange-500" />
                  重点关注人群动态
                </CardTitle>
-               <Button variant="ghost" size="sm" className="text-xs" asChild>
-                  <a href="/population-tags">查看全部 &rarr;</a>
+               <Button variant="ghost" size="sm" className="text-xs" onClick={() => onRouteChange?.('population-tags')}>
+                  查看全部 &rarr;
                </Button>
              </div>
            </CardHeader>
@@ -289,41 +431,20 @@ export function StatisticsOverview() {
            </CardHeader>
            <CardContent>
              <div className="grid grid-cols-2 gap-4">
-               <div className="p-4 border border-[var(--color-neutral-03)] rounded-lg bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] cursor-pointer transition-colors group" onClick={() => window.location.href = '/demographics-analysis'}>
-                 <div className="flex items-center gap-2 mb-2">
-                   <Users className="w-5 h-5 text-blue-400" />
-                   <span className="font-semibold text-[var(--color-neutral-11)]">特征分析</span>
+               {routeCards.map((card) => (
+                 <div
+                   key={card.route}
+                   className="p-4 border border-[var(--color-neutral-03)] rounded-lg bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] cursor-pointer transition-colors group"
+                   onClick={() => onRouteChange?.(card.route)}
+                 >
+                   <div className="flex items-center gap-2 mb-2">
+                     <card.icon className={`w-5 h-5 ${card.iconColor}`} />
+                     <span className="font-semibold text-[var(--color-neutral-11)]">{card.title}</span>
+                   </div>
+                   <p className="text-xs text-[var(--color-neutral-08)]">{card.description}</p>
+                   <ArrowRight className={`w-4 h-4 mt-2 opacity-0 group-hover:opacity-100 transition-opacity ${card.arrowColor}`} />
                  </div>
-                 <p className="text-xs text-[var(--color-neutral-08)]">学历、职业、户籍地等详细画像分析。</p>
-                 <ArrowRight className="w-4 h-4 text-blue-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-               </div>
-
-               <div className="p-4 border border-[var(--color-neutral-03)] rounded-lg bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] cursor-pointer transition-colors group" onClick={() => window.location.href = '/population-tags'}>
-                 <div className="flex items-center gap-2 mb-2">
-                   <Activity className="w-5 h-5 text-indigo-400" />
-                   <span className="font-semibold text-[var(--color-neutral-11)]">标签画像</span>
-                 </div>
-                 <p className="text-xs text-[var(--color-neutral-08)]">142类标签交叉分析与人群圈选。</p>
-                 <ArrowRight className="w-4 h-4 text-indigo-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-               </div>
-
-               <div className="p-4 border border-[var(--color-neutral-03)] rounded-lg bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] cursor-pointer transition-colors group" onClick={() => window.location.href = '/heatmap'}>
-                 <div className="flex items-center gap-2 mb-2">
-                   <Home className="w-5 h-5 text-green-400" />
-                   <span className="font-semibold text-[var(--color-neutral-11)]">空间可视化</span>
-                 </div>
-                 <p className="text-xs text-[var(--color-neutral-08)]">基于地图的网格热力图与房屋落点。</p>
-                 <ArrowRight className="w-4 h-4 text-green-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-               </div>
-
-               <div className="p-4 border border-[var(--color-neutral-03)] rounded-lg bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] cursor-pointer transition-colors group" onClick={() => window.location.href = '/data-reports'}>
-                 <div className="flex items-center gap-2 mb-2">
-                   <Database className="w-5 h-5 text-orange-400" />
-                   <span className="font-semibold text-[var(--color-neutral-11)]">报表中心</span>
-                 </div>
-                 <p className="text-xs text-[var(--color-neutral-08)]">生成月报、专报及历史数据导出。</p>
-                 <ArrowRight className="w-4 h-4 text-orange-400 mt-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-               </div>
+               ))}
              </div>
            </CardContent>
          </Card>

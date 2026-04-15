@@ -38,12 +38,19 @@ interface MobileAppProps {
 }
 
 export function MobileApp({ onExitMobile }: MobileAppProps) {
-  const [history, setHistory] = useState<string[]>(() => {
+  const buildInitialHistory = () => {
     const path = window.location.pathname;
+    if (path.includes('/mobile/tasks')) return ['home', 'tasks?mode=today'];
+    if (path.includes('/mobile/conflict')) return ['home', 'conflict'];
+    if (path.includes('/mobile/grid')) return ['home', 'grid-overview'];
     if (path.includes('/mobile/housing')) return ['home', 'housing'];
     if (path.includes('/mobile/people')) return ['home', 'people'];
     if (path.includes('/mobile/profile')) return ['home', 'profile'];
     return ['home'];
+  };
+
+  const [history, setHistory] = useState<string[]>(() => {
+    return buildInitialHistory();
   });
   
   // 获取当前路由（栈顶）
@@ -76,11 +83,10 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   const handleExitMobile = () => {
     if (confirm('确定要退出移动端模式吗？')) {
       if (onExitMobile) {
-        // 使用传入的回调函数返回PC端
         onExitMobile();
       } else {
-        // 后备方案：直接刷新页面
-        window.location.href = '/';
+        setHistory(['home']);
+        toast.info('已返回移动端工作台首页');
       }
     }
   };
@@ -166,11 +172,10 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
           onLogout={() => {
             if (confirm('确定要退出登录并返回电脑端吗？')) {
               if (onExitMobile) {
-                // 使用传入的回调函数返回PC端
                 onExitMobile();
               } else {
-                // 后备方案：直接刷新页面
-                window.location.href = '/';
+                setHistory(['home']);
+                toast.info('已返回移动端工作台首页');
               }
             }
           }} 

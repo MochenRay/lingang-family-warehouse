@@ -1,27 +1,20 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Home as HomeIcon,
-  Camera,
   Users,
   AlertCircle,
-  CheckCircle,
-  Clock,
+  Loader2,
   MapPin,
-  TrendingUp,
-  Bell,
   FileText,
   ChevronRight,
   Scan,
-  QrCode,
   ShieldAlert,
-  Flag,
-  BookOpen,
-  PenTool,
-  PieChart
+  Building2,
+  ClipboardList,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
-import { Badge } from '../ui/badge';
 import { MobileLayout } from './MobileLayout';
+import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 
 interface MobileHomeProps {
   onRouteChange: (route: string) => void;
@@ -29,45 +22,88 @@ interface MobileHomeProps {
 }
 
 export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
-  const [username] = useState(localStorage.getItem('mobile_user') || '网格员');
-  const currentGridName = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}').name;
+  const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const username = localStorage.getItem('mobile_user') || '网格员';
+  const fallbackGridName = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}').name;
 
-  // Mock数据
-  const todayStats = {
-    pending: 5,
-    completed: 12,
-    collected: 8,
-    reported: 3
+  useEffect(() => {
+    let active = true;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await statsRepository.getDashboard('month');
+        if (!active) {
+          return;
+        }
+        setDashboard(response);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+
+    const handleDbChange = () => {
+      void load();
+    };
+
+    window.addEventListener('db-change', handleDbChange);
+    return () => {
+      active = false;
+      window.removeEventListener('db-change', handleDbChange);
+    };
+  }, []);
+
+  const currentGridName = dashboard?.grids.find((item) => item.peopleCount > 0)?.name ?? fallbackGridName;
+
+  const workSummary = {
+    pending: dashboard?.conflictStats.active ?? 0,
+    completed: dashboard?.conflictStats.resolved ?? 0,
+    visited: dashboard?.metadata.totalVisits ?? 0,
+    highRisk: dashboard?.mobilePeopleStats.highRisk ?? 0,
   };
+
+  const syncLabel = dashboard?.metadata.generatedAt
+    ? `最近同步 ${dashboard.metadata.generatedAt.slice(5, 16)}`
+    : '正在同步最新台账';
+  const busiestGrid = dashboard
+    ? [...dashboard.grids].sort(
+        (left, right) => (right.conflictCount + right.visitCount) - (left.conflictCount + left.visitCount),
+      )[0]
+    : null;
 
   const quickActions = [
     {
-      icon: HomeIcon,
-      label: '房屋采集',
-      color: 'bg-primary',
-      path: 'collect-house',
-      desc: '录入房屋信息'
+      icon: ClipboardList,
+      label: '待办清单',
+      color: 'bg-[#2761CB]',
+      path: 'tasks?mode=today',
+      desc: '查看当前待跟进事项'
     },
     {
       icon: Users,
-      label: '人口采集',
+      label: '人口台账',
       color: 'bg-[var(--color-status-success)]',
-      path: 'collect-person',
-      desc: '录入人口信息'
+      path: 'people',
+      desc: '进入人员与画像视图'
+    },
+    {
+      icon: Building2,
+      label: '房屋台账',
+      color: 'bg-[#4E86DF]',
+      path: 'housing',
+      desc: '查看房屋与居住关系'
     },
     {
       icon: FileText,
-      label: '电子记事',
+      label: '走访记录',
       color: 'bg-[#413DD4]',
-      path: 'quick-note',
-      desc: 'AI智能记录'
-    },
-    {
-      icon: AlertCircle,
-      label: '问题上报',
-      color: 'bg-[var(--color-status-warning)]',
-      path: 'patrol',
-      desc: '上报现场问题'
+      path: 'people',
+      desc: '从重点对象进入走访'
     },
     {
       icon: ShieldAlert,
@@ -77,67 +113,47 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       desc: '纠纷化解'
     },
     {
-      icon: Flag,
-      label: '活动组织',
+      icon: Scan,
+      label: '扫码核验',
       color: 'bg-[#2EC4B6]',
-      path: 'activity',
-      desc: '社区活动'
-    },
-    {
-      icon: BookOpen,
-      label: '政策解读',
-      color: 'bg-[#4E86DF]',
-      path: 'policy-interpretation',
-      desc: '政策智能检索'
-    },
-    {
-      icon: PenTool,
-      label: '公文写作',
-      color: 'bg-[#19B172]',
-      path: 'official-writing',
-      desc: '辅助文档生成'
-    },
-    {
-      icon: PieChart,
-      label: '智能问数',
-      color: 'bg-[#8B3BCC]',
-      path: 'smart-query',
-      desc: '自然语言查询'
+      path: 'scan',
+      desc: '快捷进入现场核验'
     }
   ];
 
-  const recentTasks = [
-    { 
-      id: 1, 
-      title: '核查环翠区竹岛街道XX小区3栋住户信息', 
-      type: '核查任务', 
-      status: 'pending',
-      deadline: '今天 18:00',
-      urgent: true
-    },
-    { 
-      id: 2, 
-      title: '补录文登区天福街道新增房屋数据', 
-      type: '数据补录', 
-      status: 'pending',
-      deadline: '明天 12:00',
-      urgent: false
-    },
-    { 
-      id: 3, 
-      title: '更新临港区草庙子镇流动人口信息', 
-      type: '信息更新', 
-      status: 'completed',
-      deadline: '昨天 17:00',
-      urgent: false
-    }
-  ];
+  const focusItems = [
+    dashboard?.riskTagsSummary[0]
+      ? {
+          id: 'risk-primary',
+          title: `${dashboard.riskTagsSummary[0].name}需优先跟进`,
+          detail: `当前 ${dashboard.riskTagsSummary[0].count} 人，建议先进入人口台账筛查。`,
+          route: 'people',
+        }
+      : null,
+    dashboard?.conflictStats
+      ? {
+          id: 'conflict-active',
+          title: `当前待化解矛盾 ${dashboard.conflictStats.active} 起`,
+          detail: `已化解 ${dashboard.conflictStats.resolved} 起，可从矛盾调解链路继续跟进。`,
+          route: 'conflict',
+        }
+      : null,
+    busiestGrid
+      ? {
+          id: 'grid-focus',
+          title: `${busiestGrid.name}是当前重点网格`,
+          detail: `人口 ${busiestGrid.peopleCount} 人，房屋 ${busiestGrid.houseCount} 套。`,
+          route: 'people',
+        }
+      : null,
+  ].filter(Boolean) as { id: string; title: string; detail: string; route: string }[];
 
-  const notices = [
-    { id: 1, title: '关于开展人口信息核查工作的通知', time: '2小时前' },
-    { id: 2, title: '系统维护通知：12月21日凌晨1:00-3:00', time: '5小时前' },
-    { id: 3, title: '关于新增“扫码识房”功能的操作指南', time: '昨天' }
-  ];
+  const aiSummary = dashboard
+    ? [
+        `本月已累计纳入 ${dashboard.totalPopulation} 名人口、${dashboard.totalHouses} 套房屋，移动端与驾驶舱口径一致。`,
+        `高风险对象 ${dashboard.mobilePeopleStats.highRisk} 人，未化解矛盾 ${dashboard.conflictStats.active} 起，建议优先查看待办清单。`,
+      ]
+    : [];
 
   return (
     <MobileLayout currentRoute="home" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
@@ -160,7 +176,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             
             <div>
               <div className="flex items-center gap-2">
-                <div className="text-[var(--color-neutral-11)] font-bold text-lg tracking-wide">李明辉</div>
+                <div className="text-[var(--color-neutral-11)] font-bold text-lg tracking-wide">{username}</div>
                 <div className="px-2 py-0.5 bg-[rgba(78,134,223,0.15)] rounded text-xs text-[#4E86DF] border border-[rgba(78,134,223,0.3)] font-medium">
                   网格员
                 </div>
@@ -193,31 +209,31 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-5 bg-gradient-to-b from-[#2761CB] to-[#4E86DF] rounded-full"></div>
-                <span className="text-base font-bold text-[var(--color-neutral-11)]">今日工作</span>
+                <span className="text-base font-bold text-[var(--color-neutral-11)]">治理总览</span>
               </div>
               <div className="flex items-center gap-1 text-[var(--color-neutral-08)] bg-[var(--color-neutral-01)] px-2.5 py-1 rounded-lg">
-                <Clock className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium">1月6日</span>
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                <span className="text-xs font-medium">{syncLabel}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </div>
             </div>
             
             <div className="grid grid-cols-4 gap-2">
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-0.5">{todayStats.pending}</div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">待办</div>
+                <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-0.5">{workSummary.pending}</div>
+                <div className="text-xs text-[var(--color-neutral-08)] font-medium">待跟进</div>
               </div>
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[var(--color-status-success)] mb-0.5">{todayStats.completed}</div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">完成</div>
+                <div className="text-2xl font-bold text-[var(--color-status-success)] mb-0.5">{workSummary.completed}</div>
+                <div className="text-xs text-[var(--color-neutral-08)] font-medium">已化解</div>
               </div>
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[#2761CB] mb-0.5">{todayStats.collected}</div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">采集</div>
+                <div className="text-2xl font-bold text-[#2761CB] mb-0.5">{workSummary.visited}</div>
+                <div className="text-xs text-[var(--color-neutral-08)] font-medium">走访</div>
               </div>
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[#8B3BCC] mb-0.5">{todayStats.reported}</div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">上报</div>
+                <div className="text-2xl font-bold text-[#8B3BCC] mb-0.5">{workSummary.highRisk}</div>
+                <div className="text-xs text-[var(--color-neutral-08)] font-medium">高风险</div>
               </div>
             </div>
           </CardContent>
@@ -247,41 +263,67 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
           </div>
         </div>
 
-        {/* 通知公告 */}
+        {/* 治理焦点 */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-3 px-1">
-            <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">通知公告</h3>
+            <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">治理焦点</h3>
             <button 
-              onClick={() => onRouteChange('notices')}
+              onClick={() => onRouteChange('tasks?mode=today')}
               className="text-xs text-[#2761CB] flex items-center font-medium active:opacity-70"
             >
-              查看更多
+              去处理
               <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
             </button>
           </div>
           <Card className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-sm overflow-hidden">
             <CardContent className="p-0 [&:last-child]:pb-0">
-              {notices.map((notice, index) => (
+              {focusItems.map((item, index) => (
                 <div 
-                  key={notice.id}
-                  onClick={() => onRouteChange('notice-detail')}
+                  key={item.id}
+                  onClick={() => onRouteChange(item.route)}
                   className={`p-3.5 flex items-center gap-3 cursor-pointer active:bg-[var(--color-neutral-03)] transition-colors ${
-                    index !== notices.length - 1 ? 'border-b border-[var(--color-neutral-03)]' : ''
+                    index !== focusItems.length - 1 ? 'border-b border-[var(--color-neutral-03)]' : ''
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center shrink-0">
-                    <Bell className="w-4 h-4 text-[#4E86DF]" />
+                    <ShieldAlert className="w-4 h-4 text-[#4E86DF]" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-[var(--color-neutral-11)] truncate">{notice.title}</div>
-                    <div className="text-xs text-[var(--color-neutral-08)] mt-0.5 flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {notice.time}
-                    </div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-11)] truncate">{item.title}</div>
+                    <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">{item.detail}</div>
                   </div>
                   <ChevronRight className="w-4 h-4 text-[var(--color-neutral-08)] flex-shrink-0" />
                 </div>
               ))}
+              {focusItems.length === 0 && (
+                <div className="p-4 text-sm text-[var(--color-neutral-08)]">正在加载统一台账焦点...</div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Sparkles className="w-4 h-4 text-[#4E86DF]" />
+            <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">AI 提示</h3>
+          </div>
+          <Card className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-sm overflow-hidden">
+            <CardContent className="p-4 space-y-3">
+              {aiSummary.map((item, index) => (
+                <div key={index} className="rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2 text-sm text-[var(--color-neutral-10)]">
+                  {item}
+                </div>
+              ))}
+              {aiSummary.length === 0 && (
+                <div className="text-sm text-[var(--color-neutral-08)]">正在生成驾驶舱同步摘要...</div>
+              )}
+              <button
+                type="button"
+                onClick={() => onRouteChange('tasks?mode=today')}
+                className="w-full rounded-xl bg-[#2761CB] px-4 py-3 text-sm font-semibold text-white shadow-sm active:scale-[0.99]"
+              >
+                查看待办清单
+              </button>
             </CardContent>
           </Card>
         </div>
