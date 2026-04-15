@@ -91,7 +91,7 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
     case 'behavior-supervision':
       return <BehaviorSupervision />;
     case 'conflict-management':
-      return <ConflictManagement />;
+      return <ConflictManagement onRouteChange={onRouteChange} />;
 
     // 规则引擎
     case 'rule-config':
