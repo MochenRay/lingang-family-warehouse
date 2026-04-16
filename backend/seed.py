@@ -15,10 +15,12 @@ if str(CURRENT_DIR) not in sys.path:
 from app.database import engine, init_database
 from app.demo_data import DemoSeedBundle
 from app.demo_data.hero_cases import build_hero_bundle
+from app.demo_data.task_rules import build_task_rule_records
 from app.models.conflict import ConflictRecord
 from app.models.grid import Grid
 from app.models.house import House, HousingHistory
 from app.models.person import Person
+from app.models.task_rule import TaskRule
 from app.models.visit import VisitRecord
 
 RecordT = TypeVar("RecordT")
@@ -30,11 +32,13 @@ def build_demo_seed_bundle() -> DemoSeedBundle:
     from app.demo_data.background_generator import build_background_bundle
 
     background_bundle = build_background_bundle(hero_bundle, seed=20260415)
-    return hero_bundle.extend(background_bundle)
+    bundle = hero_bundle.extend(background_bundle)
+    bundle.task_rules.extend(build_task_rule_records())
+    return bundle
 
 
 def purge_existing_data(session: Session) -> None:
-    for model in (ConflictRecord, VisitRecord, Person, HousingHistory, House, Grid):
+    for model in (TaskRule, ConflictRecord, VisitRecord, Person, HousingHistory, House, Grid):
         session.exec(delete(model))
     session.commit()
 
@@ -79,6 +83,7 @@ def main() -> None:
         insert_records(session, bundle.people)
         insert_records(session, bundle.visits)
         insert_records(session, bundle.conflicts)
+        insert_records(session, bundle.task_rules)
 
     print("Seed completed.")
     print("Counts:", bundle.counts())

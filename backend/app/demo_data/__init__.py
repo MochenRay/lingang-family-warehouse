@@ -5,6 +5,7 @@ from app.models.conflict import ConflictRecord
 from app.models.grid import Grid
 from app.models.house import House, HousingHistory
 from app.models.person import Person
+from app.models.task_rule import TaskRule
 from app.models.visit import VisitRecord
 
 
@@ -16,6 +17,7 @@ class DemoSeedBundle:
     people: list[Person] = field(default_factory=list)
     visits: list[VisitRecord] = field(default_factory=list)
     conflicts: list[ConflictRecord] = field(default_factory=list)
+    task_rules: list[TaskRule] = field(default_factory=list)
 
     def extend(self, other: "DemoSeedBundle") -> "DemoSeedBundle":
         self.grids.extend(other.grids)
@@ -24,6 +26,7 @@ class DemoSeedBundle:
         self.people.extend(other.people)
         self.visits.extend(other.visits)
         self.conflicts.extend(other.conflicts)
+        self.task_rules.extend(other.task_rules)
         return self
 
     def counts(self) -> dict[str, int]:
@@ -34,4 +37,5 @@ class DemoSeedBundle:
             "people": len(self.people),
             "visits": len(self.visits),
             "conflicts": len(self.conflicts),
+            "task_rules": len(self.task_rules),
         }

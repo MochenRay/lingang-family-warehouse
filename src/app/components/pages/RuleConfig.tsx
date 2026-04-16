@@ -1,22 +1,18 @@
-import { useState } from 'react';
-import { RuleEditDialog } from '../rules/RuleEditDialog';
-import {
-  Plus,
-  Search,
-  Filter,
-  MoreHorizontal,
-  AlertTriangle,
-  CheckCircle2,
-  Clock,
-  Play,
-  ListTodo,
-  Zap,
-  Users
-} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Settings2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Label } from '../ui/label';
+import { Switch } from '../ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../ui/select';
 import {
   Table,
   TableBody,
@@ -24,192 +20,193 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../ui/table";
+} from '../ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
-import { Switch } from "../ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
+import { taskRepository } from '../../services/repositories/taskRepository';
+import { taskRuleRepository, type TaskRuleRecord } from '../../services/repositories/taskRuleRepository';
 
-interface Rule {
-  id: number;
+type RulePriority = TaskRuleRecord['priority'];
+
+interface RuleDraft {
   name: string;
   description: string;
-  conditions: { field: string; operator: string; value: string }[];
-  action: string;
-  priority: 'critical' | 'high' | 'medium' | 'low';
-  status: boolean;
-  lastRun: string;
-  triggerType: '事件触发' | '周期触发';
-  coveredCount: number;
+  priority: RulePriority;
+  enabled: boolean;
+  maxIdleDays: number;
+  urgentAfterDays: number;
+  deadlineDays: number;
+  overdueAfterDays?: number;
 }
 
-const initialRules: Rule[] = [
-  {
-    id: 1,
-    name: "独居老人走访提醒",
-    description: "对标记为'独居老人'且超过7天未走访的人员生成待办任务",
-    conditions: [
-      { field: "关爱标签", operator: "包含", value: "独居老人" },
-      { field: "最后走访时间", operator: "早于", value: "7天前" }
-    ],
-    action: "生成待办任务",
-    priority: "high",
-    status: true,
-    lastRun: "2026-01-20 10:00",
-    triggerType: '事件触发',
-    coveredCount: 126,
-  },
-  {
-    id: 2,
-    name: "群租房风险预警",
-    description: "房屋居住人数超过8人时触发预警",
-    conditions: [
-      { field: "居住人数", operator: "大于", value: "8" }
-    ],
-    action: "发送风险预警",
-    priority: "critical",
-    status: true,
-    lastRun: "2026-01-20 09:30",
-    triggerType: '事件触发',
-    coveredCount: 34,
-  },
-  {
-    id: 3,
-    name: "低保户定期关怀",
-    description: "每月1号对低保户生成关怀任务",
-    conditions: [
-      { field: "关爱标签", operator: "包含", value: "低保户" },
-      { field: "频率", operator: "是", value: "每月1号" }
-    ],
-    action: "生成关怀任务",
-    priority: "medium",
-    status: true,
-    lastRun: "2026-01-15 08:00",
-    triggerType: '周期触发',
-    coveredCount: 89,
-  },
-  {
-    id: 4,
-    name: "重点人员动态监控",
-    description: "社区矫正、信访人员等重点人群信息变更时生成核查任务",
-    conditions: [
-      { field: "重点人员类型", operator: "包含", value: "社区矫正/信访人员" },
-      { field: "数据操作", operator: "是", value: "信息变更" }
-    ],
-    action: "生成核查任务",
-    priority: "critical",
-    status: true,
-    lastRun: "2026-01-20 11:20",
-    triggerType: '事件触发',
-    coveredCount: 18,
-  },
-  {
-    id: 5,
-    name: "重症患者健康回访",
-    description: "对重症患者每周生成健康回访任务",
-    conditions: [
-      { field: "健康状态", operator: "是", value: "重症患者" },
-      { field: "频率", operator: "是", value: "每周一" }
-    ],
-    action: "生成回访任务",
-    priority: "high",
-    status: true,
-    lastRun: "2026-01-20 09:00",
-    triggerType: '周期触发',
-    coveredCount: 42,
-  },
-  {
-    id: 6,
-    name: "孕产妇定期关怀",
-    description: "每两周对孕产妇生成关怀走访任务",
-    conditions: [
-      { field: "健康状态", operator: "是", value: "孕产妇" },
-      { field: "频率", operator: "是", value: "每两周" }
-    ],
-    action: "生成关怀任务",
-    priority: "medium",
-    status: false,
-    lastRun: "2023-12-25 09:00",
-    triggerType: '周期触发',
-    coveredCount: 15,
-  },
-  {
-    id: 7,
-    name: "流动人口信息核查",
-    description: "流动人口超过90天未更新信息时生成核查任务",
-    conditions: [
-      { field: "人员类型", operator: "等于", value: "流动" },
-      { field: "最后更新时间", operator: "早于", value: "90天前" }
-    ],
-    action: "生成核查任务",
-    priority: "medium",
-    status: true,
-    lastRun: "2026-01-19 08:00",
-    triggerType: '事件触发',
-    coveredCount: 203,
-  },
-];
-
-const priorityConfig: Record<string, { label: string; dotClass: string; badgeClass: string }> = {
-  critical: { label: '极高', dotClass: 'bg-red-500', badgeClass: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  high:     { label: '高',   dotClass: 'bg-orange-500', badgeClass: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-  medium:   { label: '中',   dotClass: 'bg-blue-400', badgeClass: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  low:      { label: '低',   dotClass: 'bg-[var(--color-neutral-06)]', badgeClass: 'text-[var(--color-neutral-08)] bg-[var(--color-neutral-03)] border-[var(--color-neutral-04)]' },
+const priorityConfig: Record<RulePriority, { label: string; badgeClass: string }> = {
+  critical: { label: '极高', badgeClass: 'text-red-400 bg-red-500/10 border-red-500/20' },
+  high: { label: '高', badgeClass: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
+  medium: { label: '中', badgeClass: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  low: { label: '低', badgeClass: 'text-[var(--color-neutral-08)] bg-[var(--color-neutral-03)] border-[var(--color-neutral-04)]' },
 };
 
+function readNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function buildDraft(rule: TaskRuleRecord): RuleDraft {
+  return {
+    name: rule.name,
+    description: rule.description,
+    priority: rule.priority,
+    enabled: rule.enabled,
+    maxIdleDays: readNumber(rule.conditions.maxIdleDays, 7),
+    urgentAfterDays: readNumber(rule.conditions.urgentAfterDays, 14),
+    deadlineDays: readNumber(rule.action.deadlineDays, 7),
+    overdueAfterDays: readNumber(rule.conditions.overdueAfterDays, 7),
+  };
+}
+
+function buildUpdatePayload(rule: TaskRuleRecord, draft: RuleDraft) {
+  return {
+    name: draft.name,
+    description: draft.description,
+    priority: draft.priority,
+    enabled: draft.enabled,
+    conditions: {
+      ...rule.conditions,
+      maxIdleDays: draft.maxIdleDays,
+      urgentAfterDays: draft.urgentAfterDays,
+      ...(rule.id === 'rule_conflict_followup'
+        ? { overdueAfterDays: draft.overdueAfterDays ?? readNumber(rule.conditions.overdueAfterDays, 7) }
+        : {}),
+    },
+    action: {
+      ...rule.action,
+      deadlineDays: draft.deadlineDays,
+    },
+  };
+}
+
+function getRuleSummary(rule: TaskRuleRecord): string {
+  const maxIdleDays = readNumber(rule.conditions.maxIdleDays, 7);
+  const urgentAfterDays = readNumber(rule.conditions.urgentAfterDays, 14);
+  const deadlineDays = readNumber(rule.action.deadlineDays, 7);
+  if (rule.id === 'rule_conflict_followup') {
+    const overdueAfterDays = readNumber(rule.conditions.overdueAfterDays, 7);
+    return `超过 ${maxIdleDays} 天未更新生成跟进任务，${overdueAfterDays} 天后标记超期，默认 ${deadlineDays} 天内完成。`;
+  }
+  return `超过 ${maxIdleDays} 天未跟进进入规则，${urgentAfterDays} 天后升级为紧急，默认 ${deadlineDays} 天内完成。`;
+}
+
 export function RuleConfig() {
+  const [rules, setRules] = useState<TaskRuleRecord[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [priorityFilter, setPriorityFilter] = useState('all');
-  const [rules, setRules] = useState<Rule[]>(initialRules);
+  const [priorityFilter, setPriorityFilter] = useState<'all' | RulePriority>('all');
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
+  const [editingRule, setEditingRule] = useState<TaskRuleRecord | null>(null);
+  const [draft, setDraft] = useState<RuleDraft | null>(null);
 
-  const filteredRules = rules.filter(r => {
-    if (searchTerm && !r.name.includes(searchTerm) && !r.description.includes(searchTerm)) return false;
-    if (priorityFilter !== 'all' && r.priority !== priorityFilter) return false;
-    return true;
-  });
+  const load = async () => {
+    setLoading(true);
+    try {
+      const [nextRules, nextSummary] = await Promise.all([
+        taskRuleRepository.getRules(),
+        taskRepository.getTaskSummary(),
+      ]);
+      setRules(nextRules);
+      setTaskSummary(nextSummary);
+    } catch (error) {
+      console.error('Failed to load task rules', error);
+      setRules([]);
+      setTaskSummary({ pending: 0, overdue: 0, completed: 0, completionRate: 0 });
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const activeCount = rules.filter(r => r.status).length;
-  const todayTriggerCount = 128;
-  const totalCovered = rules.filter(r => r.status).reduce((sum, r) => sum + r.coveredCount, 0);
-  const pendingTasks = 45;
+  useEffect(() => {
+    void load();
+  }, []);
+
+  const filteredRules = useMemo(() => {
+    return rules.filter((rule) => {
+      if (priorityFilter !== 'all' && rule.priority !== priorityFilter) {
+        return false;
+      }
+      if (!searchTerm.trim()) {
+        return true;
+      }
+      const keyword = searchTerm.trim();
+      return rule.name.includes(keyword) || rule.description.includes(keyword);
+    });
+  }, [priorityFilter, rules, searchTerm]);
+
+  const activeCount = rules.filter((rule) => rule.enabled).length;
+  const totalCovered = rules.filter((rule) => rule.enabled).reduce((sum, rule) => sum + rule.coveredCount, 0);
+
+  const handleToggleRule = async (rule: TaskRuleRecord, nextEnabled: boolean) => {
+    setSavingId(rule.id);
+    try {
+      await taskRuleRepository.updateRule(rule.id, { enabled: nextEnabled });
+      await load();
+    } catch (error) {
+      console.error('Failed to toggle task rule', error);
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const openEditor = (rule: TaskRuleRecord) => {
+    setEditingRule(rule);
+    setDraft(buildDraft(rule));
+  };
+
+  const closeEditor = () => {
+    setEditingRule(null);
+    setDraft(null);
+  };
+
+  const handleSave = async () => {
+    if (!editingRule || !draft) {
+      return;
+    }
+    setSavingId(editingRule.id);
+    try {
+      await taskRuleRepository.updateRule(editingRule.id, buildUpdatePayload(editingRule, draft));
+      await load();
+      closeEditor();
+    } catch (error) {
+      console.error('Failed to update task rule', error);
+    } finally {
+      setSavingId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      {/* 头部区域 */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">待办规则配置</h1>
-          <p className="text-sm text-[var(--color-neutral-08)] mt-1">
-            配置自动化规则引擎，基于人口特征、标签和数据变更自动生成待办任务或风险预警
+          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
+            规则现在会直接影响移动端待办投影，不再是本地演示页。当前只保留轻量阈值配置，不引入完整规则引擎。
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" className="gap-2 border-[var(--color-neutral-04)] text-[var(--color-neutral-09)] hover:bg-[var(--color-neutral-03)]">
-            <Play className="w-4 h-4" />
-            立即运行所有
-          </Button>
-          <Button
-            className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={() => setIsDialogOpen(true)}
-          >
-            <Plus className="w-4 h-4" />
-            新建规则
-          </Button>
-        </div>
+        <Button
+          variant="outline"
+          className="gap-2 border-[var(--color-neutral-04)] text-[var(--color-neutral-09)] hover:bg-[var(--color-neutral-03)]"
+          onClick={() => void load()}
+          disabled={loading}
+        >
+          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          刷新投影
+        </Button>
       </div>
 
-      {/* 统计概览 */}
       <div className="grid gap-4 md:grid-cols-4">
         <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -218,194 +215,238 @@ export function RuleConfig() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{activeCount}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">
-              共 {rules.length} 条配置规则
-            </p>
+            <p className="text-xs text-[var(--color-neutral-06)]">当前共 {rules.length} 条规则配置</p>
           </CardContent>
         </Card>
         <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">今日触发</CardTitle>
-            <Zap className="h-4 w-4 text-orange-500" />
+            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">覆盖对象</CardTitle>
+            <Settings2 className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{todayTriggerCount}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">
-              较昨日 +12%
-            </p>
+            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{totalCovered}</div>
+            <p className="text-xs text-[var(--color-neutral-06)]">按当前规则命中的待跟进对象</p>
           </CardContent>
         </Card>
         <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">覆盖人群</CardTitle>
-            <Users className="h-4 w-4 text-blue-500" />
+            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">待办清单</CardTitle>
+            <Clock className="h-4 w-4 text-amber-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{totalCovered.toLocaleString()}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">
-              占总人口 12.5%
-            </p>
+            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.pending ?? 0}</div>
+            <p className="text-xs text-[var(--color-neutral-06)]">当前规则下生成的移动端待办数量</p>
           </CardContent>
         </Card>
         <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">待处理任务</CardTitle>
-            <ListTodo className="h-4 w-4 text-amber-500" />
+            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">超期跟进</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{pendingTasks}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">
-              其中紧急 8 个
-            </p>
+            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.overdue ?? 0}</div>
+            <p className="text-xs text-[var(--color-neutral-06)]">规则变更后立即反映到待办摘要</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* 规则列表 */}
       <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-[var(--color-neutral-11)]">规则列表</CardTitle>
-            <div className="flex items-center gap-2">
-              <div className="relative w-64">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-[var(--color-neutral-06)]" />
-                <Input
-                  placeholder="搜索规则名称..."
-                  className="pl-8 bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-06)]"
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-[100px] bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-09)]">
-                  <Filter className="w-3.5 h-3.5 mr-1" />
-                  <SelectValue placeholder="优先级" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部</SelectItem>
-                  <SelectItem value="critical">极高</SelectItem>
-                  <SelectItem value="high">高</SelectItem>
-                  <SelectItem value="medium">中</SelectItem>
-                  <SelectItem value="low">低</SelectItem>
-                </SelectContent>
-              </Select>
+        <CardContent className="p-4">
+          <div className="flex flex-col gap-3 md:flex-row">
+            <div className="flex-1">
+              <Input
+                placeholder="搜索规则名称或说明"
+                value={searchTerm}
+                onChange={(event) => setSearchTerm(event.target.value)}
+                className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)]"
+              />
             </div>
+            <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as 'all' | RulePriority)}>
+              <SelectTrigger className="w-full md:w-44 bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)]">
+                <SelectValue placeholder="优先级筛选" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部优先级</SelectItem>
+                <SelectItem value="critical">极高</SelectItem>
+                <SelectItem value="high">高</SelectItem>
+                <SelectItem value="medium">中</SelectItem>
+                <SelectItem value="low">低</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow className="border-[var(--color-neutral-03)] hover:bg-transparent">
-                <TableHead className="text-[var(--color-neutral-08)]">规则名称</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">触发方式</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">触发条件</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">执行动作</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">优先级</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">状态</TableHead>
-                <TableHead className="text-[var(--color-neutral-08)]">最近运行</TableHead>
-                <TableHead className="text-right text-[var(--color-neutral-08)]">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredRules.map((rule) => {
-                const pc = priorityConfig[rule.priority];
-                return (
-                  <TableRow key={rule.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]/50">
-                    <TableCell>
-                      <div className="font-medium text-[var(--color-neutral-11)]">{rule.name}</div>
-                      <div className="text-xs text-[var(--color-neutral-07)] truncate max-w-[220px]" title={rule.description}>
-                        {rule.description}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={rule.triggerType === '事件触发'
-                        ? 'text-purple-400 bg-purple-500/10 border-purple-500/20 text-xs'
-                        : 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20 text-xs'
-                      }>
-                        {rule.triggerType}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        {rule.conditions.map((cond, idx) => (
-                          <Badge key={idx} variant="outline" className="w-fit text-xs text-[var(--color-neutral-09)] border-[var(--color-neutral-04)] bg-[var(--color-neutral-03)]">
-                            {cond.field} {cond.operator} {cond.value}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-[var(--color-neutral-09)]">{rule.action}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={pc.badgeClass}>
-                        <div className={`w-1.5 h-1.5 rounded-full ${pc.dotClass} mr-1.5`} />
-                        {pc.label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Switch
-                          checked={rule.status}
-                          onCheckedChange={(checked) => {
-                            setRules(rules.map(r => r.id === rule.id ? { ...r, status: checked } : r));
-                          }}
-                        />
-                        <span className="text-xs text-[var(--color-neutral-07)]">{rule.status ? '启用' : '禁用'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1 text-sm text-[var(--color-neutral-07)]">
-                        <Clock className="w-3 h-3" />
-                        {rule.lastRun}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-[var(--color-neutral-07)] hover:text-[var(--color-neutral-11)] hover:bg-[var(--color-neutral-03)]">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>编辑规则</DropdownMenuItem>
-                          <DropdownMenuItem>查看日志</DropdownMenuItem>
-                          <DropdownMenuItem>立即运行</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-400">删除</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
         </CardContent>
       </Card>
 
-      <RuleEditDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        onSave={(newRule) => {
-          const tableRule: Rule = {
-            id: rules.length + 1,
-            name: newRule.name,
-            description: newRule.action?.desc || '新创建的规则',
-            conditions: newRule.triggerType === 'event'
-              ? newRule.config.conditions.map((c: any) => ({
-                  field: c.field,
-                  operator: c.op === 'gt' ? '大于' : c.op === 'eq' ? '等于' : c.op === 'contains' ? '包含' : c.op,
-                  value: c.value
-                }))
-              : [{ field: '频率', operator: '是', value: newRule.config.frequency }],
-            action: newRule.action?.title || '生成任务',
-            priority: newRule.priority,
-            status: true,
-            lastRun: '-',
-            triggerType: newRule.triggerType === 'event' ? '事件触发' : '周期触发',
-            coveredCount: 0,
-          };
-          setRules([tableRule, ...rules]);
-        }}
-      />
+      <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <CardHeader>
+          <CardTitle className="text-base text-[var(--color-neutral-11)]">规则总览</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          {loading ? (
+            <div className="flex items-center justify-center py-16 text-[var(--color-neutral-08)]">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              正在读取规则与任务投影...
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[var(--color-neutral-03)]">
+                  <TableHead>规则</TableHead>
+                  <TableHead>覆盖对象</TableHead>
+                  <TableHead>优先级</TableHead>
+                  <TableHead>当前阈值</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRules.map((rule) => (
+                  <TableRow key={rule.id} className="border-[var(--color-neutral-03)]">
+                    <TableCell className="align-top">
+                      <div className="space-y-1">
+                        <div className="font-medium text-[var(--color-neutral-11)]">{rule.name}</div>
+                        <div className="text-sm text-[var(--color-neutral-08)]">{rule.description}</div>
+                        <div className="text-xs text-[var(--color-neutral-06)]">{getRuleSummary(rule)}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <div className="text-sm font-medium text-[var(--color-neutral-11)]">{rule.coveredCount}</div>
+                      <div className="text-xs text-[var(--color-neutral-06)]">当前命中对象</div>
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <Badge variant="outline" className={priorityConfig[rule.priority].badgeClass}>
+                        {priorityConfig[rule.priority].label}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="align-top text-sm text-[var(--color-neutral-08)]">
+                      {readNumber(rule.conditions.maxIdleDays, 7)} 天触发
+                      {rule.id === 'rule_conflict_followup'
+                        ? ` / ${readNumber(rule.conditions.overdueAfterDays, 7)} 天超期`
+                        : ` / ${readNumber(rule.conditions.urgentAfterDays, 14)} 天升级紧急`}
+                    </TableCell>
+                    <TableCell className="align-top">
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={rule.enabled}
+                          onCheckedChange={(checked) => void handleToggleRule(rule, checked)}
+                          disabled={savingId === rule.id}
+                        />
+                        <span className="text-sm text-[var(--color-neutral-08)]">{rule.enabled ? '已启用' : '已停用'}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="align-top text-right">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-[var(--color-neutral-04)]"
+                        onClick={() => openEditor(rule)}
+                      >
+                        调整阈值
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredRules.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="py-16 text-center text-sm text-[var(--color-neutral-08)]">
+                      当前筛选条件下没有可显示的规则。
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog open={Boolean(editingRule && draft)} onOpenChange={(open) => !open && closeEditor()}>
+        <DialogContent className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-11)]">
+          <DialogHeader>
+            <DialogTitle>调整规则阈值</DialogTitle>
+            <DialogDescription className="text-[var(--color-neutral-07)]">
+              这里的修改会直接影响移动端待办投影，不再只是页面演示。
+            </DialogDescription>
+          </DialogHeader>
+
+          {editingRule && draft && (
+            <div className="grid gap-4 py-2">
+              <div className="grid gap-2">
+                <Label>规则名称</Label>
+                <Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+              </div>
+              <div className="grid gap-2">
+                <Label>规则说明</Label>
+                <Input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>优先级</Label>
+                  <Select value={draft.priority} onValueChange={(value) => setDraft({ ...draft, priority: value as RulePriority })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="critical">极高</SelectItem>
+                      <SelectItem value="high">高</SelectItem>
+                      <SelectItem value="medium">中</SelectItem>
+                      <SelectItem value="low">低</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-end gap-3 pb-2">
+                  <Switch checked={draft.enabled} onCheckedChange={(checked) => setDraft({ ...draft, enabled: checked })} />
+                  <span className="text-sm text-[var(--color-neutral-08)]">启用这条规则</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>触发阈值（天）</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.maxIdleDays}
+                    onChange={(event) => setDraft({ ...draft, maxIdleDays: Number(event.target.value || 1) })}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>{editingRule.id === 'rule_conflict_followup' ? '超期阈值（天）' : '升级紧急（天）'}</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={editingRule.id === 'rule_conflict_followup' ? (draft.overdueAfterDays ?? 7) : draft.urgentAfterDays}
+                    onChange={(event) => {
+                      const nextValue = Number(event.target.value || 1);
+                      setDraft(
+                        editingRule.id === 'rule_conflict_followup'
+                          ? { ...draft, overdueAfterDays: nextValue }
+                          : { ...draft, urgentAfterDays: nextValue },
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+              {editingRule.id !== 'rule_conflict_followup' && (
+                <div className="grid gap-2">
+                  <Label>任务截止（天）</Label>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={draft.deadlineDays}
+                    onChange={(event) => setDraft({ ...draft, deadlineDays: Number(event.target.value || 1) })}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditor}>取消</Button>
+            <Button onClick={() => void handleSave()} disabled={!draft || (editingRule ? savingId === editingRule.id : false)}>
+              保存并更新投影
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

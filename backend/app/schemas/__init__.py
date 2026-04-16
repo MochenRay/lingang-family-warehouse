@@ -4,6 +4,14 @@ from app.schemas.grid import GridRead
 from app.schemas.house import HouseCreate, HouseRead, HouseUpdate, HousingHistoryRead
 from app.schemas.person import PersonCreate, PersonRead, PersonUpdate
 from app.schemas.stats import StatsDashboardRead, StatsGridListRead
+from app.schemas.task_rule import (
+    TaskProjectionRead,
+    TaskProjectionSummaryRead,
+    TaskRuleCreate,
+    TaskRuleListRead,
+    TaskRuleRead,
+    TaskRuleUpdate,
+)
 from app.schemas.visit import PersonVisitCreate, VisitRecordCreate, VisitRecordRead, VisitRecordUpdate
 
 __all__ = [
@@ -13,6 +21,12 @@ __all__ = [
     "ConflictUpdate",
     "StatsDashboardRead",
     "StatsGridListRead",
+    "TaskProjectionRead",
+    "TaskProjectionSummaryRead",
+    "TaskRuleCreate",
+    "TaskRuleListRead",
+    "TaskRuleRead",
+    "TaskRuleUpdate",
     "GridRead",
     "HouseCreate",
     "HouseRead",
