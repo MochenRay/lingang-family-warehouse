@@ -41,6 +41,12 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   const buildInitialHistory = () => {
     const path = window.location.pathname;
     if (path.includes('/mobile/tasks')) return ['home', 'tasks?mode=today'];
+    if (path.includes('/mobile/visit-form/')) {
+      const personId = path.split('/mobile/visit-form/')[1];
+      if (personId) {
+        return ['home', 'people', `person-detail/${personId}`, `visit-form/${personId}`];
+      }
+    }
     if (path.includes('/mobile/conflict/new')) return ['home', 'conflict', 'conflict-form'];
     if (path.includes('/mobile/conflict/')) {
       const id = path.split('/mobile/conflict/')[1];

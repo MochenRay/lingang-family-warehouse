@@ -358,7 +358,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
             ))}
             <button
               className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-1 text-gray-400 active:bg-gray-100 transition-colors"
-              onClick={() => toast('附件上传暂未接入真实存储，已保留入口')}
+              onClick={() => toast('当前版本暂不支持附件上传')}
             >
               <Camera className="w-6 h-6" />
               <span className="text-[10px]">添加</span>

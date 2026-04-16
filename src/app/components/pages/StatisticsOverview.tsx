@@ -9,6 +9,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
+import { toast } from 'sonner';
 
 // Custom Tooltip for dark mode
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -44,6 +45,35 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const [conflictStats, setConflictStats] = useState<DashboardStatsResponse['conflictStats'] | null>(null);
   const [visitCount, setVisitCount] = useState(0);
   const [loading, setLoading] = useState(true);
+
+  const handleExportReport = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      range: selectedRange,
+      summary: {
+        totalPopulation,
+        totalHouses,
+        dataCompleteness,
+        gridCoverage,
+        visitCount,
+        conflictStats,
+      },
+      grids: gridItems,
+      riskTagsSummary,
+      trendData,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `lingang-dashboard-${selectedRange}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success('驾驶舱快照已导出');
+  };
 
   useEffect(() => {
     // Force a small delay to ensure container size is calculated
@@ -172,7 +202,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                <SelectItem value="quarter">本季度</SelectItem>
              </SelectContent>
            </Select>
-           <Button variant="outline">导出报表</Button>
+           <Button variant="outline" onClick={handleExportReport}>导出报表</Button>
         </div>
       </div>
 
