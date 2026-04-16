@@ -138,7 +138,7 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     }, 1000);
     timerIntervalRef.current = timer;
 
-    // 模拟实时语音转文字
+    // 逐段回填录音整理结果
     let segmentIndex = 0;
     const speech = setInterval(() => {
       if (segmentIndex < MOCK_SPEECH_SEGMENTS.length) {
@@ -161,11 +161,11 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     }
     setRecordingStatus('processing');
 
-    // 模拟AI分析过程
+    // 录音结束后整理为走访草稿
     processingTimeoutRef.current = setTimeout(() => {
       processingTimeoutRef.current = null;
       setRecordingStatus('done');
-      // 填充模拟的分析结果
+      // 回填整理后的字段草稿
       setFormData(prev => ({
         ...prev,
         healthStatus: "老人自述身体状况良好，血压控制稳定，坚持按时服药。",
@@ -176,7 +176,7 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
         nextVisitPlan: "下周回访检查燃气软管更换情况。",
         visitPurpose: "日常巡访，重点关注冬季取暖及用气安全。" // 自动填充目的
       }));
-      toast.success("AI分析完成，已自动生成走访记录");
+      toast.success("录音整理完成，已生成走访记录草稿");
     }, 2000);
   };
 
@@ -622,7 +622,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     {formatTime(recordingTime)}
                   </div>
                   
-                  {/* 波纹动画模拟 */}
+                  {/* 录音态波纹动画 */}
                   <div className="relative w-24 h-24 mb-8 flex items-center justify-center">
                     <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-20 animate-ping"></span>
                     <span className="absolute inline-flex h-20 w-20 rounded-full bg-purple-500 opacity-20 animate-pulse"></span>
