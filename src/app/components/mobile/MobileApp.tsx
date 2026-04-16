@@ -41,6 +41,13 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   const buildInitialHistory = () => {
     const path = window.location.pathname;
     if (path.includes('/mobile/tasks')) return ['home', 'tasks?mode=today'];
+    if (path.includes('/mobile/conflict/new')) return ['home', 'conflict', 'conflict-form'];
+    if (path.includes('/mobile/conflict/')) {
+      const id = path.split('/mobile/conflict/')[1];
+      if (id) {
+        return ['home', 'conflict', `conflict-detail/${id}`];
+      }
+    }
     if (path.includes('/mobile/conflict')) return ['home', 'conflict'];
     if (path.includes('/mobile/grid')) return ['home', 'grid-overview'];
     if (path.includes('/mobile/housing')) return ['home', 'housing'];
@@ -96,7 +103,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     // Check for dynamic routes first
     if (currentRoute.startsWith('/mobile/tasks/')) {
       const taskId = currentRoute.split('/').pop();
-      return <MobileTaskDetail taskId={taskId || ''} onBack={handleBack} />;
+      return <MobileTaskDetail taskId={taskId || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
     }
     
     if (currentRoute.startsWith('person-detail/')) {

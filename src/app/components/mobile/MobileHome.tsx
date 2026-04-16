@@ -15,6 +15,7 @@ import {
 import { Card, CardContent } from '../ui/card';
 import { MobileLayout } from './MobileLayout';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
+import { taskRepository } from '../../services/repositories/taskRepository';
 
 interface MobileHomeProps {
   onRouteChange: (route: string) => void;
@@ -23,6 +24,7 @@ interface MobileHomeProps {
 
 export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
+  const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const username = localStorage.getItem('mobile_user') || '网格员';
   const fallbackGridName = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}').name;
@@ -33,11 +35,15 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     const load = async () => {
       setLoading(true);
       try {
-        const response = await statsRepository.getDashboard('month');
+        const [response, nextTaskSummary] = await Promise.all([
+          statsRepository.getDashboard('month'),
+          taskRepository.getTaskSummary(),
+        ]);
         if (!active) {
           return;
         }
         setDashboard(response);
+        setTaskSummary(nextTaskSummary);
       } finally {
         if (active) {
           setLoading(false);
@@ -61,8 +67,8 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const currentGridName = dashboard?.grids.find((item) => item.peopleCount > 0)?.name ?? fallbackGridName;
 
   const workSummary = {
-    pending: dashboard?.conflictStats.active ?? 0,
-    completed: dashboard?.conflictStats.resolved ?? 0,
+    pending: taskSummary?.pending ?? 0,
+    completed: taskSummary?.completed ?? 0,
     visited: dashboard?.metadata.totalVisits ?? 0,
     highRisk: dashboard?.mobilePeopleStats.highRisk ?? 0,
   };
@@ -151,7 +157,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const aiSummary = dashboard
     ? [
         `本月已累计纳入 ${dashboard.totalPopulation} 名人口、${dashboard.totalHouses} 套房屋，移动端与驾驶舱口径一致。`,
-        `高风险对象 ${dashboard.mobilePeopleStats.highRisk} 人，未化解矛盾 ${dashboard.conflictStats.active} 起，建议优先查看待办清单。`,
+        `高风险对象 ${dashboard.mobilePeopleStats.highRisk} 人，当前待跟进任务 ${taskSummary?.pending ?? 0} 项，建议优先查看待办清单。`,
       ]
     : [];
 
@@ -225,7 +231,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
               </div>
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
                 <div className="text-2xl font-bold text-[var(--color-status-success)] mb-0.5">{workSummary.completed}</div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">已化解</div>
+                <div className="text-xs text-[var(--color-neutral-08)] font-medium">已完成</div>
               </div>
               <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
                 <div className="text-2xl font-bold text-[#2761CB] mb-0.5">{workSummary.visited}</div>
