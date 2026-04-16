@@ -1,4 +1,5 @@
 import type { ConflictRecord, House, Person, VisitRecord } from '../../types/core';
+import { buildQueryString, callWithFallback, fetchJson } from '../api';
 import { conflictRepository, type ConflictContext } from './conflictRepository';
 import { houseRepository } from './houseRepository';
 import { personRepository } from './personRepository';
@@ -293,7 +294,7 @@ function buildCompletedConflictTasks(conflicts: ConflictRecord[]): MobileTaskIte
     .slice(0, 12);
 }
 
-async function buildTaskFeed(): Promise<MobileTaskFeed> {
+async function buildFallbackTaskFeed(): Promise<MobileTaskFeed> {
   const currentGridId = getCurrentGridId();
   const [people, conflicts, recentVisits] = await Promise.all([
     personRepository.getPeople({ limit: 500, gridId: currentGridId }),
@@ -432,16 +433,22 @@ function buildConflictTaskDetail(
 
 export const taskRepository = {
   async getTaskFeed(): Promise<MobileTaskFeed> {
-    return buildTaskFeed();
+    return callWithFallback(
+      async () => {
+        const currentGridId = getCurrentGridId();
+        return fetchJson<MobileTaskFeed>(`/task-rules/projection${buildQueryString({ gridId: currentGridId })}`);
+      },
+      () => buildFallbackTaskFeed(),
+    );
   },
 
   async getTaskSummary(): Promise<MobileTaskFeed['summary']> {
-    const feed = await buildTaskFeed();
+    const feed = await this.getTaskFeed();
     return feed.summary;
   },
 
   async getTaskDetail(id: string): Promise<MobileTaskDetail | undefined> {
-    const feed = await buildTaskFeed();
+    const feed = await this.getTaskFeed();
     const task = [...feed.pending, ...feed.completed].find((item) => item.id === id);
     if (!task) {
       return undefined;
