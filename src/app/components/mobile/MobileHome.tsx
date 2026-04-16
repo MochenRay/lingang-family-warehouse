@@ -27,7 +27,16 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const username = localStorage.getItem('mobile_user') || '网格员';
-  const fallbackGridName = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}').name;
+
+  let fallbackGridId: string | undefined;
+  let fallbackGridName = '竹岛街道海源社区第一网格';
+  try {
+    const currentGrid = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}');
+    fallbackGridId = currentGrid?.id;
+    fallbackGridName = currentGrid?.name || fallbackGridName;
+  } catch {
+    fallbackGridId = undefined;
+  }
 
   useEffect(() => {
     let active = true;
@@ -64,7 +73,10 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     };
   }, []);
 
-  const currentGridName = dashboard?.grids.find((item) => item.peopleCount > 0)?.name ?? fallbackGridName;
+  const currentGridName =
+    (fallbackGridId ? dashboard?.grids.find((item) => item.id === fallbackGridId)?.name : undefined) ??
+    dashboard?.grids.find((item) => item.peopleCount > 0)?.name ??
+    fallbackGridName;
 
   const workSummary = {
     pending: taskSummary?.pending ?? 0,
