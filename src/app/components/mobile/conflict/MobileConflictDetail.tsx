@@ -25,6 +25,7 @@ import {
 } from '../../ui/dialog';
 import { MobileStatusBar } from '../MobileStatusBar';
 import { conflictRepository, type ConflictContext } from '../../../services/repositories/conflictRepository';
+import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
 import type { ConflictRecord } from '../../../types/core';
 import { toast } from 'sonner';
 
@@ -49,10 +50,7 @@ interface ScriptCard {
 }
 
 function getCurrentWorkerName() {
-  if (typeof window === 'undefined') {
-    return '网格员';
-  }
-  return window.localStorage.getItem('mobile_user') || '网格员';
+  return mobileContextRepository.getCurrentWorkerName();
 }
 
 function buildPolicyCards(conflict: ConflictRecord, context: ConflictContext): PolicyCard[] {

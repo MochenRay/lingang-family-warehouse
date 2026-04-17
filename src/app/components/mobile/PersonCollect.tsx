@@ -17,8 +17,9 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { Checkbox } from '../ui/checkbox';
 import { MobileStatusBar } from './MobileStatusBar';
-import { db } from '../../services/db';
 import { Person, PersonType } from '../../types/core';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
+import { personRepository } from '../../services/repositories/personRepository';
 
 interface PersonCollectProps {
   onBack: () => void;
@@ -95,7 +96,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
     });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.name || !formData.idNumber || !formData.phone) {
       alert('请填写必填项！');
       return;
@@ -111,9 +112,11 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
       }
     }
 
+    const currentGridSelection = mobileContextRepository.getCurrentGridSelection();
+
     const newPerson: Person = {
       id: `p_${Date.now()}`,
-      gridId: 'g2',
+      gridId: currentGridSelection.id || 'g1',
       name: formData.name,
       idCard: formData.idNumber,
       gender: (formData.gender as '男' | '女') || '男',
@@ -155,7 +158,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
       updatedAt: new Date().toISOString(),
     };
 
-    db.addPerson(newPerson);
+    await personRepository.addPerson(newPerson);
     alert('人口信息已成功录入系统');
     onBack();
   };

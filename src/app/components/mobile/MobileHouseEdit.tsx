@@ -6,8 +6,8 @@ import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card } from '../ui/card';
-import { db } from '../../services/db';
 import { House, HouseType } from '../../types/core';
+import { houseRepository } from '../../services/repositories/houseRepository';
 
 interface MobileHouseEditProps {
   id: string;
@@ -25,8 +25,14 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
   });
 
   useEffect(() => {
-    const houseData = db.getHouse(id);
-    if (houseData) {
+    let active = true;
+
+    const load = async () => {
+      const houseData = await houseRepository.getHouse(id);
+      if (!active || !houseData) {
+        return;
+      }
+
       setHouse(houseData);
       setFormData({
         ownerName: houseData.ownerName,
@@ -34,13 +40,19 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
         type: houseData.type,
         address: houseData.address,
       });
-    }
+    };
+
+    void load();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!house) return;
 
-    db.updateHouse(id, {
+    await houseRepository.updateHouse(id, {
       ownerName: formData.ownerName,
       area: formData.area,
       type: formData.type,

@@ -43,7 +43,7 @@
 - 目标页中的散落 `localStorage`
 - 直接暴露“mock / 模拟”语义的文案
 
-本轮保留的唯一 `localStorage` 入口是：
+本轮保留的唯一“移动端用户/网格上下文” `localStorage` 入口是：
 
 - `src/app/services/repositories/mobileContextRepository.ts`
 
@@ -78,6 +78,7 @@
 执行结果：
 
 - `docker compose ps`：`api` 运行中，`db` 健康
+- `docker compose exec -T api python seed.py`：通过
 - 使用 Python 3.12 本地虚拟环境 + `sqlite` 重跑 `backend/seed.py`：通过
 - 使用 `uvicorn` 本地启动 `app.main:app`：通过
 
@@ -199,7 +200,7 @@
 2. `KnowledgeAccumulation` 仍是最小知识条目骨架，不是完整 RAG 后台或文档处理流水线。
 3. 搜索当前是统一结果聚合与正确跳转，不是全文检索引擎。
 4. 浏览器自动化随机点击仍未在当前 Codex 沙箱中完成，原因与 `Phase 2` 一致，Chromium 启动权限受限。
-5. 当前容器运行状态正常，但本轮没有把“最新知识接口已在 Docker 新镜像内重建复验”写成既成事实；新增知识链路的启动验证来自本地 Python 3.12 虚拟环境 + `sqlite + uvicorn`。
+5. 当前 Docker 运行态已通过重跑 `seed.py` 修复知识数据空表问题，`GET /api/knowledge` 当前返回 `total=5`；但本轮仍没有把“最新知识接口已在 Docker 新镜像内重建复验”写成既成事实，新增知识链路的启动验证主证据仍来自本地 Python 3.12 虚拟环境 + `sqlite + uvicorn`。
 6. `SmartAgentPages` 仍保留 placeholder 形态，它不阻塞第二圈接骨结论，但属于 `Phase 4/5` 继续收口的对象。
 
 ## 进入 Phase 4 的判断

@@ -16,6 +16,7 @@ import { Card, CardContent } from '../ui/card';
 import { MobileLayout } from './MobileLayout';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { taskRepository } from '../../services/repositories/taskRepository';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobileHomeProps {
   onRouteChange: (route: string) => void;
@@ -26,17 +27,10 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
   const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
   const [loading, setLoading] = useState(true);
-  const username = localStorage.getItem('mobile_user') || '网格员';
-
-  let fallbackGridId: string | undefined;
-  let fallbackGridName = '竹岛街道海源社区第一网格';
-  try {
-    const currentGrid = JSON.parse(localStorage.getItem('current_grid') || '{"name":"竹岛街道海源社区第一网格"}');
-    fallbackGridId = currentGrid?.id;
-    fallbackGridName = currentGrid?.name || fallbackGridName;
-  } catch {
-    fallbackGridId = undefined;
-  }
+  const username = mobileContextRepository.getCurrentWorkerName();
+  const currentGridSelection = mobileContextRepository.getCurrentGridSelection();
+  const fallbackGridId = currentGridSelection.id;
+  const fallbackGridName = currentGridSelection.name || '竹岛街道海源社区第一网格';
 
   useEffect(() => {
     let active = true;
