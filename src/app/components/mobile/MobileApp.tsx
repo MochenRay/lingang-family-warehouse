@@ -137,6 +137,11 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       return <MobileVisitForm personId={personId || ''} onBack={handleBack} />;
     }
 
+    if (currentRoute.startsWith('notice-detail/')) {
+      const noticeId = currentRoute.split('/').pop();
+      return <MobileNoticeDetail noticeId={noticeId || ''} onBack={handleBack} />;
+    }
+
     if (currentRoute.startsWith('conflict-detail/')) {
       const id = currentRoute.split('/').pop();
       return <MobileConflictDetail id={id || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
@@ -203,9 +208,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'scan':
         return <MobileScan onBack={handleBack} />;
       case 'notices':
-        return <MobileNotices onBack={handleBack} onNoticeClick={() => handleRouteChange('notice-detail')} />;
-      case 'notice-detail':
-        return <MobileNoticeDetail onBack={handleBack} />;
+        return <MobileNotices onBack={handleBack} onNoticeClick={(id) => handleRouteChange(`notice-detail/${id}`)} />;
       case 'search':
         return <MobileSearch onBack={handleBack} onRouteChange={handleRouteChange} />;
       case 'quick-note-history':

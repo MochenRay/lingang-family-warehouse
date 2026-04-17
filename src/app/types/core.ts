@@ -143,7 +143,15 @@ export interface Notification {
   content: string;
   date: string;
   read: boolean;
-  type: 'system' | 'task' | 'alert';
+  type: 'system' | 'task' | 'alert' | 'urgent' | 'guide' | 'info';
+  scope?: string[];
+  grids?: string[];
+  status?: 'published' | 'draft';
+  publisher?: string;
+  department?: string;
+  scheduledTime?: string;
+  readCount?: number;
+  attachments?: { name: string; size: string }[];
 }
 
 export interface DashboardStats {
