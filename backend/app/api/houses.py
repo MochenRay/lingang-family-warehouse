@@ -58,6 +58,24 @@ def list_houses(
     return HousesListResponse(items=items, total=total)
 
 
+@router.get("/history-records", response_model=list[HousingHistoryRead])
+def list_housing_history_records(
+    session: Session = Depends(get_session),
+    grid_id: str | None = Query(default=None, alias="gridId"),
+    limit: int = Query(default=500, ge=1, le=2000),
+) -> list[HousingHistoryRead]:
+    records = list(session.exec(select(HousingHistory)))
+    if grid_id:
+        house_ids = {
+            house.id
+            for house in session.exec(select(House).where(House.gridId == grid_id))
+        }
+        records = [record for record in records if record.houseId in house_ids]
+
+    records.sort(key=lambda record: record.period, reverse=True)
+    return [HousingHistoryRead.model_validate(record) for record in records[:limit]]
+
+
 @router.get("/{house_id}", response_model=HouseRead)
 def get_house(house_id: str, session: Session = Depends(get_session)) -> HouseRead:
     house = session.get(House, house_id)

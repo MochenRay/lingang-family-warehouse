@@ -140,6 +140,25 @@ export const houseRepository = {
     );
   },
 
+  async getHousingHistoryRecords(gridId?: string): Promise<HousingHistory[]> {
+    return callWithFallback(
+      () =>
+        fetchJson<HousingHistory[]>(
+          `/houses/history-records${buildQueryString({
+            gridId,
+            limit: 1000,
+          })}`,
+        ),
+      () => db.getHousingHistory((item) => {
+        if (!gridId) {
+          return true;
+        }
+        const house = db.getHouse(item.houseId);
+        return house?.gridId === gridId;
+      }),
+    );
+  },
+
   async deleteHouse(id: string): Promise<void> {
     return callWithFallback(
       async () => {
