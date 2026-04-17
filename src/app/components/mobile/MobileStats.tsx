@@ -4,6 +4,7 @@ import { MobileStatusBar } from './MobileStatusBar';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import {
   PERFORMANCE_SCORE_WEIGHTS,
   type PerformanceScoreKey,
@@ -105,22 +106,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
     };
   }, []);
 
-  const currentGridId = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return undefined;
-    }
-    try {
-      const raw = window.localStorage.getItem('current_grid');
-      if (!raw) {
-        return undefined;
-      }
-      const parsed = JSON.parse(raw) as { id?: string };
-      return parsed.id;
-    } catch (error) {
-      console.warn('Failed to parse current_grid from localStorage', error);
-      return undefined;
-    }
-  }, []);
+  const currentGridId = useMemo(() => mobileContextRepository.getCurrentGridSelection().id, []);
 
   const currentUser = useMemo(
     () => allWorkers.find((worker) => worker.gridId === currentGridId) ?? allWorkers[0],

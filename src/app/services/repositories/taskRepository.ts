@@ -2,6 +2,7 @@ import type { ConflictRecord, House, Person, VisitRecord } from '../../types/cor
 import { buildQueryString, callWithFallback, fetchJson } from '../api';
 import { conflictRepository, type ConflictContext } from './conflictRepository';
 import { houseRepository } from './houseRepository';
+import { mobileContextRepository } from './mobileContextRepository';
 import { personRepository } from './personRepository';
 import { visitRepository } from './visitRepository';
 
@@ -94,27 +95,11 @@ function getDaysDiff(value: string | undefined): number {
 }
 
 function getCurrentWorkerName(): string {
-  if (typeof window === 'undefined') {
-    return '网格员';
-  }
-  return window.localStorage.getItem('mobile_user') || '网格员';
+  return mobileContextRepository.getCurrentWorkerName();
 }
 
 function getCurrentGridId(): string | undefined {
-  if (typeof window === 'undefined') {
-    return undefined;
-  }
-  try {
-    const raw = window.localStorage.getItem('current_grid');
-    if (!raw) {
-      return undefined;
-    }
-    const parsed = JSON.parse(raw) as { id?: string };
-    return parsed.id;
-  } catch (error) {
-    console.warn('Failed to parse current_grid from localStorage', error);
-    return undefined;
-  }
+  return mobileContextRepository.getCurrentGridSelection().id;
 }
 
 function summarizeContent(content: string, maxLength = 64): string {
