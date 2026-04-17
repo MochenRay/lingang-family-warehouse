@@ -1,35 +1,25 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Search, Filter, Bell, Calendar, ChevronRight } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
+import { formatNoticeTime, noticeRepository, type NoticeRecord } from '../../services/repositories/noticeRepository';
 
 interface MobileNoticesProps {
   onBack: () => void;
-  onNoticeClick?: () => void;
+  onNoticeClick?: (id: string) => void;
 }
 
 export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('all');
-  const [notices, setNotices] = useState<any[]>([]);
-
-  // 默认 Mock 数据
-  const defaultNotices = [
-    { id: 1, title: '关于开展人口信息核查工作的通知', time: '2小时前', type: 'urgent', content: '请各网格员注意，从即日起开展为期一周的人口信息专项核查工作...' },
-    { id: 2, title: '系统维护通知：12月21日凌晨1:00-3:00', time: '5小时前', type: 'system', content: '系统将进行例行维护，期间无法访问，请提前做好准备。' },
-    { id: 3, title: '关于新增"扫码识房"功能的操作指南', time: '昨天', type: 'guide', content: '为了提高采集效率，系统新增了扫码识房功能，具体操作步骤如下...' },
-    { id: 4, title: '12月份优秀网格员名单公示', time: '2天前', type: 'info', content: '经考核评定，以下同志获得12月份优秀网格员称号...' },
-    { id: 5, title: '关于防范电信诈骗的宣传任务', time: '3天前', type: 'task', content: '请结合日常走访，向居民普及防范电信诈骗知识...' },
-    { id: 6, title: '网格通APP版本更新说明 v2.1.0', time: '1周前', type: 'system', content: '本次更新包含以下内容：1. 优化了地图加载速度...' },
-    { id: 7, title: '冬季取暖安全隐患排查通知', time: '1周前', type: 'urgent', content: '随着气温下降，请重点关注辖区内独居老人的取暖安全...' },
-  ];
+  const [notices, setNotices] = useState<NoticeRecord[]>([]);
 
   // 加载通知数据（包含发布的公告）
   useEffect(() => {
-    loadNotices();
+    void loadNotices();
 
     // 监听新公告发布事件
     const handleNoticePublished = () => {
-      loadNotices();
+      void loadNotices();
     };
     window.addEventListener('notice-published', handleNoticePublished);
 
@@ -38,14 +28,9 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
     };
   }, []);
 
-  const loadNotices = () => {
-    // 从 localStorage 读取发布的公告
-    const publishedNotices = JSON.parse(localStorage.getItem('published_notices') || '[]');
-    
-    // 合并默认通知和发布的公告
-    const allNotices = [...publishedNotices, ...defaultNotices];
-    
-    setNotices(allNotices);
+  const loadNotices = async () => {
+    const items = await noticeRepository.getNotices({ status: 'published' });
+    setNotices(items);
   };
 
   const getTypeLabel = (type: string) => {
@@ -126,7 +111,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
               <div 
                 key={notice.id} 
                 className="bg-white rounded-xl p-4 shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
-                onClick={() => onNoticeClick && onNoticeClick()}
+                onClick={() => onNoticeClick && onNoticeClick(notice.id)}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${badge.color}`}>
@@ -134,7 +119,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
                   </div>
                   <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
                     <Calendar className="w-3 h-3" />
-                    {notice.time}
+                    {formatNoticeTime(notice.publishedAt)}
                   </span>
                 </div>
                 <h3 className="text-sm font-bold text-gray-900 mb-2 leading-tight">
@@ -144,7 +129,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
                   {notice.content}
                 </p>
                 <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400">威海市社会治理中心</span>
+                  <span className="text-[10px] text-gray-400">{notice.department}</span>
                   <div className="flex items-center text-xs text-blue-600 font-medium">
                     查看详情
                     <ChevronRight className="w-3 h-3 ml-0.5" />

@@ -7,7 +7,13 @@ export const SEED_NOTIFICATIONS: Notification[] = [
     content: "请各位网格员重点关注辖区内群租房、九小场所的消防安全...",
     date: "2026-01-07 09:00",
     read: false,
-    type: "system"
+    type: "urgent",
+    scope: ["all"],
+    grids: [],
+    status: "published",
+    publisher: "系统管理员",
+    department: "临港区社会治理现代化指挥中心",
+    readCount: 386,
   },
   {
     id: "n2",
@@ -15,6 +21,26 @@ export const SEED_NOTIFICATIONS: Notification[] = [
     content: "本月高龄老人探访任务完成率需达到100%，请及时处理。",
     date: "2026-01-06 14:30",
     read: true,
-    type: "task"
-  }
+    type: "task",
+    scope: ["all"],
+    grids: [],
+    status: "published",
+    publisher: "系统管理员",
+    department: "临港区社会治理现代化指挥中心",
+    readCount: 241,
+  },
+  {
+    id: "n3",
+    title: "关于新增“扫码识房”功能的操作指南",
+    content: "为了提高采集效率，系统新增了扫码识房功能，具体操作步骤如下...",
+    date: "2026-01-05 10:00",
+    read: false,
+    type: "guide",
+    scope: ["all"],
+    grids: [],
+    status: "published",
+    publisher: "系统管理员",
+    department: "临港区社会治理现代化指挥中心",
+    readCount: 198,
+  },
 ];

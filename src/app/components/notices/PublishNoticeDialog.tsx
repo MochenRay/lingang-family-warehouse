@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
+import { noticeRepository } from '../../services/repositories/noticeRepository';
 
 interface NoticeFormData {
   title: string;
@@ -46,6 +47,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
   });
 
   const [showPreview, setShowPreview] = useState(false);
+  const [gridList, setGridList] = useState<string[]>([]);
 
   // 公告类型选项
   const noticeTypes = [
@@ -64,15 +66,19 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
     { value: 'street', label: '指定街道' },
   ];
 
-  // 网格列表（示例）
-  const gridList = [
-    '竹岛街道海源社区第一网格',
-    '竹岛街道海源社区第二网格',
-    '竹岛街道翠竹社区第一网格',
-    '竹岛街道翠竹社区第二网格',
-    '海滨街道金海湾社区第一网格',
-    '海滨街道金海湾社区第二网格',
-  ];
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      const grids = await noticeRepository.getGridOptions();
+      if (active) {
+        setGridList(grids);
+      }
+    };
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleScopeChange = (value: string, checked: boolean) => {
     setFormData(prev => ({
@@ -92,7 +98,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
     }));
   };
 
-  const handlePublish = () => {
+  const handlePublish = async () => {
     // 验证必填项
     if (!formData.title.trim() || !formData.content.trim()) {
       alert('请填写标题和内容');
@@ -104,27 +110,17 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
       return;
     }
 
-    // 获取现有通知
-    const existingNotices = JSON.parse(localStorage.getItem('published_notices') || '[]');
-    
-    // 创建新通知
-    const newNotice = {
-      id: Date.now(),
+    const created = await noticeRepository.createNotice({
       title: formData.title,
-      type: formData.type,
+      type: formData.type as 'urgent' | 'system' | 'guide' | 'task' | 'info',
       content: formData.content,
       scope: formData.scope,
       grids: formData.grids,
-      time: formData.publishNow ? '刚刚' : formData.scheduledTime,
-      publishedAt: new Date().toISOString(),
-      publisher: '系统管理员',
-    };
-
-    // 保存到 localStorage
-    localStorage.setItem('published_notices', JSON.stringify([newNotice, ...existingNotices]));
-
-    // 触发自定义事件，通知其他组件
-    window.dispatchEvent(new CustomEvent('notice-published', { detail: newNotice }));
+      status: formData.publishNow ? 'published' : 'draft',
+      publishNow: formData.publishNow,
+      scheduledTime: formData.publishNow ? undefined : formData.scheduledTime,
+    });
+    window.dispatchEvent(new CustomEvent('notice-published', { detail: created }));
 
     // 重置表单并关闭对话框
     setFormData({
@@ -139,14 +135,17 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
     onOpenChange(false);
   };
 
-  const handleSaveDraft = () => {
-    const drafts = JSON.parse(localStorage.getItem('notice_drafts') || '[]');
-    const newDraft = {
-      ...formData,
-      id: Date.now(),
-      savedAt: new Date().toISOString(),
-    };
-    localStorage.setItem('notice_drafts', JSON.stringify([newDraft, ...drafts]));
+  const handleSaveDraft = async () => {
+    await noticeRepository.createNotice({
+      title: formData.title || '未命名草稿',
+      type: formData.type as 'urgent' | 'system' | 'guide' | 'task' | 'info',
+      content: formData.content,
+      scope: formData.scope,
+      grids: formData.grids,
+      status: 'draft',
+      publishNow: false,
+      scheduledTime: formData.scheduledTime,
+    });
     alert('草稿已保存');
   };
 

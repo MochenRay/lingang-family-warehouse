@@ -138,6 +138,17 @@ class DBService {
     return this.getItem<Notification>(STORAGE_KEYS.NOTIFICATIONS);
   }
 
+  addNotification(notification: Notification) {
+    const notifications = this.getNotifications();
+    notifications.unshift(notification);
+    this.setItem(STORAGE_KEYS.NOTIFICATIONS, notifications);
+  }
+
+  deleteNotification(id: string) {
+    const notifications = this.getNotifications().filter((notice) => notice.id !== id);
+    this.setItem(STORAGE_KEYS.NOTIFICATIONS, notifications);
+  }
+
   // --- Conflicts ---
   getConflicts(filter?: (c: ConflictRecord) => boolean): ConflictRecord[] {
     const conflicts = this.getItem<ConflictRecord>(STORAGE_KEYS.CONFLICTS);

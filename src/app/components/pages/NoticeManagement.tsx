@@ -3,21 +3,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
-import { 
+import {
   Plus,
   Search,
   Calendar,
   Users,
   Eye,
   Trash2,
-  Edit,
-  Filter,
   Clock,
   CheckCircle2,
   Bell,
   AlertCircle
 } from 'lucide-react';
 import { PublishNoticeDialog } from '../notices/PublishNoticeDialog';
+import { formatNoticeTime, noticeRepository, type NoticeRecord } from '../../services/repositories/noticeRepository';
 import {
   Table,
   TableBody,
@@ -27,20 +26,8 @@ import {
   TableRow,
 } from "../ui/table";
 
-interface Notice {
-  id: number;
-  title: string;
-  type: string;
-  content: string;
-  scope: string[];
-  grids: string[];
-  time: string;
-  publishedAt: string;
-  publisher: string;
-}
-
 export function NoticeManagement() {
-  const [notices, setNotices] = useState<Notice[]>([]);
+  const [notices, setNotices] = useState<NoticeRecord[]>([]);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
@@ -56,11 +43,11 @@ export function NoticeManagement() {
 
   // 加载公告列表
   useEffect(() => {
-    loadNotices();
+    void loadNotices();
 
     // 监听新公告发布事件
     const handleNoticePublished = () => {
-      loadNotices();
+      void loadNotices();
     };
     window.addEventListener('notice-published', handleNoticePublished);
 
@@ -69,20 +56,18 @@ export function NoticeManagement() {
     };
   }, []);
 
-  const loadNotices = () => {
-    const publishedNotices = JSON.parse(localStorage.getItem('published_notices') || '[]');
-    setNotices(publishedNotices);
+  const loadNotices = async () => {
+    const items = await noticeRepository.getNotices();
+    setNotices(items);
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm('确定要删除这条公告吗？')) {
-      const updatedNotices = notices.filter(n => n.id !== id);
-      localStorage.setItem('published_notices', JSON.stringify(updatedNotices));
-      setNotices(updatedNotices);
-      
-      // 触发事件通知移动端更新
-      window.dispatchEvent(new CustomEvent('notice-published'));
+  const handleDelete = async (id: string) => {
+    if (!confirm('确定要删除这条公告吗？')) {
+      return;
     }
+    await noticeRepository.deleteNotice(id);
+    await loadNotices();
+    window.dispatchEvent(new CustomEvent('notice-published'));
   };
 
   const getTypeConfig = (type: string) => {
@@ -130,7 +115,7 @@ export function NoticeManagement() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">总公告数</p>
-                <p className="text-2xl font-bold">{notices.length}</p>
+                <p className="text-2xl font-bold">{notices.filter(n => n.status === 'published').length}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Bell className="w-6 h-6 text-blue-600" />
@@ -177,7 +162,7 @@ export function NoticeManagement() {
               <div>
                 <p className="text-sm text-muted-foreground">今日发布</p>
                 <p className="text-2xl font-bold">
-                  {notices.filter(n => n.time.includes('小时前') || n.time === '刚刚').length}
+                  {notices.filter(n => formatNoticeTime(n.publishedAt).includes('小时前') || formatNoticeTime(n.publishedAt) === '刚刚').length}
                 </p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
@@ -266,7 +251,7 @@ export function NoticeManagement() {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm text-gray-600">
                           <Calendar className="w-3 h-3" />
-                          {notice.time}
+                          {formatNoticeTime(notice.publishedAt)}
                         </div>
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
