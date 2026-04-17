@@ -206,7 +206,24 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'quick-note':
         return <QuickNote onBack={handleBack} onRouteChange={handleRouteChange} />;
       case 'scan':
-        return <MobileScan onBack={handleBack} />;
+        return (
+          <MobileScan
+            onBack={handleBack}
+            onResult={(result, type) => {
+              if (type === 'person') {
+                handleRouteChange(`person-detail/${result}`);
+                return;
+              }
+              if (type === 'house') {
+                handleRouteChange(`house-detail/${result}`);
+                return;
+              }
+              if (type === 'ocr') {
+                handleRouteChange(result || 'collect-person');
+              }
+            }}
+          />
+        );
       case 'notices':
         return <MobileNotices onBack={handleBack} onNoticeClick={(id) => handleRouteChange(`notice-detail/${id}`)} />;
       case 'search':

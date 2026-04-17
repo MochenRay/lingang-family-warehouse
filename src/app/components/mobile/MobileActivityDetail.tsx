@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
   MapPin,
@@ -60,6 +60,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
   const [residentSearch, setResidentSearch] = useState('');
   const [selectedResidents, setSelectedResidents] = useState<string[]>([]);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const uploadInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const found = MOCK_ACTIVITIES.find(a => a.id === id);
@@ -84,8 +85,15 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
     setIsResidentDrawerOpen(false);
   };
 
-  const handleFileUpload = () => {
-    toast.info('演示模式：仅支持模拟上传');
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
+      return;
+    }
+    const nextImages = files.map((file) => URL.createObjectURL(file));
+    setUploadedImages((prev) => [...prev, ...nextImages].slice(0, 9));
+    toast.success(`已添加 ${nextImages.length} 张现场图片`);
+    event.target.value = '';
   };
 
   const handleDeleteImage = (index: number) => {
@@ -284,6 +292,14 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                 </h3>
               </div>
               <div className="p-4">
+                <input
+                  ref={uploadInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
                 <div className="grid grid-cols-3 gap-3">
                   {uploadedImages.map((img, idx) => (
                     <div key={idx} className="aspect-square rounded-xl relative overflow-hidden border border-gray-100">
@@ -300,7 +316,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                   ))}
                   {activity.executionStatus === 'in_progress' && (
                     <button
-                      onClick={handleFileUpload}
+                      onClick={() => uploadInputRef.current?.click()}
                       className="aspect-square rounded-xl border-2 border-dashed border-gray-200 bg-gray-50 flex flex-col items-center justify-center gap-1.5 text-gray-400 active:bg-gray-100 transition-colors"
                     >
                       <Camera className="w-5 h-5" />

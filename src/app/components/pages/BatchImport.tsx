@@ -1,24 +1,26 @@
 import { useState } from 'react';
-import { Upload, Download, FileSpreadsheet, CircleCheck, CircleX, CircleAlert, FileText, History, AlertCircle, CheckCircle2, Info } from 'lucide-react';
+import { Upload, Download, FileSpreadsheet, CircleX, CircleAlert, FileText, History, AlertCircle, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Badge } from '../ui/badge';
-import { Progress } from '../ui/progress';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
+import { toast } from 'sonner';
+
+type ImportStatus = '待校验' | '成功' | '部分失败' | '失败';
 
 // 导入记录类型
 interface ImportRecord {
   id: string;
   fileName: string;
   type: '人口数据' | '房屋数据' | '人房关系';
-  totalRows: number;
-  successRows: number;
-  failedRows: number;
-  status: '进行中' | '成功' | '部分失败' | '失败';
+  totalRows: number | null;
+  successRows: number | null;
+  failedRows: number | null;
+  status: ImportStatus;
   importTime: string;
   operator: string;
 }
@@ -31,8 +33,7 @@ interface ErrorDetail {
   error: string;
 }
 
-// Mock导入历史数据
-const mockImportHistory: ImportRecord[] = [
+const initialImportHistory: ImportRecord[] = [
   {
     id: '1',
     fileName: '人口信息导入_2026年1月.xlsx',
@@ -119,14 +120,37 @@ const importConfigs = {
   }
 };
 
+const templateSampleRows: Record<'人口数据' | '房屋数据' | '人房关系', string[]> = {
+  '人口数据': ['张三,370102199001011234,男,35,13800138000,海源一品1号楼1单元101'],
+  '房屋数据': ['海源一品,1号楼,1单元,101,6,89'],
+  '人房关系': ['370102199001011234,海源一品1号楼1单元101,现居,业主,2023-01-01'],
+};
+
+function formatNow(): string {
+  return new Date()
+    .toLocaleString('zh-CN', { hour12: false })
+    .replace(/\//g, '-');
+}
+
+function downloadTextFile(filename: string, content: string, mimeType = 'text/csv;charset=utf-8'): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function BatchImport() {
-  const [importHistory] = useState<ImportRecord[]>(mockImportHistory);
+  const [importHistory, setImportHistory] = useState<ImportRecord[]>(initialImportHistory);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importType, setImportType] = useState<'人口数据' | '房屋数据' | '人房关系'>('人口数据');
-  const [isImporting, setIsImporting] = useState(false);
-  const [importProgress, setImportProgress] = useState(0);
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
   const [selectedErrorRecord, setSelectedErrorRecord] = useState<string | null>(null);
+  const [latestSubmissionId, setLatestSubmissionId] = useState<string | null>(null);
   const [errorDetails] = useState<Record<string, ErrorDetail[]>>({
     '1': [
       { row: 15, field: '身份证号', value: '37000019900101', error: '身份证号格式错误，应为18位' },
@@ -150,39 +174,72 @@ export function BatchImport() {
     }
   };
 
-  // 模拟导入过程
   const handleImport = () => {
     if (!selectedFile) {
-      alert('请先选择要导入的文件');
+      toast.error('请先选择要导入的文件');
       return;
     }
 
-    setIsImporting(true);
-    setImportProgress(0);
+    if (selectedFile.size > 10 * 1024 * 1024) {
+      toast.error('文件超过 10MB，请拆分后重新上传');
+      return;
+    }
 
-    // 模拟导入进度
-    const interval = setInterval(() => {
-      setImportProgress(prev => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsImporting(false);
-          alert(`导入完成！\n成功：980 条\n失败：20 条\n\n请在导入历史中查看详情`);
-          setSelectedFile(null);
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+    const nextRecord: ImportRecord = {
+      id: `import_${Date.now()}`,
+      fileName: selectedFile.name,
+      type: importType,
+      totalRows: null,
+      successRows: null,
+      failedRows: null,
+      status: '待校验',
+      importTime: formatNow(),
+      operator: '系统管理员',
+    };
+
+    setImportHistory((prev) => [nextRecord, ...prev]);
+    setLatestSubmissionId(nextRecord.id);
+    setSelectedFile(null);
+    toast.success('文件已提交，系统将先执行模板校验，再进入后台导入批处理');
   };
 
-  // 下载模板
   const handleDownloadTemplate = (type: string) => {
-    alert(`正在下载 ${type} 模板...\n\n模板包含:\n- 必填字段说明\n- 数据格式示例\n- 常见错误提示`);
+    const config = importConfigs[type as keyof typeof importConfigs];
+    const template = [
+      config.requiredFields.join(','),
+      templateSampleRows[type as keyof typeof templateSampleRows][0],
+    ].join('\n');
+    downloadTextFile(`${type}_模板.csv`, template);
+    toast.success(`${type}模板已下载`);
   };
 
-  // 状态徽章
+  const handleDownloadErrorReport = (recordId: string) => {
+    const rows = errorDetails[recordId] ?? [];
+    if (!rows.length) {
+      toast.info('当前记录没有可下载的错误明细');
+      return;
+    }
+    const report = [
+      '行号,字段,错误值,错误原因',
+      ...rows.map((row) =>
+        [`第${row.row}行`, row.field, row.value || '(空值)', row.error]
+          .map((item) => `"${item.replace(/"/g, '""')}"`)
+          .join(','),
+      ),
+    ].join('\n');
+    downloadTextFile(`导入错误报告_${recordId}.csv`, report);
+    toast.success('错误报告已下载');
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case '待校验':
+        return (
+          <Badge className="gap-1 bg-amber-500/20 text-amber-300 border-amber-400/30">
+            <CircleAlert className="w-3 h-3" />
+            待校验
+          </Badge>
+        );
       case '成功':
         return (
           <Badge className="gap-1 bg-green-500/20 text-green-400 border-green-400/30">
@@ -216,6 +273,9 @@ export function BatchImport() {
   };
 
   const currentConfig = importConfigs[importType];
+  const latestSubmission = latestSubmissionId
+    ? importHistory.find((record) => record.id === latestSubmissionId)
+    : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -355,25 +415,29 @@ export function BatchImport() {
                         <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-medium text-sm">
                           3
                         </div>
-                        <h3 className="font-medium text-[var(--color-neutral-11)]">开始导入</h3>
+                        <h3 className="font-medium text-[var(--color-neutral-11)]">提交校验</h3>
                       </div>
                       <div className="pl-10 space-y-3">
+                        <p className="text-sm text-[var(--color-neutral-08)]">
+                          文件会先进入模板校验队列，校验通过后再由后台批处理入库。
+                        </p>
                         <Button 
                           onClick={handleImport} 
-                          disabled={!selectedFile || isImporting}
+                          disabled={!selectedFile}
                           className="w-full h-10"
                           size="lg"
                         >
-                          {isImporting ? '导入中...' : '开始导入'}
+                          提交校验
                         </Button>
-                        
-                        {isImporting && (
-                          <div className="space-y-2">
-                            <Progress value={importProgress} className="h-2" />
-                            <p className="text-sm text-center text-[var(--color-neutral-08)]">
-                              正在导入数据，请稍候... {importProgress}%
-                            </p>
-                          </div>
+
+                        {latestSubmission && (
+                          <Alert className="border-amber-400/30 bg-amber-500/10">
+                            <CircleAlert className="h-4 w-4 text-amber-300" />
+                            <AlertTitle className="text-amber-200">最新受理记录</AlertTitle>
+                            <AlertDescription className="text-amber-100/80">
+                              {latestSubmission.fileName} 已登记为导入申请，当前状态为“待校验”。
+                            </AlertDescription>
+                          </Alert>
                         )}
                       </div>
                     </div>
@@ -440,7 +504,7 @@ export function BatchImport() {
               导入历史记录
             </DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
-              查看最近的批量导入记录和结果
+              查看最近的批量导入记录、待校验文件和错误明细
             </DialogDescription>
           </DialogHeader>
           
@@ -470,9 +534,9 @@ export function BatchImport() {
                         {record.type}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-[var(--color-neutral-10)]">{record.totalRows}</TableCell>
-                    <TableCell className="text-green-400">{record.successRows}</TableCell>
-                    <TableCell className="text-red-400">{record.failedRows}</TableCell>
+                    <TableCell className="text-[var(--color-neutral-10)]">{record.totalRows ?? '--'}</TableCell>
+                    <TableCell className="text-green-400">{record.successRows ?? '--'}</TableCell>
+                    <TableCell className="text-red-400">{record.failedRows ?? '--'}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                     <TableCell className="text-sm text-[var(--color-neutral-08)]">
                       {record.importTime}
@@ -541,9 +605,7 @@ export function BatchImport() {
               关闭
             </Button>
             <Button 
-              onClick={() => {
-                alert('正在下载错误报告...\n\n错误报告将包含所有失败行的详细信息');
-              }}
+              onClick={() => selectedErrorRecord && handleDownloadErrorReport(selectedErrorRecord)}
             >
               <Download className="w-4 h-4 mr-2" />
               下载错误报告

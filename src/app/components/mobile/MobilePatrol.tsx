@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { 
-  MapPin, 
-  Camera, 
+import { useRef, useState } from 'react';
+import {
+  MapPin,
+  Camera,
   Mic,
   AlertTriangle,
   Send,
@@ -14,17 +14,33 @@ import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { MobileLayout } from './MobileLayout';
+import { toast } from 'sonner';
+import { conflictRepository } from '../../services/repositories/conflictRepository';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobilePatrolProps {
   onRouteChange: (route: string) => void;
   onExitMobile?: () => void;
 }
 
+function getNowString(): string {
+  return new Date().toLocaleString('zh-CN', { hour12: false }).replace(/\//g, '-');
+}
+
+function mapPatrolCategoryToConflictType(category: string): '邻里纠纷' | '家庭纠纷' | '物业纠纷' | '其他' {
+  if (['房屋安全', '环境卫生', '消防隐患', '公共设施'].includes(category)) {
+    return '物业纠纷';
+  }
+  return '其他';
+}
+
 export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [locationObtained, setLocationObtained] = useState(false);
-  const [recording, setRecording] = useState(false);
-  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locationSummary, setLocationSummary] = useState('');
+  const photoInputRef = useRef<HTMLInputElement | null>(null);
+
   const [formData, setFormData] = useState({
     category: '',
     urgency: '',
@@ -33,43 +49,92 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
   });
 
   const handlePhotoCapture = () => {
-    const mockPhotos = [
-      'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400',
-      'https://images.unsplash.com/photo-1449844908441-8829872d2607?w=400',
-      'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?w=400'
-    ];
-    const randomPhoto = mockPhotos[Math.floor(Math.random() * mockPhotos.length)];
-    setPhotos([...photos, randomPhoto]);
+    photoInputRef.current?.click();
+  };
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
+      return;
+    }
+    const nextPhotos = files
+      .slice(0, Math.max(0, 9 - photos.length))
+      .map((file) => URL.createObjectURL(file));
+    setPhotos((prev) => [...prev, ...nextPhotos].slice(0, 9));
+    event.target.value = '';
   };
 
   const handleGetLocation = () => {
-    setLocationObtained(true);
-    setFormData({
-      ...formData,
-      location: '威海市环翠区竹岛街道XX路XX号'
-    });
+    if (!navigator.geolocation) {
+      toast.info('当前环境不支持定位，请手工补充巡查位置');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const summary = `经度 ${position.coords.longitude.toFixed(4)}，纬度 ${position.coords.latitude.toFixed(4)}`;
+        setLocationObtained(true);
+        setLocationSummary(summary);
+        setFormData((prev) => ({
+          ...prev,
+          location: prev.location || summary,
+        }));
+        toast.success('已记录当前巡查位置');
+      },
+      () => {
+        toast.info('未获取到定位权限，请手工补充巡查位置');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+      },
+    );
   };
 
   const handleVoiceInput = () => {
-    setRecording(!recording);
-    if (!recording) {
-      setTimeout(() => {
-        setRecording(false);
-        setFormData({
-          ...formData,
-          description: '发现环翠区竹岛街道XX小区存在违建情况，占用公共绿地约50平方米，影响居民正常生活。'
-        });
-      }, 2000);
-    }
+    toast.info('当前请直接填写文字描述，语音转写会并入统一记录链后再开放。');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.category || !formData.description) {
-      alert('请填写问题分类和描述！');
+      toast.error('请填写问题分类和描述');
       return;
     }
-    alert('问题上报成功！\n已推送给相关管理人员');
-    onRouteChange('home');
+
+    const now = getNowString();
+    const workerName = mobileContextRepository.getCurrentWorkerName();
+    const gridId = mobileContextRepository.getCurrentGridSelection().id || 'g1';
+
+    setIsSubmitting(true);
+    try {
+      const record = await conflictRepository.addConflict({
+        source: '自行发现',
+        title: `${formData.category}巡查线索`,
+        type: mapPatrolCategoryToConflictType(formData.category),
+        description: formData.description,
+        involvedParties: [],
+        status: '调解中',
+        gridId,
+        location: formData.location || '待核实',
+        timeline: [
+          {
+            date: now,
+            content: `移动巡查上报：${formData.urgency ? `紧急程度${formData.urgency}；` : ''}${formData.description}`,
+            operator: workerName,
+          },
+        ],
+        images: [],
+        createdAt: now,
+        updatedAt: now,
+      });
+      toast.success('已登记为巡查线索，并同步到问题处置列表');
+      onRouteChange(`conflict-detail/${record.id}`);
+    } catch (error) {
+      console.error('Failed to submit patrol report', error);
+      toast.error('提交失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const recentReports = [
@@ -102,14 +167,12 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
   return (
     <MobileLayout currentRoute="patrol" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
       <div className="bg-gray-50">
-        {/* 顶部标题 */}
         <div className="bg-white p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-800 mb-1">巡查上报</h2>
-          <p className="text-sm text-gray-500">发现问题及时上报，共建美好社区</p>
+          <p className="text-sm text-gray-500">发现问题及时登记，并同步到问题处置队列</p>
         </div>
 
         <div className="p-4 space-y-4">
-          {/* 问题分类 */}
           <Card>
             <CardContent className="p-4">
               <Label className="text-sm font-semibold mb-3 block">
@@ -131,46 +194,31 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
             </CardContent>
           </Card>
 
-          {/* 紧急程度 */}
           <Card>
             <CardContent className="p-4">
               <Label className="text-sm font-semibold mb-3 block">紧急程度</Label>
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  onClick={() => setFormData({ ...formData, urgency: '一般' })}
-                  className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
-                    formData.urgency === '一般'
-                      ? 'bg-blue-50 border-blue-500 text-blue-700'
-                      : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  一般
-                </button>
-                <button
-                  onClick={() => setFormData({ ...formData, urgency: '较急' })}
-                  className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
-                    formData.urgency === '较急'
-                      ? 'bg-orange-50 border-orange-500 text-orange-700'
-                      : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  较急
-                </button>
-                <button
-                  onClick={() => setFormData({ ...formData, urgency: '紧急' })}
-                  className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
-                    formData.urgency === '紧急'
-                      ? 'bg-red-50 border-red-500 text-red-700'
-                      : 'border-gray-200 text-gray-600'
-                  }`}
-                >
-                  紧急
-                </button>
+                {['一般', '较急', '紧急'].map((urgency) => (
+                  <button
+                    key={urgency}
+                    onClick={() => setFormData({ ...formData, urgency })}
+                    className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
+                      formData.urgency === urgency
+                        ? urgency === '紧急'
+                          ? 'bg-red-50 border-red-500 text-red-700'
+                          : urgency === '较急'
+                            ? 'bg-orange-50 border-orange-500 text-orange-700'
+                            : 'bg-blue-50 border-blue-500 text-blue-700'
+                        : 'border-gray-200 text-gray-600'
+                    }`}
+                  >
+                    {urgency}
+                  </button>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          {/* 问题描述 */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -181,10 +229,9 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                   variant="outline"
                   size="sm"
                   onClick={handleVoiceInput}
-                  className={recording ? 'bg-red-50 text-red-600 border-red-300' : ''}
                 >
-                  <Mic className={`w-4 h-4 mr-1 ${recording ? 'animate-pulse' : ''}`} />
-                  {recording ? '录音中...' : '语音输入'}
+                  <Mic className="w-4 h-4 mr-1" />
+                  语音提醒
                 </Button>
               </div>
               <Textarea
@@ -199,7 +246,6 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
             </CardContent>
           </Card>
 
-          {/* 现场照片 */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -208,12 +254,21 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                   {photos.length}/9
                 </Badge>
               </div>
-              
+
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handlePhotoSelect}
+              />
+
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((photo, index) => (
                   <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                     <img src={photo} alt="" className="w-full h-full object-cover" />
-                    <button 
+                    <button
                       onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
                       className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center shadow-md"
                     >
@@ -221,22 +276,21 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                     </button>
                   </div>
                 ))}
-                
+
                 {photos.length < 9 && (
                   <button
                     onClick={handlePhotoCapture}
                     className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors bg-white"
                   >
                     <Camera className="w-8 h-8 mb-1" />
-                    <span className="text-xs">拍照</span>
+                    <span className="text-xs">上传照片</span>
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-2">建议拍摄多角度照片，便于问题判断</p>
+              <p className="text-xs text-gray-500 mt-2">现场照片会作为巡查线索附件预览，正式归档可在后续处置页补传</p>
             </CardContent>
           </Card>
 
-          {/* 位置信息 */}
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
@@ -251,24 +305,29 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                   {locationObtained ? '已定位' : '获取定位'}
                 </Button>
               </div>
-              {locationObtained && (
-                <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                  {formData.location}
+              <Textarea
+                placeholder="请填写巡查位置或地标"
+                value={formData.location}
+                onChange={(event) => setFormData({ ...formData, location: event.target.value })}
+                className="min-h-[80px] resize-none"
+              />
+              {locationSummary && (
+                <div className="mt-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                  {locationSummary}
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* 提交按钮 */}
           <Button
             className="w-full h-12 bg-blue-600 hover:bg-blue-700"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
             <Send className="w-5 h-5 mr-2" />
-            提交上报
+            {isSubmitting ? '提交中...' : '提交上报'}
           </Button>
 
-          {/* 最近上报 */}
           <div className="pt-4">
             <h3 className="text-sm font-semibold text-gray-700 mb-3 px-1">最近上报</h3>
             <div className="space-y-2">
@@ -280,8 +339,8 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="text-sm font-medium text-gray-800">{report.category}</span>
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`text-xs ${report.statusColor}`}
                           >
                             {report.status}
