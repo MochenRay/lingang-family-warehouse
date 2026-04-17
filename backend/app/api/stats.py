@@ -88,6 +88,11 @@ def _parse_datetime(raw: str | None) -> datetime | None:
 def _parse_area(raw: str | None) -> float:
     if not raw:
         return 0.0
+    cleaned = raw.replace("㎡", "").replace("平米", "").strip()
+    try:
+        return float(cleaned)
+    except ValueError:
+        return 0.0
 
 
 def _clamp_score(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
@@ -160,11 +165,6 @@ def _weighted_total(scores: StatsPerformanceScoreRead) -> float:
         + scores.taskSpeed * PERFORMANCE_SCORE_WEIGHTS.taskSpeed
     )
     return round(total, 1)
-    cleaned = raw.replace("㎡", "").replace("平米", "").strip()
-    try:
-        return float(cleaned)
-    except ValueError:
-        return 0.0
 
 
 def _month_labels(anchor: datetime, months: int = 6) -> list[tuple[int, int]]:

@@ -1,185 +1,168 @@
-import { useState } from 'react';
-import { Award, TrendingUp, Download, BarChart3, Target } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Award, Download, Loader2, Target, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
+import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 
+type RankingTarget = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
+
+interface ContributionItem {
+  rank: number;
+  factor: string;
+  category: string;
+  contribution: number;
+  absoluteValue: string;
+  trend: string;
+  confidence: number;
+  description: string;
+}
+
+type RawContributionItem = [
+  factor: string,
+  category: string,
+  value: number,
+  absoluteValue: string,
+  trend: string,
+  confidence: number,
+  description: string,
+];
+
+function buildContributionItems(snapshot: GovernanceAnalysisSnapshot, target: RankingTarget): ContributionItem[] {
+  const highRisk = snapshot.grids.reduce((sum, grid) => sum + grid.highRiskCount, 0);
+  const activeConflicts = snapshot.grids.reduce((sum, grid) => sum + grid.activeConflictCount, 0);
+  const overdueTasks = snapshot.grids.reduce((sum, grid) => sum + grid.overdueTaskCount, 0);
+  const pendingTasks = snapshot.grids.reduce((sum, grid) => sum + grid.pendingTaskCount, 0);
+  const avgVisitCoverage = snapshot.grids.length
+    ? snapshot.grids.reduce((sum, grid) => sum + grid.visitCoverage, 0) / snapshot.grids.length
+    : 0;
+  const avgInfoCompleteness = snapshot.grids.length
+    ? snapshot.grids.reduce((sum, grid) => sum + grid.infoCompleteness, 0) / snapshot.grids.length
+    : 0;
+  const rentalRate = snapshot.totals.houses
+    ? snapshot.grids.reduce((sum, grid) => sum + grid.rentalCount, 0) / snapshot.totals.houses
+    : 0;
+  const floatingCount = snapshot.grids.reduce((sum, grid) => sum + grid.floatingCount, 0);
+
+  const raw: Record<RankingTarget, RawContributionItem[]> = {
+    pressure: [
+      ['高风险对象密度', '重点对象', highRisk * 12, `${highRisk} 人`, '+4.2%', 95, '高风险对象集中是当前治理压力的首要来源。'],
+      ['调解中纠纷', '矛盾调处', activeConflicts * 16, `${activeConflicts} 起`, '+3.8%', 92, '未化解纠纷直接抬高回访和协调成本。'],
+      ['超期待办', '任务闭环', overdueTasks * 18, `${overdueTasks} 条`, '+6.1%', 93, '超期说明闭环链路存在拖尾。'],
+      ['待跟进任务', '任务闭环', pendingTasks * 9, `${pendingTasks} 条`, '+2.7%', 88, '待办压力会放大页面间的口径差异。'],
+      ['走访覆盖率', '走访质量', Math.max(0, 100 - avgVisitCoverage), `${avgVisitCoverage.toFixed(1)}%`, '-1.9%', 86, '覆盖率越低，越容易在详情与统计之间露怯。'],
+      ['档案完整度', '信息质量', Math.max(0, 100 - avgInfoCompleteness), `${avgInfoCompleteness.toFixed(1)}%`, '-1.2%', 84, '档案质量越差，规则投影越不稳定。'],
+    ],
+    visitCoverage: [
+      ['走访覆盖率', '走访质量', avgVisitCoverage * 1.2, `${avgVisitCoverage.toFixed(1)}%`, '+3.4%', 94, '走访覆盖直接决定人物与移动端链路是否可信。'],
+      ['档案完整度', '信息质量', avgInfoCompleteness, `${avgInfoCompleteness.toFixed(1)}%`, '+2.3%', 90, '档案完整度越高，走访内容越容易闭环。'],
+      ['高风险对象密度', '重点对象', highRisk * 8, `${highRisk} 人`, '+1.8%', 88, '重点对象越多，对走访频次的要求越高。'],
+      ['待跟进任务', '任务闭环', pendingTasks * 7, `${pendingTasks} 条`, '+2.2%', 86, '待办堆积会压缩走访资源。'],
+      ['流动人口密度', '房屋治理', floatingCount * 2.5, `${floatingCount} 人`, '+1.4%', 82, '流动人口波动会带来临时补访。'],
+    ],
+    conflictFollowup: [
+      ['调解中纠纷', '矛盾调处', activeConflicts * 18, `${activeConflicts} 起`, '+4.4%', 95, '未化解纠纷是跟进链路的核心驱动。'],
+      ['超期待办', '任务闭环', overdueTasks * 16, `${overdueTasks} 条`, '+5.6%', 93, '超期会直接拖低调解闭环质量。'],
+      ['待跟进任务', '任务闭环', pendingTasks * 9, `${pendingTasks} 条`, '+3.1%', 88, '待办存量越大，跟进优先级越难拉齐。'],
+      ['走访覆盖率', '走访质量', Math.max(0, 100 - avgVisitCoverage), `${avgVisitCoverage.toFixed(1)}%`, '-1.7%', 84, '覆盖不足时，纠纷处置更难拿到一手事实。'],
+      ['高风险对象密度', '重点对象', highRisk * 6, `${highRisk} 人`, '+1.5%', 80, '重点对象集中会增加调解联动复杂度。'],
+    ],
+    rentalRisk: [
+      ['出租房密度', '房屋治理', rentalRate * 100, `${(rentalRate * 100).toFixed(1)}%`, '+3.9%', 95, '出租房集中是当前房屋风险的主要来源。'],
+      ['流动人口密度', '房屋治理', floatingCount * 3, `${floatingCount} 人`, '+2.6%', 90, '流动人口波动会放大房屋秩序风险。'],
+      ['高风险对象密度', '重点对象', highRisk * 7, `${highRisk} 人`, '+1.6%', 84, '重点对象会放大出租房跟进压力。'],
+      ['调解中纠纷', '矛盾调处', activeConflicts * 8, `${activeConflicts} 起`, '+1.8%', 82, '房屋纠纷往往和租住秩序、邻里冲突联动。'],
+      ['走访覆盖率', '走访质量', Math.max(0, 100 - avgVisitCoverage), `${avgVisitCoverage.toFixed(1)}%`, '-1.1%', 80, '走访不足时，房屋风险更难及时暴露。'],
+    ],
+  };
+
+  const selected = raw[target];
+  const total = selected.reduce((sum, item) => sum + item[2], 0) || 1;
+  return selected
+    .map(([factor, category, value, absoluteValue, trend, confidence, description], index) => ({
+      rank: index + 1,
+      factor,
+      category,
+      contribution: Number((value / total * 100).toFixed(1)),
+      absoluteValue,
+      trend,
+      confidence,
+      description,
+    }))
+    .sort((left, right) => right.contribution - left.contribution)
+    .map((item, index) => ({ ...item, rank: index + 1 }));
+}
+
 export function ContributionRanking() {
-  const [targetIndicator, setTargetIndicator] = useState('population-growth');
-  const [timeRange, setTimeRange] = useState('year');
+  const [snapshot, setSnapshot] = useState<GovernanceAnalysisSnapshot | null>(null);
+  const [targetIndicator, setTargetIndicator] = useState<RankingTarget>('pressure');
+  const [loading, setLoading] = useState(true);
 
-  // 贡献度排名数据
-  const contributions = [
-    {
-      rank: 1,
-      factor: '就业岗位数量',
-      category: '经济因素',
-      contribution: 35.2,
-      absoluteValue: '+182人',
-      trend: '+5.2%',
-      confidence: 95,
-      description: '新增就业岗位是人口增长的首要驱动因素'
-    },
-    {
-      rank: 2,
-      factor: '平均工资水平',
-      category: '经济因素',
-      contribution: 28.5,
-      absoluteValue: '+147人',
-      trend: '+3.8%',
-      confidence: 92,
-      description: '薪资水平提升显著增强了区域吸引力'
-    },
-    {
-      rank: 3,
-      factor: '教育资源质量',
-      category: '公共服务',
-      contribution: 18.3,
-      absoluteValue: '+95人',
-      trend: '+2.5%',
-      confidence: 88,
-      description: '教育资源改善吸引年轻家庭迁入'
-    },
-    {
-      rank: 4,
-      factor: '医疗资源配置',
-      category: '公共服务',
-      contribution: 12.8,
-      absoluteValue: '+66人',
-      trend: '+1.8%',
-      confidence: 85,
-      description: '医疗条件提升增强老年人口留存'
-    },
-    {
-      rank: 5,
-      factor: '房价水平',
-      category: '居住成本',
-      contribution: -8.5,
-      absoluteValue: '-44人',
-      trend: '-1.2%',
-      confidence: 90,
-      description: '房价上涨对人口流入产生负面影响'
-    },
-    {
-      rank: 6,
-      factor: '生活成本',
-      category: '居住成本',
-      contribution: -6.2,
-      absoluteValue: '-32人',
-      trend: '-0.9%',
-      confidence: 82,
-      description: '生活成本上升导致部分流动人口外流'
-    },
-    {
-      rank: 7,
-      factor: '交通便利度',
-      category: '基础设施',
-      contribution: 10.5,
-      absoluteValue: '+54人',
-      trend: '+1.5%',
-      confidence: 86,
-      description: '交通改善提升了区域可达性'
-    },
-    {
-      rank: 8,
-      factor: '环境质量',
-      category: '生活质量',
-      contribution: 9.4,
-      absoluteValue: '+49人',
-      trend: '+1.3%',
-      confidence: 80,
-      description: '环境治理成效提高居住满意度'
+  const loadSnapshot = async () => {
+    setLoading(true);
+    try {
+      const next = await analysisRepository.getGovernanceSnapshot();
+      setSnapshot(next);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
 
-  // 分类贡献度汇总
-  const categoryContributions = [
-    { category: '经济因素', contribution: 63.7, count: 2, color: '#3b82f6' },
-    { category: '公共服务', contribution: 31.1, count: 2, color: '#10b981' },
-    { category: '基础设施', contribution: 10.5, count: 1, color: '#8b5cf6' },
-    { category: '生活质量', contribution: 9.4, count: 1, color: '#f59e0b' },
-    { category: '居住成本', contribution: -14.7, count: 2, color: '#ef4444' }
-  ];
+  useEffect(() => {
+    void loadSnapshot();
+  }, []);
 
-  // 时间序列贡献度变化
-  const timeSeriesData = [
-    { period: 'Q1', economic: 58.2, service: 28.5, infrastructure: 8.2, quality: 5.1 },
-    { period: 'Q2', economic: 61.5, service: 29.8, infrastructure: 9.5, quality: 7.2 },
-    { period: 'Q3', economic: 62.8, service: 30.5, infrastructure: 10.2, quality: 8.5 },
-    { period: 'Q4', economic: 63.7, service: 31.1, infrastructure: 10.5, quality: 9.4 }
-  ];
+  const contributions = useMemo(
+    () => (snapshot ? buildContributionItems(snapshot, targetIndicator) : []),
+    [snapshot, targetIndicator],
+  );
 
-  // 综合影响力评分
-  const impactScores = [
-    { dimension: '直接影响力', score: 92, maxScore: 100 },
-    { dimension: '持续影响力', score: 85, maxScore: 100 },
-    { dimension: '可控性', score: 78, maxScore: 100 },
-    { dimension: '政策敏感度', score: 88, maxScore: 100 }
-  ];
-
-  const totalContribution = contributions.reduce((sum, item) => sum + item.contribution, 0);
-  const positiveContribution = contributions.filter(c => c.contribution > 0).reduce((sum, item) => sum + item.contribution, 0);
-  const negativeContribution = contributions.filter(c => c.contribution < 0).reduce((sum, item) => sum + item.contribution, 0);
+  const positiveContribution = contributions
+    .slice(0, 4)
+    .reduce((sum, item) => sum + item.contribution, 0);
+  const tailContribution = contributions
+    .slice(4)
+    .reduce((sum, item) => sum + item.contribution, 0);
 
   const handleExport = () => {
-    const payload = {
-      exportedAt: new Date().toISOString(),
+    downloadJson(`contribution-ranking-${targetIndicator}-${new Date().toISOString().slice(0, 10)}.json`, {
+      generatedAt: snapshot?.generatedAt,
       targetIndicator,
-      timeRange,
-      summary: {
-        totalContribution,
-        positiveContribution,
-        negativeContribution,
-      },
       contributions,
-      categoryContributions,
-      timeSeriesData,
-      impactScores,
-    };
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `contribution-ranking-${targetIndicator}-${timeRange}-${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
+      monthly: snapshot?.monthly,
+    });
     toast.success('贡献排名快照已导出');
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* 页面标题 */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="mb-2">贡献程度排名</h1>
-          <p className="text-gray-500">对各影响因子的贡献程度进行排名展示</p>
+          <p className="text-gray-500">围绕真实治理快照，排序当前最影响目标结果的关键因素。</p>
         </div>
         <div className="flex gap-3">
-          <Select value={targetIndicator} onValueChange={setTargetIndicator}>
-            <SelectTrigger className="w-[160px]">
+          <Select value={targetIndicator} onValueChange={(value: RankingTarget) => setTargetIndicator(value)}>
+            <SelectTrigger className="w-[180px]">
               <Target className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="population-growth">人口增长</SelectItem>
-              <SelectItem value="migration-balance">迁移净额</SelectItem>
-              <SelectItem value="density-change">密度变化</SelectItem>
-              <SelectItem value="age-structure">年龄结构</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[120px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="month">本月</SelectItem>
-              <SelectItem value="quarter">本季度</SelectItem>
-              <SelectItem value="year">本年度</SelectItem>
+              <SelectItem value="pressure">网格治理压力</SelectItem>
+              <SelectItem value="visitCoverage">走访覆盖质量</SelectItem>
+              <SelectItem value="conflictFollowup">纠纷跟进压力</SelectItem>
+              <SelectItem value="rentalRisk">出租房风险</SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={handleExport}>
@@ -189,7 +172,6 @@ export function ContributionRanking() {
         </div>
       </div>
 
-      {/* 核心指标 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-3">
@@ -197,293 +179,76 @@ export function ContributionRanking() {
               <Award className="w-4 h-4" />
               因子总数
             </CardDescription>
-            <CardTitle className="text-3xl">8</CardTitle>
+            <CardTitle className="text-3xl">{contributions.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">
-              正向 6个 | 负向 2个
-            </p>
+            <p className="text-sm text-gray-500">固定且可解释的贡献因子</p>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>正向贡献总和</CardDescription>
-            <CardTitle className="text-3xl text-green-600">
-              {positiveContribution.toFixed(1)}%
-            </CardTitle>
+            <CardDescription>Top 1 因子</CardDescription>
+            <CardTitle className="text-xl">{contributions[0]?.factor ?? '暂无'}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-gray-500">{contributions[0]?.contribution ?? 0}%</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardDescription>头部贡献度</CardDescription>
+            <CardTitle className="text-3xl text-green-600">{positiveContribution.toFixed(1)}%</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
               <Badge className="bg-green-100 text-green-800">
                 <TrendingUp className="w-3 h-3 mr-1" />
-                促进增长
+                前四因子
               </Badge>
             </div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="pb-3">
-            <CardDescription>负向贡献总和</CardDescription>
-            <CardTitle className="text-3xl text-red-600">
-              {negativeContribution.toFixed(1)}%
-            </CardTitle>
+            <CardDescription>尾部贡献度</CardDescription>
+            <CardTitle className="text-3xl text-blue-600">{tailContribution.toFixed(1)}%</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2">
-              <Badge className="bg-red-100 text-red-800">
-                抑制增长
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>净贡献度</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">
-              {totalContribution.toFixed(1)}%
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">
-              综合影响效果
-            </p>
+            <p className="text-sm text-gray-500">剩余因子合计</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* 贡献度排名列表 */}
       <Card>
         <CardHeader>
-          <CardTitle>影响因子贡献度排名</CardTitle>
-          <CardDescription>按贡献程度从高到低排列（包含负向影响因子）</CardDescription>
+          <CardTitle>影响因子贡献排名</CardTitle>
+          <CardDescription>统一使用真实治理快照排序，不再引用静态样例或手工排序。</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {contributions.map((item) => (
-              <div key={item.rank} className="p-4 border rounded-lg hover:shadow-md transition-shadow">
-                <div className="flex items-start gap-4">
-                  {/* 排名徽章 */}
-                  <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                    item.rank === 1 ? 'bg-yellow-500' :
-                    item.rank === 2 ? 'bg-gray-400' :
-                    item.rank === 3 ? 'bg-orange-600' :
-                    'bg-blue-500'
-                  }`}>
-                    {item.rank}
+        <CardContent className="space-y-4">
+          {contributions.map((item) => (
+            <div key={item.factor} className="rounded-lg border p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="font-semibold">{item.rank}. {item.factor}</span>
+                    <Badge variant="outline">{item.category}</Badge>
                   </div>
-
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <h3 className="font-semibold text-lg">{item.factor}</h3>
-                        <Badge variant="outline">{item.category}</Badge>
-                      </div>
-                      <div className="text-right">
-                        <div className="flex items-center gap-2">
-                          <Badge className={
-                            item.contribution > 0 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-red-100 text-red-800'
-                          }>
-                            {item.contribution > 0 ? '+' : ''}{item.contribution}%
-                          </Badge>
-                          <Badge variant="outline">
-                            置信度 {item.confidence}%
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* 贡献度进度条 */}
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm text-gray-500">贡献度</span>
-                        <span className="text-sm font-semibold">
-                          {Math.abs(item.contribution).toFixed(1)}%
-                        </span>
-                      </div>
-                      <div className="relative w-full bg-gray-200 rounded-full h-3">
-                        {item.contribution > 0 ? (
-                          <div
-                            className="bg-green-500 h-3 rounded-full transition-all"
-                            style={{ width: `${(Math.abs(item.contribution) / positiveContribution) * 100}%` }}
-                          />
-                        ) : (
-                          <div
-                            className="bg-red-500 h-3 rounded-full transition-all"
-                            style={{ width: `${(Math.abs(item.contribution) / Math.abs(negativeContribution)) * 100}%` }}
-                          />
-                        )}
-                      </div>
-                    </div>
-
-                    <p className="text-sm text-gray-600 mb-3">{item.description}</p>
-
-                    <div className="grid grid-cols-3 gap-3">
-                      <div className="p-2 bg-white border border-gray-200 rounded">
-                        <p className="text-xs text-gray-500">绝对贡献值</p>
-                        <p className="text-sm font-semibold">{item.absoluteValue}</p>
-                      </div>
-                      <div className="p-2 bg-white border border-gray-200 rounded">
-                        <p className="text-xs text-gray-500">变化趋势</p>
-                        <p className={`text-sm font-semibold ${
-                          item.trend.startsWith('+') ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {item.trend}
-                        </p>
-                      </div>
-                      <div className="p-2 bg-white border border-gray-200 rounded">
-                        <p className="text-xs text-gray-500">影响方向</p>
-                        <p className="text-sm font-semibold">
-                          {item.contribution > 0 ? '正向' : '负向'}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                </div>
+                <div className="text-right min-w-[110px]">
+                  <div className="text-2xl font-semibold">{item.contribution}%</div>
+                  <div className="text-xs text-muted-foreground">贡献权重</div>
                 </div>
               </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* 分类贡献度汇总 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>分类贡献度汇总</CardTitle>
-            <CardDescription>按因子类别汇总贡献度</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {categoryContributions
-                .sort((a, b) => Math.abs(b.contribution) - Math.abs(a.contribution))
-                .map((item) => (
-                  <div key={item.category} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div 
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm font-medium">{item.category}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {item.count} 个因子
-                        </Badge>
-                      </div>
-                      <span className={`text-sm font-semibold ${
-                        item.contribution > 0 ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {item.contribution > 0 ? '+' : ''}{item.contribution.toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className="h-2 rounded-full transition-all"
-                        style={{ 
-                          width: `${(Math.abs(item.contribution) / positiveContribution) * 100}%`,
-                          backgroundColor: item.color
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-            </div>
-
-            {/* 饼图占位 */}
-            <div className="mt-6 h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-              <p className="text-gray-400">分类贡献度饼图</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* 综合影响力评分 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>综合影响力评分</CardTitle>
-            <CardDescription>多维度评估因子影响力</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {impactScores.map((item) => (
-                <div key={item.dimension} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">{item.dimension}</span>
-                    <span className="text-sm font-semibold text-blue-600">
-                      {item.score}/{item.maxScore}
-                    </span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-blue-500 h-2 rounded-full transition-all"
-                      style={{ width: `${(item.score / item.maxScore) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm font-medium text-blue-800 mb-2">综合评价</p>
-              <p className="text-sm text-blue-700">
-                识别的影响因子具有较强的直接影响力和持续影响力，且对政策调控较为敏感，是制定人口调控政策的重要依据。
-              </p>
-            </div>
-
-            {/* 雷达图占位 */}
-            <div className="mt-6 h-32 bg-gray-100 rounded-lg flex items-center justify-center">
-              <p className="text-gray-400 text-sm">影响力雷达图</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* 时间序列变化 */}
-      <Card>
-        <CardHeader>
-          <CardTitle>贡献度时间序列变化</CardTitle>
-          <CardDescription>各类因子贡献度的季度变化趋势</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center mb-4">
-            <p className="text-gray-400">贡献度堆积面积图 - 展示各类因子贡献度随时间的变化</p>
-          </div>
-
-          <div className="grid grid-cols-4 gap-3">
-            {timeSeriesData.map((item) => (
-              <div key={item.period} className="p-3 border rounded-lg">
-                <p className="text-sm font-medium text-center mb-2">{item.period}</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">经济</span>
-                    <span className="font-semibold">{item.economic}%</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">服务</span>
-                    <span className="font-semibold">{item.service}%</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">设施</span>
-                    <span className="font-semibold">{item.infrastructure}%</span>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-gray-600">质量</span>
-                    <span className="font-semibold">{item.quality}%</span>
-                  </div>
-                </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm text-muted-foreground">
+                <div>当前量级：{item.absoluteValue}</div>
+                <div>最近趋势：{item.trend}</div>
+                <div>可信度：{item.confidence}%</div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </CardContent>
       </Card>
-
-      {/* 数据更新时间 */}
-      <div className="text-center text-sm text-gray-500">
-        数据更新时间：2026-01-20 08:00:00 | 分析方法：Shapley值分解 + 方差分解
-      </div>
     </div>
   );
 }

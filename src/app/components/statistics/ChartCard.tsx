@@ -1,7 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card";
-import { Button } from "../ui/button";
-import { Download, Info } from "lucide-react";
+import { Info } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 
 interface ChartCardProps {
@@ -48,10 +47,6 @@ export function ChartCard({
         </div>
         <div className="flex items-center gap-2">
           {action}
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <Download className="h-4 w-4" />
-            <span className="sr-only">Download</span>
-          </Button>
         </div>
       </CardHeader>
       <CardContent>
