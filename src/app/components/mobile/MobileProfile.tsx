@@ -16,6 +16,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MobileLayout } from './MobileLayout';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobileProfileProps {
   onRouteChange: (route: string) => void;
@@ -24,11 +25,10 @@ interface MobileProfileProps {
 }
 
 export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileProfileProps) {
-  // 模拟用户上下文：实际项目中应从全局状态或 Context 获取
-  const [username] = useState(localStorage.getItem('mobile_user') || '网格员张三');
+  const [username] = useState(mobileContextRepository.getCurrentWorkerName() || '网格员张三');
   const [currentGrid, setCurrentGrid] = useState(() => {
-    const saved = localStorage.getItem('current_grid');
-    return saved ? JSON.parse(saved) : { id: 'g1', name: '竹岛街道海源社区第一网格' };
+    const saved = mobileContextRepository.getCurrentGridSelection();
+    return { id: saved.id || 'g1', name: saved.name || '竹岛街道海源社区第一网格' };
   });
 
   // 模拟切换网格身份（开发调试用）
@@ -40,9 +40,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     const newGrid = grids[gridId];
     if (newGrid) {
       setCurrentGrid(newGrid);
-      localStorage.setItem('current_grid', JSON.stringify(newGrid));
-      // 强制刷新以更新其他组件状态（实际项目推荐用 Context）
-      window.location.reload(); 
+      mobileContextRepository.setCurrentGridSelection(newGrid);
     }
   };
 
@@ -73,7 +71,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
 
   const handleLogout = () => {
     if (confirm('确定要退出登录吗？')) {
-      localStorage.removeItem('mobile_user');
+      mobileContextRepository.clearCurrentWorkerName();
       if (onLogout) {
         onLogout();
       } else {
@@ -94,7 +92,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <div className="text-[var(--color-neutral-11)] font-bold text-xl tracking-wide">李明辉</div>
+                  <div className="text-[var(--color-neutral-11)] font-bold text-xl tracking-wide">{username}</div>
                   <div className="px-1.5 py-0.5 bg-[var(--color-neutral-03)] rounded text-xs text-[var(--color-neutral-08)] border border-[var(--color-neutral-04)]">网格员</div>
                 </div>
                 <div className="text-[var(--color-neutral-08)] text-sm flex items-center gap-1.5 mt-1.5">

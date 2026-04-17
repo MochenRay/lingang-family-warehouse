@@ -9,9 +9,9 @@ import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
-import { db } from '../../services/db';
 import { Person, PersonType } from '../../types/core';
-import { tagStore } from '../../utils/tagStore';
+import { personRepository } from '../../services/repositories/personRepository';
+import { tagRepository, type ManagedTagSummary } from '../../services/repositories/tagRepository';
 
 interface MobilePersonEditProps {
   id: string;
@@ -22,6 +22,7 @@ interface MobilePersonEditProps {
 export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) {
   const [person, setPerson] = useState<Person | null>(null);
   const [personTags, setPersonTags] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<ManagedTagSummary[]>([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [tagSearch, setTagSearch] = useState('');
   const [expandedSections, setExpandedSections] = useState({
@@ -72,8 +73,25 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
   };
 
   useEffect(() => {
-    const personData = db.getPerson(id);
-    if (personData) {
+    let active = true;
+
+    const load = async () => {
+      const [personData, tagSnapshot] = await Promise.all([
+        personRepository.getPerson(id),
+        tagRepository.getSnapshot(),
+      ]);
+
+      if (!active) {
+        return;
+      }
+
+      setAvailableTags(tagSnapshot.tags);
+
+      if (!personData) {
+        setPerson(null);
+        return;
+      }
+
       setPerson(personData);
       setPersonTags(personData.tags || []);
       setFormData({
@@ -83,7 +101,6 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         type: personData.type,
         nation: personData.nation || '',
         education: personData.education || '',
-        // 详细信息
         birthDate: personData.birthDate || '',
         birthplace: personData.birthplace || '',
         maritalStatus: personData.maritalStatus || '',
@@ -95,12 +112,9 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         communityVolunteer: personData.communityVolunteer || false,
         skills: personData.skills || '',
         pets: personData.pets || '',
-        // 个人经历
         biography: personData.biography || '',
-        // 活动参与
         activities: personData.activityParticipation?.activities || '',
         needs: personData.activityParticipation?.needs || '',
-        // 健康档案
         hasChronic: personData.healthRecord?.hasChronic || false,
         chronicDetails: personData.healthRecord?.chronicDetails || '',
         needsRegularMedicine: personData.healthRecord?.needsRegularMedicine || false,
@@ -109,16 +123,21 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         isSeverePatient: personData.healthRecord?.isSeverePatient || false,
         isPregnant: personData.healthRecord?.isPregnant || false,
         specialNotes: personData.healthRecord?.specialNotes || '',
-        // 重要事件
         importantEvents: personData.importantEvents || '',
       });
-    }
+    };
+
+    void load();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!person) return;
 
-    db.updatePerson(id, {
+    await personRepository.updatePerson(id, {
       tags: personTags,
       name: formData.name,
       phone: formData.phone || undefined,
@@ -167,15 +186,14 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
 
   // 按 type + category 分组所有可用标签
   const groupedTags = useMemo(() => {
-    const allTags = tagStore.getTags();
     const groups: Record<string, Record<string, string[]>> = {};
-    for (const tag of allTags) {
+    for (const tag of availableTags) {
       if (!groups[tag.type]) groups[tag.type] = {};
       if (!groups[tag.type][tag.category]) groups[tag.type][tag.category] = [];
       groups[tag.type][tag.category].push(tag.name);
     }
     return groups;
-  }, []);
+  }, [availableTags]);
 
   // 搜索过滤
   const filteredGroupedTags = useMemo(() => {

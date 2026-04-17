@@ -4,6 +4,7 @@ export interface CurrentGridSelection {
 }
 
 const DEFAULT_GRID_NAME = '竹岛街道海源社区第一网格';
+const DEFAULT_WORKER_NAME = '网格员';
 
 export const mobileContextRepository = {
   getCurrentGridSelection(): CurrentGridSelection {
@@ -29,9 +30,9 @@ export const mobileContextRepository = {
 
   getCurrentWorkerName(): string {
     if (typeof window === 'undefined') {
-      return '网格员';
+      return DEFAULT_WORKER_NAME;
     }
-    return window.localStorage.getItem('mobile_user') || '网格员';
+    return window.localStorage.getItem('mobile_user') || DEFAULT_WORKER_NAME;
   },
 
   setCurrentGridSelection(selection: CurrentGridSelection): void {
@@ -45,5 +46,19 @@ export const mobileContextRepository = {
         name: selection.name || DEFAULT_GRID_NAME,
       }),
     );
+  },
+
+  setCurrentWorkerName(name: string): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem('mobile_user', name || DEFAULT_WORKER_NAME);
+  },
+
+  clearCurrentWorkerName(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.removeItem('mobile_user');
   },
 };
