@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { toast } from 'sonner';
 
 export function ContributionRanking() {
   const [targetIndicator, setTargetIndicator] = useState('population-growth');
@@ -122,6 +123,34 @@ export function ContributionRanking() {
   const positiveContribution = contributions.filter(c => c.contribution > 0).reduce((sum, item) => sum + item.contribution, 0);
   const negativeContribution = contributions.filter(c => c.contribution < 0).reduce((sum, item) => sum + item.contribution, 0);
 
+  const handleExport = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      targetIndicator,
+      timeRange,
+      summary: {
+        totalContribution,
+        positiveContribution,
+        negativeContribution,
+      },
+      contributions,
+      categoryContributions,
+      timeSeriesData,
+      impactScores,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `contribution-ranking-${targetIndicator}-${timeRange}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success('贡献排名快照已导出');
+  };
+
   return (
     <div className="space-y-6">
       {/* 页面标题 */}
@@ -153,7 +182,7 @@ export function ContributionRanking() {
               <SelectItem value="year">本年度</SelectItem>
             </SelectContent>
           </Select>
-          <Button>
+          <Button onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             导出
           </Button>

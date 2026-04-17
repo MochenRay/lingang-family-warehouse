@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Flashlight, Image as ImageIcon, Scan, Text, Camera } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
+import { toast } from 'sonner';
 
 interface MobileScanProps {
   onBack: () => void;
@@ -48,7 +49,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
             {mode === 'scan' ? '扫一扫' : 'OCR识别'}
           </div>
           <button 
-            onClick={() => {}}
+            onClick={() => toast.info('当前版本暂不支持从相册导入，请使用扫码框演示入口')}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/40"
           >
             <ImageIcon className="w-5 h-5" />

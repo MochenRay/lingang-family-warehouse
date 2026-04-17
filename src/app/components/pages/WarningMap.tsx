@@ -4,10 +4,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
+import { toast } from 'sonner';
 
 export function WarningMap() {
   const [warningType, setWarningType] = useState('all');
   const [severity, setSeverity] = useState('all');
+  const [selectedWarningId, setSelectedWarningId] = useState<number | null>(null);
 
   // 预警点位数据
   const warningPoints = [
@@ -131,6 +140,31 @@ export function WarningMap() {
     return true;
   });
 
+  const selectedWarning = filteredWarnings.find((item) => item.id === selectedWarningId) ?? null;
+
+  const handleExport = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      filters: {
+        warningType,
+        severity,
+      },
+      summary: warningStats,
+      warnings: filteredWarnings,
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `warning-map-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    toast.success('预警快照已导出');
+  };
+
   return (
     <div className="space-y-6">
       {/* 页面标题 */}
@@ -164,7 +198,7 @@ export function WarningMap() {
               <SelectItem value="low">轻微</SelectItem>
             </SelectContent>
           </Select>
-          <Button>
+          <Button onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             导出
           </Button>
@@ -405,7 +439,7 @@ export function WarningMap() {
                           {warning.area}
                         </Badge>
                       </div>
-                      <Button size="sm" variant="outline">
+                      <Button size="sm" variant="outline" onClick={() => setSelectedWarningId(warning.id)}>
                         查看详情
                       </Button>
                     </div>
@@ -443,6 +477,39 @@ export function WarningMap() {
       <div className="text-center text-sm text-gray-500">
         数据实时更新 | 预警规则每日08:00更新
       </div>
+
+      <Dialog open={Boolean(selectedWarning)} onOpenChange={(open) => !open && setSelectedWarningId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedWarning?.type ?? '预警详情'}</DialogTitle>
+            <DialogDescription>
+              {selectedWarning ? `${selectedWarning.area} · 阈值 ${selectedWarning.threshold}` : '查看预警对象详情'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedWarning ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge className={getLevelColor(selectedWarning.level)}>{getLevelLabel(selectedWarning.level)}</Badge>
+                <Badge variant="outline">{selectedWarning.value}</Badge>
+              </div>
+              <div className="rounded-lg border bg-slate-50 p-4 space-y-3 text-sm text-slate-700">
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">预警说明</div>
+                  <div>{selectedWarning.description}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">影响范围</div>
+                  <div>{selectedWarning.impact}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-slate-500 mb-1">坐标</div>
+                  <div className="font-mono text-xs">{selectedWarning.lat}, {selectedWarning.lng}</div>
+                </div>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
