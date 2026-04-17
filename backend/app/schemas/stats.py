@@ -93,3 +93,53 @@ class StatsDashboardRead(ReadSchema):
 class StatsGridListRead(ReadSchema):
     metadata: StatsMetadataRead
     grids: list[StatsGridItemRead] = Field(default_factory=list)
+
+
+class StatsPerformanceScoreRead(ReadSchema):
+    visitFreq: float
+    visitQuality: float
+    infoComplete: float
+    taskCount: float
+    taskSpeed: float
+
+
+class StatsPerformanceItemRead(ReadSchema):
+    id: str
+    name: str
+    gridId: str
+    gridName: str
+    communityName: str
+    streetName: str
+    districtName: str
+    workerCount: int
+    visitCount: int
+    visitQuality: float
+    infoCompleteness: float
+    taskCompleted: int
+    pendingCount: int
+    overdueCount: int
+    scores: StatsPerformanceScoreRead
+    totalScore: float
+
+
+class StatsPerformanceSummaryRead(ReadSchema):
+    workerCount: int
+    avgScore: float
+    bestCommunity: str
+    needImproveCount: int
+
+
+class StatsQualityAlertRead(ReadSchema):
+    id: str
+    type: str
+    desc: str
+    count: int
+    area: str
+
+
+class StatsPerformanceRead(ReadSchema):
+    metadata: StatsMetadataRead
+    weights: StatsPerformanceScoreRead
+    workers: list[StatsPerformanceItemRead] = Field(default_factory=list)
+    summary: StatsPerformanceSummaryRead
+    qualityAlerts: list[StatsQualityAlertRead] = Field(default_factory=list)

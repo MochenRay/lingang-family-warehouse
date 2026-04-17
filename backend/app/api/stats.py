@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from calendar import monthrange
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
@@ -24,13 +24,20 @@ from app.schemas.stats import (
     StatsHousingStatsRead,
     StatsMetadataRead,
     StatsMobilePeopleStatsRead,
+    StatsPerformanceItemRead,
+    StatsPerformanceRead,
+    StatsPerformanceScoreRead,
+    StatsPerformanceSummaryRead,
+    StatsQualityAlertRead,
     StatsRiskTagItemRead,
     StatsTrendItemRead,
 )
+from app.services.task_rules import build_task_projection
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
+DEFAULT_DISTRICT_NAME = "海源示范片区"
 AGE_BUCKETS = (
     ("0-18岁", 0, 18, "#8b5cf6"),
     ("19-35岁", 19, 35, "#3b82f6"),
@@ -43,6 +50,13 @@ RISK_TAGS = (
     ("社区矫正", "中", ["社区矫正"]),
     ("群租", "中", ["群租", "群租风险", "群租线索"]),
     ("信访", "低", ["信访", "信访人员"]),
+)
+PERFORMANCE_SCORE_WEIGHTS = StatsPerformanceScoreRead(
+    visitFreq=0.25,
+    visitQuality=0.25,
+    infoComplete=0.20,
+    taskCount=0.15,
+    taskSpeed=0.15,
 )
 
 
@@ -74,6 +88,78 @@ def _parse_datetime(raw: str | None) -> datetime | None:
 def _parse_area(raw: str | None) -> float:
     if not raw:
         return 0.0
+
+
+def _clamp_score(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
+    return max(minimum, min(maximum, value))
+
+
+def _average(values: list[float]) -> float:
+    if not values:
+        return 0.0
+    return round(sum(values) / len(values), 1)
+
+
+def _parse_grid_hierarchy(name: str) -> tuple[str, str, str]:
+    street_name = name
+    community_name = name
+
+    if "街道" in name:
+        street_name = f"{name.split('街道', 1)[0]}街道"
+        community_name = name[len(street_name):] or name
+    elif "镇" in name:
+        street_name = f"{name.split('镇', 1)[0]}镇"
+        community_name = name[len(street_name):] or name
+
+    if "第" in community_name and "网格" in community_name:
+        community_name = community_name.split("第", 1)[0]
+    elif "网格" in community_name:
+        community_name = community_name.split("网格", 1)[0]
+
+    community_name = community_name.strip() or name
+    return DEFAULT_DISTRICT_NAME, street_name.strip() or name, community_name
+
+
+def _person_completeness(person: Person) -> float:
+    fields = [
+        bool(person.phone),
+        bool(person.idCard),
+        bool(person.address),
+        bool(person.houseId),
+        bool(person.updatedAt),
+        bool(person.tags),
+    ]
+    return sum(1 for value in fields if value) / len(fields)
+
+
+def _house_completeness(house: House) -> float:
+    fields = [
+        bool(house.ownerPhone),
+        bool(house.area),
+        bool(house.type),
+        bool(house.occupancyStatus),
+        bool(house.residenceType),
+    ]
+    return sum(1 for value in fields if value) / len(fields)
+
+
+def _visit_quality_score(visit: VisitRecord) -> float:
+    content_length = len((visit.content or "").strip())
+    tag_bonus = min(len(visit.tags or []) * 6, 18)
+    image_bonus = min(len(visit.images or []) * 8, 16)
+    score = 42 + min(content_length * 0.6, 32) + tag_bonus + image_bonus
+    return round(_clamp_score(score, minimum=45.0), 1)
+
+
+def _weighted_total(scores: StatsPerformanceScoreRead) -> float:
+    total = (
+        scores.visitFreq * PERFORMANCE_SCORE_WEIGHTS.visitFreq
+        + scores.visitQuality * PERFORMANCE_SCORE_WEIGHTS.visitQuality
+        + scores.infoComplete * PERFORMANCE_SCORE_WEIGHTS.infoComplete
+        + scores.taskCount * PERFORMANCE_SCORE_WEIGHTS.taskCount
+        + scores.taskSpeed * PERFORMANCE_SCORE_WEIGHTS.taskSpeed
+    )
+    return round(total, 1)
     cleaned = raw.replace("㎡", "").replace("平米", "").strip()
     try:
         return float(cleaned)
@@ -301,6 +387,182 @@ def _build_grid_items(
     return items
 
 
+def _build_performance(session: Session) -> StatsPerformanceRead:
+    people = list(session.exec(select(Person)).all())
+    houses = list(session.exec(select(House)).all())
+    grids = list(session.exec(select(Grid)).all())
+    visits = list(session.exec(select(VisitRecord)).all())
+    conflicts = list(session.exec(select(ConflictRecord)).all())
+    now = datetime.now(SHANGHAI_TZ)
+
+    people_by_grid: dict[str, list[Person]] = defaultdict(list)
+    houses_by_grid: dict[str, list[House]] = defaultdict(list)
+    visits_by_grid: dict[str, list[VisitRecord]] = defaultdict(list)
+    conflicts_by_grid: dict[str, list[ConflictRecord]] = defaultdict(list)
+    for person in people:
+        people_by_grid[person.gridId].append(person)
+    for house in houses:
+        houses_by_grid[house.gridId].append(house)
+    for visit in visits:
+        visits_by_grid[visit.gridId].append(visit)
+    for conflict in conflicts:
+        conflicts_by_grid[conflict.gridId].append(conflict)
+
+    projections = {grid.id: build_task_projection(session, grid.id) for grid in grids}
+    max_visit_count = max((len(visits_by_grid.get(grid.id, [])) for grid in grids), default=1)
+    max_completed_count = max((len(projections[grid.id].completed) for grid in grids), default=1)
+
+    workers: list[StatsPerformanceItemRead] = []
+    incomplete_by_grid: dict[str, int] = {}
+    overdue_by_grid: dict[str, int] = {}
+    late_closed_by_grid: dict[str, int] = {}
+
+    for grid in grids:
+        grid_people = people_by_grid.get(grid.id, [])
+        grid_houses = houses_by_grid.get(grid.id, [])
+        grid_visits = visits_by_grid.get(grid.id, [])
+        projection = projections[grid.id]
+
+        visit_count = len(grid_visits)
+        visit_freq_score = round((visit_count / max_visit_count) * 100, 1) if max_visit_count else 0.0
+        visit_quality = _average([_visit_quality_score(visit) for visit in grid_visits])
+
+        completeness_parts = [
+            *[_person_completeness(person) for person in grid_people],
+            *[_house_completeness(house) for house in grid_houses],
+        ]
+        info_complete = round(_average(completeness_parts) * 100, 1) if completeness_parts else 0.0
+
+        completed_count = len(projection.completed)
+        task_count_score = round((completed_count / max_completed_count) * 100, 1) if max_completed_count else 0.0
+
+        on_time_flags = [item.onTime for item in projection.completed if item.onTime is not None]
+        on_time_rate = (
+            round(sum(1 for flag in on_time_flags if flag) / len(on_time_flags) * 100, 1)
+            if on_time_flags
+            else (60.0 if projection.summary.pending else 100.0)
+        )
+        overdue_ratio = projection.summary.overdue / max(projection.summary.pending + completed_count, 1)
+        task_speed = round(
+            _clamp_score(on_time_rate * 0.7 + (1 - overdue_ratio) * 30, minimum=45.0),
+            1,
+        )
+
+        scores = StatsPerformanceScoreRead(
+            visitFreq=visit_freq_score,
+            visitQuality=visit_quality,
+            infoComplete=info_complete,
+            taskCount=task_count_score,
+            taskSpeed=task_speed,
+        )
+
+        district_name, street_name, community_name = _parse_grid_hierarchy(grid.name)
+        workers.append(
+            StatsPerformanceItemRead(
+                id=grid.id,
+                name=grid.managerName or grid.name,
+                gridId=grid.id,
+                gridName=grid.name,
+                communityName=community_name,
+                streetName=street_name,
+                districtName=district_name,
+                workerCount=1,
+                visitCount=visit_count,
+                visitQuality=visit_quality,
+                infoCompleteness=info_complete,
+                taskCompleted=completed_count,
+                pendingCount=projection.summary.pending,
+                overdueCount=projection.summary.overdue,
+                scores=scores,
+                totalScore=_weighted_total(scores),
+            )
+        )
+
+        incomplete_by_grid[grid.name] = sum(
+            1
+            for person in grid_people
+            if not person.phone or not person.houseId or not person.tags
+        ) + sum(
+            1
+            for house in grid_houses
+            if not house.ownerPhone or not house.area or not house.occupancyStatus or not house.residenceType
+        )
+        overdue_by_grid[grid.name] = projection.summary.overdue
+        late_closed_by_grid[grid.name] = sum(1 for item in projection.completed if item.onTime is False)
+
+    workers.sort(key=lambda item: (-item.totalScore, item.name))
+    community_scores: dict[str, list[float]] = defaultdict(list)
+    for worker in workers:
+        community_scores[worker.communityName].append(worker.totalScore)
+
+    best_community = ""
+    best_score = -1.0
+    for community_name, scores in community_scores.items():
+        community_score = sum(scores) / len(scores)
+        if community_score > best_score:
+            best_score = community_score
+            best_community = community_name
+
+    quality_alerts: list[StatsQualityAlertRead] = []
+    if incomplete_by_grid:
+        area, count = max(incomplete_by_grid.items(), key=lambda item: item[1])
+        quality_alerts.append(
+            StatsQualityAlertRead(
+                id="profile_gap",
+                type="档案缺口",
+                desc="人员档案缺少联系电话、关联房屋或基础标签。",
+                count=count,
+                area=area,
+            )
+        )
+    if overdue_by_grid:
+        area, count = max(overdue_by_grid.items(), key=lambda item: item[1])
+        quality_alerts.append(
+            StatsQualityAlertRead(
+                id="overdue_followup",
+                type="跟进超期",
+                desc="待回访或矛盾跟进任务已超期，影响闭环时效。",
+                count=count,
+                area=area,
+            )
+        )
+    if late_closed_by_grid:
+        area, count = max(late_closed_by_grid.items(), key=lambda item: item[1])
+        quality_alerts.append(
+            StatsQualityAlertRead(
+                id="late_resolution",
+                type="闭环滞后",
+                desc="已化解事件存在超期闭环，建议复盘处置链路。",
+                count=count,
+                area=area,
+            )
+        )
+
+    metadata = StatsMetadataRead(
+        generatedAt=now.strftime("%Y-%m-%d %H:%M:%S"),
+        totalGrids=len(grids),
+        totalPeople=len(people),
+        totalHouses=len(houses),
+        totalVisits=len(visits),
+        totalConflicts=len(conflicts),
+    )
+
+    summary = StatsPerformanceSummaryRead(
+        workerCount=len(workers),
+        avgScore=round(sum(worker.totalScore for worker in workers) / len(workers), 1) if workers else 0.0,
+        bestCommunity=best_community or "暂无",
+        needImproveCount=sum(1 for worker in workers if worker.totalScore < 70),
+    )
+
+    return StatsPerformanceRead(
+        metadata=metadata,
+        weights=PERFORMANCE_SCORE_WEIGHTS,
+        workers=workers,
+        summary=summary,
+        qualityAlerts=quality_alerts,
+    )
+
+
 def _build_dashboard(session: Session) -> StatsDashboardRead:
     people = list(session.exec(select(Person)).all())
     houses = list(session.exec(select(House)).all())
@@ -389,3 +651,8 @@ def read_dashboard(
 @router.get("/grids", response_model=StatsGridListRead)
 def read_grids(session: Session = Depends(get_session)) -> StatsGridListRead:
     return _build_grid_list(session)
+
+
+@router.get("/performance", response_model=StatsPerformanceRead)
+def read_performance(session: Session = Depends(get_session)) -> StatsPerformanceRead:
+    return _build_performance(session)

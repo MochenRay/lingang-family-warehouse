@@ -1,10 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, Trophy, Crown, Medal, Info, ChevronDown } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Card, CardContent } from '../ui/card';
 import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Avatar, AvatarFallback } from '../ui/avatar';
-import { SEED_GRID_WORKER_SCORES, SCORE_WEIGHTS } from '../../data/seeds/behavior';
+import {
+  PERFORMANCE_SCORE_WEIGHTS,
+  type PerformanceScoreKey,
+  type StatsPerformanceItem,
+  statsRepository,
+} from '../../services/repositories/statsRepository';
 
 interface MobileStatsProps {
   onBack: () => void;
@@ -12,7 +17,7 @@ interface MobileStatsProps {
 
 type ViewLevel = 'community' | 'street' | 'district';
 
-const SCORE_LABELS: Record<keyof typeof SCORE_WEIGHTS, { label: string; short: string }> = {
+const SCORE_LABELS: Record<PerformanceScoreKey, { label: string; short: string }> = {
   visitFreq: { label: '走访频次', short: '频次' },
   visitQuality: { label: '走访质量', short: '质量' },
   infoComplete: { label: '信息完善度', short: '完善' },
@@ -20,12 +25,12 @@ const SCORE_LABELS: Record<keyof typeof SCORE_WEIGHTS, { label: string; short: s
   taskSpeed: { label: '响应速度', short: '速度' },
 };
 
-const SCORE_KEYS = Object.keys(SCORE_WEIGHTS) as (keyof typeof SCORE_WEIGHTS)[];
+const SCORE_KEYS = Object.keys(PERFORMANCE_SCORE_WEIGHTS) as PerformanceScoreKey[];
 
 interface RankItem {
   name: string;
   workerCount: number;
-  scores: Record<keyof typeof SCORE_WEIGHTS, number>;
+  scores: Record<PerformanceScoreKey, number>;
   totalScore: number;
   rank: number;
   // 仅社区级有
@@ -37,8 +42,8 @@ function avg(nums: number[]): number {
   return parseFloat((nums.reduce((a, b) => a + b, 0) / nums.length).toFixed(1));
 }
 
-function aggregate(workers: typeof SEED_GRID_WORKER_SCORES, groupBy: (w: typeof SEED_GRID_WORKER_SCORES[0]) => string): RankItem[] {
-  const groups = new Map<string, typeof SEED_GRID_WORKER_SCORES>();
+function aggregate(workers: StatsPerformanceItem[], groupBy: (w: StatsPerformanceItem) => string): RankItem[] {
+  const groups = new Map<string, StatsPerformanceItem[]>();
   workers.forEach(w => {
     const key = groupBy(w);
     const arr = groups.get(key) || [];
@@ -75,13 +80,58 @@ const scoreColor = (score: number) => {
 export function MobileStats({ onBack }: MobileStatsProps) {
   const [activeTab, setActiveTab] = useState<ViewLevel>('community');
   const [showFormula, setShowFormula] = useState(false);
+  const [allWorkers, setAllWorkers] = useState<StatsPerformanceItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const allWorkers = SEED_GRID_WORKER_SCORES;
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const response = await statsRepository.getPerformanceStats();
+        if (active) {
+          setAllWorkers(response.workers);
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
 
-  // 当前用户（mock 为第一个网格员）
-  const currentUser = allWorkers[0];
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const currentGridId = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return undefined;
+    }
+    try {
+      const raw = window.localStorage.getItem('current_grid');
+      if (!raw) {
+        return undefined;
+      }
+      const parsed = JSON.parse(raw) as { id?: string };
+      return parsed.id;
+    } catch (error) {
+      console.warn('Failed to parse current_grid from localStorage', error);
+      return undefined;
+    }
+  }, []);
+
+  const currentUser = useMemo(
+    () => allWorkers.find((worker) => worker.gridId === currentGridId) ?? allWorkers[0],
+    [allWorkers, currentGridId],
+  );
 
   const rankings = useMemo(() => {
+    if (!currentUser) {
+      return [];
+    }
+
     if (activeTab === 'community') {
       // 网格员个人排名（社区视角）
       const items: RankItem[] = allWorkers
@@ -110,6 +160,16 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
   // 当前用户的排名（根据 Tab 切换语境）
   const myRank = useMemo(() => {
+    if (!currentUser) {
+      return {
+        rank: 0,
+        total: 0,
+        percentile: 0,
+        scope: '暂无数据',
+        scopeLabel: '暂无排名',
+      };
+    }
+
     if (activeTab === 'community') {
       // 社区 Tab：我在社区内网格员中的个人排名
       const peers = allWorkers.filter(w => w.communityName === currentUser.communityName);
@@ -215,6 +275,12 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
+        {loading && (
+          <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+            正在刷新真实绩效口径...
+          </div>
+        )}
+
         {/* 个人成绩卡 */}
         <div className="mb-4 relative overflow-hidden rounded-2xl bg-card border border-border shadow-sm">
           <div className="absolute top-0 right-0 p-4 opacity-5">
@@ -225,7 +291,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Avatar className="w-12 h-12 border-2 border-border">
-                  <AvatarFallback className="bg-[var(--color-neutral-03)] text-foreground">{currentUser.name.slice(-1)}</AvatarFallback>
+                  <AvatarFallback className="bg-[var(--color-neutral-03)] text-foreground">{currentUser?.name.slice(-1) ?? '--'}</AvatarFallback>
                 </Avatar>
                 <div>
                   <div className="text-muted-foreground text-xs mb-1">{myRank.scope} · {myRank.scopeLabel}</div>
@@ -244,15 +310,15 @@ export function MobileStats({ onBack }: MobileStatsProps) {
               {SCORE_KEYS.map(key => (
                 <div key={key} className="bg-[var(--color-neutral-02)] rounded-lg p-2 text-center">
                   <div className="text-muted-foreground text-[10px] mb-0.5">{SCORE_LABELS[key].short}</div>
-                  <div className={`font-bold text-base ${scoreColor(currentUser.scores[key])}`}>
-                    {currentUser.scores[key]}
+                  <div className={`font-bold text-base ${scoreColor(currentUser?.scores[key] ?? 0)}`}>
+                    {currentUser?.scores[key] ?? '--'}
                   </div>
                 </div>
               ))}
               <div className="bg-[var(--color-neutral-02)] rounded-lg p-2 text-center">
                 <div className="text-muted-foreground text-[10px] mb-0.5">综合</div>
-                <div className={`font-bold text-base ${scoreColor(currentUser.totalScore)}`}>
-                  {currentUser.totalScore}
+                <div className={`font-bold text-base ${scoreColor(currentUser?.totalScore ?? 0)}`}>
+                  {currentUser?.totalScore ?? '--'}
                 </div>
               </div>
             </div>
@@ -275,7 +341,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
             {SCORE_KEYS.map(key => (
               <div key={key} className="flex justify-between">
                 <span className="text-foreground">{SCORE_LABELS[key].label}</span>
-                <span>权重 {(SCORE_WEIGHTS[key] * 100)}%</span>
+                <span>权重 {(PERFORMANCE_SCORE_WEIGHTS[key] * 100)}%</span>
               </div>
             ))}
             <div className="pt-1.5 border-t border-border text-muted-foreground">
@@ -286,6 +352,11 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
         {/* 排名列表 */}
         <div className="space-y-3 pb-6">
+          {!currentUser && !loading && (
+            <Card className="border-none shadow-sm overflow-hidden">
+              <CardContent className="p-4 text-sm text-muted-foreground">当前暂无可用绩效数据。</CardContent>
+            </Card>
+          )}
           {rankings.map((item) => (
             <Card key={item.name} className="border-none shadow-sm overflow-hidden">
               <CardContent className="p-4">
