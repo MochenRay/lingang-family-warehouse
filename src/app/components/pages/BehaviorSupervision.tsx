@@ -1,5 +1,4 @@
-import { useState, useMemo } from 'react';
-import { SEED_GRID_WORKER_SCORES, SCORE_WEIGHTS } from '../../data/seeds/behavior';
+import { useEffect, useMemo, useState } from 'react';
 import {
   CheckCircle2,
   AlertCircle,
@@ -21,6 +20,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import {
+  PERFORMANCE_SCORE_WEIGHTS,
+  type PerformanceScoreKey,
+  type StatsPerformanceItem,
+  type StatsQualityAlertItem,
+  statsRepository,
+} from '../../services/repositories/statsRepository';
 
 type ViewLevel = 'district' | 'street' | 'community' | 'grid';
 
@@ -46,7 +52,7 @@ const VIEW_LABELS: Record<ViewLevel, string> = {
   grid: '网格员',
 };
 
-const SCORE_LABELS: Record<keyof typeof SCORE_WEIGHTS, { label: string; short: string; desc: string }> = {
+const SCORE_LABELS: Record<PerformanceScoreKey, { label: string; short: string; desc: string }> = {
   visitFreq: { label: '走访频次', short: '频次', desc: '一定时间内的走访次数，标准化为0-100分' },
   visitQuality: { label: '走访质量', short: '质量', desc: '每次走访记录内容的平均质量评分' },
   infoComplete: { label: '信息完善度', short: '完善', desc: '辖区内居民信息的填写完整率' },
@@ -91,8 +97,41 @@ export function BehaviorSupervision() {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [selectedStreet, setSelectedStreet] = useState<string | null>(null);
   const [selectedCommunity, setSelectedCommunity] = useState<string | null>(null);
+  const [allWorkers, setAllWorkers] = useState<StatsPerformanceItem[]>([]);
+  const [qualityAlerts, setQualityAlerts] = useState<StatsQualityAlertItem[]>([]);
+  const [generatedAt, setGeneratedAt] = useState<string>('');
+  const [totals, setTotals] = useState({ people: 0, houses: 0, visits: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const allWorkers = SEED_GRID_WORKER_SCORES;
+  useEffect(() => {
+    let active = true;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const performance = await statsRepository.getPerformanceStats();
+        if (!active) {
+          return;
+        }
+        setAllWorkers(performance.workers);
+        setQualityAlerts(performance.qualityAlerts);
+        setGeneratedAt(performance.metadata.generatedAt);
+        setTotals({
+          people: performance.metadata.totalPeople,
+          houses: performance.metadata.totalHouses,
+          visits: performance.metadata.totalVisits,
+        });
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void load();
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // 按层级聚合
   const statsData = useMemo(() => {
@@ -166,8 +205,16 @@ export function BehaviorSupervision() {
 
   // 概览数据
   const overviewStats = useMemo(() => {
+    if (allWorkers.length === 0) {
+      return {
+        workerCount: 0,
+        avgScore: '0.0',
+        bestCommunity: '暂无',
+        needImproveCount: 0,
+      };
+    }
+
     const avgTotal = allWorkers.reduce((s, w) => s + w.totalScore, 0) / allWorkers.length;
-    // 按社区聚合找最高分
     const commGroups = new Map<string, number[]>();
     allWorkers.forEach(w => {
       const arr = commGroups.get(w.communityName) || [];
@@ -188,6 +235,8 @@ export function BehaviorSupervision() {
       needImproveCount: needImprove,
     };
   }, [allWorkers]);
+
+  const topWorker = allWorkers[0];
 
   const handleItemClick = (item: AggregatedItem) => {
     if (viewLevel === 'district') {
@@ -212,14 +261,6 @@ export function BehaviorSupervision() {
       setSelectedCommunity(null);
     }
   };
-
-  // 数据质量预警
-  const qualityAlerts = [
-    { id: 1, type: '逻辑错误', desc: '房屋空置但仍有关联现居人员', count: 12, area: '竹岛街道' },
-    { id: 2, type: '缺失字段', desc: '人口信息缺失联系电话', count: 45, area: '环翠楼街道' },
-    { id: 3, type: '格式错误', desc: '身份证号码格式不规范', count: 3, area: '鲸园街道' },
-    { id: 4, type: '重复数据', desc: '同一身份证号对应多条记录', count: 8, area: '嵩山街道' },
-  ];
 
   // 得分颜色
   const scoreColor = (score: number) => {
@@ -280,14 +321,14 @@ export function BehaviorSupervision() {
                   <Label>简报预览</Label>
                   <div className="border rounded-md p-4 bg-gray-50 text-sm leading-relaxed text-gray-700 min-h-[200px]">
                     <p className="font-bold mb-2 text-center text-lg">{briefingType === 'daily' ? '每日' : briefingType === 'weekly' ? '每周' : '每月'}工作绩效简报</p>
-                    <p className="mb-2 text-gray-500 text-center text-xs">生成时间: 2026-01-06</p>
+                    <p className="mb-2 text-gray-500 text-center text-xs">生成时间: {generatedAt || '数据加载中'}</p>
                     <div className="space-y-2">
                       <p><strong>一、总体情况</strong></p>
-                      <p>本{briefingType === 'daily' ? '日' : briefingType === 'weekly' ? '周' : '月'}全区网格员活跃度较高，共采集数据 5,230 条，任务完成率达 94.5%。</p>
+                      <p>本{briefingType === 'daily' ? '日' : briefingType === 'weekly' ? '周' : '月'}辖区累计沉淀 {totals.visits} 条走访记录，覆盖 {totals.people} 名居民、{totals.houses} 套房屋，当前平均综合得分为 {overviewStats.avgScore}。</p>
                       <p><strong>二、亮点分析</strong></p>
-                      <p>竹岛街道在"独居老人走访"任务中表现突出，完成率 100%；张伟（海源社区）采集效率全区第一。</p>
+                      <p>{topWorker ? `${topWorker.name}（${topWorker.gridName}）当前位居首位，综合得分 ${topWorker.totalScore}；${overviewStats.bestCommunity} 在同层级对比中保持领先。` : '当前尚无可用于生成亮点分析的数据。'}</p>
                       <p><strong>三、问题预警</strong></p>
-                      <p>发现 68 条待修正数据，主要集中在环翠楼街道的人口信息不全问题，建议加强相关培训。</p>
+                      <p>{qualityAlerts[0] ? `当前最突出的预警为“${qualityAlerts[0].type}”，共 ${qualityAlerts[0].count} 条，集中在 ${qualityAlerts[0].area}，建议优先处理。` : '当前未发现显著异常预警。'}</p>
                     </div>
                   </div>
                 </div>
@@ -303,7 +344,13 @@ export function BehaviorSupervision() {
         </div>
       </div>
 
-      {/* 城市大脑对接状态 */}
+      {loading && (
+        <Card className="border-dashed">
+          <CardContent className="p-4 text-sm text-[var(--color-neutral-08)]">正在刷新真实督导口径...</CardContent>
+        </Card>
+      )}
+
+      {/* 数据主链状态 */}
       <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
@@ -312,31 +359,31 @@ export function BehaviorSupervision() {
                 <RefreshCw className="w-6 h-6 text-blue-400" />
               </div>
               <div>
-                <h3 className="font-bold text-lg text-[var(--color-neutral-11)]">城市大脑数据对接正常</h3>
+                <h3 className="font-bold text-lg text-[var(--color-neutral-11)]">治理数据主链已联通</h3>
                 <div className="flex items-center gap-2 text-sm text-[var(--color-neutral-08)] mt-1">
                   <span className="flex items-center gap-1">
                     <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                    连接状态: 在线
+                    连接状态: 正常
                   </span>
                   <span className="w-px h-3 bg-gray-300"></span>
-                  <span>更新频率: 实时同步</span>
+                  <span>统计口径: 真实走访 / 待办 / 档案完整度</span>
                   <span className="w-px h-3 bg-gray-300"></span>
-                  <span>最近同步: 2026-01-06 14:30:00</span>
+                  <span>最近刷新: {generatedAt || '加载中'}</span>
                 </div>
               </div>
             </div>
             <div className="flex gap-8">
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">同步人员数据</div>
-                <div className="text-xl font-bold text-gray-900">145,231</div>
+                <div className="text-sm text-gray-500 mb-1">居民档案</div>
+                <div className="text-xl font-bold text-gray-900">{totals.people}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">同步房屋数据</div>
-                <div className="text-xl font-bold text-gray-900">56,789</div>
+                <div className="text-sm text-gray-500 mb-1">房屋档案</div>
+                <div className="text-xl font-bold text-gray-900">{totals.houses}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">同步家庭数据</div>
-                <div className="text-xl font-bold text-gray-900">42,100</div>
+                <div className="text-sm text-gray-500 mb-1">走访记录</div>
+                <div className="text-xl font-bold text-gray-900">{totals.visits}</div>
               </div>
             </div>
           </div>
@@ -423,11 +470,11 @@ export function BehaviorSupervision() {
               <CardContent className="pt-0 pb-4 px-6">
                 <div className="border-t border-[var(--color-neutral-03)] pt-4">
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {(Object.entries(SCORE_LABELS) as [keyof typeof SCORE_WEIGHTS, typeof SCORE_LABELS[keyof typeof SCORE_WEIGHTS]][]).map(([key, meta]) => (
+                    {(Object.entries(SCORE_LABELS) as [PerformanceScoreKey, typeof SCORE_LABELS[PerformanceScoreKey]][]).map(([key, meta]) => (
                       <div key={key} className="p-3 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-sm text-[var(--color-neutral-11)]">{meta.label}</span>
-                          <Badge variant="outline" className="text-xs">{(SCORE_WEIGHTS[key] * 100)}%</Badge>
+                          <Badge variant="outline" className="text-xs">{(PERFORMANCE_SCORE_WEIGHTS[key] * 100)}%</Badge>
                         </div>
                         <p className="text-xs text-[var(--color-neutral-08)]">{meta.desc}</p>
                       </div>
@@ -527,7 +574,7 @@ export function BehaviorSupervision() {
                     </div>
 
                     {/* 五维得分 */}
-                    {(Object.keys(SCORE_WEIGHTS) as (keyof typeof SCORE_WEIGHTS)[]).map(key => (
+                    {(Object.keys(PERFORMANCE_SCORE_WEIGHTS) as PerformanceScoreKey[]).map(key => (
                       <div key={key} className="text-center">
                         <span className={`font-semibold text-sm ${scoreColor(item.scores[key])}`}>
                           {item.scores[key]}
