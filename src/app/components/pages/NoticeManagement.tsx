@@ -18,6 +18,13 @@ import {
 import { PublishNoticeDialog } from '../notices/PublishNoticeDialog';
 import { formatNoticeTime, noticeRepository, type NoticeRecord } from '../../services/repositories/noticeRepository';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "../ui/dialog";
+import {
   Table,
   TableBody,
   TableCell,
@@ -29,6 +36,7 @@ import {
 export function NoticeManagement() {
   const [notices, setNotices] = useState<NoticeRecord[]>([]);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
+  const [previewNotice, setPreviewNotice] = useState<NoticeRecord | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
 
@@ -262,7 +270,7 @@ export function NoticeManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => alert('预览功能开发中')}
+                            onClick={() => setPreviewNotice(notice)}
                           >
                             <Eye className="w-4 h-4" />
                           </Button>
@@ -303,6 +311,32 @@ export function NoticeManagement() {
         open={showPublishDialog}
         onOpenChange={setShowPublishDialog}
       />
+
+      <Dialog open={Boolean(previewNotice)} onOpenChange={(open) => !open && setPreviewNotice(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{previewNotice?.title ?? '公告预览'}</DialogTitle>
+            <DialogDescription>
+              {previewNotice
+                ? `${formatNoticeTime(previewNotice.publishedAt)} · ${getScopeText(previewNotice.scope)} · ${previewNotice.publisher}`
+                : '查看公告详情'}
+            </DialogDescription>
+          </DialogHeader>
+          {previewNotice ? (
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Badge className={getTypeConfig(previewNotice.type).color}>
+                  {getTypeConfig(previewNotice.type).label}
+                </Badge>
+                <Badge variant="outline">{previewNotice.status === 'published' ? '已发布' : '草稿'}</Badge>
+              </div>
+              <div className="rounded-lg border bg-slate-50 p-4 text-sm leading-6 text-slate-700 whitespace-pre-wrap">
+                {previewNotice.content}
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
