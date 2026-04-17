@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { buildSecondaryAiIntro, buildSecondaryAiReply } from '../../services/secondaryAiDemo';
 
 interface MobileOfficialWritingProps {
   onBack: () => void;
@@ -21,10 +22,9 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
   const [messages, setMessages] = useState<Message[]>([{
     id: 1,
     role: 'ai',
-    content: '您好！我是公文写作助手。请告诉我您需要撰写的文稿类型、主要内容要点，我可以为您生成初稿或润色文章。'
+    content: buildSecondaryAiIntro('writing')
   }]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
@@ -32,25 +32,23 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
     if (scrollBottomRef.current) {
       scrollBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSendMessage = (text: string = inputMessage) => {
     if (!text.trim()) return;
 
-    const newUserMsg: Message = { id: Date.now(), role: 'user', content: text };
-    setMessages(prev => [...prev, newUserMsg]);
+    const timestamp = Date.now();
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
     setInputMessage('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
+    setMessages(prev => [
+      ...prev,
+      newUserMsg,
+      {
+        id: timestamp + 1,
         role: 'ai',
-        content: `收到您的请求："${text}"。\n\n（这里是写作助手的模拟回复。在实际系统中，这里将连接后端大模型API，根据上下文生成针对性的回答。）`
-      }]);
-    }, 1500);
+        content: buildSecondaryAiReply('writing', text),
+      },
+    ]);
   };
 
   const suggestedQuestions = [
@@ -128,23 +126,6 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
           </div>
         ))}
 
-        {isTyping && (
-          <div className="flex gap-3">
-            <Avatar className="w-8 h-8 shrink-0 bg-[#19B172]">
-              <AvatarFallback>
-                <Bot className="w-4 h-4 text-white" />
-              </AvatarFallback>
-            </Avatar>
-            <Card className="inline-block bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-              <div className="p-3 flex items-center gap-1">
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </Card>
-          </div>
-        )}
-
         <div ref={scrollBottomRef} />
       </div>
 
@@ -199,7 +180,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
           />
           <Button
             onClick={() => handleSendMessage()}
-            disabled={!inputMessage.trim() || isTyping}
+            disabled={!inputMessage.trim()}
             className="h-[44px] px-4 bg-[#19B172] hover:bg-[#15965f] text-white shrink-0"
           >
             <Send className="w-5 h-5" />
