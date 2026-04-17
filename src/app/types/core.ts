@@ -154,6 +154,22 @@ export interface Notification {
   attachments?: { name: string; size: string }[];
 }
 
+export interface KnowledgeEntry {
+  id: string;
+  title: string;
+  type: 'document' | 'meeting' | 'image' | 'article' | string;
+  category: string;
+  summary: string;
+  content: string;
+  size?: string;
+  uploadDate: string;
+  author: string;
+  tags: string[];
+  relatedType?: string;
+  relatedId?: string;
+  source?: string;
+}
+
 export interface DashboardStats {
   population: number;
   houses: number;

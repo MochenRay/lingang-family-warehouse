@@ -2,6 +2,7 @@
 from app.schemas.conflict import ConflictContextRead, ConflictCreate, ConflictRecordRead, ConflictUpdate
 from app.schemas.grid import GridRead
 from app.schemas.house import HouseCreate, HouseRead, HouseUpdate, HousingHistoryRead
+from app.schemas.knowledge import KnowledgeEntryListRead, KnowledgeEntryRead
 from app.schemas.notice import NoticeCreate, NoticeListRead, NoticeRead
 from app.schemas.person import PersonCreate, PersonRead, PersonUpdate
 from app.schemas.stats import StatsDashboardRead, StatsGridListRead
@@ -33,6 +34,8 @@ __all__ = [
     "HouseRead",
     "HouseUpdate",
     "HousingHistoryRead",
+    "KnowledgeEntryListRead",
+    "KnowledgeEntryRead",
     "NoticeCreate",
     "NoticeListRead",
     "NoticeRead",
