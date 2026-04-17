@@ -15,11 +15,13 @@ if str(CURRENT_DIR) not in sys.path:
 from app.database import engine, init_database
 from app.demo_data import DemoSeedBundle
 from app.demo_data.hero_cases import build_hero_bundle
+from app.demo_data.knowledge import build_knowledge_records
 from app.demo_data.notices import build_notice_records
 from app.demo_data.task_rules import build_task_rule_records
 from app.models.conflict import ConflictRecord
 from app.models.grid import Grid
 from app.models.house import House, HousingHistory
+from app.models.knowledge import KnowledgeRecord
 from app.models.notice import NoticeRecord
 from app.models.person import Person
 from app.models.task_rule import TaskRule
@@ -35,13 +37,14 @@ def build_demo_seed_bundle() -> DemoSeedBundle:
 
     background_bundle = build_background_bundle(hero_bundle, seed=20260415)
     bundle = hero_bundle.extend(background_bundle)
+    bundle.knowledge_records.extend(build_knowledge_records())
     bundle.notices.extend(build_notice_records())
     bundle.task_rules.extend(build_task_rule_records())
     return bundle
 
 
 def purge_existing_data(session: Session) -> None:
-    for model in (TaskRule, NoticeRecord, ConflictRecord, VisitRecord, Person, HousingHistory, House, Grid):
+    for model in (TaskRule, NoticeRecord, KnowledgeRecord, ConflictRecord, VisitRecord, Person, HousingHistory, House, Grid):
         session.exec(delete(model))
     session.commit()
 
@@ -86,6 +89,7 @@ def main() -> None:
         insert_records(session, bundle.people)
         insert_records(session, bundle.visits)
         insert_records(session, bundle.conflicts)
+        insert_records(session, bundle.knowledge_records)
         insert_records(session, bundle.notices)
         insert_records(session, bundle.task_rules)
 

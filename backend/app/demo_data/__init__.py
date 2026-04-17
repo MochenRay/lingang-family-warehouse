@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from app.models.conflict import ConflictRecord
 from app.models.grid import Grid
 from app.models.house import House, HousingHistory
+from app.models.knowledge import KnowledgeRecord
 from app.models.notice import NoticeRecord
 from app.models.person import Person
 from app.models.task_rule import TaskRule
@@ -18,6 +19,7 @@ class DemoSeedBundle:
     people: list[Person] = field(default_factory=list)
     visits: list[VisitRecord] = field(default_factory=list)
     conflicts: list[ConflictRecord] = field(default_factory=list)
+    knowledge_records: list[KnowledgeRecord] = field(default_factory=list)
     notices: list[NoticeRecord] = field(default_factory=list)
     task_rules: list[TaskRule] = field(default_factory=list)
 
@@ -28,6 +30,7 @@ class DemoSeedBundle:
         self.people.extend(other.people)
         self.visits.extend(other.visits)
         self.conflicts.extend(other.conflicts)
+        self.knowledge_records.extend(other.knowledge_records)
         self.notices.extend(other.notices)
         self.task_rules.extend(other.task_rules)
         return self
@@ -40,6 +43,7 @@ class DemoSeedBundle:
             "people": len(self.people),
             "visits": len(self.visits),
             "conflicts": len(self.conflicts),
+            "knowledge_records": len(self.knowledge_records),
             "notices": len(self.notices),
             "task_rules": len(self.task_rules),
         }

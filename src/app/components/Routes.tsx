@@ -79,7 +79,7 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
     
     // 数仓智能体
     case 'knowledge-accumulation':
-      return <KnowledgeAccumulation />;
+      return <KnowledgeAccumulation onRouteChange={onRouteChange} />;
     case 'policy-interpretation':
       return <PolicyInterpretation />;
     case 'document-writing':
