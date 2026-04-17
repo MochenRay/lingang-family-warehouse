@@ -33,4 +33,17 @@ export const mobileContextRepository = {
     }
     return window.localStorage.getItem('mobile_user') || '网格员';
   },
+
+  setCurrentGridSelection(selection: CurrentGridSelection): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem(
+      'current_grid',
+      JSON.stringify({
+        id: selection.id,
+        name: selection.name || DEFAULT_GRID_NAME,
+      }),
+    );
+  },
 };

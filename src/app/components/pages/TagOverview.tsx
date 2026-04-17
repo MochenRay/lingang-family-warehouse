@@ -127,8 +127,7 @@ export function TagOverview() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">标签管理</h2>
           <p className="text-muted-foreground">
-            当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立 mock
-            标签目录。
+            当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立标签目录。
           </p>
         </div>
         <Button

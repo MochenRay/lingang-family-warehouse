@@ -7,6 +7,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { conflictRepository } from '../../services/repositories/conflictRepository';
 import { houseRepository } from '../../services/repositories/houseRepository';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { personRepository } from '../../services/repositories/personRepository';
 import { statsRepository, type StatsGridItem } from '../../services/repositories/statsRepository';
 import { visitRepository } from '../../services/repositories/visitRepository';
@@ -14,34 +15,6 @@ import type { ConflictRecord, House, Person, VisitRecord } from '../../types/cor
 
 interface MobileGridOverviewProps {
   onBack: () => void;
-}
-
-interface GridSelection {
-  id: string;
-  name?: string;
-}
-
-function readCurrentGrid(): GridSelection | null {
-  if (typeof window === 'undefined') {
-    return null;
-  }
-  const raw = window.localStorage.getItem('current_grid');
-  if (!raw) {
-    return null;
-  }
-  try {
-    const parsed = JSON.parse(raw) as GridSelection;
-    return parsed?.id ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCurrentGrid(grid: GridSelection) {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  window.localStorage.setItem('current_grid', JSON.stringify(grid));
 }
 
 function buildAgeBuckets(people: Person[]) {
@@ -112,7 +85,9 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   const [conflicts, setConflicts] = useState<ConflictRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [selectedGridId, setSelectedGridId] = useState<string | null>(() => readCurrentGrid()?.id ?? null);
+  const [selectedGridId, setSelectedGridId] = useState<string | null>(
+    () => mobileContextRepository.getCurrentGridSelection().id ?? null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -155,7 +130,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
 
         const selectedGrid = nextGridStats.grids.find((grid) => grid.id === nextGridId);
         if (selectedGrid) {
-          writeCurrentGrid({ id: selectedGrid.id, name: selectedGrid.name });
+          mobileContextRepository.setCurrentGridSelection({
+            id: selectedGrid.id,
+            name: selectedGrid.name,
+          });
         }
       } catch (loadError) {
         if (!cancelled) {
