@@ -1,13 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { 
-  Sparkles, 
   Send, 
   Paperclip, 
   Bot, 
   FileText, 
-  Search, 
-  BarChart, 
-  FileEdit,
   BookOpen,
   PenTool,
   PieChart
@@ -18,6 +14,11 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
+import {
+  buildSecondaryAiIntro,
+  buildSecondaryAiReply,
+  type SecondaryAiKind,
+} from '../../services/secondaryAiDemo';
 
 // --- Shared Types & Mock Data ---
 
@@ -34,7 +35,7 @@ interface SmartChatProps {
   suggestedQuestions: string[];
   initialMessages: Message[];
   placeholder: string;
-  agentName?: string;
+  demoKind: SecondaryAiKind;
 }
 
 // --- Base Component ---
@@ -46,36 +47,33 @@ function BaseSmartChat({
   suggestedQuestions, 
   initialMessages,
   placeholder,
-  agentName = "智能助手"
+  demoKind
 }: SmartChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollBottomRef.current) {
       scrollBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSendMessage = (text: string = inputMessage) => {
     if (!text.trim()) return;
-    
-    const newUserMsg: Message = { id: Date.now(), role: 'user', content: text };
-    setMessages(prev => [...prev, newUserMsg]);
-    setInputMessage('');
-    setIsTyping(true);
 
-    // Simulate AI response
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
+    const timestamp = Date.now();
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
+    setInputMessage('');
+    setMessages(prev => [
+      ...prev,
+      newUserMsg,
+      {
+        id: timestamp + 1,
         role: 'ai',
-        content: `收到您的请求：“${text}”。\n\n（这里是${agentName}的模拟回复。在实际系统中，这里将连接后端大模型API，根据上下文生成针对性的回答。）`
-      }]);
-    }, 1500);
+        content: buildSecondaryAiReply(demoKind, text),
+      },
+    ]);
   };
 
   return (
@@ -142,18 +140,6 @@ function BaseSmartChat({
                   </div>
                 </div>
               ))}
-              {isTyping && (
-                <div className="flex gap-3">
-                  <Avatar className="w-8 h-8 bg-[rgba(78,134,223,0.15)]">
-                    <AvatarFallback className="bg-transparent"><Bot className="w-5 h-5 text-[#4E86DF]" /></AvatarFallback>
-                  </Avatar>
-                  <div className="bg-[var(--color-neutral-02)] px-4 py-3 rounded-lg rounded-tl-sm border border-[var(--color-neutral-03)] shadow-sm flex items-center gap-1">
-                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0s'}}></span>
-                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></span>
-                    <span className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{animationDelay: '0.4s'}}></span>
-                  </div>
-                </div>
-              )}
               <div ref={scrollBottomRef} />
             </div>
           </ScrollArea>
@@ -222,13 +208,13 @@ export function PolicyInterpretation() {
     <BaseSmartChat
       title="政策解读"
       description="基于本地政策库的智能检索与解读助手"
-      agentName="政策专家"
+      demoKind="policy"
       sidebarContent={sidebar}
       placeholder="请输入您想查询的政策问题，例如：最新的高龄津贴发放标准是什么？"
       initialMessages={[{
         id: 1,
         role: 'ai',
-        content: '您好！我是政策解读助手。我已学习了最新的民政、社保、医保等领域政策文件，可以为您提供精准的政策依据和解读。'
+        content: buildSecondaryAiIntro('policy')
       }]}
       suggestedQuestions={[
         "临港区最新的低保申请条件是什么？",
@@ -267,13 +253,13 @@ export function OfficialDocumentWriting() {
     <BaseSmartChat
       title="公文写作"
       description="辅助生成各类社区工作文档、报告与通知"
-      agentName="写作助手"
+      demoKind="writing"
       sidebarContent={sidebar}
       placeholder="请输入您的写作需求，例如：帮我写一份关于社区环境整治的总结报告。"
       initialMessages={[{
         id: 1,
         role: 'ai',
-        content: '您好！我是公文写作助手。请告诉我您需要撰写的文稿类型、主要内容要点，我可以为您生成初稿或润色文章。'
+        content: buildSecondaryAiIntro('writing')
       }]}
       suggestedQuestions={[
         "生成一份季度社区网格化管理工作总结",
@@ -312,13 +298,13 @@ export function SmartQuery() {
     <BaseSmartChat
       title="智能问数"
       description="通过自然语言查询、统计和分析辖区数据"
-      agentName="数据分析师"
+      demoKind="query"
       sidebarContent={sidebar}
       placeholder="请输入您想分析的数据问题，例如：统计本月新增流动人口数量。"
       initialMessages={[{
         id: 1,
         role: 'ai',
-        content: '您好！我是数据分析助手。我已连接家庭数仓核心数据库，您可以直接问我数据统计、趋势分析等问题。'
+        content: buildSecondaryAiIntro('query')
       }]}
       suggestedQuestions={[
         "统计辖区内60岁以上老人的总数及占比",

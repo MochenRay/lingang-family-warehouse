@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { buildSecondaryAiIntro, buildSecondaryAiReply } from '../../services/secondaryAiDemo';
 
 interface MobileSmartQueryProps {
   onBack: () => void;
@@ -21,10 +22,9 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
   const [messages, setMessages] = useState<Message[]>([{
     id: 1,
     role: 'ai',
-    content: '您好！我是智能问数助手。您可以用自然语言向我提问，我会从数据仓库中查询并分析相关数据，为您生成可视化结果。'
+    content: buildSecondaryAiIntro('query')
   }]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
@@ -32,25 +32,23 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
     if (scrollBottomRef.current) {
       scrollBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSendMessage = (text: string = inputMessage) => {
     if (!text.trim()) return;
 
-    const newUserMsg: Message = { id: Date.now(), role: 'user', content: text };
-    setMessages(prev => [...prev, newUserMsg]);
+    const timestamp = Date.now();
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
     setInputMessage('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
+    setMessages(prev => [
+      ...prev,
+      newUserMsg,
+      {
+        id: timestamp + 1,
         role: 'ai',
-        content: `收到您的请求："${text}"。\n\n（这里是数据分析助手的模拟回复。在实际系统中，这里将连接后端大模型API和数据仓库，根据查询生成数据分析结果和可视化图表。）`
-      }]);
-    }, 1500);
+        content: buildSecondaryAiReply('query', text),
+      },
+    ]);
   };
 
   const suggestedQuestions = [
@@ -128,23 +126,6 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
           </div>
         ))}
 
-        {isTyping && (
-          <div className="flex gap-3">
-            <Avatar className="w-8 h-8 shrink-0 bg-[#8B3BCC]">
-              <AvatarFallback>
-                <Bot className="w-4 h-4 text-white" />
-              </AvatarFallback>
-            </Avatar>
-            <Card className="inline-block bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-              <div className="p-3 flex items-center gap-1">
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </Card>
-          </div>
-        )}
-
         <div ref={scrollBottomRef} />
       </div>
 
@@ -199,7 +180,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
           />
           <Button
             onClick={() => handleSendMessage()}
-            disabled={!inputMessage.trim() || isTyping}
+            disabled={!inputMessage.trim()}
             className="h-[44px] px-4 bg-[#8B3BCC] hover:bg-[#7432a8] text-white shrink-0"
           >
             <Send className="w-5 h-5" />

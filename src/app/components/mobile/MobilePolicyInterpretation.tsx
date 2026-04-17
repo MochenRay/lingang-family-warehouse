@@ -6,6 +6,7 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { buildSecondaryAiIntro, buildSecondaryAiReply } from '../../services/secondaryAiDemo';
 
 interface MobilePolicyInterpretationProps {
   onBack: () => void;
@@ -21,10 +22,9 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
   const [messages, setMessages] = useState<Message[]>([{
     id: 1,
     role: 'ai',
-    content: '您好！我是政策解读助手。我已学习了最新的民政、社保、医保等领域政策文件，可以为您提供精准的政策依据和解读。'
+    content: buildSecondaryAiIntro('policy')
   }]);
   const [inputMessage, setInputMessage] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
@@ -32,25 +32,23 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
     if (scrollBottomRef.current) {
       scrollBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isTyping]);
+  }, [messages]);
 
   const handleSendMessage = (text: string = inputMessage) => {
     if (!text.trim()) return;
 
-    const newUserMsg: Message = { id: Date.now(), role: 'user', content: text };
-    setMessages(prev => [...prev, newUserMsg]);
+    const timestamp = Date.now();
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
     setInputMessage('');
-    setIsTyping(true);
-
-    // Simulate AI response
-    setTimeout(() => {
-      setIsTyping(false);
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1,
+    setMessages(prev => [
+      ...prev,
+      newUserMsg,
+      {
+        id: timestamp + 1,
         role: 'ai',
-        content: `收到您的请求："${text}"。\n\n（这里是政策专家的模拟回复。在实际系统中，这里将连接后端大模型API，根据上下文生成针对性的回答。）`
-      }]);
-    }, 1500);
+        content: buildSecondaryAiReply('policy', text),
+      },
+    ]);
   };
 
   const suggestedQuestions = [
@@ -128,23 +126,6 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
           </div>
         ))}
 
-        {isTyping && (
-          <div className="flex gap-3">
-            <Avatar className="w-8 h-8 shrink-0 bg-[#4E86DF]">
-              <AvatarFallback>
-                <Bot className="w-4 h-4 text-white" />
-              </AvatarFallback>
-            </Avatar>
-            <Card className="inline-block bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-              <div className="p-3 flex items-center gap-1">
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                <div className="w-2 h-2 bg-[var(--color-neutral-08)] rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-              </div>
-            </Card>
-          </div>
-        )}
-
         <div ref={scrollBottomRef} />
       </div>
 
@@ -199,7 +180,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
           />
           <Button
             onClick={() => handleSendMessage()}
-            disabled={!inputMessage.trim() || isTyping}
+            disabled={!inputMessage.trim()}
             className="h-[44px] px-4 bg-[#4E86DF] hover:bg-[#3d6fc7] text-white shrink-0"
           >
             <Send className="w-5 h-5" />
