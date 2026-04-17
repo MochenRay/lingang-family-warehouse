@@ -4,6 +4,9 @@
 > 验证分支：`task/t45-phase4-verification`
 > 验证基线：`913f229`
 
+> 更新说明：本文记录的是 `T45` 时点的“不通过”判断。
+> 该判断已在 `T46` 的残余页收口后被补平；当前最新结论请以 [phase4-closeout-checklist.md](</Users/rayli/Desktop/临港家庭数仓 /docs/phase4-closeout-checklist.md>) 为准。
+
 ## 结论
 
 `T45` 已完成，但 `Phase 4` 当前**不通过**，项目**暂不进入 `Phase 5`**。

@@ -1,0 +1,22 @@
+{
+  "base_url": "http://127.0.0.1:4173",
+  "results": [
+    {
+      "name": "desktop-batch-import",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t46-artifacts/desktop-batch-import.png"
+    },
+    {
+      "name": "mobile-scan-sample",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t46-artifacts/mobile-scan-sample.png"
+    },
+    {
+      "name": "mobile-house-collect",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t46-artifacts/mobile-house-collect.png"
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}

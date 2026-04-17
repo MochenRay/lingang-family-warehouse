@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { ChevronLeft, Flashlight, Image as ImageIcon, Scan, Text, Camera } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronLeft, Flashlight, Image as ImageIcon, Scan, Text } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 import { toast } from 'sonner';
 
@@ -11,21 +11,11 @@ interface MobileScanProps {
 export function MobileScan({ onBack, onResult }: MobileScanProps) {
   const [mode, setMode] = useState<'scan' | 'ocr'>('scan');
   const [flashlight, setFlashlight] = useState(false);
-  const [scanning, setScanning] = useState(true);
 
-  // 模拟扫描动画和结果
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (scanning) {
-      // 仅用于演示，实际不会自动触发结果，除非模拟
-      // timer = setTimeout(() => {
-      //   setScanning(false);
-      //   // 模拟成功震动
-      //   if (navigator.vibrate) navigator.vibrate(200);
-      // }, 5000);
-    }
-    return () => clearTimeout(timer);
-  }, [scanning]);
+  const handleSampleResult = (result: string, type: 'person' | 'house' | 'ocr', message: string) => {
+    toast.success(message);
+    onResult?.(result, type);
+  };
 
   return (
     <div className="h-full bg-black flex flex-col relative overflow-hidden">
@@ -49,7 +39,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
             {mode === 'scan' ? '扫一扫' : 'OCR识别'}
           </div>
           <button 
-            onClick={() => toast.info('当前版本暂不支持从相册导入，请使用扫码框演示入口')}
+            onClick={() => toast.info('当前入口以现场扫码核验为主，相册导入暂未开放。')}
             className="w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/40"
           >
             <ImageIcon className="w-5 h-5" />
@@ -75,11 +65,11 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
             <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-blue-500 rounded-br-sm"></div>
 
             {/* 扫描线动画 */}
-            <div className={`absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-scan ${scanning ? '' : 'hidden'}`}></div>
+            <div className="absolute left-0 right-0 h-1 bg-gradient-to-r from-transparent via-blue-500 to-transparent shadow-[0_0_10px_rgba(59,130,246,0.5)] animate-scan"></div>
 
             {/* 提示文字 */}
             <div className="absolute bottom-4 left-0 right-0 text-center text-white/70 text-xs">
-              {mode === 'scan' ? '对准二维码/条形码，自动扫描' : '对准身份证/房产证，自动识别'}
+              {mode === 'scan' ? '对准二维码即可核验，也可使用下方样例入口直接验证落点' : '可先用样例入口查看 OCR 识别后的回填链路'}
             </div>
           </div>
           
@@ -89,6 +79,39 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
 
         {/* 下半遮罩 */}
         <div className="flex-1 bg-black/50 backdrop-blur-[1px] flex flex-col items-center pt-8">
+          <div className="w-full max-w-[280px] mb-6 px-4">
+            <div className="rounded-2xl border border-white/10 bg-black/30 backdrop-blur-md p-3 text-white/80">
+              <p className="text-xs leading-5">
+                当前页用于演示扫码核验的落点。正式识别结果会跳回居民、房屋或采集页继续处理。
+              </p>
+              <div className="mt-3 grid grid-cols-1 gap-2">
+                {mode === 'scan' ? (
+                  <>
+                    <button
+                      onClick={() => handleSampleResult('p_hero_061', 'person', '已识别居民二维码，正在打开居民详情')}
+                      className="rounded-xl bg-white/10 px-3 py-2 text-left text-sm text-white hover:bg-white/20 transition-colors"
+                    >
+                      居民二维码样例
+                    </button>
+                    <button
+                      onClick={() => handleSampleResult('h_hero_008', 'house', '已识别房屋二维码，正在打开房屋详情')}
+                      className="rounded-xl bg-white/10 px-3 py-2 text-left text-sm text-white hover:bg-white/20 transition-colors"
+                    >
+                      房屋二维码样例
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => handleSampleResult('collect-person', 'ocr', '已打开证件识别后的信息采集入口')}
+                    className="rounded-xl bg-white/10 px-3 py-2 text-left text-sm text-white hover:bg-white/20 transition-colors"
+                  >
+                    证件 OCR 样例
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
            {/* 手电筒开关 */}
            <button 
              onClick={() => setFlashlight(!flashlight)}

@@ -1,13 +1,5 @@
-import { useState } from 'react';
-import { 
-  ArrowLeft, 
-  Camera, 
-  MapPin, 
-  QrCode, 
-  Save,
-  Home as HomeIcon,
-  ChevronLeft
-} from 'lucide-react';
+import { useRef, useState } from 'react';
+import { Camera, MapPin, QrCode, Save, ChevronLeft } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -16,15 +8,32 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { MobileStatusBar } from './MobileStatusBar';
+import { toast } from 'sonner';
+import { houseRepository } from '../../services/repositories/houseRepository';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
+import type { HouseType } from '../../types/core';
 
 interface HouseCollectProps {
   onBack: () => void;
 }
 
+function mapUsageToHouseType(usage: string): HouseType {
+  if (usage === '住宅') {
+    return '自住';
+  }
+  if (usage === '商业' || usage === '办公') {
+    return '经营';
+  }
+  return '其他';
+}
+
 export function HouseCollect({ onBack }: HouseCollectProps) {
   const [photos, setPhotos] = useState<string[]>([]);
   const [locationObtained, setLocationObtained] = useState(false);
-  
+  const [locationSummary, setLocationSummary] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [formData, setFormData] = useState({
     houseNumber: '',
     district: '环翠区',
@@ -43,43 +52,100 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
   });
 
   const handlePhotoCapture = () => {
-    // Mock添加照片
-    const mockPhoto = `https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400`;
-    setPhotos([...photos, mockPhoto]);
+    fileInputRef.current?.click();
+  };
+
+  const handlePhotoSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    if (!files.length) {
+      return;
+    }
+    const nextPhotos = files
+      .slice(0, Math.max(0, 9 - photos.length))
+      .map((file) => URL.createObjectURL(file));
+    setPhotos((prev) => [...prev, ...nextPhotos].slice(0, 9));
+    event.target.value = '';
   };
 
   const handleGetLocation = () => {
-    // Mock获取定位
-    setLocationObtained(true);
-    setTimeout(() => {
-      alert('定位成功\n经度: 122.1215\n纬度: 37.5132\n地址: 威海市环翠区竹岛街道');
-    }, 500);
+    if (!navigator.geolocation) {
+      toast.info('当前环境不支持定位，请继续手工补充地址信息');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLocationObtained(true);
+        setLocationSummary(
+          `经度 ${position.coords.longitude.toFixed(4)}，纬度 ${position.coords.latitude.toFixed(4)}`,
+        );
+        toast.success('已记录当前定位');
+      },
+      () => {
+        toast.info('未获取到定位权限，请继续手工补充地址信息');
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 8000,
+      },
+    );
   };
 
   const handleScanQR = () => {
-    // Mock扫码
-    const mockNumber = 'HC-ZD-001-1-101';
-    setFormData({ ...formData, houseNumber: mockNumber });
+    const buildingCode = formData.building.replace(/\D/g, '') || '00';
+    const unitCode = formData.unit.replace(/\D/g, '') || '00';
+    const roomCode = formData.room.replace(/\D/g, '') || '000';
+    const suggestedNumber = `HC-${buildingCode.padStart(2, '0')}-${unitCode.padStart(2, '0')}-${roomCode.padStart(3, '0')}`;
+    setFormData({ ...formData, houseNumber: suggestedNumber });
+    toast.success('已生成建议房屋编号，可根据现场门牌再调整');
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.houseNumber || !formData.community || !formData.building) {
-      alert('请填写必填项！');
+      toast.error('请填写房屋编号、社区和楼栋');
       return;
     }
-    alert('房屋信息提交成功！\n审核通过后将同步到系统');
-    onBack();
+
+    const gridId = mobileContextRepository.getCurrentGridSelection().id || 'g1';
+    const address = `${formData.community}${formData.building}${formData.unit || ''}${formData.room || ''}`;
+
+    setIsSubmitting(true);
+    try {
+      await houseRepository.addHouse({
+        gridId,
+        address,
+        communityName: formData.community,
+        building: formData.building,
+        unit: formData.unit || '-',
+        room: formData.room || formData.houseNumber,
+        ownerName: '待核实',
+        area: formData.area || '0',
+        type: mapUsageToHouseType(formData.usage),
+        memberCount: 0,
+        tags: locationObtained ? ['移动采集', '已定位'] : ['移动采集'],
+        updatedAt: new Date().toISOString(),
+        houseType: '普通住宅',
+        occupancyStatus: '其他',
+        residenceType: '自住',
+      });
+      toast.success('房屋信息已登记到台账，后续可在房屋管理页继续补充');
+      onBack();
+    } catch (error) {
+      console.error('Failed to submit house collect form', error);
+      toast.error('提交失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
     <div className="h-full bg-background pb-20 overflow-y-auto">
-      {/* 顶部导航栏 */}
       <div className="sticky top-0 z-10 bg-card border-b border-border">
         <MobileStatusBar variant="light" />
         <div className="px-4 py-3 flex items-center gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onBack}
             className="h-8 w-8"
           >
@@ -93,7 +159,6 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
       </div>
 
       <div className="p-4 space-y-4">
-        {/* 房屋编号 */}
         <Card>
           <CardContent className="p-4">
             <Label className="text-sm font-semibold mb-3 block">
@@ -101,32 +166,31 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
             </Label>
             <div className="flex gap-2">
               <Input
-                placeholder="请输入或扫码获取"
+                placeholder="请输入或生成建议编号"
                 value={formData.houseNumber}
                 onChange={(e) => setFormData({ ...formData, houseNumber: e.target.value })}
                 className="flex-1"
               />
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="icon"
                 onClick={handleScanQR}
               >
                 <QrCode className="w-5 h-5" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">示例：HC-ZD-001-1-101</p>
+            <p className="text-xs text-gray-500 mt-2">建议格式：HC-楼栋-单元-房号，可根据现场二维码或门牌调整</p>
           </CardContent>
         </Card>
 
-        {/* 位置信息 */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-sm font-semibold">
                 位置信息 <span className="text-red-500">*</span>
               </Label>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleGetLocation}
                 className={locationObtained ? 'bg-green-50 text-green-700 border-green-300' : ''}
@@ -137,6 +201,11 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
             </div>
 
             <div className="space-y-3">
+              {locationSummary && (
+                <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                  {locationSummary}
+                </div>
+              )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
                   <Label className="text-xs text-gray-600 mb-1 block">区/县</Label>
@@ -219,7 +288,6 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           </CardContent>
         </Card>
 
-        {/* 房屋属性 */}
         <Card>
           <CardContent className="p-4">
             <Label className="text-sm font-semibold mb-3 block">房屋属性</Label>
@@ -292,7 +360,6 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           </CardContent>
         </Card>
 
-        {/* 现场照片 */}
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
@@ -301,12 +368,21 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                 {photos.length}/9
               </Badge>
             </div>
-            
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={handlePhotoSelect}
+            />
+
             <div className="grid grid-cols-3 gap-2">
               {photos.map((photo, index) => (
                 <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
                   <img src={photo} alt="" className="w-full h-full object-cover" />
-                  <button 
+                  <button
                     onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
                     className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
                   >
@@ -314,22 +390,21 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   </button>
                 </div>
               ))}
-              
+
               {photos.length < 9 && (
                 <button
                   onClick={handlePhotoCapture}
                   className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
                 >
                   <Camera className="w-8 h-8 mb-1" />
-                  <span className="text-xs">拍照</span>
+                  <span className="text-xs">上传照片</span>
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-2">建议拍摄：门牌号、外观、内部</p>
+            <p className="text-xs text-gray-500 mt-2">建议补充门牌号、房屋外观与入户口照片</p>
           </CardContent>
         </Card>
 
-        {/* 备注 */}
         <Card>
           <CardContent className="p-4">
             <Label className="text-sm font-semibold mb-2 block">备注说明</Label>
@@ -342,7 +417,6 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           </CardContent>
         </Card>
 
-        {/* 提交按钮 */}
         <div className="flex gap-3 pt-2">
           <Button
             variant="outline"
@@ -354,9 +428,10 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           <Button
             className="flex-1 h-12 bg-primary hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
+            disabled={isSubmitting}
           >
             <Save className="w-5 h-5 mr-2" />
-            提交审核
+            {isSubmitting ? '提交中...' : '提交审核'}
           </Button>
         </div>
       </div>
