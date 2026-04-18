@@ -1,0 +1,13 @@
+node_modules
+.next
+.git
+.DS_Store
+.claude
+.obsidian
+tmp
+docs/artifacts
+backend/.venv
+backend/__pycache__
+**/__pycache__
+*.pyc
+*.log
