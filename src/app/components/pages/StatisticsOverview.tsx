@@ -180,6 +180,37 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
     },
   ];
 
+  const recommendedJourney = [
+    {
+      step: '01',
+      title: '先看驾驶舱',
+      detail: '先建立辖区全景、风险压力和执行重点的第一印象。',
+      action: '留在当前页',
+      route: 'statistics-overview',
+    },
+    {
+      step: '02',
+      title: '再看人口与房屋',
+      detail: '从画像、标签、人房关系切入，理解对象和空间怎么被治理。',
+      action: '进入人口管理',
+      route: 'population',
+    },
+    {
+      step: '03',
+      title: '再看矛盾处置',
+      detail: '这里最容易体现 AI 如何参与判断、推进和回访闭环。',
+      action: '进入矛盾调解',
+      route: 'conflict-management',
+    },
+    {
+      step: '04',
+      title: '最后体验移动端',
+      detail: '把管理端看到的重点对象和待办，落到一线执行工作台。',
+      action: '打开移动端',
+      route: 'mobile',
+    },
+  ];
+
   if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin" /></div>;
 
   return (
@@ -188,10 +219,10 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">综合统计驾驶舱</h1>
-          <p className="text-muted-foreground">辖区人口、房屋及风险态势的一站式数据概览。</p>
+          <p className="text-muted-foreground">网格治理智能中台的主入口，建议先从这里建立全景，再进入人口、房屋、矛盾和移动端主链。</p>
         </div>
         <div className="flex gap-2">
-           <Button onClick={() => onRouteChange?.('mobile')}>进入移动端工作台</Button>
+           <Button onClick={() => onRouteChange?.('mobile')}>体验移动端主链</Button>
            <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
              <SelectTrigger className="w-[120px]">
                <SelectValue placeholder="时间范围" />
@@ -202,9 +233,60 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                <SelectItem value="quarter">本季度</SelectItem>
              </SelectContent>
            </Select>
-           <Button variant="outline" onClick={handleExportReport}>导出报表</Button>
+           <Button variant="outline" onClick={handleExportReport}>导出驾驶舱快照</Button>
         </div>
       </div>
+
+      <Card className="overflow-hidden border border-[rgba(78,134,223,0.22)] bg-[linear-gradient(135deg,rgba(39,97,203,0.08),rgba(78,134,223,0.02))]">
+        <CardContent className="p-0">
+          <div className="grid grid-cols-1 xl:grid-cols-[1.15fr,1fr]">
+            <div className="border-b border-[rgba(78,134,223,0.14)] px-6 py-6 xl:border-b-0 xl:border-r">
+              <div className="flex items-center gap-2 text-sm font-semibold text-[#2761CB]">
+                <Sparkles className="w-4 h-4" />
+                推荐浏览路径
+              </div>
+              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">
+                第一次打开，建议按这条线看完整个 Demo
+              </h2>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-neutral-08)]">
+                这不是一个靠单页炫技的作品，而是一套“驾驶舱判断 → 对象台账 → 处置闭环 → 移动端执行”的治理工作流。先看主链，再去点第二圈和示例页，理解成本最低。
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Button onClick={() => onRouteChange?.('population')}>
+                  从人口管理开始
+                </Button>
+                <Button variant="outline" onClick={() => onRouteChange?.('mobile')}>
+                  直接体验移动端
+                </Button>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2">
+              {recommendedJourney.map((item, index) => (
+                <button
+                  key={item.step}
+                  type="button"
+                  onClick={() => onRouteChange?.(item.route)}
+                  className={`group flex flex-col items-start gap-3 px-5 py-5 text-left transition-colors hover:bg-[rgba(255,255,255,0.52)] ${
+                    index % 2 === 0 ? 'md:border-r border-[rgba(78,134,223,0.12)]' : ''
+                  } ${index < 2 ? 'border-b border-[rgba(78,134,223,0.12)]' : ''}`}
+                >
+                  <div className="inline-flex items-center rounded-full border border-[rgba(39,97,203,0.18)] bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#2761CB]">
+                    {item.step}
+                  </div>
+                  <div>
+                    <div className="text-base font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
+                    <div className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">{item.detail}</div>
+                  </div>
+                  <div className="inline-flex items-center gap-1 text-sm font-medium text-[#2761CB]">
+                    {item.action}
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 1. 核心指标卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
