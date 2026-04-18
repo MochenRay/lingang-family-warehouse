@@ -167,6 +167,24 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       ]
     : [];
 
+  const guidedJourney = [
+    {
+      title: '先看待办清单',
+      detail: '最快理解一线人员今天要处理什么。',
+      route: 'tasks?mode=today',
+    },
+    {
+      title: '再点人口台账',
+      detail: '从人物详情、画像、走访入口进入主链。',
+      route: 'people',
+    },
+    {
+      title: '最后用扫码/房屋入口看现场',
+      detail: '体验从对象到现场核验的移动端链路。',
+      route: 'scan',
+    },
+  ];
+
   return (
     <MobileLayout currentRoute="home" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
       {/* 顶部渐变背景区域 */}
@@ -253,6 +271,38 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       </div>
 
       <div className="px-4 pt-4 pb-2">
+        <div className="mb-6">
+          <Card className="border-[rgba(78,134,223,0.2)] bg-[linear-gradient(135deg,rgba(39,97,203,0.08),rgba(78,134,223,0.02))] shadow-sm overflow-hidden">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#4E86DF]">
+                <Sparkles className="w-4 h-4" />
+                首次体验建议
+              </div>
+              <div className="mt-2 text-sm leading-6 text-[var(--color-neutral-10)]">
+                如果你是第一次打开移动端，建议先从待办清单进入，再看人口台账，最后体验扫码核验或房屋台账，这样最容易理解一线执行链路。
+              </div>
+              <div className="mt-4 space-y-2">
+                {guidedJourney.map((item, index) => (
+                  <button
+                    key={item.title}
+                    type="button"
+                    onClick={() => onRouteChange(item.route)}
+                    className="flex w-full items-start gap-3 rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
+                  >
+                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.12)] text-xs font-semibold text-[#2761CB]">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
+                      <div className="mt-0.5 text-xs text-[var(--color-neutral-08)]">{item.detail}</div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         {/* 快捷功能 */}
         <div className="mb-6">
           <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3">快捷功能</h3>

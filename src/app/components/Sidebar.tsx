@@ -223,6 +223,16 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
 
       {/* 底部折叠按钮 */}
       <div className="p-3 border-t border-gray-200 dark:border-[var(--color-neutral-03)] shrink-0 space-y-2">
+        {!collapsed && (
+          <div className="rounded-xl border border-[rgba(78,134,223,0.18)] bg-[rgba(78,134,223,0.06)] px-3 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4E86DF]">
+              建议这样看
+            </div>
+            <div className="mt-2 text-xs leading-5 text-[var(--color-neutral-09)]">
+              先看驾驶舱，再进人口管理、房屋管理和矛盾调解，最后切到移动端工作台体验一线执行链路。
+            </div>
+          </div>
+        )}
         <Button
           variant="outline"
           size="sm"
@@ -230,7 +240,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
           className="w-full justify-center bg-blue-50 dark:bg-[var(--color-neutral-02)] text-blue-600 dark:text-[var(--color-brand-primary-hover)] border-blue-200 dark:border-[var(--color-brand-primary)] hover:bg-blue-100 dark:hover:bg-[var(--color-neutral-03)]"
         >
           <Smartphone className={cn("shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
-          {!collapsed && <span className="ml-2 text-xs">移动端小程序入口（演示用）</span>}
+          {!collapsed && <span className="ml-2 text-xs">打开移动端工作台</span>}
         </Button>
 
       </div>
