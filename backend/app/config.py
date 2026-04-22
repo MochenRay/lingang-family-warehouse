@@ -16,9 +16,15 @@ class Settings(BaseSettings):
     )
     database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
 
-    llm_model: str = Field(default="", alias="LLM_MODEL")
-    llm_base_url: str = Field(default="", alias="LLM_BASE_URL")
+    ai_enabled: bool = Field(default=True, alias="AI_ENABLED")
+    llm_model: str = Field(default="gemini-3.1-flash-lite", alias="LLM_MODEL")
+    llm_fallback_model: str = Field(default="gemini-2.5-flash-lite", alias="LLM_FALLBACK_MODEL")
+    llm_base_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai/",
+        alias="LLM_BASE_URL",
+    )
     llm_api_key: str = Field(default="", alias="LLM_API_KEY")
+    llm_timeout_seconds: float = Field(default=25.0, alias="LLM_TIMEOUT_SECONDS")
 
     cors_origins_raw: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
@@ -47,7 +53,7 @@ class Settings(BaseSettings):
 
     @property
     def llm_configured(self) -> bool:
-        return bool(self.llm_model and self.llm_api_key)
+        return bool(self.llm_model and self.llm_base_url and self.llm_api_key)
 
 
 @lru_cache

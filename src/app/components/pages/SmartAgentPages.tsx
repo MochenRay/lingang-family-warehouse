@@ -6,7 +6,8 @@ import {
   FileText, 
   BookOpen,
   PenTool,
-  PieChart
+  PieChart,
+  Loader2,
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
@@ -19,6 +20,7 @@ import {
   buildSecondaryAiReply,
   type SecondaryAiKind,
 } from '../../services/secondaryAiDemo';
+import { secondaryAiRepository } from '../../services/repositories/secondaryAiRepository';
 
 // --- Shared Types & Mock Data ---
 
@@ -36,6 +38,7 @@ interface SmartChatProps {
   initialMessages: Message[];
   placeholder: string;
   demoKind: SecondaryAiKind;
+  apiKind?: SecondaryAiKind;
 }
 
 // --- Base Component ---
@@ -47,10 +50,12 @@ function BaseSmartChat({
   suggestedQuestions, 
   initialMessages,
   placeholder,
-  demoKind
+  demoKind,
+  apiKind,
 }: SmartChatProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
+  const [sending, setSending] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -59,21 +64,32 @@ function BaseSmartChat({
     }
   }, [messages]);
 
-  const handleSendMessage = (text: string = inputMessage) => {
-    if (!text.trim()) return;
+  const handleSendMessage = async (text: string = inputMessage) => {
+    const nextPrompt = text.trim();
+    if (!nextPrompt || sending) return;
 
     const timestamp = Date.now();
-    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: nextPrompt };
     setInputMessage('');
-    setMessages(prev => [
-      ...prev,
-      newUserMsg,
-      {
-        id: timestamp + 1,
-        role: 'ai',
-        content: buildSecondaryAiReply(demoKind, text),
-      },
-    ]);
+    setMessages(prev => [...prev, newUserMsg]);
+    setSending(true);
+
+    try {
+      const content = apiKind
+        ? (await secondaryAiRepository.sendMessage(apiKind, nextPrompt)).content
+        : buildSecondaryAiReply(demoKind, nextPrompt);
+
+      setMessages(prev => [
+        ...prev,
+        {
+          id: timestamp + 1,
+          role: 'ai',
+          content,
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -103,7 +119,9 @@ function BaseSmartChat({
                   <div 
                     key={i} 
                     className="text-xs p-2 bg-[var(--color-neutral-03)] rounded hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] cursor-pointer text-[var(--color-neutral-10)] transition-colors"
-                    onClick={() => handleSendMessage(q)}
+                    onClick={() => {
+                      void handleSendMessage(q);
+                    }}
                   >
                     {q}
                   </div>
@@ -154,7 +172,7 @@ function BaseSmartChat({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    handleSendMessage();
+                    void handleSendMessage();
                   }
                 }}
               />
@@ -165,10 +183,12 @@ function BaseSmartChat({
                 <Button 
                   size="icon" 
                   className="h-8 w-8 bg-[#2761CB] hover:bg-[#4E86DF] text-white border-0"
-                  onClick={() => handleSendMessage()}
-                  disabled={!inputMessage.trim()}
+                  onClick={() => {
+                    void handleSendMessage();
+                  }}
+                  disabled={!inputMessage.trim() || sending}
                 >
-                  <Send className="w-4 h-4" />
+                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                 </Button>
               </div>
             </div>
@@ -209,6 +229,7 @@ export function PolicyInterpretation() {
       title="政策解读"
       description="基于本地政策库的智能检索与解读助手"
       demoKind="policy"
+      apiKind="policy"
       sidebarContent={sidebar}
       placeholder="请输入您想查询的政策问题，例如：最新的高龄津贴发放标准是什么？"
       initialMessages={[{
@@ -254,6 +275,7 @@ export function OfficialDocumentWriting() {
       title="公文写作"
       description="辅助生成各类社区工作文档、报告与通知"
       demoKind="writing"
+      apiKind="writing"
       sidebarContent={sidebar}
       placeholder="请输入您的写作需求，例如：帮我写一份关于社区环境整治的总结报告。"
       initialMessages={[{

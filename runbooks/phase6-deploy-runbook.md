@@ -81,8 +81,19 @@ bash scripts/sync_homedata_web.sh /Users/rayli/Desktop/homedata-web
 - `APP_ENV=demo`
 - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
 - `PORT=8000`
+- `AI_ENABLED=true`
+- `LLM_MODEL=gemini-3.1-flash-lite`
+- `LLM_FALLBACK_MODEL=gemini-2.5-flash-lite`
+- `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`
+- `LLM_API_KEY=<Gemini key>`
+- `LLM_TIMEOUT_SECONDS=25`
 
 当前仓库代码会在启动时自动把 Railway 提供的 `postgresql://...` 转成 `postgresql+psycopg://...`，不需要手工改 secret 值。
+
+AI kill switch 约定：
+
+- 需要一键关闭 AI 时，把 `AI_ENABLED=false`
+- 关闭后前端试点页仍可用，但会回到样例安全答复，不再请求真实模型
 
 ### Deploy
 
@@ -164,6 +175,48 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 - `https://homedata.lilei.dev/api/health` 返回健康 JSON
 - `PopulationManagement / HousingManagement / ConflictManagement` 可进入
 - 移动端入口可进入
+
+## 云端数据恢复
+
+当前唯一真相源仍是 `backend/seed.py`，不再发明第二套初始化逻辑。
+
+### Railway 容器内恢复命令
+
+先进入目标 service 容器：
+
+```bash
+railway ssh --project=742fe870-68f0-4753-a8c7-86c87bc91dbf --environment=f2c20f38-d8bd-4d0e-854d-118f4979f219 --service=e6094f88-d376-461c-952b-a486f52f4ee8
+```
+
+容器内执行：
+
+```bash
+cd /app
+python seed.py
+```
+
+成功时应看到：
+
+- `Seed completed.`
+- `people=471`
+- `houses=188`
+- `visits=672`
+- `conflicts=16`
+- `knowledge_records=5`
+- `notices=5`
+- `task_rules=3`
+
+### 恢复后公网验收
+
+```bash
+curl 'https://homedata.lilei.dev/api/people?limit=1'
+curl 'https://homedata.lilei.dev/api/stats/dashboard'
+curl 'https://homedata.lilei.dev/api/knowledge?limit=5'
+curl 'https://homedata.lilei.dev/api/notices?limit=5'
+curl 'https://homedata.lilei.dev/api/task-rules'
+```
+
+如果这些接口重新返回标准演示基线，则说明公网恢复已完成。
 
 ## 故障排查
 
