@@ -1,0 +1,17 @@
+{
+  "base_url": "https://homedata.lilei.dev",
+  "results": [
+    {
+      "name": "free-browse-entry",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t54-artifacts/free-browse-entry.png"
+    },
+    {
+      "name": "directed-demo-mainline",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t54-artifacts/directed-demo-mainline.png"
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}

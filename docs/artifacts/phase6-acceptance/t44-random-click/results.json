@@ -1,0 +1,43 @@
+{
+  "base_url": "https://homedata.lilei.dev",
+  "results": [
+    {
+      "name": "desktop-home",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-home.png"
+    },
+    {
+      "name": "desktop-sidebar-cross-nav",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-sidebar-cross-nav.png"
+    },
+    {
+      "name": "desktop-search-target",
+      "status": "passed",
+      "detail": "搜索结果跳转到 人口管理",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-search-target.png"
+    },
+    {
+      "name": "desktop-search-jump",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-search-jump.png"
+    },
+    {
+      "name": "desktop-notice-preview",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-notice-preview.png"
+    },
+    {
+      "name": "desktop-analysis-export",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/desktop-analysis-export.png"
+    },
+    {
+      "name": "mobile-home-browse",
+      "status": "passed",
+      "screenshot": "/tmp/lingang-t44-artifacts/mobile-home-browse.png"
+    }
+  ],
+  "console_errors": [],
+  "page_errors": []
+}
