@@ -5,7 +5,7 @@ export interface ApiListResponse<T> {
   total: number;
 }
 
-const DEFAULT_API_URL = 'http://localhost:8000/api';
+const DEFAULT_LOCAL_API_URL = 'http://localhost:8000/api';
 const DATA_MODE_STORAGE_KEY = 'app_data_mode';
 const VALID_DATA_MODES = new Set<DataMode>(['auto', 'api', 'fallback']);
 
@@ -19,7 +19,19 @@ function readEnvValue(key: string): string | undefined {
 }
 
 export function getApiBaseUrl(): string {
-  return readEnvValue('VITE_API_URL') ?? DEFAULT_API_URL;
+  const envValue = readEnvValue('VITE_API_URL');
+  if (envValue) {
+    return envValue;
+  }
+
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      return '/api';
+    }
+  }
+
+  return DEFAULT_LOCAL_API_URL;
 }
 
 export function getDataMode(): DataMode {
