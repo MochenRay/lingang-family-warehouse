@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, Send, Bot, PenTool, Sparkles } from 'lucide-react';
+import { ArrowLeft, Send, Bot, PenTool, Sparkles, Loader2 } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -7,6 +7,7 @@ import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { buildSecondaryAiIntro, buildSecondaryAiReply } from '../../services/secondaryAiDemo';
+import { secondaryAiRepository } from '../../services/repositories/secondaryAiRepository';
 
 interface MobileOfficialWritingProps {
   onBack: () => void;
@@ -25,6 +26,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
     content: buildSecondaryAiIntro('writing')
   }]);
   const [inputMessage, setInputMessage] = useState('');
+  const [sending, setSending] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const scrollBottomRef = useRef<HTMLDivElement>(null);
 
@@ -34,21 +36,29 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
     }
   }, [messages]);
 
-  const handleSendMessage = (text: string = inputMessage) => {
-    if (!text.trim()) return;
+  const handleSendMessage = async (text: string = inputMessage) => {
+    const nextPrompt = text.trim();
+    if (!nextPrompt || sending) return;
 
     const timestamp = Date.now();
-    const newUserMsg: Message = { id: timestamp, role: 'user', content: text };
+    const newUserMsg: Message = { id: timestamp, role: 'user', content: nextPrompt };
     setInputMessage('');
-    setMessages(prev => [
-      ...prev,
-      newUserMsg,
-      {
-        id: timestamp + 1,
-        role: 'ai',
-        content: buildSecondaryAiReply('writing', text),
-      },
-    ]);
+    setMessages(prev => [...prev, newUserMsg]);
+    setSending(true);
+
+    try {
+      const response = await secondaryAiRepository.sendMessage('writing', nextPrompt);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: timestamp + 1,
+          role: 'ai',
+          content: response.content || buildSecondaryAiReply('writing', nextPrompt),
+        },
+      ]);
+    } finally {
+      setSending(false);
+    }
   };
 
   const suggestedQuestions = [
@@ -151,7 +161,9 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
                 {suggestedQuestions.map((question, idx) => (
                   <button
                     key={idx}
-                    onClick={() => handleSendMessage(question)}
+                    onClick={() => {
+                      void handleSendMessage(question);
+                    }}
                     className="w-full text-left p-3 bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)] rounded-xl text-sm text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-03)] transition-colors"
                   >
                     {question}
@@ -174,16 +186,18 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
-                handleSendMessage();
+                void handleSendMessage();
               }
             }}
           />
           <Button
-            onClick={() => handleSendMessage()}
-            disabled={!inputMessage.trim()}
+            onClick={() => {
+              void handleSendMessage();
+            }}
+            disabled={!inputMessage.trim() || sending}
             className="h-[44px] px-4 bg-[#19B172] hover:bg-[#15965f] text-white shrink-0"
           >
-            <Send className="w-5 h-5" />
+            {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>
         </div>
       </div>
