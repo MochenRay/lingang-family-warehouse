@@ -37,6 +37,15 @@ class Settings(BaseSettings):
         return [origin.strip() for origin in self.cors_origins_raw.split(",") if origin.strip()]
 
     @property
+    def sqlalchemy_database_url(self) -> str:
+        raw_url = self.database_url.strip()
+        if raw_url.startswith("postgres://"):
+            return raw_url.replace("postgres://", "postgresql+psycopg://", 1)
+        if raw_url.startswith("postgresql://"):
+            return raw_url.replace("postgresql://", "postgresql+psycopg://", 1)
+        return raw_url
+
+    @property
     def llm_configured(self) -> bool:
         return bool(self.llm_model and self.llm_api_key)
 
