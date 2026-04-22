@@ -180,19 +180,21 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 当前唯一真相源仍是 `backend/seed.py`，不再发明第二套初始化逻辑。
 
-### Railway 容器内恢复命令
+### Railway CLI 准备
 
-先进入目标 service 容器：
+如果本机还没有 `railway` CLI：
 
 ```bash
-railway ssh --project=742fe870-68f0-4753-a8c7-86c87bc91dbf --environment=f2c20f38-d8bd-4d0e-854d-118f4979f219 --service=e6094f88-d376-461c-952b-a486f52f4ee8
+brew install railway
+railway login
 ```
 
-容器内执行：
+### Railway 容器内恢复命令
+
+推荐直接使用一条命令恢复，不必先手动进入交互 shell：
 
 ```bash
-cd /app
-python seed.py
+railway ssh --project=742fe870-68f0-4753-a8c7-86c87bc91dbf --environment=f2c20f38-d8bd-4d0e-854d-118f4979f219 --service=e6094f88-d376-461c-952b-a486f52f4ee8 "cd /app && python seed.py"
 ```
 
 成功时应看到：
@@ -205,6 +207,19 @@ python seed.py
 - `knowledge_records=5`
 - `notices=5`
 - `task_rules=3`
+
+如果需要交互式进入容器，也可以先执行：
+
+```bash
+railway ssh --project=742fe870-68f0-4753-a8c7-86c87bc91dbf --environment=f2c20f38-d8bd-4d0e-854d-118f4979f219 --service=e6094f88-d376-461c-952b-a486f52f4ee8
+```
+
+然后在容器内执行：
+
+```bash
+cd /app
+python seed.py
+```
 
 ### 恢复后公网验收
 

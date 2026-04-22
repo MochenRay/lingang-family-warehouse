@@ -28,24 +28,35 @@ def open_root(page: Page) -> None:
 
 
 def ensure_sidebar_item_visible(page: Page, group_label: str, item_label: str) -> None:
-    item_button = page.get_by_role("button", name=item_label)
+    sidebar = page.locator("aside").first
+    item_button = sidebar.get_by_role("button", name=item_label, exact=True)
     if item_button.count() and item_button.first.is_visible():
         return
-    page.get_by_role("button", name=group_label).click()
+    sidebar.get_by_role("button", name=group_label, exact=True).click()
     item_button.first.wait_for(state="visible", timeout=10000)
 
 
 def click_sidebar_item(page: Page, group_label: str, item_label: str, expect_text: str) -> None:
     open_root(page)
     ensure_sidebar_item_visible(page, group_label, item_label)
-    page.get_by_role("button", name=item_label).click()
+    page.locator("aside").first.get_by_role("button", name=item_label, exact=True).click()
     wait_for_text(page, expect_text)
+    page.wait_for_load_state("networkidle")
 
 
 def capture(page: Page, name: str) -> str:
     path = ARTIFACT_DIR / f"{name}.png"
     page.screenshot(path=str(path), full_page=True)
     return str(path)
+
+
+def click_first_visible_button(page: Page, labels: list[str]) -> None:
+    for label in labels:
+        button = page.get_by_role("button", name=label, exact=True)
+        if button.count() and button.first.is_visible():
+            button.first.click()
+            return
+    raise AssertionError(f"None of the expected buttons appeared: {labels}")
 
 
 def first_visible_heading(page: Page, candidates: list[str], timeout: int = 10000) -> str:
@@ -109,6 +120,8 @@ def main() -> None:
                 ensure_sidebar_item_visible(page, "数据管理", "房屋管理"),
                 page.get_by_role("button", name="房屋管理").click(),
                 wait_for_text(page, "房屋管理"),
+                page.wait_for_load_state("networkidle"),
+                page.wait_for_timeout(1500),
             ),
         )
 
@@ -160,12 +173,20 @@ def main() -> None:
 
         def mobile_people_browse() -> None:
             open_root(page)
-            page.get_by_role("button", name="移动端小程序入口（演示用）").click()
-            wait_for_text(page, "治理总览")
+            click_first_visible_button(
+                page,
+                [
+                    "打开移动端工作台",
+                    "体验移动端主链",
+                    "直接体验移动端",
+                    "移动端小程序入口（演示用）",
+                ],
+            )
+            wait_for_text(page, "首次体验建议")
             page.get_by_text("人口台账", exact=True).first.click()
             page.get_by_placeholder("搜索姓名/身份证/地址...").wait_for(state="visible", timeout=10000)
             page.get_by_role("button", name="工作台").click()
-            wait_for_text(page, "治理总览")
+            wait_for_text(page, "首次体验建议")
 
         run_step(page, "mobile-home-browse", mobile_people_browse)
 
