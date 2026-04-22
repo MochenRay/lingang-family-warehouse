@@ -1,0 +1,13 @@
+{
+  "status": "live",
+  "agent_type": "assistant",
+  "kind": "query",
+  "context_id": null,
+  "request": {
+    "message": null
+  },
+  "model": "gemini-2.5-flash-lite",
+  "used_fallback_model": true,
+  "summary": "LLM response generated successfully.",
+  "error": null
+}
