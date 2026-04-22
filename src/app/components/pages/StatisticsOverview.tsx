@@ -219,7 +219,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">综合统计驾驶舱</h1>
-          <p className="text-muted-foreground">网格治理智能中台的主入口，建议先从这里建立全景，再进入人口、房屋、矛盾和移动端主链。</p>
+          <p className="text-muted-foreground">网格治理智能中台的主入口。当前为公网在线演示环境，无需登录，建议先从这里建立全景，再进入人口、房屋、矛盾和移动端主链。</p>
         </div>
         <div className="flex gap-2">
            <Button onClick={() => onRouteChange?.('mobile')}>体验移动端主链</Button>
