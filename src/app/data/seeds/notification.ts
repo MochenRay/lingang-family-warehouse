@@ -12,7 +12,7 @@ export const SEED_NOTIFICATIONS: Notification[] = [
     grids: [],
     status: "published",
     publisher: "系统管理员",
-    department: "临港区社会治理现代化指挥中心",
+    department: "蓬莱区社会治理现代化指挥中心",
     readCount: 386,
   },
   {
@@ -26,7 +26,7 @@ export const SEED_NOTIFICATIONS: Notification[] = [
     grids: [],
     status: "published",
     publisher: "系统管理员",
-    department: "临港区社会治理现代化指挥中心",
+    department: "蓬莱区社会治理现代化指挥中心",
     readCount: 241,
   },
   {
@@ -40,7 +40,7 @@ export const SEED_NOTIFICATIONS: Notification[] = [
     grids: [],
     status: "published",
     publisher: "系统管理员",
-    department: "临港区社会治理现代化指挥中心",
+    department: "蓬莱区社会治理现代化指挥中心",
     readCount: 198,
   },
 ];

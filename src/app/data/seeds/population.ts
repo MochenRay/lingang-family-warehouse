@@ -11,7 +11,7 @@ export const SEED_PEOPLE: Person[] = [
     gender: "男",
     age: 35,
     phone: "13800138000",
-    address: "海源一品1号楼1单元101",
+    address: "海梦苑1号楼1单元101",
     houseId: "h1",
     tags: ["党员", "青年", "热心助人", "作息规律", "邻里关系好", "家庭和睦"],
     type: "户籍",
@@ -28,12 +28,12 @@ export const SEED_PEOPLE: Person[] = [
     ],
     // 详细信息
     birthDate: "1989-01",
-    birthplace: "山东威海",
+    birthplace: "山东烟台",
     maritalStatus: "已婚",
     politicalStatus: "中共党员",
     militaryService: false,
     graduationInfo: "山东大学 计算机科学与技术专业",
-    workplace: "临港新片区某科技公司 技术总监",
+    workplace: "蓬莱区某科技公司 技术总监",
     communityVolunteer: true,
     skills: "编程、羽毛球、摄影",
     pets: "无",
@@ -42,7 +42,7 @@ export const SEED_PEOPLE: Person[] = [
       isFloorLeader: false,
       isAssistant: false
     },
-    biography: "2007-2011年，在山东大学学习计算机科学与技术专业。2011-2015年，在北京某互联网公司从事软件开发工作，担任高级工程师。2015年至今，在临港新片区某科技公司担任技术总监，负责公司核心产品研发。",
+    biography: "2007-2011年，在山东大学学习计算机科学与技术专业。2011-2015年，在北京某互联网公司从事软件开发工作，担任高级工程师。2015年至今，在蓬莱区某科技公司担任技术总监，负责公司核心产品研发。",
     activityParticipation: {
       activities: "定期参加社区志愿服务活动，担任单元长，协助社区开展居民服务工作。积极参与社区文化活动和体育活动。",
       needs: "希望社区能够提供更多儿童活动空间和设施，丰富孩子的课余生活。"
@@ -61,7 +61,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002201506010031",
     gender: "男",
     age: 9,
-    address: "海源一品1号楼1单元101",
+    address: "海梦苑1号楼1单元101",
     houseId: "h1",
     tags: ["学龄儿童", "乐观开朗", "邻里关系好", "家庭和睦"],
     type: "户籍",
@@ -83,7 +83,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002199002150022",
     gender: "女",
     age: 34,
-    address: "海源一品1号楼1单元101",
+    address: "海梦苑1号楼1单元101",
     houseId: "h1",
     tags: ["育龄妇女", "脾气温和", "喜欢种菜种花", "社区活跃分子", "家庭和睦"],
     type: "户籍",
@@ -102,7 +102,7 @@ export const SEED_PEOPLE: Person[] = [
     politicalStatus: "群众",
     militaryService: false,
     graduationInfo: "济南职业学院 会计专业",
-    workplace: "临港新片区某贸易公司 财务主管",
+    workplace: "蓬莱区某贸易公司 财务主管",
     communityVolunteer: true,
     skills: "绘画、烹饪、瑜伽",
     pets: "无",
@@ -111,7 +111,7 @@ export const SEED_PEOPLE: Person[] = [
       isUnitLeader: false,
       isAssistant: false
     },
-    biography: "2008-2011年，在济南职业学院学习会计专业。2011-2015年，在济南某企业从事会计工作。2015年随丈夫迁至上海临港，在临港新片区某贸易公司担任财务主管。",
+    biography: "2008-2011年，在济南职业学院学习会计专业。2011-2015年，在济南某企业从事会计工作。2015年随丈夫迁至烟台蓬莱，在蓬莱区某贸易公司担任财务主管。",
     activityParticipation: {
       activities: "积极参加社区文艺活动，曾参与社区春节联欢会节目表演。参与社区志愿服务。",
       needs: "希望社区能够组织更多亲子活动，增进家长与孩子的互动。"
@@ -130,7 +130,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002195203030015",
     gender: "男",
     age: 72,
-    address: "海源一品1号楼1单元102",
+    address: "海梦苑1号楼1单元102",
     houseId: "h2",
     tags: ["空巢老人", "低保人群", "高血压", "固执己见", "喜欢打牌下棋", "不合群", "子女不在身边", "家庭经济困难", "家有病患"],
     type: "户籍",
@@ -140,17 +140,17 @@ export const SEED_PEOPLE: Person[] = [
     updatedAt: "2025-12-21",
     // 详细信息
     birthDate: "1952-03",
-    birthplace: "山东威海",
+    birthplace: "山东烟台",
     maritalStatus: "丧偶",
     politicalStatus: "群众",
     militaryService: true,
     graduationInfo: "初中毕业",
-    workplace: "已退休，原威海某工厂工人",
+    workplace: "已退休，原烟台某工厂工人",
     communityVolunteer: false,
     skills: "象棋",
     pets: "无",
     careLabels: ["独居老人", "低保户"],
-    biography: "1968-1970年服兵役，在山东某部队服役。1970-2012年在威海某工厂工作，担任车间工人。2012年退休后随子女迁至临港居住。配偶于2018年去世，目前独居。",
+    biography: "1968-1970年服兵役，在山东某部队服役。1970-2012年在烟台某工厂工作，担任车间工人。2012年退休后随子女迁至蓬莱居住。配偶于2018年去世，目前独居。",
     activityParticipation: {
       activities: "偶尔参加社区组织的老年活动，喜欢在社区活动室下象棋。",
       needs: "需要定期体检服务和购药帮助，希望社区能够提供更多关怀和探访。"
@@ -174,7 +174,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002199608080019",
     gender: "男",
     age: 28,
-    address: "海源一品8号楼2单元101",
+    address: "海梦苑8号楼2单元101",
     houseId: "h3",
     tags: ["流动人口", "内向孤僻", "夜间活动多", "不合群"],
     type: "流动",
@@ -190,7 +190,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002198511200028",
     gender: "女",
     age: 39,
-    address: "海源一品2号楼3单元602",
+    address: "海梦苑2号楼3单元602",
     houseId: "h4",
     tags: ["妇女主任", "热心助人", "爱管闲事", "影响力大", "社区活跃分子", "家庭和睦"],
     type: "户籍",
@@ -206,7 +206,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002198309100017",
     gender: "男",
     age: 41,
-    address: "海源一品2号楼3单元602",
+    address: "海梦苑2号楼3单元602",
     houseId: "h4",
     tags: ["退役军人", "固执己见", "早起锻炼", "作息规律", "邻里关系好", "家庭和睦"],
     type: "户籍",
@@ -222,7 +222,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "37100219981212001X",
     gender: "男",
     age: 26,
-    address: "海源一品5号楼2单元404",
+    address: "海梦苑5号楼2单元404",
     houseId: "h6",
     tags: ["流动人口", "租客", "乐观开朗", "爱串门"],
     type: "流动",
@@ -238,7 +238,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002197505050011",
     gender: "男",
     age: 49,
-    address: "海源一品6号楼1单元101",
+    address: "海梦苑6号楼1单元101",
     houseId: "h7",
     tags: ["个体工商户", "信访人员", "暴躁易怒", "爱抱怨", "经常与人起冲突", "邻里关系差", "夫妻关系紧张"],
     type: "户籍",
@@ -254,7 +254,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002194501010022",
     gender: "女",
     age: 79,
-    address: "海源一品7号楼3单元502",
+    address: "海梦苑7号楼3单元502",
     houseId: "h8",
     tags: ["高龄老人", "独居", "脾气温和", "早起锻炼", "广场舞爱好者", "邻里关系好", "子女不在身边"],
     type: "户籍",
@@ -270,7 +270,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002197808080013",
     gender: "男",
     age: 46,
-    address: "海源一品7号楼3单元502",
+    address: "海梦苑7号楼3单元502",
     houseId: "h8",
     tags: ["残疾人", "低保户", "内向孤僻", "多疑敏感", "不合群", "家庭经济困难"],
     type: "户籍",
@@ -408,7 +408,7 @@ export const SEED_PEOPLE: Person[] = [
     // 去重
     const uniqueTags = [...new Set(tags)];
     
-    // 威海人口统计模拟：汉族占绝大多数(>99%)，少数民族主要为朝鲜族、满族、回族
+    // 烟台人口统计模拟：汉族占绝大多数(>99%)，少数民族主要为朝鲜族、满族、回族
     let nation = '汉族';
     const rand = Math.random();
     if (rand > 0.99) nation = '朝鲜族'; // 靠近韩国，有一定比例
@@ -427,7 +427,7 @@ export const SEED_PEOPLE: Person[] = [
       education = '高中'; // 包含中专
     } else {
       // 19岁以上，根据年龄段分布学历
-      // 威海作为沿海开放城市，受教育程度较高
+      // 烟台作为沿海开放城市，受教育程度较高
       const eduRand = Math.random();
       if (age <= 35) {
          // 年轻一代：本科/大专比例高
@@ -462,7 +462,7 @@ export const SEED_PEOPLE: Person[] = [
       nation,
       education,
       phone: `13${Math.floor(Math.random()*10)}0000${String(i).padStart(4, '0')}`,
-      address: house ? house.address : "海源一品",
+      address: house ? house.address : "海梦苑",
       houseId: house ? house.id : undefined,
       tags: uniqueTags,
       type: type as any,
@@ -479,7 +479,7 @@ export const SEED_PEOPLE: Person[] = [
     gender: "男",
     age: 68,
     phone: "13800138100",
-    address: "海源一品4号楼2单元301",
+    address: "海梦苑4号楼2单元301",
     houseId: "h_parents",
     tags: ["老年人", "党员", "固执己见", "早起锻炼", "喜欢打牌下棋", "邻里关系好", "家庭和睦"],
     type: "户籍",
@@ -501,7 +501,7 @@ export const SEED_PEOPLE: Person[] = [
     gender: "女",
     age: 66,
     phone: "13800138101",
-    address: "海源一品4号楼2单元301",
+    address: "海梦苑4号楼2单元301",
     houseId: "h_parents",
     tags: ["老年人", "育龄妇女", "脾气温和", "喜欢种菜种花", "广场舞爱好者", "爱串门", "家庭和睦"],
     type: "户籍",
@@ -524,7 +524,7 @@ export const SEED_PEOPLE: Person[] = [
     gender: "男",
     age: 32,
     phone: "13800138200",
-    address: "海源一品4号楼1单元502",
+    address: "海梦苑4号楼1单元502",
     houseId: "h_brother",
     tags: ["青年", "乐观开朗", "喜欢遛狗", "邻里关系好", "家庭和睦"],
     type: "户籍",
@@ -549,7 +549,7 @@ export const SEED_PEOPLE: Person[] = [
     gender: "女",
     age: 31,
     phone: "13800138201",
-    address: "海源一品4号楼1单元502",
+    address: "海梦苑4号楼1单元502",
     houseId: "h_brother",
     tags: ["育龄妇女", "青年", "脾气温和", "爱养宠物", "社区活跃分子", "家庭和睦"],
     type: "户籍",
@@ -570,7 +570,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002201801100055",
     gender: "男",
     age: 6,
-    address: "海源一品4号楼1单元502",
+    address: "海梦苑4号楼1单元502",
     houseId: "h_brother",
     tags: ["学龄儿童", "乐观开朗", "家庭和睦"],
     type: "户籍",
@@ -591,7 +591,7 @@ export const SEED_PEOPLE: Person[] = [
     idCard: "371002202105150066",
     gender: "女",
     age: 3,
-    address: "海源一品4号楼1单元502",
+    address: "海梦苑4号楼1单元502",
     houseId: "h_brother",
     tags: ["学龄前", "乐观开朗", "家庭和睦"],
     type: "户籍",

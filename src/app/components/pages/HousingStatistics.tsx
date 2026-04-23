@@ -119,7 +119,7 @@ export function HousingStatistics() {
       const coverage =
         grid.peopleCount > 0 ? Math.min(100, Math.round((grid.visitCount / grid.peopleCount) * 100)) : 0;
       return {
-        name: grid.name.replace('竹岛街道', '').replace('海源社区', '').replace('第', '').replace('网格', '网格'),
+        name: grid.name.replace('登州街道', '').replace('海梦苑社区', '').replace('第', '').replace('网格', '网格'),
         走访率: coverage,
         信息完整度: calculateInfoCompleteness(gridPeople),
       };

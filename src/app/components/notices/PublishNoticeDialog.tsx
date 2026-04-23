@@ -340,7 +340,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                     {formData.content || '公告内容将在此处显示...'}
                   </p>
                   <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">威海市社会治理中心</span>
+                    <span className="text-[10px] text-gray-400">烟台市社会治理中心</span>
                     <span className="text-xs text-blue-600">查看详情</span>
                   </div>
                 </div>

@@ -16,9 +16,9 @@ export function RegionFilter({ value, onChange, className }: RegionFilterProps) 
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">全区</SelectItem>
-          <SelectItem value="street_a">环翠楼街道</SelectItem>
-          <SelectItem value="street_b">鲸园街道</SelectItem>
-          <SelectItem value="street_c">竹岛街道</SelectItem>
+          <SelectItem value="street_a">蓬莱阁街道</SelectItem>
+          <SelectItem value="street_b">紫荆山街道</SelectItem>
+          <SelectItem value="street_c">登州街道</SelectItem>
         </SelectContent>
       </Select>
       

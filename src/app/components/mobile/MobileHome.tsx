@@ -30,7 +30,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const username = mobileContextRepository.getCurrentWorkerName();
   const currentGridSelection = mobileContextRepository.getCurrentGridSelection();
   const fallbackGridId = currentGridSelection.id;
-  const fallbackGridName = currentGridSelection.name || '竹岛街道海源社区第一网格';
+  const fallbackGridName = currentGridSelection.name || '登州街道海梦苑社区第一网格';
 
   useEffect(() => {
     let active = true;

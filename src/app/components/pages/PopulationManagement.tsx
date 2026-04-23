@@ -82,18 +82,8 @@ import { Grid, House, Person, PersonType, VisitRecord } from "../../types/core";
 
 // 复用行政区划数据结构
 const REGIONS = {
-  '环翠区': {
-    '竹岛街道': ['海源社区', '翠竹社区', '青竹社区'],
-    '环翠楼街道': ['东北村社区', '东南村社区'],
-    '鲸园街道': ['古陌社区', '北门外社区']
-  },
-  '文登区': {
-    '龙山路街道': ['龙山社区', '五龙社区'],
-    '天福路街道': ['天福社区', '文山社区']
-  },
-  '临港区': {
-    '草庙子镇': ['草庙子村', '林泉社区'],
-    '蔄山镇': ['蔄山村', '汶口社区']
+  '蓬莱区': {
+    '登州街道': ['海梦苑社区', '东城社区']
   }
 };
 
@@ -450,7 +440,7 @@ export function PopulationManagement() {
   const getAvailableGrids = (district?: string, street?: string, community?: string) => {
     if (!district || !street || !community) return [];
     // 根据区县、街道、社区筛选网格
-    // 网格名称格式: "竹岛街道海源社区第一网格"
+    // 网格名称格式: "登州街道海梦苑社区第一网格"
     const searchPattern = `${street}${community}`;
     return grids.filter(g => g.name.includes(searchPattern));
   };

@@ -33,7 +33,7 @@ class NoticeCreate(SQLModel):
     status: str = "published"
     publishedAt: str | None = None
     publisher: str = "系统管理员"
-    department: str = "临港区社会治理现代化指挥中心"
+    department: str = "蓬莱区社会治理现代化指挥中心"
     scheduledTime: str | None = None
     readCount: int = 0
     attachments: list[NoticeAttachmentRead] = Field(default_factory=list)

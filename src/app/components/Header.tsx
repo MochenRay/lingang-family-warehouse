@@ -32,7 +32,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500 dark:text-[var(--color-neutral-08)]">当前辖区:</span>
           <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:text-[var(--color-brand-primary-hover)] dark:border-[var(--color-brand-primary)] dark:bg-[var(--color-neutral-02)]">
-            威海市
+            烟台市
           </Badge>
         </div>
       </div>

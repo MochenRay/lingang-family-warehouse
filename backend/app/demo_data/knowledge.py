@@ -75,7 +75,7 @@ def build_knowledge_records() -> list[KnowledgeRecord]:
             tags=["冬季取暖", "安全宣传", "公众号文章"],
             relatedType="notice",
             relatedId="notice_002",
-            source="平安威海公众号",
+            source="平安烟台公众号",
         ),
         KnowledgeRecord(
             id="knowledge_004",
@@ -99,7 +99,7 @@ def build_knowledge_records() -> list[KnowledgeRecord]:
         ),
         KnowledgeRecord(
             id="knowledge_005",
-            title="海源社区第一网格重点对象周研判摘要",
+            title="海梦苑社区第一网格重点对象周研判摘要",
             type="document",
             category="研判摘要",
             summary="整理第一网格重点对象、待回访对象和矛盾风险的周度研判结论，用于搜索和驾驶舱补充阅读。",

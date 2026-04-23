@@ -65,7 +65,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
                  {notice?.type ?? '通知'}
                </Badge>
                <span className="text-xs text-blue-300 bg-[#3b82f6]/20 border border-[#3b82f6]/30 px-2 py-0.5 rounded">
-                 {notice?.department ?? '临港区社会治理现代化指挥中心'}
+                 {notice?.department ?? '蓬莱区社会治理现代化指挥中心'}
                </span>
              </div>
 

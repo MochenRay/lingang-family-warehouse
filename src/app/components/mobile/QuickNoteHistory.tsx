@@ -15,10 +15,10 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
         {
           id: 101,
           time: '14:30',
-          content: '走访海源一品1号楼1单元101室，李大爷反映暖气不热，已联系物业维修。',
+          content: '走访海梦苑1号楼1单元101室，李大爷反映暖气不热，已联系物业维修。',
           tags: ['民情日志', '物业维修'],
           person: '李大爷',
-          address: '海源一品1-1-101',
+          address: '海梦苑1-1-101',
           images: []
         },
         {
@@ -27,7 +27,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
           content: '巡查小区环境，发现3号楼下有乱堆乱放现象，已协调清理。',
           tags: ['安全隐患', '环境卫生'],
           person: null,
-          address: '海源一品3号楼周边',
+          address: '海梦苑3号楼周边',
           images: ['img1']
         }
       ]
@@ -42,7 +42,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
           content: '入户核实流动人口信息，新增租户张三一家三口。',
           tags: ['信息采集', '流动人口'],
           person: '张三',
-          address: '海源一品5-2-302',
+          address: '海梦苑5-2-302',
           images: []
         }
       ]
@@ -57,7 +57,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
           content: '探访独居老人王奶奶，送去米面油，老人身体状况良好。',
           tags: ['关爱服务', '独居老人'],
           person: '王奶奶',
-          address: '海源一品2-1-102',
+          address: '海梦苑2-1-102',
           images: ['img2', 'img3']
         }
       ]

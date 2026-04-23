@@ -132,7 +132,7 @@ function parseGridHierarchy(name: string): { districtName: string; streetName: s
   }
 
   return {
-    districtName: '海源示范片区',
+    districtName: '蓬莱示范片区',
     streetName: streetName.trim() || name,
     communityName: communityName.trim() || name,
   };

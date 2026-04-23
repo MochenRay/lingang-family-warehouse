@@ -36,8 +36,8 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
 
   const [formData, setFormData] = useState({
     houseNumber: '',
-    district: '环翠区',
-    street: '竹岛街道',
+    district: '蓬莱区',
+    street: '登州街道',
     community: '',
     building: '',
     unit: '',
@@ -95,7 +95,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
     const buildingCode = formData.building.replace(/\D/g, '') || '00';
     const unitCode = formData.unit.replace(/\D/g, '') || '00';
     const roomCode = formData.room.replace(/\D/g, '') || '000';
-    const suggestedNumber = `HC-${buildingCode.padStart(2, '0')}-${unitCode.padStart(2, '0')}-${roomCode.padStart(3, '0')}`;
+    const suggestedNumber = `PL-${buildingCode.padStart(2, '0')}-${unitCode.padStart(2, '0')}-${roomCode.padStart(3, '0')}`;
     setFormData({ ...formData, houseNumber: suggestedNumber });
     toast.success('已生成建议房屋编号，可根据现场门牌再调整');
   };
@@ -179,7 +179,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                 <QrCode className="w-5 h-5" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">建议格式：HC-楼栋-单元-房号，可根据现场二维码或门牌调整</p>
+            <p className="text-xs text-gray-500 mt-2">建议格式：PL-楼栋-单元-房号，可根据现场二维码或门牌调整</p>
           </CardContent>
         </Card>
 
@@ -214,10 +214,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="环翠区">环翠区</SelectItem>
-                      <SelectItem value="文登区">文登区</SelectItem>
-                      <SelectItem value="临港区">临港区</SelectItem>
-                      <SelectItem value="高新区">高新区</SelectItem>
+                      <SelectItem value="蓬莱区">蓬莱区</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -228,9 +225,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="竹岛街道">竹岛街道</SelectItem>
-                      <SelectItem value="鲸园街道">鲸园街道</SelectItem>
-                      <SelectItem value="凤林街道">凤林街道</SelectItem>
+                      <SelectItem value="登州街道">登州街道</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

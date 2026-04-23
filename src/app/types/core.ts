@@ -97,7 +97,7 @@ export interface House {
   id: string;
   gridId: string;
   address: string;
-  communityName: string; // e.g., "海源一品"
+  communityName: string; // e.g., "海梦苑"
   building: string; // e.g., "1号楼"
   unit: string; // e.g., "1单元"
   room: string; // e.g., "101"

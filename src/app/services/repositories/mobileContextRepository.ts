@@ -3,7 +3,7 @@ export interface CurrentGridSelection {
   name?: string;
 }
 
-const DEFAULT_GRID_NAME = '竹岛街道海源社区第一网格';
+const DEFAULT_GRID_NAME = '登州街道海梦苑社区第一网格';
 const DEFAULT_WORKER_NAME = '网格员';
 
 export const mobileContextRepository = {

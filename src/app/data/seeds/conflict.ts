@@ -4,7 +4,7 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
   {
     id: 'c_001',
     source: '上级下派',
-    title: '海源一品1号楼噪音扰民投诉',
+    title: '海梦苑1号楼噪音扰民投诉',
     type: '邻里纠纷',
     description: '接到12345热线转办，1号楼3单元502住户反映楼上装修噪音过大，休息时间仍在施工。请网格员核实并协调。',
     involvedParties: [
@@ -13,7 +13,7 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     ],
     status: '调解中',
     gridId: 'g2',
-    location: '海源一品1号楼3单元',
+    location: '海梦苑1号楼3单元',
     timeline: [
       { date: '2025-12-25 10:00', content: '街道综治中心接单并下派', operator: '系统管理员' },
     ],
@@ -28,11 +28,11 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     type: '物业纠纷',
     description: '接社区转办，2号楼南侧绿地有居民私自开垦种菜，破坏绿化。请网格员联系物业协同处理。',
     involvedParties: [
-      { type: 'organization', id: 'PROPERTY_MGMT', name: '海源物业' }
+      { type: 'organization', id: 'PROPERTY_MGMT', name: '海梦苑物业' }
     ],
     status: '已化解',
     gridId: 'g2',
-    location: '海源一品2号楼南侧绿地',
+    location: '海梦苑2号楼南侧绿地',
     timeline: [
       { date: '2025-12-20 09:30', content: '接到社区派单', operator: '系统管理员' },
       { date: '2025-12-20 14:00', content: '联合物业进行清理，并教育当事人', operator: '王网格' },
@@ -45,16 +45,16 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
   {
     id: 'c_003',
     source: '上级下派',
-    title: '海源三期夫妻争吵扰民',
+    title: '海景苑夫妻争吵扰民',
     type: '家庭纠纷',
-    description: '接110转办，海源三期5号楼居民报警称邻居夫妻深夜争吵，影响休息。请网格员上门了解情况并进行调解。',
+    description: '接110转办，海景苑5号楼居民报警称邻居夫妻深夜争吵，影响休息。请网格员上门了解情况并进行调解。',
     involvedParties: [
       { type: 'resident', id: 'p5', name: '李强' },
       { type: 'resident', id: 'p6', name: '刘芳' }
     ],
     status: '调解中',
     gridId: 'g2',
-    location: '海源三期5号楼2单元',
+    location: '海景苑5号楼2单元',
     timeline: [
       { date: '2026-01-02 22:30', content: '公安部门转派单', operator: '系统管理员' },
       { date: '2026-01-03 09:00', content: '网格员上门了解情况', operator: '王网格' },
@@ -68,15 +68,15 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     source: '上级下派',
     title: '车位归属权纠纷',
     type: '物业纠纷',
-    description: '接物业公司报告，海源一品地下车库34号车位产权归属存在争议，两户业主均声称拥有该车位。请网格员协助核实产权并调解。',
+    description: '接物业公司报告，海梦苑地下车库34号车位产权归属存在争议，两户业主均声称拥有该车位。请网格员协助核实产权并调解。',
     involvedParties: [
       { type: 'resident', id: 'p7', name: '赵明' },
       { type: 'resident', id: 'p8', name: '周涛' },
-      { type: 'organization', id: 'PROPERTY_MGMT', name: '海源物业' }
+      { type: 'organization', id: 'PROPERTY_MGMT', name: '海梦苑物业' }
     ],
     status: '调解中',
     gridId: 'g2',
-    location: '海源一品地下车库',
+    location: '海梦苑地下车库',
     timeline: [
       { date: '2025-12-28 15:00', content: '街道综治办下派任务', operator: '系统管理员' },
       { date: '2025-12-28 16:30', content: '联系双方了解情况', operator: '王网格' },
@@ -91,15 +91,15 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     source: '上级下派',
     title: '楼道堆放杂物引发火灾隐患',
     type: '邻里纠纷',
-    description: '接消防部门转办，海源二期3号楼多户居民在楼道堆放杂物，存在严重消防安全隐患。请网格员督促清理并做好宣传教育。',
+    description: '接消防部门转办，京蓬苑3号楼多户居民在楼道堆放杂物，存在严重消防安全隐患。请网格员督促清理并做好宣传教育。',
     involvedParties: [
       { type: 'resident', id: 'p9', name: '孙婷' },
       { type: 'resident', id: 'p10', name: '钱勇' },
-      { type: 'organization', id: 'PROPERTY_MGMT', name: '海源物业' }
+      { type: 'organization', id: 'PROPERTY_MGMT', name: '海梦苑物业' }
     ],
     status: '已化解',
     gridId: 'g2',
-    location: '海源二期3号楼',
+    location: '京蓬苑3号楼',
     timeline: [
       { date: '2025-12-15 09:00', content: '消防部门转派', operator: '系统管理员' },
       { date: '2025-12-15 14:00', content: '逐户上门沟通并下发整改通知', operator: '王网格' },
@@ -115,14 +115,14 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     source: '上级下派',
     title: '老人赡养纠纷',
     type: '家庭纠纷',
-    description: '接民政部门转办，海源一品独居老人反映子女长期不探望、不尽赡养义务。请网格员介入调解。',
+    description: '接民政部门转办，海梦苑独居老人反映子女长期不探望、不尽赡养义务。请网格员介入调解。',
     involvedParties: [
       { type: 'resident', id: 'p11', name: '吴大爷' },
       { type: 'resident', id: 'p12', name: '吴小华' }
     ],
     status: '调解中',
     gridId: 'g2',
-    location: '海源一品6号楼',
+    location: '海梦苑6号楼',
     timeline: [
       { date: '2025-12-30 10:00', content: '民政部门转派', operator: '系统管理员' },
       { date: '2025-12-30 15:00', content: '上门了解老人情况', operator: '王网格' },
@@ -137,14 +137,14 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     source: '上级下派',
     title: '宠物扰民投诉',
     type: '邻里纠纷',
-    description: '接12345热线转办，海源三期居民投诉邻居饲养大型犬只，经常吠叫扰民且未拴绳，存在安全隐患。请网格员核实处理。',
+    description: '接12345热线转办，海景苑居民投诉邻居饲养大型犬只，经常吠叫扰民且未拴绳，存在安全隐患。请网格员核实处理。',
     involvedParties: [
       { type: 'resident', id: 'p13', name: '郑雨' },
       { type: 'resident', id: 'p14', name: '陈建' }
     ],
     status: '已化解',
     gridId: 'g2',
-    location: '海源三期7号楼',
+    location: '海景苑7号楼',
     timeline: [
       { date: '2025-12-22 16:00', content: '街道综治中心下派', operator: '系统管理员' },
       { date: '2025-12-23 09:00', content: '上门核实情况', operator: '王网格' },
@@ -160,14 +160,14 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     source: '上级下派',
     title: '物业费收取争议',
     type: '物业纠纷',
-    description: '接区信访办转办，海源二期业主对物业费标准及服务质量不满，拒缴物业费。请网格员协调物业公司与业主沟通。',
+    description: '接区信访办转办，京蓬苑业主对物业费标准及服务质量不满，拒缴物业费。请网格员协调物业公司与业主沟通。',
     involvedParties: [
       { type: 'resident', id: 'p15', name: '冯丽' },
-      { type: 'organization', id: 'PROPERTY_MGMT', name: '海源物业' }
+      { type: 'organization', id: 'PROPERTY_MGMT', name: '海梦苑物业' }
     ],
     status: '调解中',
     gridId: 'g2',
-    location: '海源二期',
+    location: '京蓬苑',
     timeline: [
       { date: '2026-01-04 11:00', content: '区信访办转派', operator: '系统管理员' },
       { date: '2026-01-04 15:00', content: '了解业主诉求', operator: '王网格' },
@@ -190,7 +190,7 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     ],
     status: '调解中',
     gridId: 'g1',
-    location: '海源一品9号楼2单元',
+    location: '海梦苑9号楼2单元',
     timeline: [
       { date: '2026-01-18 10:00', content: '街道综治中心接单并下派', operator: '系统管理员' },
       { date: '2026-01-18 14:00', content: '上门核实情况，确认装修方在午休时间施工', operator: '网格员李明辉' },
@@ -210,7 +210,7 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     ],
     status: '已化解',
     gridId: 'g1',
-    location: '海源一品10号楼3单元',
+    location: '海梦苑10号楼3单元',
     timeline: [
       { date: '2026-01-10 09:00', content: '社区派单', operator: '系统管理员' },
       { date: '2026-01-10 15:00', content: '逐户走访排查，锁定抛物楼层', operator: '网格员李明辉' },
@@ -229,11 +229,11 @@ export const SEED_CONFLICTS: ConflictRecord[] = [
     description: '接物业报告，9号楼3单元出租房疑似群租，人员频繁进出，邻居多次投诉。请网格员核查并处理。',
     involvedParties: [
       { type: 'resident', id: 'p23', name: '苗刚' },
-      { type: 'organization', id: 'PROPERTY_MGMT', name: '海源物业' }
+      { type: 'organization', id: 'PROPERTY_MGMT', name: '海梦苑物业' }
     ],
     status: '调解中',
     gridId: 'g1',
-    location: '海源一品9号楼3单元301',
+    location: '海梦苑9号楼3单元301',
     timeline: [
       { date: '2026-01-15 11:00', content: '物业报告群租问题', operator: '系统管理员' },
       { date: '2026-01-15 16:00', content: '上门核查，确认实际居住5人', operator: '网格员李明辉' },

@@ -67,7 +67,7 @@ const initialPopulations: Population[] = [
     gender: '男',
     age: 34,
     phone: '13800138000',
-    address: '威海市环翠区竹岛街道A区1号楼1单元101',
+    address: '烟台市蓬莱区登州街道A区1号楼1单元101',
     status: '正常',
     residenceType: '常住',
     createTime: '2025-12-15 10:30:00'
@@ -79,7 +79,7 @@ const initialPopulations: Population[] = [
     gender: '女',
     age: 32,
     phone: '13900139000',
-    address: '威海市环翠区竹岛街道A区1号楼1单元102',
+    address: '烟台市蓬莱区登州街道A区1号楼1单元102',
     status: '正常',
     residenceType: '户籍',
     createTime: '2025-12-20 14:20:00'
@@ -91,7 +91,7 @@ const initialPopulations: Population[] = [
     gender: '男',
     age: 38,
     phone: '13700137000',
-    address: '威海市环翠区竹岛街道B区2号楼3单元201',
+    address: '烟台市蓬莱区登州街道B区2号楼3单元201',
     status: '正常',
     residenceType: '流动',
     createTime: '2025-12-28 09:15:00'
@@ -103,7 +103,7 @@ const initialPopulations: Population[] = [
     gender: '女',
     age: 30,
     phone: '13600136000',
-    address: '威海市环翠区竹岛街道C区3号楼2单元305',
+    address: '烟台市蓬莱区登州街道C区3号楼2单元305',
     status: '迁出',
     residenceType: '常住',
     createTime: '2025-12-05 16:40:00'
@@ -115,7 +115,7 @@ const initialPopulations: Population[] = [
     gender: '男',
     age: 60,
     phone: '13500135000',
-    address: '威海市环翠区竹岛街道A区1号楼2单元203',
+    address: '烟台市蓬莱区登州街道A区1号楼2单元203',
     status: '正常',
     residenceType: '常住',
     createTime: '2025-12-10 11:25:00'
@@ -126,7 +126,7 @@ const initialBuildings: Building[] = [
   {
     id: '1',
     name: 'A区1号楼',
-    address: '威海市环翠区竹岛街道A区',
+    address: '烟台市蓬莱区登州街道A区',
     floors: 6,
     createTime: '2025-12-01',
     units: [
@@ -160,7 +160,7 @@ const initialBuildings: Building[] = [
   {
     id: '2',
     name: 'B区2号楼',
-    address: '威海市环翠区竹岛街道B区',
+    address: '烟台市蓬莱区登州街道B区',
     floors: 8,
     createTime: '2025-12-03',
     units: [

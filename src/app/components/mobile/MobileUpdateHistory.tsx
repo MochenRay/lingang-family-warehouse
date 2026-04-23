@@ -70,7 +70,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
           type: 'house',
           action: 'update',
           title: '更新房屋信息',
-          desc: '更新海源一品1号楼1单元101室居住状态为"自住"，登记车牌号鲁K88***。',
+          desc: '更新海梦苑1号楼1单元101室居住状态为"自住"，登记车牌号鲁F88***。',
           user: '李明辉'
         },
         {
@@ -93,7 +93,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
           type: 'conflict',
           action: 'mediate',
           title: '矛盾调解记录',
-          desc: '调解海源社区2号楼302与303噪音纠纷，双方达成和解，已签署调解协议。',
+          desc: '调解海梦苑社区2号楼302与303噪音纠纷，双方达成和解，已签署调解协议。',
           user: '李明辉',
           status: '调解成功'
         },
