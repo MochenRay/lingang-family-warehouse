@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Home, Activity, Database, ArrowRight, AlertTriangle, Loader2, Sparkles, Smartphone, MapPinned, ShieldAlert } from 'lucide-react';
+import { Users, Home, Activity, Database, ArrowRight, AlertTriangle, Loader2, Sparkles, Smartphone, MapPinned, ShieldAlert, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -11,13 +11,12 @@ import {
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { toast } from 'sonner';
 
-// Custom Tooltip for dark mode
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="bg-[#1f2937] border border-gray-700 p-2 rounded shadow-lg text-xs text-white">
-        <p className="font-medium mb-1">{label}</p>
-        <p style={{ color: payload[0]?.color || payload[0]?.fill || '#3b82f6' }}>
+      <div className="rounded-lg border border-[rgba(39,97,203,0.18)] bg-white px-3 py-2 text-xs text-[var(--color-neutral-11)] shadow-xl">
+        <p className="font-semibold mb-1">{label}</p>
+        <p className="font-medium" style={{ color: payload[0]?.color || payload[0]?.fill || '#2761CB' }}>
           数值: {payload[0].value}
         </p>
       </div>
@@ -45,6 +44,17 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const [conflictStats, setConflictStats] = useState<DashboardStatsResponse['conflictStats'] | null>(null);
   const [visitCount, setVisitCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [showJourneyOverlay, setShowJourneyOverlay] = useState(() => {
+    if (typeof window === 'undefined') {
+      return false;
+    }
+    return window.sessionStorage.getItem('homedata_journey_overlay_dismissed') !== '1';
+  });
+
+  const closeJourneyOverlay = () => {
+    window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1');
+    setShowJourneyOverlay(false);
+  };
 
   const handleExportReport = () => {
     const payload = {
@@ -204,9 +214,9 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
     },
     {
       step: '04',
-      title: '最后体验移动端',
+      title: '最后进入移动端工作台',
       detail: '把管理端看到的重点对象和待办，落到一线执行工作台。',
-      action: '打开移动端',
+      action: '进入工作台',
       route: 'mobile',
     },
   ];
@@ -215,14 +225,81 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      {showJourneyOverlay && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4 backdrop-blur-sm">
+          <div className="relative w-full max-w-4xl overflow-hidden rounded-2xl border border-[rgba(78,134,223,0.22)] bg-white shadow-2xl">
+            <button
+              type="button"
+              aria-label="关闭浏览建议"
+              onClick={closeJourneyOverlay}
+              className="absolute right-4 top-4 rounded-full border border-[var(--color-neutral-03)] bg-white p-2 text-[var(--color-neutral-08)] transition-colors hover:bg-[var(--color-neutral-02)] hover:text-[var(--color-neutral-11)]"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <div className="grid grid-cols-1 lg:grid-cols-[0.95fr,1.3fr]">
+              <div className="bg-[linear-gradient(135deg,rgba(39,97,203,0.10),rgba(78,134,223,0.03))] p-8">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[#2761CB]">
+                  <Sparkles className="h-4 w-4" />
+                  首次使用建议
+                </div>
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">
+                  先建立全景，再进入对象台账和处置链路
+                </h2>
+                <p className="mt-4 text-sm leading-7 text-[var(--color-neutral-08)]">
+                  这套系统面向街道、社区和网格治理人员。首次进入时建议先从驾驶舱看辖区态势，再进入人口、房屋、矛盾等业务台账，最后查看移动端工作台如何承接一线核查。
+                </p>
+                <div className="mt-6 flex flex-wrap gap-2">
+                  <Button onClick={closeJourneyOverlay}>留在驾驶舱</Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      closeJourneyOverlay();
+                      onRouteChange?.('population');
+                    }}
+                  >
+                    进入人口管理
+                  </Button>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2">
+                {recommendedJourney.map((item, index) => (
+                  <button
+                    key={item.step}
+                    type="button"
+                    onClick={() => {
+                      closeJourneyOverlay();
+                      onRouteChange?.(item.route);
+                    }}
+                    className={`group flex min-h-[150px] flex-col items-start gap-3 p-6 text-left transition-colors hover:bg-[#F3F7FF] ${
+                      index % 2 === 0 ? 'sm:border-r border-[rgba(78,134,223,0.12)]' : ''
+                    } ${index < 2 ? 'border-b border-[rgba(78,134,223,0.12)]' : ''}`}
+                  >
+                    <div className="inline-flex items-center rounded-full border border-[rgba(39,97,203,0.18)] bg-[#F4F8FF] px-2.5 py-1 text-xs font-semibold text-[#2761CB]">
+                      {item.step}
+                    </div>
+                    <div>
+                      <div className="text-base font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
+                      <div className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">{item.detail}</div>
+                    </div>
+                    <div className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-[#2761CB]">
+                      {item.action}
+                      <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* 顶部标题与操作 */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">综合统计驾驶舱</h1>
-          <p className="text-muted-foreground">网格治理智能中台的主入口。当前为公网在线演示环境，无需登录，建议先从这里建立全景，再进入人口、房屋、矛盾和移动端主链。</p>
+          <p className="text-muted-foreground">汇总辖区人口、房屋、风险标签和处置压力，为街道、社区和网格治理人员提供态势研判入口。</p>
         </div>
         <div className="flex gap-2">
-           <Button onClick={() => onRouteChange?.('mobile')}>体验移动端主链</Button>
+           <Button onClick={() => onRouteChange?.('mobile')}>打开移动端工作台</Button>
            <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
              <SelectTrigger className="w-[120px]">
                <SelectValue placeholder="时间范围" />
@@ -236,57 +313,6 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
            <Button variant="outline" onClick={handleExportReport}>导出驾驶舱快照</Button>
         </div>
       </div>
-
-      <Card className="overflow-hidden border border-[rgba(78,134,223,0.22)] bg-[linear-gradient(135deg,rgba(39,97,203,0.08),rgba(78,134,223,0.02))]">
-        <CardContent className="p-0">
-          <div className="grid grid-cols-1 xl:grid-cols-[1.15fr,1fr]">
-            <div className="border-b border-[rgba(78,134,223,0.14)] px-6 py-6 xl:border-b-0 xl:border-r">
-              <div className="flex items-center gap-2 text-sm font-semibold text-[#2761CB]">
-                <Sparkles className="w-4 h-4" />
-                推荐浏览路径
-              </div>
-              <h2 className="mt-3 text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">
-                第一次打开，建议按这条线看完整个 Demo
-              </h2>
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--color-neutral-08)]">
-                这不是一个靠单页炫技的作品，而是一套“驾驶舱判断 → 对象台账 → 处置闭环 → 移动端执行”的治理工作流。先看主链，再去点第二圈和示例页，理解成本最低。
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
-                <Button onClick={() => onRouteChange?.('population')}>
-                  从人口管理开始
-                </Button>
-                <Button variant="outline" onClick={() => onRouteChange?.('mobile')}>
-                  直接体验移动端
-                </Button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              {recommendedJourney.map((item, index) => (
-                <button
-                  key={item.step}
-                  type="button"
-                  onClick={() => onRouteChange?.(item.route)}
-                  className={`group flex flex-col items-start gap-3 px-5 py-5 text-left transition-colors hover:bg-[rgba(255,255,255,0.52)] ${
-                    index % 2 === 0 ? 'md:border-r border-[rgba(78,134,223,0.12)]' : ''
-                  } ${index < 2 ? 'border-b border-[rgba(78,134,223,0.12)]' : ''}`}
-                >
-                  <div className="inline-flex items-center rounded-full border border-[rgba(39,97,203,0.18)] bg-white/70 px-2.5 py-1 text-xs font-semibold text-[#2761CB]">
-                    {item.step}
-                  </div>
-                  <div>
-                    <div className="text-base font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
-                    <div className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">{item.detail}</div>
-                  </div>
-                  <div className="inline-flex items-center gap-1 text-sm font-medium text-[#2761CB]">
-                    {item.action}
-                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* 1. 核心指标卡片 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -334,7 +360,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 查看矛盾调解
               </Button>
               <Button onClick={() => onRouteChange?.('mobile')}>
-                去移动端执行
+                打开移动端工作台
               </Button>
             </div>
           </CardContent>
@@ -467,11 +493,11 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 <div className="flex justify-center gap-6 text-sm mb-4">
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                        <span className="text-gray-300">男性 {genderData[0]?.value || 0}</span>
+                        <span className="text-[var(--color-neutral-08)]">男性 {genderData[0]?.value || 0}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-3 h-3 rounded-full bg-pink-500"></div>
-                        <span className="text-gray-300">女性 {genderData[1]?.value || 0}</span>
+                        <span className="text-[var(--color-neutral-08)]">女性 {genderData[1]?.value || 0}</span>
                       </div>
                    </div>
 
@@ -479,7 +505,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 <div className="space-y-3 px-2">
                    {ageData.map((item, idx) => (
                      <div key={idx} className="space-y-1">
-                       <div className="flex justify-between text-xs text-gray-400">
+                       <div className="flex justify-between text-xs text-[var(--color-neutral-08)]">
                          <span>{item.name}</span>
                          <span>{item.value}人 ({totalPopulation > 0 ? ((item.value / totalPopulation) * 100).toFixed(0) : 0}%)</span>
                        </div>
@@ -515,12 +541,12 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
            <CardContent>
              <div className="space-y-1">
                {riskTagsSummary.map((tag, i) => (
-                 <div key={i} className="flex items-center justify-between py-3 border-b border-gray-800 last:border-0 hover:bg-slate-800/50 px-2 rounded transition-colors">
+                 <div key={i} className="flex items-center justify-between rounded px-2 py-3 transition-colors hover:bg-[#F3F7FF] border-b border-[var(--color-neutral-03)] last:border-0">
                    <div className="flex items-center gap-3">
                      <Badge variant={tag.level === '高' ? 'destructive' : (tag.level === '中' ? 'default' : 'secondary')} className="w-12 justify-center text-xs">
                        {tag.level}风险
                      </Badge>
-                     <span className="font-medium text-sm text-gray-300">{tag.name}</span>
+                     <span className="font-medium text-sm text-[var(--color-neutral-10)]">{tag.name}</span>
                    </div>
                    <div className="flex items-center gap-4">
                      <span className="font-bold">{tag.count} 人</span>

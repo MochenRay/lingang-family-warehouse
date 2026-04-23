@@ -116,6 +116,7 @@ interface Population extends Person {
 
 const HIGH_RISK_KEYWORDS = ["矫正", "信访", "涉诉", "精神障碍", "吸毒", "邪教"];
 const MEDIUM_RISK_KEYWORDS = ["独居", "失业", "残疾", "低保", "困境", "留守"];
+const PAGE_SIZE = 20;
 
 const extractInfoFromIdCard = (idCard: string) => {
   if (!idCard || idCard.length !== 18) return null;
@@ -285,10 +286,12 @@ export function PopulationManagement() {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [grids, setGrids] = useState<Grid[]>([]);
   const [houses, setHouses] = useState<House[]>([]);
+  const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [selectedPopulationVisits, setSelectedPopulationVisits] = useState<VisitRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   
   // 标签管理状态
   const [recommendedTags, setRecommendedTags] = useState<string[]>([]); // 推荐的标签名称
@@ -307,11 +310,15 @@ export function PopulationManagement() {
   const [visibleColumns, setVisibleColumns] = useState({
     gender: true,
     age: true,
-    idCard: true,
-    nation: true,
-    education: true,
+    idCard: false,
+    nation: false,
+    education: false,
     region: true,
     address: true,
+    family: true,
+    relation: true,
+    biography: true,
+    visits: true,
     tags: true,
     type: false, // 默认收起
     status: false, // 默认收起
@@ -480,16 +487,18 @@ export function PopulationManagement() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [people, nextGrids, nextHouses] = await Promise.all([
+      const [people, nextGrids, nextHouses, nextVisits] = await Promise.all([
         personRepository.getPeople(),
         personRepository.getGrids(),
         houseRepository.getHouses(),
+        visitRepository.getVisits({ targetType: "person", order: "desc", limit: 1000 }),
       ]);
       const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
       const mappedPopulations = people.map((person) => mapPersonToPopulation(person, gridMap.get(person.gridId)));
 
       setGrids(nextGrids);
       setHouses(nextHouses);
+      setVisits(nextVisits);
       setPopulations(mappedPopulations);
       setSelectedPopulation((prev) => {
         if (!prev) {
@@ -586,6 +595,34 @@ export function PopulationManagement() {
     );
   });
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchKeyword, statusFilter, residenceFilter, riskFilter, tagFilter, filterDistrict, filterStreet, filterCommunity]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredPopulations.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStart = (safeCurrentPage - 1) * PAGE_SIZE;
+  const paginatedPopulations = filteredPopulations.slice(pageStart, pageStart + PAGE_SIZE);
+  const pageSelectedIds = paginatedPopulations.map((pop) => pop.id);
+  const isCurrentPageFullySelected =
+    pageSelectedIds.length > 0 && pageSelectedIds.every((id) => selectedRows.includes(id));
+  const houseMap = new Map(houses.map((house) => [house.id, house]));
+  const peopleByHouseId = populations.reduce((map, person) => {
+    if (!person.houseId) {
+      return map;
+    }
+    const current = map.get(person.houseId) ?? [];
+    current.push(person);
+    map.set(person.houseId, current);
+    return map;
+  }, new Map<string, Population[]>());
+  const visitsByPersonId = visits.reduce((map, visit) => {
+    const current = map.get(visit.targetId) ?? [];
+    current.push(visit);
+    map.set(visit.targetId, current);
+    return map;
+  }, new Map<string, VisitRecord[]>());
+
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
       case "正常": return "default";
@@ -611,6 +648,53 @@ export function PopulationManagement() {
     // We should probably check if they match IDs or Names in tagStore.
     // For now, let's just return objects with name=tagId
     return tagIds.map(t => ({ id: t, name: t }));
+  };
+
+  const getHouseDisplay = (person: Population, houseMap: Map<string, House>) => {
+    if (!person.houseId) {
+      return "未关联房屋";
+    }
+    const house = houseMap.get(person.houseId);
+    if (!house) {
+      return "未关联房屋";
+    }
+    return `${house.communityName} ${house.building}${house.unit}${house.room}`;
+  };
+
+  const getRelationDisplay = (person: Population, peopleByHouseId: Map<string, Population[]>) => {
+    const relations = person.familyRelations ?? [];
+    if (relations.length > 0) {
+      return relations.slice(0, 2).map((relation) => relation.relationType).join(" / ");
+    }
+    if (!person.houseId) {
+      return "待补家庭关系";
+    }
+    const housemates = peopleByHouseId.get(person.houseId)?.filter((item) => item.id !== person.id) ?? [];
+    return housemates.length > 0 ? `同户 ${housemates.length} 人` : "单户登记";
+  };
+
+  const getBiographyDisplay = (person: Population) => {
+    if (person.biography) {
+      return person.biography;
+    }
+    if (person.workplace) {
+      return person.workplace;
+    }
+    if (person.activityParticipation?.needs) {
+      return person.activityParticipation.needs;
+    }
+    return person.education ? `${person.education}；待补工作/经历` : "待补经历";
+  };
+
+  const getVisitDisplay = (person: Population, visitsByPersonId: Map<string, VisitRecord[]>) => {
+    const personVisits = visitsByPersonId.get(person.id) ?? [];
+    if (personVisits.length === 0) {
+      return { title: "暂无走访", detail: "建议补一次基础核验" };
+    }
+    return {
+      title: personVisits[0].date,
+      detail: `累计 ${personVisits.length} 次`,
+    };
   };
 
   const handleView = (pop: Population) => {
@@ -806,10 +890,10 @@ export function PopulationManagement() {
   };
 
   const toggleAllSelection = () => {
-    if (selectedRows.length === filteredPopulations.length) {
-      setSelectedRows([]);
+    if (isCurrentPageFullySelected) {
+      setSelectedRows(selectedRows.filter((id) => !pageSelectedIds.includes(id)));
     } else {
-      setSelectedRows(filteredPopulations.map((pop) => pop.id));
+      setSelectedRows([...new Set([...selectedRows, ...pageSelectedIds])]);
     }
   };
 
@@ -954,19 +1038,21 @@ export function PopulationManagement() {
               {/* 第二行：属性筛选与按钮 */}
               <div className="flex gap-3 flex-wrap items-center justify-between">
                 <div className="flex gap-3">
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-[120px]">
-                      <Filter className="w-4 h-4 mr-2" />
-                      <SelectValue placeholder="状态" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">全部状态</SelectItem>
-                      <SelectItem value="正常">正常</SelectItem>
-                      <SelectItem value="迁出">迁出</SelectItem>
-                      <SelectItem value="死亡">死亡</SelectItem>
-                      <SelectItem value="作废">作废</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-4 h-4 text-gray-500" />
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="w-[132px]">
+                        <SelectValue placeholder="状态" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">全部状态</SelectItem>
+                        <SelectItem value="正常">正常</SelectItem>
+                        <SelectItem value="迁出">迁出</SelectItem>
+                        <SelectItem value="死亡">死亡</SelectItem>
+                        <SelectItem value="作废">作废</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
                   <Select value={residenceFilter} onValueChange={setResidenceFilter}>
                     <SelectTrigger className="w-[120px]">
@@ -1069,6 +1155,30 @@ export function PopulationManagement() {
                         详细地址
                       </DropdownMenuCheckboxItem>
                       <DropdownMenuCheckboxItem
+                        checked={visibleColumns.family}
+                        onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, family: checked }))}
+                      >
+                        家庭房屋
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={visibleColumns.relation}
+                        onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, relation: checked }))}
+                      >
+                        家庭关系
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={visibleColumns.biography}
+                        onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, biography: checked }))}
+                      >
+                        经历诉求
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
+                        checked={visibleColumns.visits}
+                        onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, visits: checked }))}
+                      >
+                        走访记录
+                      </DropdownMenuCheckboxItem>
+                      <DropdownMenuCheckboxItem
                         checked={visibleColumns.tags}
                         onCheckedChange={(checked) => setVisibleColumns(prev => ({ ...prev, tags: checked }))}
                       >
@@ -1115,11 +1225,11 @@ export function PopulationManagement() {
       <Card className="overflow-hidden">
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <Table className="min-w-[1500px]">
+            <Table className="min-w-[1900px]">
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-12 sticky left-0 z-20 bg-gray-50">
-                    <input type="checkbox" checked={selectedRows.length === filteredPopulations.length && filteredPopulations.length > 0} onChange={toggleAllSelection} className="rounded" />
+                    <input type="checkbox" checked={isCurrentPageFullySelected} onChange={toggleAllSelection} className="rounded" />
                   </TableHead>
                   <TableHead className="sticky left-12 z-20 bg-gray-50 min-w-[120px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">姓名</TableHead>
                   {visibleColumns.gender && <TableHead>性别</TableHead>}
@@ -1129,6 +1239,10 @@ export function PopulationManagement() {
                   {visibleColumns.idCard && <TableHead>身份证号</TableHead>}
                   {visibleColumns.region && <TableHead>所属区域</TableHead>}
                   {visibleColumns.address && <TableHead>详细地址</TableHead>}
+                  {visibleColumns.family && <TableHead>家庭/房屋</TableHead>}
+                  {visibleColumns.relation && <TableHead>关系</TableHead>}
+                  {visibleColumns.biography && <TableHead>经历/诉求</TableHead>}
+                  {visibleColumns.visits && <TableHead>走访记录</TableHead>}
                   {visibleColumns.tags && <TableHead>标签</TableHead>}
                   {visibleColumns.type && <TableHead>居住类型</TableHead>}
                   {visibleColumns.status && <TableHead>状态</TableHead>}
@@ -1136,8 +1250,9 @@ export function PopulationManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPopulations.length > 0 ? (
-                  filteredPopulations.map((pop) => {
+                {paginatedPopulations.length > 0 ? (
+                  paginatedPopulations.map((pop) => {
+                    const visitDisplay = getVisitDisplay(pop, visitsByPersonId);
                     return (
                       <TableRow key={pop.id}>
                         <TableCell className="sticky left-0 z-10 bg-white">
@@ -1171,6 +1286,34 @@ export function PopulationManagement() {
                           </TableCell>
                         )}
                         {visibleColumns.address && <TableCell className="max-w-[200px] truncate" title={pop.address}>{pop.address}</TableCell>}
+                        {visibleColumns.family && (
+                          <TableCell className="max-w-[220px] text-sm">
+                            <div className="truncate font-medium text-gray-900" title={getHouseDisplay(pop, houseMap)}>
+                              {getHouseDisplay(pop, houseMap)}
+                            </div>
+                            <div className="mt-1 text-xs text-gray-500">
+                              {pop.houseId ? `房屋 ID：${pop.houseId}` : "待补人房关联"}
+                            </div>
+                          </TableCell>
+                        )}
+                        {visibleColumns.relation && (
+                          <TableCell className="max-w-[160px] text-sm">
+                            <span className="text-gray-700">{getRelationDisplay(pop, peopleByHouseId)}</span>
+                          </TableCell>
+                        )}
+                        {visibleColumns.biography && (
+                          <TableCell className="max-w-[240px] text-sm">
+                            <div className="line-clamp-2 text-gray-700" title={getBiographyDisplay(pop)}>
+                              {getBiographyDisplay(pop)}
+                            </div>
+                          </TableCell>
+                        )}
+                        {visibleColumns.visits && (
+                          <TableCell className="text-sm">
+                            <div className="font-medium text-gray-900">{visitDisplay.title}</div>
+                            <div className="mt-1 text-xs text-gray-500">{visitDisplay.detail}</div>
+                          </TableCell>
+                        )}
                         {visibleColumns.tags && (
                           <TableCell>
                             <div className="flex flex-wrap gap-1 items-center max-w-[150px]">
@@ -1241,6 +1384,33 @@ export function PopulationManagement() {
                 )}
               </TableBody>
             </Table>
+          </div>
+          <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-gray-500">
+              共 {filteredPopulations.length} 条，当前显示 {filteredPopulations.length === 0 ? 0 : pageStart + 1}-
+              {Math.min(pageStart + PAGE_SIZE, filteredPopulations.length)} 条
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safeCurrentPage <= 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                上一页
+              </Button>
+              <div className="min-w-[92px] text-center text-sm text-gray-600">
+                第 {safeCurrentPage} / {totalPages} 页
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={safeCurrentPage >= totalPages}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              >
+                下一页
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -168,7 +168,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
             "w-full flex items-center gap-3 h-10 rounded-[2px] transition-all duration-200",
             paddingClass,
             isActive && "bg-[rgba(39,97,203,0.08)] text-[#2761CB]",
-            !isActive && "text-[#8194B5] hover:text-[#AEC0DE] hover:bg-[rgba(39,97,203,0.04)]",
+            !isActive && "text-[#8194B5] hover:text-[#2761CB] hover:bg-[rgba(39,97,203,0.06)]",
             collapsed && "justify-center px-2"
           )}
         >
@@ -229,7 +229,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
               建议这样看
             </div>
             <div className="mt-2 text-xs leading-5 text-[var(--color-neutral-09)]">
-              先看驾驶舱，再进人口管理、房屋管理和矛盾调解，最后切到移动端工作台体验一线执行链路。
+              面向一线网格员的移动工作台入口，用于查看待办、人口、房屋和走访任务。
             </div>
           </div>
         )}
@@ -240,7 +240,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
           className="w-full justify-center bg-blue-50 dark:bg-[var(--color-neutral-02)] text-blue-600 dark:text-[var(--color-brand-primary-hover)] border-blue-200 dark:border-[var(--color-brand-primary)] hover:bg-blue-100 dark:hover:bg-[var(--color-neutral-03)]"
         >
           <Smartphone className={cn("shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
-          {!collapsed && <span className="ml-2 text-xs">打开移动端工作台</span>}
+          {!collapsed && <span className="ml-2 text-xs">体验移动端工作台</span>}
         </Button>
 
       </div>
