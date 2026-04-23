@@ -15,12 +15,16 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
+import { AiStatusBadge } from '../ui/AiStatusBadge';
 import {
   buildSecondaryAiIntro,
   buildSecondaryAiReply,
   type SecondaryAiKind,
 } from '../../services/secondaryAiDemo';
-import { secondaryAiRepository } from '../../services/repositories/secondaryAiRepository';
+import {
+  secondaryAiRepository,
+  type SecondaryAiChatResult,
+} from '../../services/repositories/secondaryAiRepository';
 
 // --- Shared Types & Mock Data ---
 
@@ -28,6 +32,7 @@ interface Message {
   id: number;
   role: 'ai' | 'user';
   content: string;
+  aiStatus?: SecondaryAiChatResult;
 }
 
 interface SmartChatProps {
@@ -75,16 +80,17 @@ function BaseSmartChat({
     setSending(true);
 
     try {
-      const content = apiKind
-        ? (await secondaryAiRepository.sendMessage(apiKind, nextPrompt)).content
-        : buildSecondaryAiReply(demoKind, nextPrompt);
+      const response = apiKind
+        ? await secondaryAiRepository.sendMessage(apiKind, nextPrompt)
+        : null;
 
       setMessages(prev => [
         ...prev,
         {
           id: timestamp + 1,
           role: 'ai',
-          content,
+          content: response?.content ?? buildSecondaryAiReply(demoKind, nextPrompt),
+          aiStatus: response ?? undefined,
         },
       ]);
     } finally {
@@ -151,6 +157,16 @@ function BaseSmartChat({
                         : 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-03)] rounded-tl-sm'
                     }`}>
                       <div className="whitespace-pre-wrap">{msg.content}</div>
+                      {msg.role === 'ai' && msg.aiStatus ? (
+                        <div className="mt-3">
+                          <AiStatusBadge
+                            status={msg.aiStatus.status}
+                            model={msg.aiStatus.model}
+                            usedFallbackModel={msg.aiStatus.used_fallback_model}
+                            error={msg.aiStatus.error}
+                          />
+                        </div>
+                      ) : null}
                     </div>
                     <span className="text-xs text-[var(--color-neutral-08)] mt-1 px-1">
                       {new Date(msg.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}

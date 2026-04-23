@@ -6,8 +6,12 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Avatar, AvatarFallback } from '../ui/avatar';
+import { AiStatusBadge } from '../ui/AiStatusBadge';
 import { buildSecondaryAiIntro, buildSecondaryAiReply } from '../../services/secondaryAiDemo';
-import { secondaryAiRepository } from '../../services/repositories/secondaryAiRepository';
+import {
+  secondaryAiRepository,
+  type SecondaryAiChatResult,
+} from '../../services/repositories/secondaryAiRepository';
 
 interface MobileOfficialWritingProps {
   onBack: () => void;
@@ -17,6 +21,7 @@ interface Message {
   id: number;
   role: 'ai' | 'user';
   content: string;
+  aiStatus?: SecondaryAiChatResult;
 }
 
 export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
@@ -54,6 +59,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
           id: timestamp + 1,
           role: 'ai',
           content: response.content || buildSecondaryAiReply('writing', nextPrompt),
+          aiStatus: response,
         },
       ]);
     } finally {
@@ -130,6 +136,17 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
                   }`}>
                     {msg.content}
                   </p>
+                  {msg.role === 'ai' && msg.aiStatus ? (
+                    <div className="mt-3">
+                      <AiStatusBadge
+                        status={msg.aiStatus.status}
+                        model={msg.aiStatus.model}
+                        usedFallbackModel={msg.aiStatus.used_fallback_model}
+                        error={msg.aiStatus.error}
+                        compact
+                      />
+                    </div>
+                  ) : null}
                 </div>
               </Card>
             </div>
