@@ -18,7 +18,7 @@ if ! gh auth status >/dev/null 2>&1; then
   exit 2
 fi
 
-if [[ ! -d "${TARGET_ROOT}/.git" ]]; then
+if ! git -C "${TARGET_ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
   echo "ERROR: target is not a git repository: ${TARGET_ROOT}" >&2
   exit 2
 fi
