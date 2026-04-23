@@ -78,6 +78,14 @@ OK: homedata-web is synced to c1fb5b2f8f06690cf2c0edeebe5120b6061a8182
 
 当前发布仓 `README.md` 仍声明“不要直接改发布仓”，`SYNC_SOURCE.json` 保留来源主仓、来源 SHA、同步时间和同步模式。当前仍未做全自动 PR/cron 同步，这不是本轮 blocker；v1 的完成标准是“可检测、可追溯、禁直改边界明确”。
 
+后续治理收口见：
+
+```text
+docs/phase7-governance-closeout.md
+```
+
+该收口补齐了远端 stale 检测、PR 同步脚本、发布仓 stale-check workflow 模板，并记录了当前 GitHub private repo branch protection 因账号/计划限制不可启用的事实。
+
 ## T73 Railway 运行态探针
 
 状态：通过。
@@ -149,6 +157,7 @@ npm run typecheck
 npm run build -- --outDir /tmp/lingang-phase7-v1-dist
 python3 -m py_compile backend/app/services/ai/__init__.py backend/app/services/ai/observability.py backend/app/services/ai/llm_gateway.py
 bash scripts/check_homedata_web_stale.sh /Users/rayli/Desktop/homedata-web
+bash scripts/check_homedata_web_remote_stale.sh
 bash scripts/phase7_runtime_probe.sh https://homedata.lilei.dev
 curl -sS https://homedata.lilei.dev/api/health
 curl -sS -X POST https://homedata.lilei.dev/api/ai/chat -H 'Content-Type: application/json' -d '{"kind":"policy","agent_type":"assistant","message":"Phase 7 验证：请用一句话回复。"}'

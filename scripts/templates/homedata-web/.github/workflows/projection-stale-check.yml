@@ -1,0 +1,64 @@
+name: Projection Stale Check
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 1 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  stale-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout projection repo
+        uses: actions/checkout@v4
+
+      - name: Compare SYNC_SOURCE.json with source repo
+        env:
+          SOURCE_REPO_READ_TOKEN: ${{ secrets.SOURCE_REPO_READ_TOKEN }}
+          SOURCE_REPO: MochenRay/lingang-family-warehouse
+          SOURCE_REF: main
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SOURCE_REPO_READ_TOKEN}" ]]; then
+            echo "::warning::SOURCE_REPO_READ_TOKEN is not configured; cross-private-repo stale check skipped."
+            exit 0
+          fi
+
+          projection_sha="$(python3 - <<'PY'
+          import json
+          with open("SYNC_SOURCE.json", encoding="utf-8") as handle:
+              print(json.load(handle).get("source_commit_sha", ""))
+          PY
+          )"
+
+          source_sha="$(python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          repo = os.environ["SOURCE_REPO"]
+          ref = os.environ["SOURCE_REF"]
+          token = os.environ["SOURCE_REPO_READ_TOKEN"]
+          request = urllib.request.Request(
+              f"https://api.github.com/repos/{repo}/commits/{ref}",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urllib.request.urlopen(request, timeout=20) as response:
+              print(json.load(response)["sha"])
+          PY
+          )"
+
+          if [[ "${projection_sha}" != "${source_sha}" ]]; then
+            echo "Projection stale: homedata-web points at ${projection_sha}, source main is ${source_sha}" >&2
+            exit 1
+          fi
+
+          echo "Projection is synced to ${source_sha}"
