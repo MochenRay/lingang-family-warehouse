@@ -49,7 +49,7 @@ copy_path "public"
 
 mkdir -p "${STAGING_DIR}"
 cp "${README_TEMPLATE}" "${STAGING_DIR}/README.md"
-if [[ -d "${PROJECTION_TEMPLATE_DIR}/.github" ]]; then
+if [[ "${INCLUDE_GITHUB_WORKFLOWS:-0}" == "1" && -d "${PROJECTION_TEMPLATE_DIR}/.github" ]]; then
   mkdir -p "${STAGING_DIR}/.github"
   rsync -a "${PROJECTION_TEMPLATE_DIR}/.github/" "${STAGING_DIR}/.github/"
 fi

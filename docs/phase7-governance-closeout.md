@@ -11,7 +11,7 @@ This closeout finishes the remaining Phase 7 operational gaps that were not part
 
 - Remote stale detection no longer requires a local `homedata-web` checkout.
 - Future projection sync can be opened as a `homedata-web` pull request instead of relying on direct `main` pushes.
-- The generated projection repo now includes a scheduled stale-check workflow template.
+- The source repo now keeps an optional scheduled stale-check workflow template for the projection repo.
 - The projection README explicitly records the no-direct-edit boundary, PR sync path, stale marker, and private-repo branch-protection limitation.
 
 This closeout still does not include Phase 8 work:
@@ -71,7 +71,11 @@ Added template:
 scripts/templates/homedata-web/.github/workflows/projection-stale-check.yml
 ```
 
-`scripts/sync_homedata_web.sh` now copies `.github/` from the projection template into `homedata-web`.
+`scripts/sync_homedata_web.sh` can copy `.github/` from the projection template into `homedata-web` when explicitly enabled:
+
+```bash
+INCLUDE_GITHUB_WORKFLOWS=1 bash scripts/sync_homedata_web.sh /Users/rayli/Desktop/homedata-web
+```
 
 Because both repositories are private, GitHub Actions cannot read the source repo with the projection repo's default `GITHUB_TOKEN`. The workflow therefore expects this optional secret:
 
@@ -80,6 +84,15 @@ SOURCE_REPO_READ_TOKEN
 ```
 
 If the secret is missing, the workflow emits a warning and exits successfully. This avoids false red deployments while still making the required hardening step visible.
+
+Current publishing limitation:
+
+```text
+The local gh OAuth token does not include the workflow scope.
+GitHub rejects pushes that add or update .github/workflows/*.
+```
+
+Therefore the workflow template is retained in the truth repo, but not pushed into `homedata-web` by default. The enforceable guardrail for this closeout is the remote stale-check script; the scheduled workflow becomes available once a workflow-scoped token or equivalent GitHub credential is configured.
 
 ### Branch Protection Limitation
 
@@ -97,7 +110,7 @@ Current enforceable guardrails are:
 - `SYNC_SOURCE.json` source marker
 - local and remote stale-check scripts
 - PR-based sync script
-- optional scheduled stale-check workflow once `SOURCE_REPO_READ_TOKEN` is configured
+- optional scheduled stale-check workflow once `SOURCE_REPO_READ_TOKEN` and workflow push credentials are configured
 
 ## Verification
 
@@ -108,10 +121,11 @@ bash -n scripts/check_homedata_web_remote_stale.sh scripts/sync_homedata_web_pr.
 bash scripts/check_homedata_web_remote_stale.sh
 tmpdir=$(mktemp -d /tmp/homedata-web-sync-test.XXXXXX)
 bash scripts/sync_homedata_web.sh "$tmpdir"
-test -f "$tmpdir/.github/workflows/projection-stale-check.yml"
 test -f "$tmpdir/README.md"
 test -f "$tmpdir/SYNC_SOURCE.json"
 python3 -m json.tool "$tmpdir/SYNC_SOURCE.json" >/dev/null
+INCLUDE_GITHUB_WORKFLOWS=1 bash scripts/sync_homedata_web.sh "$tmpdir"
+test -f "$tmpdir/.github/workflows/projection-stale-check.yml"
 rm -rf "$tmpdir"
 ```
 
@@ -128,4 +142,5 @@ Phase 7 is now closed for the current scope.
 Remaining follow-up is not a code blocker:
 
 - If Ray wants fully automatic private cross-repo stale checking, add a fine-grained GitHub token with read access to `lingang-family-warehouse` as `SOURCE_REPO_READ_TOKEN` in `homedata-web` repository secrets.
+- If the workflow file should be pushed by local `gh`, refresh the token with `workflow` scope first.
 - If GitHub plan/repo visibility changes, revisit branch protection and require PR-based sync at the platform level.
