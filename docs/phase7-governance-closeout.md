@@ -41,7 +41,7 @@ It uses `gh api`, so it can check the real GitHub remote state without opening t
 Current result:
 
 ```text
-OK: MochenRay/homedata-web@main is synced to 34a6f6e0ce880f15d51fe4442db5e6da9e000228
+OK: MochenRay/homedata-web@main is synced to <source-main-sha>
 ```
 
 ### PR-Based Projection Sync
@@ -132,7 +132,7 @@ rm -rf "$tmpdir"
 Observed result:
 
 ```text
-OK: MochenRay/homedata-web@main is synced to 34a6f6e0ce880f15d51fe4442db5e6da9e000228
+OK: MochenRay/homedata-web@main is synced to <source-main-sha>
 ```
 
 ## Operational Boundary
