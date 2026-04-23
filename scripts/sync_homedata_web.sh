@@ -6,7 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 TARGET_ROOT="${1:-/Users/rayli/Desktop/homedata-web}"
 STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/homedata-web-sync.XXXXXX")"
-README_TEMPLATE="${SCRIPT_DIR}/templates/homedata-web/README.md"
+PROJECTION_TEMPLATE_DIR="${SCRIPT_DIR}/templates/homedata-web"
+README_TEMPLATE="${PROJECTION_TEMPLATE_DIR}/README.md"
 
 cleanup() {
   rm -rf "${STAGING_DIR}"
@@ -48,6 +49,10 @@ copy_path "public"
 
 mkdir -p "${STAGING_DIR}"
 cp "${README_TEMPLATE}" "${STAGING_DIR}/README.md"
+if [[ -d "${PROJECTION_TEMPLATE_DIR}/.github" ]]; then
+  mkdir -p "${STAGING_DIR}/.github"
+  rsync -a "${PROJECTION_TEMPLATE_DIR}/.github/" "${STAGING_DIR}/.github/"
+fi
 
 SOURCE_COMMIT_SHA="$(git -C "${SOURCE_ROOT}" rev-parse HEAD)"
 SOURCE_BRANCH="$(git -C "${SOURCE_ROOT}" rev-parse --abbrev-ref HEAD)"
