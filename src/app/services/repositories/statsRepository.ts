@@ -155,7 +155,7 @@ export interface PerformanceStatsResponse {
   qualityAlerts: StatsQualityAlertItem[];
 }
 
-const PERFORMANCE_DISTRICT_NAME = '海源示范片区';
+const PERFORMANCE_DISTRICT_NAME = '蓬莱示范片区';
 
 function clampScore(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value));

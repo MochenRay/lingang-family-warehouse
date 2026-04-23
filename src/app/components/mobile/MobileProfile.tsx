@@ -28,14 +28,14 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
   const [username] = useState(mobileContextRepository.getCurrentWorkerName() || '网格员张三');
   const [currentGrid, setCurrentGrid] = useState(() => {
     const saved = mobileContextRepository.getCurrentGridSelection();
-    return { id: saved.id || 'g1', name: saved.name || '竹岛街道海源社区第一网格' };
+    return { id: saved.id || 'g1', name: saved.name || '登州街道海梦苑社区第一网格' };
   });
 
   // 模拟切换网格身份（开发调试用）
   const switchGrid = (gridId: string) => {
     const grids: Record<string, { id: string; name: string }> = {
-      'g1': { id: 'g1', name: '竹岛街道海源社区第一网格' },
-      'g2': { id: 'g2', name: '竹岛街道海源社区第二网格' }
+      'g1': { id: 'g1', name: '登州街道海梦苑社区第一网格' },
+      'g2': { id: 'g2', name: '登州街道海梦苑社区第二网格' }
     };
     const newGrid = grids[gridId];
     if (newGrid) {
@@ -188,7 +188,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
 
           {/* 版本信息 */}
           <div className="text-center text-xs text-[var(--color-neutral-06)] pb-4">
-            <p>威海家庭数仓移动采集端</p>
+            <p>烟台家庭数仓移动采集端</p>
             <p className="mt-1">版本 v1.0.0</p>
           </div>
         </div>

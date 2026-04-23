@@ -206,7 +206,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
             <Database className="w-6 h-6 text-blue-600 dark:text-[var(--color-brand-primary-hover)]" />
             <div className="flex flex-col">
               <span className="font-semibold text-gray-900 dark:text-[var(--color-neutral-11)]">家庭数仓</span>
-              <span className="text-xs text-gray-500 dark:text-[var(--color-neutral-08)]">威海临港</span>
+              <span className="text-xs text-gray-500 dark:text-[var(--color-neutral-08)]">烟台蓬莱</span>
             </div>
           </div>
         ) : (

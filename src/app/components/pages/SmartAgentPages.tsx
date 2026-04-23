@@ -254,7 +254,7 @@ export function PolicyInterpretation() {
         content: buildSecondaryAiIntro('policy')
       }]}
       suggestedQuestions={[
-        "临港区最新的低保申请条件是什么？",
+        "蓬莱区最新的低保申请条件是什么？",
         "残疾人两项补贴的具体标准是多少？",
         "退役军人优待证如何办理？",
         "大病救助的报销比例是多少？"

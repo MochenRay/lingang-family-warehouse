@@ -10,18 +10,8 @@ import { Label } from '../ui/label';
 
 // 复用行政区划数据结构
 const REGIONS = {
-  '环翠区': {
-    '竹岛街道': ['海源社区', '翠竹社区', '青竹社区'],
-    '环翠楼街道': ['东北村社区', '东南村社区'],
-    '鲸园街道': ['古陌社区', '北门外社区']
-  },
-  '文登区': {
-    '龙山路街道': ['龙山社区', '五龙社区'],
-    '天福路街道': ['天福社区', '文山社区']
-  },
-  '临港区': {
-    '草庙子镇': ['草庙子村', '林泉社区'],
-    '蔄山镇': ['蔄山村', '汶口社区']
+  '蓬莱区': {
+    '登州街道': ['海梦苑社区', '东城社区']
   }
 };
 
@@ -64,7 +54,7 @@ export function UserManagement() {
       id: 1,
       username: 'admin',
       realName: '张三',
-      email: 'zhangsan@weihai.gov.cn',
+      email: 'zhangsan@yantai.gov.cn',
       phone: '13800138001',
       role: '系统管理员',
       department: '数据管理中心',
@@ -78,11 +68,11 @@ export function UserManagement() {
       id: 2,
       username: 'district_hc',
       realName: '李四',
-      email: 'lisi@weihai.gov.cn',
+      email: 'lisi@yantai.gov.cn',
       phone: '13800138002',
       role: '区域管理员',
-      department: '环翠区管理办',
-      scope: '环翠区',
+      department: '蓬莱区管理办',
+      scope: '蓬莱区',
       status: 'active',
       lastLogin: '2026-01-20 14:15:00',
       cityBrainAccount: 'cb_hc_002',
@@ -92,11 +82,11 @@ export function UserManagement() {
       id: 3,
       username: 'street_zd',
       realName: '王五',
-      email: 'wangwu@weihai.gov.cn',
+      email: 'wangwu@yantai.gov.cn',
       phone: '13800138003',
       role: '街道干部',
-      department: '竹岛街道办事处',
-      scope: '环翠区/竹岛街道',
+      department: '登州街道办事处',
+      scope: '蓬莱区/登州街道',
       status: 'active',
       lastLogin: '2026-01-20 13:45:00',
       cityBrainAccount: 'cb_zd_003',
@@ -106,11 +96,11 @@ export function UserManagement() {
       id: 4,
       username: 'grid_hy',
       realName: '赵六',
-      email: 'zhaoliu@weihai.gov.cn',
+      email: 'zhaoliu@yantai.gov.cn',
       phone: '13800138004',
       role: '网格员',
-      department: '海源社区居委会',
-      scope: '环翠区/竹岛街道/海源社区',
+      department: '海梦苑社区居委会',
+      scope: '蓬莱区/登州街道/海梦苑社区',
       status: 'active',
       lastLogin: '2026-01-19 16:20:00',
       cityBrainAccount: 'cb_grid_004',
@@ -270,7 +260,7 @@ export function UserManagement() {
                     </Select>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    注：如果不选择下级区域，则默认为管辖上级区域下的所有范围。例如只选"环翠区"，则拥有全区权限。
+                    注：如果不选择下级区域，则默认为管辖上级区域下的所有范围。例如只选"蓬莱区"，则拥有全区权限。
                   </p>
                 </div>
               </div>

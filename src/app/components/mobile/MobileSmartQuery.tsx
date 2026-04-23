@@ -52,9 +52,9 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
   };
 
   const suggestedQuestions = [
-    "竹岛街道60岁以上老人有多少？",
+    "登州街道60岁以上老人有多少？",
     "本月新增人口数量对比上月如何？",
-    "环翠区各街道人口密度排名",
+    "蓬莱区各街道人口密度排名",
     "独居老人分布最多的前5个社区"
   ];
 
