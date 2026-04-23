@@ -37,7 +37,7 @@ from app.services.task_rules import build_task_projection
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
-DEFAULT_DISTRICT_NAME = "海源示范片区"
+DEFAULT_DISTRICT_NAME = "蓬莱示范片区"
 AGE_BUCKETS = (
     ("0-18岁", 0, 18, "#8b5cf6"),
     ("19-35岁", 19, 35, "#3b82f6"),

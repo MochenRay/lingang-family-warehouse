@@ -14,7 +14,7 @@ class NoticeBase(SQLModel):
     status: str = Field(index=True, max_length=16, default="published")
     publishedAt: str = Field(max_length=32)
     publisher: str = Field(max_length=80)
-    department: str = Field(max_length=120, default="临港区社会治理现代化指挥中心")
+    department: str = Field(max_length=120, default="蓬莱区社会治理现代化指挥中心")
     scheduledTime: str | None = Field(default=None, max_length=32)
     readCount: int = Field(default=0, ge=0)
     attachments: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON, nullable=False))
