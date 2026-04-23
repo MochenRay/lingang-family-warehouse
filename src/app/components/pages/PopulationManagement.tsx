@@ -491,7 +491,7 @@ export function PopulationManagement() {
         personRepository.getPeople(),
         personRepository.getGrids(),
         houseRepository.getHouses(),
-        visitRepository.getVisits({ targetType: "person", order: "desc", limit: 1000 }),
+        visitRepository.getVisits({ targetType: "person", order: "desc", limit: 500 }),
       ]);
       const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
       const mappedPopulations = people.map((person) => mapPersonToPopulation(person, gridMap.get(person.gridId)));
