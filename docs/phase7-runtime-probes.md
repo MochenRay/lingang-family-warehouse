@@ -1,6 +1,6 @@
 # Phase 7 Runtime Probes
 
-> 最近确认时间：2026-04-23 19:25 CST
+> 最近确认时间：2026-04-23 20:32 CST
 > 公网入口：`https://homedata.lilei.dev`
 
 ## Railway Restart
@@ -61,6 +61,42 @@ task_rules=3
 }
 ```
 
+## AI Kill Switch 探针
+
+本轮短暂将 Railway 后端环境变量切为 `AI_ENABLED=false`，验证完成后已切回 `AI_ENABLED=true`。
+
+关闭时公网结果：
+
+```text
+GET /api/health -> {"status":"ok","backend":"ready","database":"ok","ai":"disabled","error":null}
+POST /api/ai/chat -> status=disabled / model=null / error="AI service disabled by environment flag."
+```
+
+关闭时页面结果：
+
+```text
+政策解读页发起问题后，页面渲染状态标记：AI 已关闭
+```
+
+恢复后公网结果：
+
+```text
+GET /api/health -> {"status":"ok","backend":"ready","database":"ok","ai":"ready","error":null}
+POST /api/ai/chat -> status=live / model=gemini-2.5-flash-lite / used_fallback_model=true
+```
+
+恢复后页面结果：
+
+```text
+政策解读页发起问题后，页面渲染状态标记：AI 回退模型 / gemini-2.5-flash-lite
+```
+
+结构化日志证据：
+
+```text
+ai_event={"event":"ai_fallback_model_used","status":"live","model":"gemini-2.5-flash-lite","used_fallback_model":true}
+```
+
 ## 预算侧记录
 
 - Railway account 已设置 `$10` email alert
@@ -72,4 +108,5 @@ task_rules=3
 
 - Restart 后首轮健康检查在 `2s` 内返回，低于 `8s` 阈值
 - Railway Postgres 数据在服务 restart 后仍保持标准演示口径
+- AI kill switch 在公网环境可用，关闭时页面不会空白，恢复后仍能回到 live fallback
 - 当前无需立即引入 warm-up / keep-alive
