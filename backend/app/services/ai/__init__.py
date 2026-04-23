@@ -1,6 +1,7 @@
 from typing import Literal
 
 from app.services.ai.llm_gateway import AITrialKind, LLMGateway, LLMRequestError
+from app.services.ai.observability import log_ai_event
 
 SUPPORTED_AGENT_TYPES = ("data_agent", "dispatch_agent", "assistant")
 TRIAL_AI_KINDS = ("query", "policy", "writing")
@@ -65,8 +66,16 @@ def build_ai_chat_response(
 ) -> dict[str, object]:
     gateway = LLMGateway()
     capability = gateway.describe()
+    requested_agent = agent_type or "assistant"
 
     if not capability["enabled"]:
+        log_ai_event(
+            "ai_disabled",
+            status="disabled",
+            kind=kind,
+            agent_type=requested_agent,
+            error="AI service disabled by environment flag.",
+        )
         return build_placeholder_response(
             agent_type=agent_type,
             context_id=context_id,
@@ -77,6 +86,13 @@ def build_ai_chat_response(
         )
 
     if not capability["configured"]:
+        log_ai_event(
+            "ai_unconfigured",
+            status="unconfigured",
+            kind=kind,
+            agent_type=requested_agent,
+            error="LLM environment variables are incomplete.",
+        )
         return build_placeholder_response(
             agent_type=agent_type,
             context_id=context_id,
@@ -89,6 +105,14 @@ def build_ai_chat_response(
     try:
         result = gateway.generate_with_fallback(kind=kind, prompt=request_message or "")
     except LLMRequestError as exc:
+        log_ai_event(
+            "ai_degraded",
+            status="degraded",
+            kind=kind,
+            agent_type=requested_agent,
+            upstream_status_code=exc.status_code,
+            error=exc.message,
+        )
         return build_placeholder_response(
             agent_type=agent_type,
             context_id=context_id,
@@ -98,6 +122,13 @@ def build_ai_chat_response(
             error=exc.message,
         )
     except Exception as exc:
+        log_ai_event(
+            "ai_unexpected_failure",
+            status="degraded",
+            kind=kind,
+            agent_type=requested_agent,
+            error=str(exc),
+        )
         return build_placeholder_response(
             agent_type=agent_type,
             context_id=context_id,
@@ -107,9 +138,20 @@ def build_ai_chat_response(
             error=f"Unexpected LLM gateway failure: {exc}",
         )
 
+    if result.used_fallback_model:
+        log_ai_event(
+            "ai_fallback_model_used",
+            status="live",
+            kind=kind,
+            agent_type=requested_agent,
+            model=result.model,
+            used_fallback_model=True,
+            error="Primary model failed; fallback model returned content.",
+        )
+
     return {
         "status": "live",
-        "agent_type": agent_type or "assistant",
+        "agent_type": requested_agent,
         "kind": kind,
         "context_id": context_id,
         "request": {
