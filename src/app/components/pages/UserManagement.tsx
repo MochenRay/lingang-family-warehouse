@@ -7,13 +7,7 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
-
-// 复用行政区划数据结构
-const REGIONS = {
-  '蓬莱区': {
-    '登州街道': ['海梦苑社区', '东城社区']
-  }
-};
+import { getCommunities, getDistricts, getStreets } from '../../config/regions';
 
 export function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -33,20 +27,6 @@ export function UserManagement() {
     email: '',
     phone: ''
   });
-
-  // 获取可选的街道列表
-  const getStreets = (district: string) => {
-    if (!district || !REGIONS[district as keyof typeof REGIONS]) return [];
-    return Object.keys(REGIONS[district as keyof typeof REGIONS]);
-  };
-
-  // 获取可选的社区列表
-  const getCommunities = (district: string, street: string) => {
-    if (!district || !street) return [];
-    const streets = REGIONS[district as keyof typeof REGIONS];
-    if (!streets) return [];
-    return streets[street as keyof typeof streets] || [];
-  };
 
   // 用户列表数据
   const users = [
@@ -225,7 +205,7 @@ export function UserManagement() {
                         <SelectValue placeholder="区县" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Object.keys(REGIONS).map(d => (
+                        {getDistricts().map(d => (
                           <SelectItem key={d} value={d}>{d}</SelectItem>
                         ))}
                       </SelectContent>

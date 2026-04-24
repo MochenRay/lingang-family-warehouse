@@ -1,4 +1,5 @@
-import { Menu, Bell, User, ChevronDown, LogOut, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Menu, Bell, User, ChevronDown, LogOut, Settings, Database, ServerOff } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -9,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
+import { API_DATA_SOURCE_EVENT, getApiDataSourceSnapshot, type ApiDataSourceSnapshot } from '../services/api';
 
 interface HeaderProps {
   onToggleSidebar: () => void;
@@ -16,6 +18,23 @@ interface HeaderProps {
 }
 
 export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
+  const [dataSource, setDataSource] = useState<ApiDataSourceSnapshot>(() => getApiDataSourceSnapshot());
+
+  useEffect(() => {
+    const handleDataSourceChange = () => setDataSource(getApiDataSourceSnapshot());
+    window.addEventListener(API_DATA_SOURCE_EVENT, handleDataSourceChange);
+    window.addEventListener('storage', handleDataSourceChange);
+    return () => {
+      window.removeEventListener(API_DATA_SOURCE_EVENT, handleDataSourceChange);
+      window.removeEventListener('storage', handleDataSourceChange);
+    };
+  }, []);
+
+  const isFallback = dataSource.source === 'fallback';
+  const isApiError = dataSource.source === 'api-error';
+  const isUnknown = dataSource.source === 'unknown';
+  const dataSourceLabel = isFallback ? '本地降级' : isApiError ? 'API 异常' : dataSource.source === 'api' ? 'API 数据' : '数据源待探测';
+
   return (
     <header className="h-16 bg-white dark:bg-[var(--color-neutral-01)] border-b border-gray-200 dark:border-[var(--color-neutral-03)] flex items-center justify-between px-6 transition-colors duration-200">
       {/* 左侧：菜单切换按钮 */}
@@ -33,6 +52,19 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           <span className="text-sm text-gray-500 dark:text-[var(--color-neutral-08)]">当前辖区:</span>
           <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:text-[var(--color-brand-primary-hover)] dark:border-[var(--color-brand-primary)] dark:bg-[var(--color-neutral-02)]">
             烟台市
+          </Badge>
+          <Badge
+            variant="outline"
+            title={`${dataSource.mode} · ${dataSource.baseUrl}${dataSource.lastError ? ` · ${dataSource.lastError}` : ''}`}
+            className={isFallback || isApiError
+              ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/70 dark:bg-amber-500/10 dark:text-amber-200"
+              : isUnknown
+                ? "border-gray-200 bg-gray-50 text-gray-600 dark:border-[var(--color-neutral-04)] dark:bg-[var(--color-neutral-02)] dark:text-[var(--color-neutral-08)]"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200"
+            }
+          >
+            {isFallback || isApiError ? <ServerOff className="mr-1 h-3 w-3" /> : <Database className="mr-1 h-3 w-3" />}
+            {dataSourceLabel}
           </Badge>
         </div>
       </div>

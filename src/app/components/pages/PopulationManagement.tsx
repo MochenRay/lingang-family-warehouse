@@ -79,13 +79,7 @@ import { houseRepository } from "../../services/repositories/houseRepository";
 import { personRepository } from "../../services/repositories/personRepository";
 import { visitRepository } from "../../services/repositories/visitRepository";
 import { Grid, House, Person, PersonType, VisitRecord } from "../../types/core";
-
-// 复用行政区划数据结构
-const REGIONS = {
-  '蓬莱区': {
-    '登州街道': ['海梦苑社区', '东城社区']
-  }
-};
+import { getCommunities, getDistricts, getStreets, inferRegionByGridName } from "../../config/regions";
 
 // Extend Person for local UI needs if necessary, but try to use core type or map it
 interface Population extends Person {
@@ -159,29 +153,6 @@ const inferRiskLevel = (tags: string[] = [], careLabels?: string[]): Population[
   return "Low";
 };
 
-const inferRegionByGrid = (grid?: Grid): Pick<Population, "district" | "street" | "community"> => {
-  if (!grid) {
-    return {};
-  }
-
-  for (const [district, streets] of Object.entries(REGIONS)) {
-    for (const [street, communities] of Object.entries(streets)) {
-      if (!grid.name.includes(street)) {
-        continue;
-      }
-
-      const matchedCommunity = communities.find((community) => grid.name.includes(community));
-      return {
-        district,
-        street,
-        community: matchedCommunity,
-      };
-    }
-  }
-
-  return {};
-};
-
 const mapPersonToPopulation = (person: Person, grid?: Grid): Population => {
   const extracted = extractInfoFromIdCard(person.idCard);
 
@@ -191,7 +162,7 @@ const mapPersonToPopulation = (person: Person, grid?: Grid): Population => {
     gender: (extracted?.gender as "男" | "女" | undefined) ?? person.gender,
     status: inferPopulationStatus(person),
     createTime: person.updatedAt,
-    ...inferRegionByGrid(grid),
+    ...inferRegionByGridName(grid?.name),
   };
 };
 
@@ -546,20 +517,6 @@ export function PopulationManagement() {
       cancelled = true;
     };
   }, [isViewDialogOpen, selectedPopulation?.id]);
-
-  // 获取可选的街道列表
-  const getStreets = (district: string) => {
-    if (!district || district === 'all' || !REGIONS[district as keyof typeof REGIONS]) return [];
-    return Object.keys(REGIONS[district as keyof typeof REGIONS]);
-  };
-
-  // 获取可选的社区列表
-  const getCommunities = (district: string, street: string) => {
-    if (!district || !street || district === 'all' || street === 'all') return [];
-    const streets = REGIONS[district as keyof typeof REGIONS];
-    if (!streets) return [];
-    return streets[street as keyof typeof streets] || [];
-  };
 
   // 筛选数据
   const filteredPopulations = populations.filter((pop) => {
@@ -983,7 +940,7 @@ export function PopulationManagement() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">全区县</SelectItem>
-                    {Object.keys(REGIONS).map(d => (
+                    {getDistricts().map(d => (
                       <SelectItem key={d} value={d}>{d}</SelectItem>
                     ))}
                   </SelectContent>
@@ -2691,7 +2648,7 @@ export function PopulationManagement() {
               >
                 <SelectTrigger><SelectValue placeholder="选择区县" /></SelectTrigger>
                 <SelectContent>
-                  {Object.keys(REGIONS).map(d => (
+                  {getDistricts().map(d => (
                     <SelectItem key={d} value={d}>{d}</SelectItem>
                   ))}
                 </SelectContent>
