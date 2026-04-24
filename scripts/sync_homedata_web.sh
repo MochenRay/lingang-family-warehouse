@@ -78,6 +78,6 @@ cat > "${STAGING_DIR}/SYNC_SOURCE.json" <<EOF
 }
 EOF
 
-rsync -a --delete --exclude ".git/" "${STAGING_DIR}/" "${TARGET_ROOT}/"
+rsync -a --delete --exclude ".git" "${STAGING_DIR}/" "${TARGET_ROOT}/"
 
 echo "synced ${TARGET_ROOT}"
