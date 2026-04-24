@@ -1,12 +1,23 @@
 export type DataMode = 'auto' | 'api' | 'fallback';
+export type ApiDataSource = 'unknown' | 'api' | 'fallback' | 'api-error';
 
 export interface ApiListResponse<T> {
   items: T[];
   total: number;
 }
 
+export interface ApiDataSourceSnapshot {
+  mode: DataMode;
+  source: ApiDataSource;
+  baseUrl: string;
+  lastError?: string;
+  updatedAt?: string;
+}
+
 const DEFAULT_LOCAL_API_URL = 'http://localhost:8000/api';
 const DATA_MODE_STORAGE_KEY = 'app_data_mode';
+const DATA_SOURCE_STORAGE_KEY = 'app_api_data_source';
+export const API_DATA_SOURCE_EVENT = 'app-api-data-source-change';
 const VALID_DATA_MODES = new Set<DataMode>(['auto', 'api', 'fallback']);
 
 function readEnvValue(key: string): string | undefined {
@@ -66,6 +77,54 @@ export function buildQueryString(
   return query ? `?${query}` : '';
 }
 
+function defaultDataSourceSnapshot(): ApiDataSourceSnapshot {
+  const mode = getDataMode();
+  return {
+    mode,
+    source: mode === 'fallback' ? 'fallback' : 'unknown',
+    baseUrl: getApiBaseUrl(),
+  };
+}
+
+export function getApiDataSourceSnapshot(): ApiDataSourceSnapshot {
+  if (typeof window === 'undefined') {
+    return defaultDataSourceSnapshot();
+  }
+
+  const raw = window.localStorage.getItem(DATA_SOURCE_STORAGE_KEY);
+  if (!raw) {
+    return defaultDataSourceSnapshot();
+  }
+
+  try {
+    return {
+      ...defaultDataSourceSnapshot(),
+      ...JSON.parse(raw),
+      mode: getDataMode(),
+      baseUrl: getApiBaseUrl(),
+    } as ApiDataSourceSnapshot;
+  } catch {
+    return defaultDataSourceSnapshot();
+  }
+}
+
+function recordApiDataSource(source: ApiDataSource, lastError?: unknown) {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  const snapshot: ApiDataSourceSnapshot = {
+    mode: getDataMode(),
+    source,
+    baseUrl: getApiBaseUrl(),
+    lastError: lastError instanceof Error ? lastError.message : typeof lastError === 'string' ? lastError : undefined,
+    updatedAt: new Date().toISOString(),
+  };
+
+  window.localStorage.setItem(DATA_SOURCE_STORAGE_KEY, JSON.stringify(snapshot));
+  window.dispatchEvent(new CustomEvent(API_DATA_SOURCE_EVENT, { detail: snapshot }));
+}
+
 function resolveUrl(path: string): string {
   if (path.startsWith('http://') || path.startsWith('https://')) {
     return path;
@@ -102,17 +161,22 @@ export async function callWithFallback<T>(
   const mode = getDataMode();
 
   if (mode === 'fallback') {
+    recordApiDataSource('fallback', '数据模式已固定为 fallback');
     return await fallbackCall();
   }
 
   try {
-    return await apiCall();
+    const result = await apiCall();
+    recordApiDataSource('api');
+    return result;
   } catch (error) {
     if (mode === 'api') {
+      recordApiDataSource('api-error', error);
       throw error;
     }
 
     console.warn('API unavailable, falling back to local db.', error);
+    recordApiDataSource('fallback', error);
     return await fallbackCall();
   }
 }

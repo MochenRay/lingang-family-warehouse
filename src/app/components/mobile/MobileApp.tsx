@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MobileHome } from './MobileHome';
 import { HouseCollect } from './HouseCollect';
 import { PersonCollect } from './PersonCollect';
@@ -38,15 +38,39 @@ interface MobileAppProps {
 }
 
 export function MobileApp({ onExitMobile }: MobileAppProps) {
-  const buildInitialHistory = () => {
-    const path = window.location.pathname;
-    if (path.includes('/mobile/tasks')) return ['home', 'tasks?mode=today'];
+  const buildInitialHistory = (pathname = window.location.pathname, search = window.location.search) => {
+    const path = pathname.replace(/\/+$/, '') || '/mobile';
+    const params = new URLSearchParams(search);
+
+    if (path.startsWith('/mobile/tasks/')) return ['home', 'tasks?mode=today', path];
+    if (path === '/mobile/tasks') return ['home', `tasks?mode=${params.get('mode') || 'today'}`];
     if (path.includes('/mobile/visit-form/')) {
       const personId = path.split('/mobile/visit-form/')[1];
       if (personId) {
         return ['home', 'people', `person-detail/${personId}`, `visit-form/${personId}`];
       }
     }
+    if (path.includes('/mobile/person/') && path.endsWith('/edit')) {
+      const personId = path.split('/mobile/person/')[1]?.replace('/edit', '');
+      if (personId) return ['home', 'people', `person-detail/${personId}`, `person-edit/${personId}`];
+    }
+    if (path.includes('/mobile/person/')) {
+      const personId = path.split('/mobile/person/')[1];
+      if (personId) return ['home', 'people', `person-detail/${personId}`];
+    }
+    if (path.includes('/mobile/house/') && path.endsWith('/edit')) {
+      const houseId = path.split('/mobile/house/')[1]?.replace('/edit', '');
+      if (houseId) return ['home', 'housing', `house-detail/${houseId}`, `house-edit/${houseId}`];
+    }
+    if (path.includes('/mobile/house/')) {
+      const houseId = path.split('/mobile/house/')[1];
+      if (houseId) return ['home', 'housing', `house-detail/${houseId}`];
+    }
+    if (path.includes('/mobile/notices/')) {
+      const noticeId = path.split('/mobile/notices/')[1];
+      if (noticeId) return ['home', 'notices', `notice-detail/${noticeId}`];
+    }
+    if (path === '/mobile/notices') return ['home', 'notices'];
     if (path.includes('/mobile/conflict/new')) return ['home', 'conflict', 'conflict-form'];
     if (path.includes('/mobile/conflict/')) {
       const id = path.split('/mobile/conflict/')[1];
@@ -55,10 +79,28 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       }
     }
     if (path.includes('/mobile/conflict')) return ['home', 'conflict'];
+    if (path.includes('/mobile/activity/new')) return ['home', 'activity', search ? `activity-form${search}` : 'activity-form'];
+    if (path.includes('/mobile/activity/')) {
+      const id = path.split('/mobile/activity/')[1];
+      if (id) return ['home', 'activity', `activity-detail/${id}${search}`];
+    }
+    if (path === '/mobile/activity') return ['home', 'activity'];
     if (path.includes('/mobile/grid')) return ['home', 'grid-overview'];
     if (path.includes('/mobile/housing')) return ['home', 'housing'];
     if (path.includes('/mobile/people')) return ['home', 'people'];
     if (path.includes('/mobile/profile')) return ['home', 'profile'];
+    if (path.includes('/mobile/patrol')) return ['home', 'patrol'];
+    if (path.includes('/mobile/collect-house')) return ['home', 'collect-house'];
+    if (path.includes('/mobile/collect-person')) return ['home', 'collect-person'];
+    if (path.includes('/mobile/quick-note-history')) return ['home', 'quick-note-history'];
+    if (path.includes('/mobile/quick-note')) return ['home', 'quick-note'];
+    if (path.includes('/mobile/scan')) return ['home', 'scan'];
+    if (path.includes('/mobile/search')) return ['home', 'search'];
+    if (path.includes('/mobile/stats')) return ['home', 'stats'];
+    if (path.includes('/mobile/update-history')) return ['home', 'update-history'];
+    if (path.includes('/mobile/policy-interpretation')) return ['home', 'policy-interpretation'];
+    if (path.includes('/mobile/official-writing')) return ['home', 'official-writing'];
+    if (path.includes('/mobile/smart-query')) return ['home', 'smart-query'];
     return ['home'];
   };
 
@@ -69,26 +111,99 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   // 获取当前路由（栈顶）
   const currentRoute = history[history.length - 1];
 
+  const toMobilePath = (route: string) => {
+    if (route.startsWith('/mobile')) return route;
+    if (route === 'home') return '/mobile';
+    if (route.startsWith('tasks')) {
+      const mode = route.includes('mode=month') ? 'month' : route.includes('mode=all') ? 'all' : 'today';
+      return `/mobile/tasks?mode=${mode}`;
+    }
+    if (route.startsWith('person-detail/')) return `/mobile/person/${route.split('/').pop()}`;
+    if (route.startsWith('house-detail/')) return `/mobile/house/${route.split('/').pop()}`;
+    if (route.startsWith('person-edit/')) return `/mobile/person/${route.split('/').pop()}/edit`;
+    if (route.startsWith('house-edit/')) return `/mobile/house/${route.split('/').pop()}/edit`;
+    if (route.startsWith('visit-form/')) return `/mobile/visit-form/${route.split('/').pop()}`;
+    if (route.startsWith('notice-detail/')) return `/mobile/notices/${route.split('/').pop()}`;
+    if (route.startsWith('conflict-detail/')) return `/mobile/conflict/${route.split('/').pop()}`;
+    if (route === 'conflict-form') return '/mobile/conflict/new';
+    if (route.startsWith('activity-detail/')) {
+      const [pathPart, queryPart] = route.split('?');
+      return `/mobile/activity/${pathPart.split('/').pop()}${queryPart ? `?${queryPart}` : ''}`;
+    }
+    if (route.startsWith('activity-form')) {
+      const query = route.includes('?') ? `?${route.split('?')[1]}` : '';
+      return `/mobile/activity/new${query}`;
+    }
+
+    const staticPaths: Record<string, string> = {
+      housing: '/mobile/housing',
+      people: '/mobile/people',
+      patrol: '/mobile/patrol',
+      profile: '/mobile/profile',
+      'collect-house': '/mobile/collect-house',
+      'collect-person': '/mobile/collect-person',
+      'quick-note': '/mobile/quick-note',
+      scan: '/mobile/scan',
+      notices: '/mobile/notices',
+      search: '/mobile/search',
+      'quick-note-history': '/mobile/quick-note-history',
+      stats: '/mobile/stats',
+      'update-history': '/mobile/update-history',
+      'grid-overview': '/mobile/grid',
+      conflict: '/mobile/conflict',
+      activity: '/mobile/activity',
+      'policy-interpretation': '/mobile/policy-interpretation',
+      'official-writing': '/mobile/official-writing',
+      'smart-query': '/mobile/smart-query',
+    };
+
+    return staticPaths[route] ?? '/mobile';
+  };
+
+  const normalizeMobileRoute = (route: string) => {
+    if (!route.startsWith('/mobile')) return route;
+    const [pathname, query = ''] = route.split('?');
+    const nextHistory = buildInitialHistory(pathname, query ? `?${query}` : '');
+    return nextHistory[nextHistory.length - 1];
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setHistory(buildInitialHistory(window.location.pathname, window.location.search));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    window.history.replaceState({ route: 'mobile', mobileRoute: currentRoute }, '', toMobilePath(currentRoute));
+
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   // 处理路由导航
   const handleRouteChange = (route: string) => {
+    const nextRoute = normalizeMobileRoute(route);
     // 如果是导航到首页，清空历史栈
-    if (route === 'home') {
+    if (nextRoute === 'home') {
       setHistory(['home']);
+      window.history.pushState({ route: 'mobile', mobileRoute: 'home' }, '', '/mobile');
       return;
     }
     
     // 避免重复推入相同的路由到栈顶
-    if (route === currentRoute) return;
+    if (nextRoute === currentRoute) return;
 
     // 简单的栈推入
-    setHistory(prev => [...prev, route]);
+    setHistory(prev => [...prev, nextRoute]);
+    window.history.pushState({ route: 'mobile', mobileRoute: nextRoute }, '', toMobilePath(nextRoute));
   };
 
   // 处理返回上一页
   const handleBack = () => {
     setHistory(prev => {
       if (prev.length <= 1) return prev; // 已经在首页或栈底，不处理
-      return prev.slice(0, -1);
+      const nextHistory = prev.slice(0, -1);
+      const nextRoute = nextHistory[nextHistory.length - 1];
+      window.history.replaceState({ route: 'mobile', mobileRoute: nextRoute }, '', toMobilePath(nextRoute));
+      return nextHistory;
     });
   };
 

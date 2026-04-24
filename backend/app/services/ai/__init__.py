@@ -23,6 +23,7 @@ def get_ai_capabilities() -> dict[str, object]:
         "phase": "phase6-public-trial",
         "notes": [
             "Policy and official writing pages may call the real LLM path when configured.",
+            "Phase 9 agent action endpoints return deterministic demo-data context even when the LLM path is unavailable.",
             "If the provider is unavailable, the API degrades to a sample-safe response instead of surfacing raw upstream errors.",
         ],
     }

@@ -20,8 +20,18 @@ import {
 } from '../housing/finderModel';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 import { Progress } from '../ui/progress';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import type { Grid, House, HousingHistory, Person } from '../../types/core';
 
@@ -105,6 +115,49 @@ function statCards(stats: HousingFinderStats) {
   ];
 }
 
+type HouseEditForm = {
+  communityName: string;
+  building: string;
+  unit: string;
+  room: string;
+  address: string;
+  ownerName: string;
+  ownerPhone: string;
+  ownerAddress: string;
+  area: string;
+  type: House['type'];
+  houseType: NonNullable<House['houseType']> | '';
+  occupancyStatus: NonNullable<House['occupancyStatus']> | '';
+  residenceType: NonNullable<House['residenceType']> | '';
+  tagsText: string;
+};
+
+function buildHouseEditForm(house: House): HouseEditForm {
+  return {
+    communityName: house.communityName ?? '',
+    building: house.building ?? '',
+    unit: house.unit ?? '',
+    room: house.room ?? '',
+    address: house.address ?? '',
+    ownerName: house.ownerName ?? '',
+    ownerPhone: house.ownerPhone ?? '',
+    ownerAddress: house.ownerAddress ?? '',
+    area: house.area ?? '',
+    type: house.type,
+    houseType: house.houseType ?? '',
+    occupancyStatus: house.occupancyStatus ?? '',
+    residenceType: house.residenceType ?? '',
+    tagsText: (house.tags ?? []).join('，'),
+  };
+}
+
+function normalizeTags(tagsText: string) {
+  return tagsText
+    .split(/[，,]/)
+    .map((tag) => tag.trim())
+    .filter(Boolean);
+}
+
 function FinderStatsStrip({ stats }: { stats: HousingFinderStats }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(220px,0.9fr)]">
@@ -161,6 +214,8 @@ export function HousingManagement() {
   const [residents, setResidents] = useState<Person[]>([]);
   const [history, setHistory] = useState<HousingHistory[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [editingHouse, setEditingHouse] = useState<House | null>(null);
+  const [editForm, setEditForm] = useState<HouseEditForm | null>(null);
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -279,6 +334,73 @@ export function HousingManagement() {
 
   const refreshSelectedHouse = () => {
     void loadData();
+  };
+
+  const openEditDialog = (house: House) => {
+    setEditingHouse(house);
+    setEditForm(buildHouseEditForm(house));
+  };
+
+  const closeEditDialog = () => {
+    setEditingHouse(null);
+    setEditForm(null);
+  };
+
+  const updateEditForm = <K extends keyof HouseEditForm>(key: K, value: HouseEditForm[K]) => {
+    setEditForm((current) => (current ? { ...current, [key]: value } : current));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingHouse || !editForm) {
+      return;
+    }
+
+    const communityName = editForm.communityName.trim();
+    const building = editForm.building.trim();
+    const unit = editForm.unit.trim();
+    const room = editForm.room.trim();
+    const ownerName = editForm.ownerName.trim();
+
+    if (!communityName || !building || !unit || !room || !ownerName) {
+      toast.error('请补齐社区、楼栋、单元、房号和产权人');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      const fallbackAddress = `${communityName}${building}${unit}${room}`;
+      const updatedHouse = await houseRepository.updateHouse(editingHouse.id, {
+        communityName,
+        building,
+        unit,
+        room,
+        ownerName,
+        address: editForm.address.trim() || fallbackAddress,
+        ownerPhone: editForm.ownerPhone.trim() || undefined,
+        ownerAddress: editForm.ownerAddress.trim() || undefined,
+        area: editForm.area.trim(),
+        type: editForm.type,
+        houseType: editForm.houseType || undefined,
+        occupancyStatus: editForm.occupancyStatus || undefined,
+        residenceType: editForm.residenceType || undefined,
+        tags: normalizeTags(editForm.tagsText),
+        updatedAt: new Date().toISOString().slice(0, 10),
+      });
+
+      if (!updatedHouse) {
+        throw new Error('房屋不存在或更新未返回结果');
+      }
+
+      toast.success('房屋信息已保存');
+      closeEditDialog();
+      await loadData();
+      setSelection((current) => ({ ...current, houseId: editingHouse.id }));
+    } catch (error) {
+      console.error('Failed to update house', error);
+      toast.error(error instanceof Error ? error.message : '房屋信息保存失败');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async (house: House) => {
@@ -443,11 +565,130 @@ export function HousingManagement() {
           history={history}
           loading={isDetailLoading}
           error={detailError}
+          onEdit={openEditDialog}
           onDelete={(house) => void handleDelete(house)}
           onRefresh={refreshSelectedHouse}
           isDeleting={isSaving}
         />
       </div>
+
+      <Dialog open={Boolean(editingHouse)} onOpenChange={(open) => {
+        if (!open) {
+          closeEditDialog();
+        }
+      }}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>编辑房屋信息</DialogTitle>
+            <DialogDescription>保存后同步刷新房屋台账、详情面板和本地降级数据。</DialogDescription>
+          </DialogHeader>
+
+          {editForm ? (
+            <div className="grid gap-4 py-2 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label>社区 *</Label>
+                <Input value={editForm.communityName} onChange={(event) => updateEditForm('communityName', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>楼栋 *</Label>
+                <Input value={editForm.building} onChange={(event) => updateEditForm('building', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>单元 *</Label>
+                <Input value={editForm.unit} onChange={(event) => updateEditForm('unit', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>房号 *</Label>
+                <Input value={editForm.room} onChange={(event) => updateEditForm('room', event.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>完整地址</Label>
+                <Input value={editForm.address} onChange={(event) => updateEditForm('address', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>产权人 *</Label>
+                <Input value={editForm.ownerName} onChange={(event) => updateEditForm('ownerName', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>产权人电话</Label>
+                <Input value={editForm.ownerPhone} onChange={(event) => updateEditForm('ownerPhone', event.target.value)} />
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>产权人居住地址</Label>
+                <Input value={editForm.ownerAddress} onChange={(event) => updateEditForm('ownerAddress', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>建筑面积</Label>
+                <Input value={editForm.area} onChange={(event) => updateEditForm('area', event.target.value)} />
+              </div>
+              <div className="space-y-2">
+                <Label>房屋用途</Label>
+                <Select value={editForm.type} onValueChange={(value) => updateEditForm('type', value as House['type'])}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="自住">自住</SelectItem>
+                    <SelectItem value="出租">出租</SelectItem>
+                    <SelectItem value="空置">空置</SelectItem>
+                    <SelectItem value="经营">经营</SelectItem>
+                    <SelectItem value="其他">其他</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>房屋类型</Label>
+                <Select value={editForm.houseType || "none"} onValueChange={(value) => updateEditForm('houseType', value === "none" ? "" : value as HouseEditForm['houseType'])}>
+                  <SelectTrigger><SelectValue placeholder="选择房屋类型" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">未设置</SelectItem>
+                    <SelectItem value="普通住宅">普通住宅</SelectItem>
+                    <SelectItem value="门市">门市</SelectItem>
+                    <SelectItem value="草厦子">草厦子</SelectItem>
+                    <SelectItem value="车库">车库</SelectItem>
+                    <SelectItem value="阁楼">阁楼</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>人房关系</Label>
+                <Select value={editForm.occupancyStatus || "none"} onValueChange={(value) => updateEditForm('occupancyStatus', value === "none" ? "" : value as HouseEditForm['occupancyStatus'])}>
+                  <SelectTrigger><SelectValue placeholder="选择人房关系" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">未设置</SelectItem>
+                    <SelectItem value="人在户在">人在户在</SelectItem>
+                    <SelectItem value="户在人不在">户在人不在</SelectItem>
+                    <SelectItem value="人不在户不在">人不在户不在</SelectItem>
+                    <SelectItem value="其他">其他</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>居住类型</Label>
+                <Select value={editForm.residenceType || "none"} onValueChange={(value) => updateEditForm('residenceType', value === "none" ? "" : value as HouseEditForm['residenceType'])}>
+                  <SelectTrigger><SelectValue placeholder="选择居住类型" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">未设置</SelectItem>
+                    <SelectItem value="自住">自住</SelectItem>
+                    <SelectItem value="租住">租住</SelectItem>
+                    <SelectItem value="闲置">闲置</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2 md:col-span-2">
+                <Label>标签</Label>
+                <Input value={editForm.tagsText} onChange={(event) => updateEditForm('tagsText', event.target.value)} placeholder="多个标签用逗号分隔" />
+              </div>
+            </div>
+          ) : null}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>取消</Button>
+            <Button onClick={() => void handleSaveEdit()} disabled={isSaving}>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              保存
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
