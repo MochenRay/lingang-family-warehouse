@@ -31,6 +31,10 @@ type RawContributionItem = [
   description: string,
 ];
 
+const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
+
 function buildContributionItems(snapshot: GovernanceAnalysisSnapshot, target: RankingTarget): ContributionItem[] {
   const highRisk = snapshot.grids.reduce((sum, grid) => sum + grid.highRiskCount, 0);
   const activeConflicts = snapshot.grids.reduce((sum, grid) => sum + grid.activeConflictCount, 0);
@@ -146,15 +150,16 @@ export function ContributionRanking() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="mb-2">贡献程度排名</h1>
-          <p className="text-gray-500">围绕真实治理快照，排序当前最影响目标结果的关键因素。</p>
+    <div className="space-y-5 text-[var(--color-neutral-10)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">CONTRIBUTION LEDGER</div>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">贡献程度排名</h1>
+          <p className={`mt-2 max-w-3xl text-sm leading-6 ${MUTED_TEXT}`}>围绕真实治理快照，排序当前最影响目标结果的关键因素。</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <Select value={targetIndicator} onValueChange={(value: RankingTarget) => setTargetIndicator(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
               <Target className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
@@ -172,75 +177,75 @@ export function ContributionRanking() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
+            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT}`}>
               <Award className="w-4 h-4" />
               因子总数
             </CardDescription>
-            <CardTitle className="text-3xl">{contributions.length}</CardTitle>
+            <CardTitle className="text-3xl text-white">{contributions.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">固定且可解释的贡献因子</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>固定且可解释的贡献因子</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>Top 1 因子</CardDescription>
-            <CardTitle className="text-xl">{contributions[0]?.factor ?? '暂无'}</CardTitle>
+            <CardDescription className={MUTED_TEXT}>Top 1 因子</CardDescription>
+            <CardTitle className="truncate text-xl text-white">{contributions[0]?.factor ?? '暂无'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">{contributions[0]?.contribution ?? 0}%</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>{contributions[0]?.contribution ?? 0}%</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>头部贡献度</CardDescription>
-            <CardTitle className="text-3xl text-green-600">{positiveContribution.toFixed(1)}%</CardTitle>
+            <CardDescription className={MUTED_TEXT}>头部贡献度</CardDescription>
+            <CardTitle className="text-3xl text-[#19B172]">{positiveContribution.toFixed(1)}%</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <Badge className="bg-green-100 text-green-800">
+              <Badge className="border border-[#19B172]/35 bg-[#19B172]/12 text-[#B6F4D8]">
                 <TrendingUp className="w-3 h-3 mr-1" />
                 前四因子
               </Badge>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>尾部贡献度</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">{tailContribution.toFixed(1)}%</CardTitle>
+            <CardDescription className={MUTED_TEXT}>尾部贡献度</CardDescription>
+            <CardTitle className="text-3xl text-[#4E86DF]">{tailContribution.toFixed(1)}%</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">剩余因子合计</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>剩余因子合计</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle>影响因子贡献排名</CardTitle>
-          <CardDescription>统一使用真实治理快照排序，不再引用静态样例或手工排序。</CardDescription>
+          <CardTitle className="text-base font-semibold text-white">影响因子贡献排名</CardTitle>
+          <CardDescription className={MUTED_TEXT}>统一使用真实治理快照排序，不再引用静态样例或手工排序。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {contributions.map((item) => (
-            <div key={item.factor} className="rounded-lg border p-4">
+            <div key={item.factor} className={`${INNER_PANEL_CLASS} p-4`}>
               <div className="flex items-center justify-between gap-4">
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold">{item.rank}. {item.factor}</span>
-                    <Badge variant="outline">{item.category}</Badge>
+                    <span className="font-semibold text-white">{item.rank}. {item.factor}</span>
+                    <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#DCE6FF]">{item.category}</Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{item.description}</p>
+                  <p className={`text-sm ${MUTED_TEXT}`}>{item.description}</p>
                 </div>
                 <div className="text-right min-w-[110px]">
-                  <div className="text-2xl font-semibold">{item.contribution}%</div>
-                  <div className="text-xs text-muted-foreground">贡献权重</div>
+                  <div className="text-2xl font-semibold text-[#19B172]">{item.contribution}%</div>
+                  <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                 </div>
               </div>
-              <div className="mt-3 grid gap-3 md:grid-cols-3 text-sm text-muted-foreground">
+              <div className={`mt-3 grid gap-3 text-sm md:grid-cols-3 ${MUTED_TEXT}`}>
                 <div>当前量级：{item.absoluteValue}</div>
                 <div>最近趋势：{item.trend}</div>
                 <div>可信度：{item.confidence}%</div>

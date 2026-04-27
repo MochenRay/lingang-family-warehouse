@@ -21,6 +21,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
+import { ChartCard } from '../statistics/ChartCard';
+import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
 type TargetVariable = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
 
@@ -45,7 +47,12 @@ interface RawFactorItem {
   impact: string;
 }
 
-const CATEGORY_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+const CATEGORY_COLORS = ['#4E86DF', '#19B172', '#D6730D', '#8B5CF6', '#D52132'];
+const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
+const GRID_STROKE = '#3d4663';
+const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
 
 function buildFactors(snapshot: GovernanceAnalysisSnapshot, targetVariable: TargetVariable): FactorItem[] {
   const totals = snapshot.totals;
@@ -234,15 +241,16 @@ export function FactorIdentification() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="mb-2">影响因子识别</h1>
-          <p className="text-gray-500">基于真实治理快照识别当前最影响网格压力与闭环质量的关键因子。</p>
+    <div className="space-y-5 text-[var(--color-neutral-10)]">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">FACTOR EXPLAINABILITY</div>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">影响因子识别</h1>
+          <p className={`mt-2 max-w-3xl text-sm leading-6 ${MUTED_TEXT}`}>基于真实治理快照识别当前最影响网格压力与闭环质量的关键因子。</p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-2">
           <Select value={targetVariable} onValueChange={(value: TargetVariable) => setTargetVariable(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
               <Target className="w-4 h-4 mr-2" />
               <SelectValue />
             </SelectTrigger>
@@ -260,121 +268,109 @@ export function FactorIdentification() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
+            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT}`}>
               <Zap className="w-4 h-4" />
               识别因子总数
             </CardDescription>
-            <CardTitle className="text-3xl">{factors.length}</CardTitle>
+            <CardTitle className="text-3xl text-white">{factors.length}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">本轮保留可解释的固定因子</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>本轮保留可解释的固定因子</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>最高贡献因子</CardDescription>
-            <CardTitle className="text-xl">{factors[0]?.name ?? '暂无'}</CardTitle>
+            <CardDescription className={MUTED_TEXT}>最高贡献因子</CardDescription>
+            <CardTitle className="truncate text-xl text-white">{factors[0]?.name ?? '暂无'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">{factors[0]?.contribution ?? 0}%</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>{factors[0]?.contribution ?? 0}%</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>平均因子权重</CardDescription>
-            <CardTitle className="text-3xl">
+            <CardDescription className={MUTED_TEXT}>平均因子权重</CardDescription>
+            <CardTitle className="text-3xl text-[#19B172]">
               {factors.length ? (factors.reduce((sum, item) => sum + item.contribution, 0) / factors.length).toFixed(1) : '0'}%
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">各因子贡献均值</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>各因子贡献均值</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>热区样本</CardDescription>
-            <CardTitle className="text-2xl">{snapshot?.grids[0]?.communityName ?? '暂无'}</CardTitle>
+            <CardDescription className={MUTED_TEXT}>热区样本</CardDescription>
+            <CardTitle className="truncate text-2xl text-white">{snapshot?.grids[0]?.communityName ?? '暂无'}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">热度 {snapshot?.grids[0]?.heatScore ?? 0}</p>
+            <p className={`text-sm ${MUTED_TEXT}`}>热度 {snapshot?.grids[0]?.heatScore ?? 0}</p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        <Card className="xl:col-span-3">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
+        <Card className={`xl:col-span-3 ${PANEL_CLASS}`}>
           <CardHeader>
-            <CardTitle>关键因子排名</CardTitle>
-            <CardDescription>只展示当前目标下真正参与解释的固定因子。</CardDescription>
+            <CardTitle className="text-base font-semibold text-white">关键因子排名</CardTitle>
+            <CardDescription className={MUTED_TEXT}>只展示当前目标下真正参与解释的固定因子。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             {factors.map((factor, index) => (
-              <div key={factor.id} className="rounded-lg border p-4 space-y-3">
+              <div key={factor.id} className={`${INNER_PANEL_CLASS} space-y-3 p-4`}>
                 <div className="flex items-center justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold">{index + 1}. {factor.name}</span>
-                      <Badge variant="outline">{factor.category}</Badge>
+                      <span className="font-semibold text-white">{index + 1}. {factor.name}</span>
+                      <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#DCE6FF]">{factor.category}</Badge>
                     </div>
-                    <p className="text-sm text-muted-foreground">{factor.description}</p>
+                    <p className={`text-sm ${MUTED_TEXT}`}>{factor.description}</p>
                   </div>
                   <div className="text-right min-w-[92px]">
-                    <div className="text-2xl font-semibold">{factor.contribution}%</div>
-                    <div className="text-xs text-muted-foreground">贡献权重</div>
+                    <div className="text-2xl font-semibold text-[#19B172]">{factor.contribution}%</div>
+                    <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                   </div>
                 </div>
-                <div className="text-sm text-muted-foreground">{factor.impact}</div>
+                <div className={`text-sm ${MUTED_TEXT}`}>{factor.impact}</div>
               </div>
             ))}
           </CardContent>
         </Card>
 
         <div className="xl:col-span-2 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>分类贡献结构</CardTitle>
-              <CardDescription>按固定分类聚合当前目标的因子贡献。</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[240px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={categoryStats} dataKey="contribution" nameKey="category" outerRadius={82} label>
-                      {categoryStats.map((item, index) => (
-                        <Cell key={item.category} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <ChartCard title="分类贡献结构" description="按固定分类聚合当前目标的因子贡献。">
+            <div className="h-[240px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={categoryStats} dataKey="contribution" nameKey="category" outerRadius={82} label>
+                    {categoryStats.map((item, index) => (
+                      <Cell key={item.category} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>网格热度散点</CardTitle>
-              <CardDescription>X 轴为走访覆盖率，Y 轴为热度，气泡大小代表人口规模。</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[260px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ScatterChart>
-                    <CartesianGrid />
-                    <XAxis type="number" dataKey="x" name="走访覆盖率" unit="%" />
-                    <YAxis type="number" dataKey="y" name="热度" />
-                    <ZAxis type="number" dataKey="z" range={[80, 420]} />
-                    <Tooltip cursor={{ strokeDasharray: '3 3' }} />
-                    <Legend />
-                    <Scatter name="网格样本" data={scatterData} fill="#3b82f6" />
-                  </ScatterChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          <ChartCard title="网格热度散点" description="X 轴为走访覆盖率，Y 轴为热度，气泡大小代表人口规模。">
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ScatterChart margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
+                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
+                  <XAxis type="number" dataKey="x" name="走访覆盖率" unit="%" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis type="number" dataKey="y" name="热度" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <ZAxis type="number" dataKey="z" range={[80, 420]} />
+                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Legend wrapperStyle={{ color: '#AFC0E8' }} />
+                  <Scatter name="网格样本" data={scatterData} fill="#4E86DF" />
+                </ScatterChart>
+              </ResponsiveContainer>
+            </div>
+          </ChartCard>
         </div>
       </div>
     </div>
