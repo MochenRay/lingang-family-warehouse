@@ -34,4 +34,9 @@ export function DarkChartTooltip({ active, payload, label }: DarkChartTooltipPro
   );
 }
 
-export const DARK_TOOLTIP_CURSOR = { fill: 'rgba(15, 23, 42, 0.28)' };
+export const DARK_TOOLTIP_CURSOR = {
+  fill: 'rgba(78, 134, 223, 0.12)',
+  stroke: '#4E86DF',
+  strokeWidth: 1,
+  strokeDasharray: '4 4',
+};
