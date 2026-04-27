@@ -11,9 +11,11 @@ interface HorizontalBarListProps {
   valueFormatter?: (value: number) => string;
   emptyText?: string;
   className?: string;
+  columnsClassName?: string;
   labelClassName?: string;
   valueClassName?: string;
   barHeight?: string;
+  minBarPercent?: number;
 }
 
 export function HorizontalBarList({
@@ -21,9 +23,11 @@ export function HorizontalBarList({
   valueFormatter = (value) => String(value),
   emptyText = '暂无数据',
   className,
+  columnsClassName = 'grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px]',
   labelClassName,
   valueClassName,
   barHeight = 'h-2',
+  minBarPercent = 0,
 }: HorizontalBarListProps) {
   const maxValue = Math.max(...items.map((item) => item.value), 1);
 
@@ -36,14 +40,14 @@ export function HorizontalBarList({
       {items.map((item) => (
         <div
           key={item.label}
-          className="grid grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px] items-center gap-3 text-sm"
+          className={cn('grid items-center gap-3 text-sm', columnsClassName)}
         >
           <span className={cn('truncate text-[var(--color-neutral-10)]', labelClassName)}>{item.label}</span>
           <div className={cn('overflow-hidden rounded-full bg-[var(--color-neutral-03)]', barHeight)}>
             <div
               className="h-full rounded-full"
               style={{
-                width: `${(item.value / maxValue) * 100}%`,
+                width: `${item.value > 0 ? Math.max(minBarPercent, (item.value / maxValue) * 100) : 0}%`,
                 backgroundColor: item.color,
               }}
             />
