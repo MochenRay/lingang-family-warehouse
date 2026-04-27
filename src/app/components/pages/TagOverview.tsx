@@ -6,6 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { tagRepository, type ManagedTagSummary, type TagSnapshot } from '../../services/repositories/tagRepository';
 
+const SURFACE_CLASS =
+  'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
+const CHIP_BASE_CLASS = 'border px-2 py-0.5 text-[11px] font-medium';
+
 function MetricCard({
   title,
   value,
@@ -18,29 +23,36 @@ function MetricCard({
   icon: typeof Users;
 }) {
   return (
-    <Card>
-      <CardContent className="flex items-center justify-between p-6">
-        <div>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="mt-2 text-2xl font-bold">{value}</p>
-          <p className="mt-1 text-xs text-muted-foreground">{detail}</p>
+    <Card className={`${SURFACE_CLASS} overflow-hidden`}>
+      <CardContent className="flex items-center justify-between gap-3 p-4">
+        <div className="min-w-0">
+          <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>{title}</p>
+          <p className="mt-2 text-2xl font-semibold leading-none text-white">{value}</p>
+          <p className={`mt-2 text-xs leading-5 ${MUTED_TEXT_CLASS}`}>{detail}</p>
         </div>
-        <div className="rounded-full bg-muted p-3">
-          <Icon className="h-5 w-5 text-muted-foreground" />
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-[#2761CB]/15 ring-1 ring-[#2761CB]/30">
+          <Icon className="h-5 w-5 text-[#4E86DF]" />
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function riskBadgeVariant(risk: ManagedTagSummary['riskLevel']) {
+function getRiskBadgeClass(risk: ManagedTagSummary['riskLevel']) {
   if (risk === 'High') {
-    return 'destructive' as const;
+    return `${CHIP_BASE_CLASS} border-[#D52132]/45 bg-[#D52132]/15 text-[#FCA5A5]`;
   }
   if (risk === 'Medium') {
-    return 'secondary' as const;
+    return `${CHIP_BASE_CLASS} border-[#D6730D]/45 bg-[#D6730D]/15 text-[#FDBA74]`;
   }
-  return 'outline' as const;
+  return `${CHIP_BASE_CLASS} border-[#19B172]/45 bg-[#19B172]/15 text-[#6EE7B7]`;
+}
+
+function getTagTypeClass(type: ManagedTagSummary['type']) {
+  if (type === '规则标签') {
+    return `${CHIP_BASE_CLASS} border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#9FC4FF]`;
+  }
+  return `${CHIP_BASE_CLASS} border-[#8B3BCC]/45 bg-[#8B3BCC]/15 text-[#D8B4FE]`;
 }
 
 export function TagOverview() {
@@ -122,11 +134,12 @@ export function TagOverview() {
   const smartTags = snapshot?.tags.filter((tag) => tag.type === '智能标签') ?? [];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">标签管理</h2>
-          <p className="text-muted-foreground">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">TAG LEDGER</div>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">标签管理</h2>
+          <p className={`mt-1 max-w-3xl text-sm leading-6 ${MUTED_TEXT_CLASS}`}>
             当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立标签目录。
           </p>
         </div>
@@ -146,13 +159,14 @@ export function TagOverview() {
               setLoading(false);
             });
           }}
+          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
         >
-          <RefreshCw className="mr-2 h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
           同步标签统计
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-3 md:grid-cols-4">
         <MetricCard title="标签总数" value={snapshot?.tags.length ?? '--'} detail="当前阶段固定首批规则，不扩写引擎" icon={Tag} />
         <MetricCard title="规则标签" value={ruleTags.length} detail="基于明确阈值和对象字段判定" icon={ShieldAlert} />
         <MetricCard title="智能标签" value={smartTags.length} detail="基于走访/矛盾/时效推导" icon={Sparkles} />
@@ -160,57 +174,57 @@ export function TagOverview() {
       </div>
 
       {error ? (
-        <Card className="border-destructive/50">
-          <CardContent className="flex items-center gap-3 p-6 text-destructive">
+        <Card className="rounded-lg border border-[#D52132]/50 bg-[#D52132]/10 shadow-none">
+          <CardContent className="flex items-center gap-3 p-4 text-[#FCA5A5]">
             <AlertCircle className="h-5 w-5" />
             <div>
-              <p className="font-medium">标签数据加载失败</p>
-              <p className="text-sm">{error}</p>
+              <p className="font-medium text-[#FCA5A5]">标签数据加载失败</p>
+              <p className="text-sm text-[#FECACA]">{error}</p>
             </div>
           </CardContent>
         </Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>标签目录</CardTitle>
-            <CardDescription>覆盖人数是派生值，不再由页面各自维护。</CardDescription>
+      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
+        <Card className={SURFACE_CLASS}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+            <CardTitle className="text-base font-semibold text-white">标签目录</CardTitle>
+            <CardDescription className={`text-xs ${MUTED_TEXT_CLASS}`}>覆盖人数是派生值，不再由页面各自维护。</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading || !snapshot ? (
-              <div className="py-10 text-sm text-muted-foreground">正在同步标签视图...</div>
+              <div className={`px-4 py-10 text-sm ${MUTED_TEXT_CLASS}`}>正在同步标签视图...</div>
             ) : (
-              <Table>
+              <Table className="min-w-[780px]">
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>标签</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>分类</TableHead>
-                    <TableHead>覆盖人数</TableHead>
-                    <TableHead>风险</TableHead>
+                  <TableRow className="bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                    <TableHead className="min-w-[260px] whitespace-nowrap">标签</TableHead>
+                    <TableHead className="whitespace-nowrap">类型</TableHead>
+                    <TableHead className="whitespace-nowrap">分类</TableHead>
+                    <TableHead className="whitespace-nowrap text-right">覆盖人数</TableHead>
+                    <TableHead className="whitespace-nowrap">风险</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {snapshot.tags.map((tag) => (
                     <TableRow
                       key={tag.id}
-                      className={tag.id === selectedTagId ? 'bg-muted/50' : ''}
+                      className={`cursor-pointer ${tag.id === selectedTagId ? 'bg-[#2761CB]/12 hover:bg-[#2761CB]/16' : 'hover:bg-[#2761CB]/8'}`}
                       onClick={() => setSelectedTagId(tag.id)}
                     >
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="font-medium">{tag.name}</div>
-                          <div className="text-xs text-muted-foreground">{tag.description}</div>
+                          <div className="font-medium text-white">{tag.name}</div>
+                          <div className={`max-w-[420px] text-xs leading-5 ${MUTED_TEXT_CLASS}`}>{tag.description}</div>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={tag.type === '规则标签' ? 'default' : 'secondary'}>{tag.type}</Badge>
+                        <Badge variant="outline" className={getTagTypeClass(tag.type)}>{tag.type}</Badge>
                       </TableCell>
-                      <TableCell>{tag.category}</TableCell>
-                      <TableCell>{tag.coverageCount}</TableCell>
+                      <TableCell className="whitespace-nowrap text-[var(--color-neutral-10)]">{tag.category}</TableCell>
+                      <TableCell className="text-right font-mono tabular-nums text-white">{tag.coverageCount}</TableCell>
                       <TableCell>
-                        <Badge variant={riskBadgeVariant(tag.riskLevel)}>{tag.riskLevel}</Badge>
+                        <Badge variant="outline" className={getRiskBadgeClass(tag.riskLevel)}>{tag.riskLevel}</Badge>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -220,31 +234,37 @@ export function TagOverview() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{selectedTag?.name ?? '标签详情'}</CardTitle>
-            <CardDescription>
+        <Card className={SURFACE_CLASS}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+            <CardTitle className="text-base font-semibold text-white">{selectedTag?.name ?? '标签详情'}</CardTitle>
+            <CardDescription className={`text-xs ${MUTED_TEXT_CLASS}`}>
               {selectedTag?.type ?? '请选择一个标签'} {selectedTag ? `· ${selectedTag.category}` : ''}
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 p-4">
             {!selectedTag ? (
-              <div className="py-10 text-sm text-muted-foreground">请选择左侧标签查看覆盖对象。</div>
+              <div className={`py-10 text-sm ${MUTED_TEXT_CLASS}`}>请选择左侧标签查看覆盖对象。</div>
             ) : (
               <>
-                <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
+                <div className="space-y-3 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
                   <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant={selectedTag.type === '规则标签' ? 'default' : 'secondary'}>{selectedTag.type}</Badge>
-                    <Badge variant={riskBadgeVariant(selectedTag.riskLevel)}>{selectedTag.riskLevel}</Badge>
-                    <Badge variant="outline">{selectedTag.coverageCount} 人</Badge>
+                    <Badge variant="outline" className={getTagTypeClass(selectedTag.type)}>{selectedTag.type}</Badge>
+                    <Badge variant="outline" className={getRiskBadgeClass(selectedTag.riskLevel)}>{selectedTag.riskLevel}</Badge>
+                    <Badge variant="outline" className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}>
+                      {selectedTag.coverageCount} 人
+                    </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground">{selectedTag.description}</p>
+                  <p className={`text-sm leading-6 ${MUTED_TEXT_CLASS}`}>{selectedTag.description}</p>
                   {selectedTag.rules?.length ? (
                     <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">规则条件</p>
+                      <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>规则条件</p>
                       <div className="flex flex-wrap gap-2">
                         {selectedTag.rules.map((rule) => (
-                          <Badge key={rule} variant="outline">
+                          <Badge
+                            key={rule}
+                            variant="outline"
+                            className={`${CHIP_BASE_CLASS} border-[#4E86DF]/35 bg-[#2761CB]/10 text-[#9FC4FF]`}
+                          >
                             {rule}
                           </Badge>
                         ))}
@@ -253,36 +273,40 @@ export function TagOverview() {
                   ) : null}
                   {selectedTag.judgmentCriteria ? (
                     <div className="space-y-1">
-                      <p className="text-xs font-medium text-muted-foreground">推导逻辑</p>
-                      <p className="text-sm">{selectedTag.judgmentCriteria}</p>
+                      <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>推导逻辑</p>
+                      <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{selectedTag.judgmentCriteria}</p>
                     </div>
                   ) : null}
                 </div>
 
                 <div className="space-y-3">
-                  <p className="text-sm font-medium">覆盖对象</p>
+                  <p className="text-sm font-medium text-white">覆盖对象</p>
                   <div className="space-y-3">
                     {coveredPeople.length === 0 ? (
-                      <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                      <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 text-sm ${MUTED_TEXT_CLASS}`}>
                         当前没有命中对象。
                       </div>
                     ) : (
                       coveredPeople.slice(0, 8).map((person) => (
-                        <div key={person.id} className="rounded-lg border p-4">
+                        <div key={person.id} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
                           <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <p className="font-medium">{person.name}</p>
-                              <p className="text-sm text-muted-foreground">
+                            <div className="min-w-0">
+                              <p className="font-medium text-white">{person.name}</p>
+                              <p className={`text-sm leading-6 ${MUTED_TEXT_CLASS}`}>
                                 {person.age} 岁 · {person.address}
                               </p>
                             </div>
-                            <Badge variant={riskBadgeVariant(person.risk)}>{person.risk}</Badge>
+                            <Badge variant="outline" className={getRiskBadgeClass(person.risk)}>{person.risk}</Badge>
                           </div>
                           <div className="mt-3 space-y-1">
-                            <p className="text-xs text-muted-foreground">最近走访：{person.lastVisitAt}</p>
+                            <p className={`text-xs ${MUTED_TEXT_CLASS}`}>最近走访：{person.lastVisitAt}</p>
                             <div className="flex flex-wrap gap-2">
                               {person.reasons.map((reason) => (
-                                <Badge key={reason} variant="outline">
+                                <Badge
+                                  key={reason}
+                                  variant="outline"
+                                  className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}
+                                >
                                   {reason}
                                 </Badge>
                               ))}
