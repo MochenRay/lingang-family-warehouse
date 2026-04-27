@@ -30,7 +30,7 @@ def capture(page: Page, name: str) -> str:
 def open_root(page: Page) -> None:
     page.goto(BASE_URL, wait_until="domcontentloaded")
     page.wait_for_load_state("networkidle")
-    wait_for_text(page, "综合统计驾驶舱")
+    wait_for_text(page, "烟台市网格治理驾驶舱")
 
 
 def ensure_sidebar_item_visible(page: Page, group_label: str, item_label: str) -> None:
@@ -64,15 +64,16 @@ def run_step(page: Page, results: list[dict[str, object]], name: str, fn: Callab
 
 def free_browse_entry(page: Page) -> None:
     open_root(page)
-    wait_for_text(page, "推荐浏览路径")
-    wait_for_text(page, "打开移动端工作台")
-    page.get_by_role("button", name="从人口管理开始").click()
-    wait_for_text(page, "人口管理")
+    wait_for_text(page, "首次使用建议")
+    page.get_by_role("button", name="查看区县对比").click()
+    wait_for_text(page, "多维数据对比")
 
 
 def directed_demo_mainline(page: Page) -> None:
     open_root(page)
-    page.get_by_role("button", name="从人口管理开始").click()
+    page.get_by_role("button", name="留在驾驶舱").click()
+    ensure_sidebar_item_visible(page, "数据管理", "人口管理")
+    page.get_by_role("button", name="人口管理").click()
     wait_for_text(page, "人口管理")
 
     ensure_sidebar_item_visible(page, "数据管理", "房屋管理")
@@ -83,7 +84,7 @@ def directed_demo_mainline(page: Page) -> None:
     page.get_by_role("button", name="矛盾调解").click()
     wait_for_text(page, "矛盾调解")
 
-    page.get_by_role("button", name="打开移动端工作台").click()
+    page.get_by_role("button", name="体验移动端工作台").click()
     wait_for_text(page, "首次体验建议")
     page.get_by_role("button", name="先看待办清单").click()
     wait_for_text(page, "今日待办")

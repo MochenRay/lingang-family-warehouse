@@ -29,15 +29,18 @@ from app.schemas.stats import (
     StatsPerformanceScoreRead,
     StatsPerformanceSummaryRead,
     StatsQualityAlertRead,
+    StatsActionItemRead,
+    StatsRegionSummaryRead,
     StatsRiskTagItemRead,
     StatsTrendItemRead,
 )
 from app.services.task_rules import build_task_projection
+from app.demo_data.regions import get_region_for_grid
 
 router = APIRouter(prefix="/stats", tags=["stats"])
 
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
-DEFAULT_DISTRICT_NAME = "蓬莱示范片区"
+DEFAULT_DISTRICT_NAME = "蓬莱区"
 AGE_BUCKETS = (
     ("0-18岁", 0, 18, "#8b5cf6"),
     ("19-35岁", 19, 35, "#3b82f6"),
@@ -105,9 +108,14 @@ def _average(values: list[float]) -> float:
     return round(sum(values) / len(values), 1)
 
 
-def _parse_grid_hierarchy(name: str) -> tuple[str, str, str]:
+def _parse_grid_hierarchy(name: str, grid_id: str | None = None) -> tuple[str, str, str, str]:
+    region = get_region_for_grid(grid_id or "", name)
+    if region:
+        return region.district, region.street, region.community, region.grid_label
+
     street_name = name
     community_name = name
+    grid_label = name
 
     if "街道" in name:
         street_name = f"{name.split('街道', 1)[0]}街道"
@@ -117,12 +125,14 @@ def _parse_grid_hierarchy(name: str) -> tuple[str, str, str]:
         community_name = name[len(street_name):] or name
 
     if "第" in community_name and "网格" in community_name:
+        grid_label = f"第{community_name.split('第', 1)[1]}"
         community_name = community_name.split("第", 1)[0]
     elif "网格" in community_name:
+        grid_label = f"{community_name.split('网格', 1)[0]}网格"
         community_name = community_name.split("网格", 1)[0]
 
     community_name = community_name.strip() or name
-    return DEFAULT_DISTRICT_NAME, street_name.strip() or name, community_name
+    return DEFAULT_DISTRICT_NAME, street_name.strip() or name, community_name, grid_label.strip() or name
 
 
 def _person_completeness(person: Person) -> float:
@@ -372,12 +382,17 @@ def _build_grid_items(
     items: list[StatsGridItemRead] = []
     for grid_id in ordered_ids:
         grid = grid_index.get(grid_id)
+        district_name, street_name, community_name, grid_label = _parse_grid_hierarchy(grid.name if grid else grid_id, grid_id)
         items.append(
             StatsGridItemRead(
                 id=grid_id,
                 name=grid.name if grid else grid_id,
                 parentId=grid.parentId if grid else None,
                 managerName=grid.managerName if grid else None,
+                districtName=district_name,
+                streetName=street_name,
+                communityName=community_name,
+                gridLabel=grid_label,
                 peopleCount=people_counts.get(grid_id, 0),
                 houseCount=house_counts.get(grid_id, 0),
                 visitCount=visit_counts.get(grid_id, 0),
@@ -385,6 +400,118 @@ def _build_grid_items(
             )
         )
     return items
+
+
+def _build_region_summaries(
+    grid_items: list[StatsGridItemRead],
+    people: list[Person],
+    conflicts: list[ConflictRecord],
+) -> list[StatsRegionSummaryRead]:
+    people_by_grid = defaultdict(list)
+    conflicts_by_grid = defaultdict(list)
+    for person in people:
+        people_by_grid[person.gridId].append(person)
+    for conflict in conflicts:
+        conflicts_by_grid[conflict.gridId].append(conflict)
+
+    buckets: dict[tuple[str, str], dict[str, object]] = {}
+
+    def add_item(level: str, name: str, parent: str | None, grid: StatsGridItemRead) -> None:
+        key = (level, name)
+        item = buckets.setdefault(
+            key,
+            {
+                "id": f"{level}:{name}",
+                "level": level,
+                "name": name,
+                "parentName": parent,
+                "peopleCount": 0,
+                "houseCount": 0,
+                "visitCount": 0,
+                "conflictCount": 0,
+                "floatingCount": 0,
+                "activeConflictCount": 0,
+                "riskCount": 0,
+            },
+        )
+        grid_people = people_by_grid.get(grid.id, [])
+        grid_conflicts = conflicts_by_grid.get(grid.id, [])
+        item["peopleCount"] = int(item["peopleCount"]) + grid.peopleCount
+        item["houseCount"] = int(item["houseCount"]) + grid.houseCount
+        item["visitCount"] = int(item["visitCount"]) + grid.visitCount
+        item["conflictCount"] = int(item["conflictCount"]) + grid.conflictCount
+        item["floatingCount"] = int(item["floatingCount"]) + sum(1 for person in grid_people if person.type == "流动")
+        item["activeConflictCount"] = int(item["activeConflictCount"]) + sum(1 for conflict in grid_conflicts if conflict.status != "已化解")
+        item["riskCount"] = int(item["riskCount"]) + sum(1 for person in grid_people if person.risk in {"High", "Medium"})
+
+    for grid in grid_items:
+        add_item("city", "烟台市", None, grid)
+        add_item("district", grid.districtName, "烟台市", grid)
+        add_item("street", grid.streetName, grid.districtName, grid)
+        add_item("community", grid.communityName, grid.streetName, grid)
+        add_item("grid", f"{grid.communityName}{grid.gridLabel}", grid.communityName, grid)
+
+    summaries: list[StatsRegionSummaryRead] = []
+    level_rank = {"city": 0, "district": 1, "street": 2, "community": 3, "grid": 4}
+    for raw in buckets.values():
+        people_count = int(raw["peopleCount"])
+        visit_gap = max(0, people_count - int(raw["visitCount"]))
+        score = round(
+            min(
+                100.0,
+                int(raw["riskCount"]) * 0.9
+                + int(raw["activeConflictCount"]) * 8.0
+                + int(raw["floatingCount"]) * 0.35
+                + visit_gap * 0.06,
+            ),
+            1,
+        )
+        summaries.append(StatsRegionSummaryRead(**raw, score=score))
+
+    return sorted(
+        summaries,
+        key=lambda item: (level_rank.get(item.level, 9), -item.score, item.name),
+    )
+
+
+def _build_action_items(region_summaries: list[StatsRegionSummaryRead]) -> list[StatsActionItemRead]:
+    districts = [item for item in region_summaries if item.level == "district"]
+    if not districts:
+        return []
+
+    by_risk = max(districts, key=lambda item: (item.riskCount, item.score, item.name))
+    by_conflict = max(districts, key=lambda item: (item.activeConflictCount, item.score, item.name))
+    by_floating = max(districts, key=lambda item: (item.floatingCount, item.score, item.name))
+
+    return [
+        StatsActionItemRead(
+            id="risk-focus",
+            title="重点对象压降",
+            description="按区县先定位高风险与中风险对象，再下钻到社区和网格核对责任清单。",
+            area=by_risk.name,
+            priority="高",
+            metric=f"{by_risk.riskCount} 人",
+            route="population-tags",
+        ),
+        StatsActionItemRead(
+            id="conflict-followup",
+            title="矛盾纠纷清零",
+            description="优先处理仍在调解中的事件，避免跨月积压影响市级治理感知。",
+            area=by_conflict.name,
+            priority="高" if by_conflict.activeConflictCount else "中",
+            metric=f"{by_conflict.activeConflictCount} 起",
+            route="conflict-management",
+        ),
+        StatsActionItemRead(
+            id="floating-scan",
+            title="流动人口复核",
+            description="对流动人口集中片区发起复核，联动出租房、走访和移动端任务。",
+            area=by_floating.name,
+            priority="中",
+            metric=f"{by_floating.floatingCount} 人",
+            route="migration-trends",
+        ),
+    ]
 
 
 def _build_performance(session: Session) -> StatsPerformanceRead:
@@ -456,7 +583,7 @@ def _build_performance(session: Session) -> StatsPerformanceRead:
             taskSpeed=task_speed,
         )
 
-        district_name, street_name, community_name = _parse_grid_hierarchy(grid.name)
+        district_name, street_name, community_name, _grid_label = _parse_grid_hierarchy(grid.name, grid.id)
         workers.append(
             StatsPerformanceItemRead(
                 id=grid.id,
@@ -579,6 +706,8 @@ def _build_dashboard(session: Session) -> StatsDashboardRead:
     conflict_stats = _build_conflict_stats(conflicts, now)
     mobile_people_stats = _build_mobile_people_stats(people)
     grid_items = _build_grid_items(grids, people, houses, visits, conflicts)
+    region_summaries = _build_region_summaries(grid_items, people, conflicts)
+    action_items = _build_action_items(region_summaries)
 
     risk_items: list[StatsRiskTagItemRead] = []
     for name, level, terms in RISK_TAGS:
@@ -613,6 +742,8 @@ def _build_dashboard(session: Session) -> StatsDashboardRead:
         conflictStats=conflict_stats,
         mobilePeopleStats=mobile_people_stats,
         grids=grid_items,
+        regionSummaries=region_summaries,
+        actionItems=action_items,
     )
 
 

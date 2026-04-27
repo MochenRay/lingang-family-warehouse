@@ -4,13 +4,14 @@ from app.models.grid import Grid
 from app.models.house import House, HousingHistory
 from app.models.person import Person
 from app.models.visit import VisitRecord
+from app.demo_data.regions import REGION_GRID_CATALOG
 
 
 def build_hero_bundle() -> DemoSeedBundle:
     return DemoSeedBundle(
         grids=[
-            Grid(id="g1", name="登州街道海梦苑社区第一网格", managerName="李明辉"),
-            Grid(id="g2", name="登州街道海梦苑社区第二网格", managerName="王海燕"),
+            Grid(id=item.id, name=item.grid_name, managerName=item.manager_name)
+            for item in REGION_GRID_CATALOG
         ],
         houses=[
             House(

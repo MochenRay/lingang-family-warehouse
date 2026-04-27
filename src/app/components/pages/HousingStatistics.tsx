@@ -1,38 +1,47 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { Building, ClipboardCheck, Home, Hotel, Store } from 'lucide-react';
+import { AlertTriangle, Building, Home, Hotel, MapPinned, Store } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import { personRepository } from '../../services/repositories/personRepository';
 import { statsRepository, type DashboardStatsResponse, type StatsGridItem } from '../../services/repositories/statsRepository';
 import type { House, Person } from '../../types/core';
+import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
-interface GridWorkloadItem {
+interface DistrictHousingItem {
   name: string;
-  走访率: number;
-  信息完整度: number;
+  houseCount: number;
+  peopleCount: number;
+  selfOccupiedCount: number;
+  rentalCount: number;
+  vacantCount: number;
+  commercialCount: number;
+  warningCount: number;
+  floatingCount: number;
+  score: number;
 }
 
 function countByTag(houses: House[], keyword: string) {
   return houses.filter((house) => (house.tags ?? []).some((tag) => tag.includes(keyword))).length;
 }
 
-function calculateInfoCompleteness(people: Person[]) {
-  if (people.length === 0) {
-    return 0;
-  }
-  const keyFields: Array<keyof Person> = ['phone', 'idCard', 'address', 'houseId'];
-  let filled = 0;
-  let total = 0;
-  people.forEach((person) => {
-    keyFields.forEach((field) => {
-      total += 1;
-      if (person[field]) {
-        filled += 1;
-      }
-    });
-  });
-  return total === 0 ? 0 : Math.round((filled / total) * 100);
+function formatNumber(value: number) {
+  return value.toLocaleString('zh-CN');
+}
+
+function createDistrictRow(name: string): DistrictHousingItem {
+  return {
+    name,
+    houseCount: 0,
+    peopleCount: 0,
+    selfOccupiedCount: 0,
+    rentalCount: 0,
+    vacantCount: 0,
+    commercialCount: 0,
+    warningCount: 0,
+    floatingCount: 0,
+    score: 0,
+  };
 }
 
 export function HousingStatistics() {
@@ -80,6 +89,63 @@ export function HousingStatistics() {
     };
   }, []);
 
+  const gridById = useMemo(() => new Map(grids.map((grid) => [grid.id, grid])), [grids]);
+
+  const districtHousingRows = useMemo(() => {
+    const rows = new Map<string, DistrictHousingItem>();
+    const ensure = (name: string) => {
+      const nextName = name || '未识别区县';
+      const existing = rows.get(nextName);
+      if (existing) {
+        return existing;
+      }
+      const created = createDistrictRow(nextName);
+      rows.set(nextName, created);
+      return created;
+    };
+
+    (dashboard?.regionSummaries ?? [])
+      .filter((item) => item.level === 'district')
+      .forEach((item) => ensure(item.name));
+
+    houses.forEach((house) => {
+      const districtName = gridById.get(house.gridId)?.districtName ?? house.communityName ?? '未识别区县';
+      const row = ensure(districtName);
+      row.houseCount += 1;
+      if (house.type === '自住') {
+        row.selfOccupiedCount += 1;
+      } else if (house.type === '出租') {
+        row.rentalCount += 1;
+      } else if (house.type === '空置') {
+        row.vacantCount += 1;
+      } else if (house.type === '经营') {
+        row.commercialCount += 1;
+      }
+      if (
+        (house.tags ?? []).some((tag) => tag.includes('群租') || tag.includes('换租') || tag.includes('租约到期')) ||
+        house.occupancyStatus === '户在人不在'
+      ) {
+        row.warningCount += 1;
+      }
+    });
+
+    people.forEach((person) => {
+      const districtName = gridById.get(person.gridId)?.districtName ?? '未识别区县';
+      const row = ensure(districtName);
+      row.peopleCount += 1;
+      if (person.type === '流动') {
+        row.floatingCount += 1;
+      }
+    });
+
+    return Array.from(rows.values())
+      .map((row) => ({
+        ...row,
+        score: Math.min(100, Number((row.warningCount * 9 + row.rentalCount * 1.8 + row.vacantCount * 1.2 + row.floatingCount * 0.4).toFixed(1))),
+      }))
+      .sort((left, right) => right.score - left.score || right.houseCount - left.houseCount || left.name.localeCompare(right.name, 'zh-CN'));
+  }, [dashboard, gridById, houses, people]);
+
   const houseUsageData = useMemo(() => {
     if (!dashboard) {
       return [];
@@ -109,23 +175,6 @@ export function HousingStatistics() {
     [houses],
   );
 
-  const gridWorkload = useMemo<GridWorkloadItem[]>(() => {
-    if (grids.length === 0) {
-      return [];
-    }
-
-    return grids.map((grid) => {
-      const gridPeople = people.filter((person) => person.gridId === grid.id);
-      const coverage =
-        grid.peopleCount > 0 ? Math.min(100, Math.round((grid.visitCount / grid.peopleCount) * 100)) : 0;
-      return {
-        name: grid.name.replace('登州街道', '').replace('海梦苑社区', '').replace('第', '').replace('网格', '网格'),
-        走访率: coverage,
-        信息完整度: calculateInfoCompleteness(gridPeople),
-      };
-    });
-  }, [grids, people]);
-
   const summaryCards = useMemo(() => {
     if (!dashboard) {
       return [];
@@ -138,11 +187,18 @@ export function HousingStatistics() {
     ];
   }, [dashboard]);
 
+  const districtChartData = districtHousingRows.slice(0, 8).map((row) => ({
+    name: row.name,
+    房屋: row.houseCount,
+    出租: row.rentalCount,
+    预警: row.warningCount,
+  }));
+
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h1 className="text-2xl font-bold tracking-tight text-gray-900">房屋网格画像</h1>
-        <p className="text-gray-500">统一复用驾驶舱、房屋管理和网格统计的真实聚合口径。</p>
+        <p className="text-gray-500">先看区县级房屋治理压力，再下钻街镇、社区和网格。</p>
       </div>
 
       {error ? (
@@ -150,6 +206,97 @@ export function HousingStatistics() {
           <CardContent className="p-6 text-sm text-destructive">{error}</CardContent>
         </Card>
       ) : null}
+
+      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+        {summaryCards.map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.label} className={`flex items-center gap-4 rounded-lg border border-[var(--color-neutral-03)] p-4 ${item.bg}`}>
+              <div className={`rounded-lg p-2 ${item.iconBg}`}>
+                <Icon className={`h-6 w-6 ${item.color}`} />
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{formatNumber(item.count)}</div>
+                <div className="text-sm font-medium text-[var(--color-neutral-08)]">{item.label}</div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr,0.9fr]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <MapPinned className="h-5 w-5 text-blue-500" />
+              区县房屋治理对比
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[340px] w-full">
+              {loading ? (
+                <div className="py-10 text-sm text-muted-foreground">正在汇总区县房屋画像...</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={districtChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                    <YAxis allowDecimals={false} />
+                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                    <Bar dataKey="房屋" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="出租" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="预警" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              重点区县清单
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {districtHousingRows.slice(0, 6).map((row, index) => (
+              <div key={row.name} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-semibold text-blue-500">{index + 1}</span>
+                    <div>
+                      <div className="font-semibold text-[var(--color-neutral-11)]">{row.name}</div>
+                      <div className="text-xs text-[var(--color-neutral-08)]">
+                        {formatNumber(row.houseCount)} 套房屋 · {formatNumber(row.peopleCount)} 人
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold text-[var(--color-neutral-11)]">{row.score}</div>
+                    <div className="text-xs text-[var(--color-neutral-07)]">压力</div>
+                  </div>
+                </div>
+                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+                  <div>
+                    <div className="text-[var(--color-neutral-07)]">出租</div>
+                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.rentalCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-[var(--color-neutral-07)]">预警</div>
+                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.warningCount}</div>
+                  </div>
+                  <div>
+                    <div className="text-[var(--color-neutral-07)]">流动</div>
+                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.floatingCount}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
@@ -177,7 +324,7 @@ export function HousingStatistics() {
                         <Cell key={entry.name} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={<DarkChartTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -200,10 +347,10 @@ export function HousingStatistics() {
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={rentalWarnings} layout="vertical" margin={{ left: 20 }}>
                     <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                    <XAxis type="number" />
+                    <XAxis type="number" allowDecimals={false} />
                     <YAxis dataKey="name" type="category" width={80} tick={{ fontWeight: 'bold' }} />
-                    <Tooltip cursor={{ fill: 'transparent' }} />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={40}>
+                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                    <Bar dataKey="value" name="数量" radius={[0, 4, 4, 0]} barSize={40}>
                       {rentalWarnings.map((entry) => (
                         <Cell key={entry.name} fill={entry.fill} />
                       ))}
@@ -214,50 +361,6 @@ export function HousingStatistics() {
             </div>
           </CardContent>
         </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <ClipboardCheck className="h-5 w-5 text-blue-600" />
-            网格员工作效能对比
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] w-full">
-            {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总网格工作量...</div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={gridWorkload}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis dataKey="name" />
-                  <YAxis domain={[0, 100]} />
-                  <Tooltip />
-                  <Bar dataKey="走访率" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="信息完整度" fill="#10b981" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-        {summaryCards.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className={`flex items-center gap-4 rounded-lg border border-[var(--color-neutral-03)] p-4 ${item.bg}`}>
-              <div className={`rounded-lg p-2 ${item.iconBg}`}>
-                <Icon className={`h-6 w-6 ${item.color}`} />
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{item.count}</div>
-                <div className="text-sm font-medium text-[var(--color-neutral-08)]">{item.label}</div>
-              </div>
-            </div>
-          );
-        })}
       </div>
     </div>
   );
