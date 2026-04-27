@@ -96,15 +96,15 @@ export function MigrationTrends() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">人口流动趋势</h2>
-          <p className="text-muted-foreground">默认先看区县级迁入迁出，再下钻街镇、社区和网格。</p>
+          <h2 className="text-2xl font-bold tracking-tight text-white">人口流动趋势</h2>
+          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">默认先看区县级迁入迁出，再下钻街镇、社区和网格。</p>
         </div>
         <div className="flex gap-3">
           <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -116,25 +116,25 @@ export function MigrationTrends() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 md:grid-cols-3">
         <ChartCard title="近六月总迁入" className="md:col-span-1">
-          <div className="flex flex-col items-center justify-center py-6">
-            <span className="text-4xl font-bold text-blue-600">{snapshot?.migration.totalIn ?? 0}</span>
-            <span className="text-sm text-muted-foreground mt-2">人次</span>
+          <div className="flex items-end justify-between py-2">
+            <span className="text-4xl font-bold tabular-nums text-[#4E86DF]">{snapshot?.migration.totalIn ?? 0}</span>
+            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
           </div>
         </ChartCard>
         <ChartCard title="近六月总迁出" className="md:col-span-1">
-          <div className="flex flex-col items-center justify-center py-6">
-            <span className="text-4xl font-bold text-orange-600">{snapshot?.migration.totalOut ?? 0}</span>
-            <span className="text-sm text-muted-foreground mt-2">人次</span>
+          <div className="flex items-end justify-between py-2">
+            <span className="text-4xl font-bold tabular-nums text-[#D6730D]">{snapshot?.migration.totalOut ?? 0}</span>
+            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
           </div>
         </ChartCard>
         <ChartCard title="净流入" className="md:col-span-1">
-          <div className="flex flex-col items-center justify-center py-6">
-            <span className={`text-4xl font-bold ${(snapshot?.migration.net ?? 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+          <div className="flex items-end justify-between py-2">
+            <span className={`text-4xl font-bold tabular-nums ${(snapshot?.migration.net ?? 0) >= 0 ? 'text-[#19B172]' : 'text-[#D52132]'}`}>
               {(snapshot?.migration.net ?? 0) > 0 ? '+' : ''}{snapshot?.migration.net ?? 0}
             </span>
-            <span className="text-sm text-muted-foreground mt-2">近六月累计</span>
+            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">近六月累计</span>
           </div>
         </ChartCard>
       </div>
@@ -143,7 +143,7 @@ export function MigrationTrends() {
         title="近六个月迁入迁出对比"
         description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
         action={(
-          <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={handleExport}>
+          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white" onClick={handleExport}>
             <Download className="h-4 w-4" />
           </button>
         )}
@@ -153,21 +153,21 @@ export function MigrationTrends() {
             <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#8884d8" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#4E86DF" stopOpacity={0.45} />
+                  <stop offset="95%" stopColor="#4E86DF" stopOpacity={0.06} />
                 </linearGradient>
                 <linearGradient id="colorOut" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#82ca9d" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#D6730D" stopOpacity={0.38} />
+                  <stop offset="95%" stopColor="#D6730D" stopOpacity={0.05} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
+              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#3d4663" />
               <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-              <Legend />
-              <Area type="monotone" dataKey="迁入" stroke="#8884d8" fillOpacity={1} fill="url(#colorIn)" />
-              <Area type="monotone" dataKey="迁出" stroke="#82ca9d" fillOpacity={1} fill="url(#colorOut)" />
+              <Legend wrapperStyle={{ color: '#AEC0DE' }} />
+              <Area type="monotone" dataKey="迁入" stroke="#4E86DF" strokeWidth={2} fillOpacity={1} fill="url(#colorIn)" />
+              <Area type="monotone" dataKey="迁出" stroke="#D6730D" strokeWidth={2} fillOpacity={1} fill="url(#colorOut)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -175,40 +175,38 @@ export function MigrationTrends() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <ChartCard title="迁入活跃区县 (Top 5)">
-          <div className="space-y-4 px-4">
+          <div className="space-y-3">
             {filteredInbound.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <span className="text-sm">{item.name}</span>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 bg-blue-200 rounded-full w-32 overflow-hidden">
+              <div key={item.name} className="grid grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px] items-center gap-3 text-sm">
+                <span className="truncate text-[var(--color-neutral-10)]">{item.name}</span>
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
                     <div
-                      className="h-full bg-blue-500"
+                      className="h-full rounded-full bg-[#4E86DF]"
                       style={{ width: `${(item.value / Math.max(filteredInbound[0]?.value ?? 1, 1)) * 100}%` }}
                     />
-                  </div>
-                  <span className="text-sm font-medium w-8 text-right">{item.value}</span>
                 </div>
+                <span className="text-right font-semibold tabular-nums text-[#4E86DF]">{item.value}</span>
               </div>
             ))}
+            {filteredInbound.length === 0 ? <div className="text-sm text-[var(--color-neutral-08)]">暂无匹配区县</div> : null}
           </div>
         </ChartCard>
 
         <ChartCard title="迁出活跃区县 (Top 5)">
-          <div className="space-y-4 px-4">
+          <div className="space-y-3">
             {filteredOutbound.map((item) => (
-              <div key={item.name} className="flex items-center justify-between">
-                <span className="text-sm">{item.name}</span>
-                <div className="flex items-center gap-2">
-                  <div className="h-2 bg-orange-200 rounded-full w-32 overflow-hidden">
+              <div key={item.name} className="grid grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px] items-center gap-3 text-sm">
+                <span className="truncate text-[var(--color-neutral-10)]">{item.name}</span>
+                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
                     <div
-                      className="h-full bg-orange-500"
+                      className="h-full rounded-full bg-[#D6730D]"
                       style={{ width: `${(item.value / Math.max(filteredOutbound[0]?.value ?? 1, 1)) * 100}%` }}
                     />
-                  </div>
-                  <span className="text-sm font-medium w-8 text-right">{item.value}</span>
                 </div>
+                <span className="text-right font-semibold tabular-nums text-[#D6730D]">{item.value}</span>
               </div>
             ))}
+            {filteredOutbound.length === 0 ? <div className="text-sm text-[var(--color-neutral-08)]">暂无匹配区县</div> : null}
           </div>
         </ChartCard>
       </div>
