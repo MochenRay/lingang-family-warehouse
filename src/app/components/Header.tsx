@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Menu, Bell, User, ChevronDown, LogOut, Settings, Database, ServerOff } from 'lucide-react';
+import { Menu, Bell, User, ChevronDown, LogOut, Settings, Database, ServerOff, HelpCircle } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   DropdownMenu,
@@ -71,6 +71,16 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
 
       {/* 右侧：通知 + 用户信息 */}
       <div className="flex items-center gap-3">
+        <Button
+          variant="ghost"
+          size="icon"
+          title="重新打开浏览建议"
+          aria-label="重新打开浏览建议"
+          onClick={() => window.dispatchEvent(new Event('homedata:open-journey-overlay'))}
+        >
+          <HelpCircle className="w-5 h-5 text-gray-600 dark:text-[var(--color-neutral-10)]" />
+        </Button>
+
         {/* 通知图标 */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5 text-gray-600 dark:text-[var(--color-neutral-10)]" />

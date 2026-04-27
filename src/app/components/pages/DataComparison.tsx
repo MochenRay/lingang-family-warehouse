@@ -11,10 +11,23 @@ import { Badge } from '../ui/badge';
 import { analysisRepository, type AnalysisGridMetric, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
+import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
 type CompareMode = 'average' | 'target';
+type CompareLevel = 'district' | 'street' | 'community' | 'grid';
 type IndicatorKey = 'population' | 'floating' | 'risk' | 'visit' | 'task';
 type ScopeKey = 'top5' | 'all' | 'warning';
+
+interface ComparisonRow {
+  id: string;
+  name: string;
+  current: number;
+  benchmark: number;
+  diff: number;
+  diffRate: number;
+  heatScore: number;
+  statusLevel: AnalysisGridMetric['statusLevel'];
+}
 
 function getMetricValue(grid: AnalysisGridMetric, indicator: IndicatorKey): number {
   switch (indicator) {
@@ -65,10 +78,67 @@ function getTargetValue(indicator: IndicatorKey): number {
   }
 }
 
+function getLevelLabel(level: CompareLevel): string {
+  switch (level) {
+    case 'district':
+      return '区县';
+    case 'street':
+      return '街镇';
+    case 'community':
+      return '社区';
+    case 'grid':
+      return '网格';
+    default:
+      return '区域';
+  }
+}
+
+function getGroupId(grid: AnalysisGridMetric, level: CompareLevel): string {
+  switch (level) {
+    case 'district':
+      return `district:${grid.districtName}`;
+    case 'street':
+      return `street:${grid.districtName}:${grid.streetName}`;
+    case 'community':
+      return `community:${grid.districtName}:${grid.streetName}:${grid.communityName}`;
+    case 'grid':
+      return `grid:${grid.id}`;
+    default:
+      return grid.id;
+  }
+}
+
+function getGroupName(grid: AnalysisGridMetric, level: CompareLevel): string {
+  switch (level) {
+    case 'district':
+      return grid.districtName;
+    case 'street':
+      return `${grid.districtName} / ${grid.streetName}`;
+    case 'community':
+      return `${grid.districtName} / ${grid.streetName} / ${grid.communityName}`;
+    case 'grid':
+      return `${grid.districtName} / ${grid.streetName} / ${grid.communityName} / ${grid.gridLabel}`;
+    default:
+      return grid.name;
+  }
+}
+
+function severityRank(level: AnalysisGridMetric['statusLevel']): number {
+  switch (level) {
+    case 'high':
+      return 3;
+    case 'medium':
+      return 2;
+    default:
+      return 1;
+  }
+}
+
 export function DataComparison() {
   const [snapshot, setSnapshot] = useState<GovernanceAnalysisSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [compareMode, setCompareMode] = useState<CompareMode>('average');
+  const [compareLevel, setCompareLevel] = useState<CompareLevel>('district');
   const [indicator, setIndicator] = useState<IndicatorKey>('population');
   const [scope, setScope] = useState<ScopeKey>('top5');
 
@@ -96,31 +166,52 @@ export function DataComparison() {
       grids = grids.filter((grid) => grid.statusLevel !== 'low');
     }
 
-    const rawValues = grids.map((grid) => getMetricValue(grid, indicator));
+    const grouped = new Map<string, { id: string; name: string; current: number; heatTotal: number; count: number; statusLevel: AnalysisGridMetric['statusLevel'] }>();
+    grids.forEach((grid) => {
+      const id = getGroupId(grid, compareLevel);
+      const existing = grouped.get(id) ?? {
+        id,
+        name: getGroupName(grid, compareLevel),
+        current: 0,
+        heatTotal: 0,
+        count: 0,
+        statusLevel: 'low' as AnalysisGridMetric['statusLevel'],
+      };
+      existing.current += getMetricValue(grid, indicator);
+      existing.heatTotal += grid.heatScore;
+      existing.count += 1;
+      if (severityRank(grid.statusLevel) > severityRank(existing.statusLevel)) {
+        existing.statusLevel = grid.statusLevel;
+      }
+      grouped.set(id, existing);
+    });
+
+    const groupedRows = Array.from(grouped.values());
+    const rawValues = groupedRows.map((row) => row.current);
     const averageValue = rawValues.length
       ? rawValues.reduce((sum, value) => sum + value, 0) / rawValues.length
       : 0;
     const benchmark = compareMode === 'average' ? averageValue : getTargetValue(indicator);
 
-    const mapped = grids.map((grid) => {
-      const current = getMetricValue(grid, indicator);
+    const mapped: ComparisonRow[] = groupedRows.map((row) => {
+      const current = row.current;
       const diff = current - benchmark;
       const diffRate = benchmark === 0 ? 0 : (diff / benchmark) * 100;
       return {
-        id: grid.id,
-        name: grid.communityName,
+        id: row.id,
+        name: row.name,
         current,
         benchmark: Number(benchmark.toFixed(1)),
         diff,
         diffRate,
-        heatScore: grid.heatScore,
-        statusLevel: grid.statusLevel,
+        heatScore: row.count ? Number((row.heatTotal / row.count).toFixed(1)) : 0,
+        statusLevel: row.statusLevel,
       };
     });
 
     mapped.sort((left, right) => right.current - left.current || left.name.localeCompare(right.name, 'zh-CN'));
     return scope === 'top5' ? mapped.slice(0, 5) : mapped;
-  }, [compareMode, indicator, scope, snapshot]);
+  }, [compareLevel, compareMode, indicator, scope, snapshot]);
 
   const chartData = rows.map((row) => ({
     name: row.name,
@@ -129,8 +220,9 @@ export function DataComparison() {
   }));
 
   const handleExport = () => {
-    downloadJson(`data-comparison-${indicator}-${compareMode}-${new Date().toISOString().slice(0, 10)}.json`, {
+    downloadJson(`data-comparison-${compareLevel}-${indicator}-${compareMode}-${new Date().toISOString().slice(0, 10)}.json`, {
       generatedAt: snapshot?.generatedAt,
+      compareLevel,
       indicator,
       compareMode,
       scope,
@@ -143,12 +235,12 @@ export function DataComparison() {
     <div className="space-y-6 animate-in fade-in duration-500">
       <div>
         <h2 className="text-3xl font-bold tracking-tight">多维数据对比</h2>
-        <p className="text-muted-foreground">用统一的网格治理快照对比当前值与片区均值/治理目标，不再依赖随机扰动。</p>
+        <p className="text-muted-foreground">默认先看区县级差异，再逐级切到街镇、社区和网格。</p>
       </div>
 
       <Card className="border-indigo-100 shadow-sm">
         <CardContent className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-indigo-700 font-semibold">
                 <ArrowLeftRight className="w-4 h-4" />
@@ -161,6 +253,21 @@ export function DataComparison() {
                 <SelectContent>
                   <SelectItem value="average">与片区均值对比</SelectItem>
                   <SelectItem value="target">与治理目标对比</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label>对比层级</Label>
+              <Select value={compareLevel} onValueChange={(value: CompareLevel) => setCompareLevel(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="district">区县</SelectItem>
+                  <SelectItem value="street">街镇</SelectItem>
+                  <SelectItem value="community">社区</SelectItem>
+                  <SelectItem value="grid">网格</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -188,9 +295,9 @@ export function DataComparison() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="top5">Top 5 热点网格</SelectItem>
+                  <SelectItem value="top5">Top 5 热点{getLevelLabel(compareLevel)}</SelectItem>
                   <SelectItem value="all">全辖区</SelectItem>
-                  <SelectItem value="warning">重点关注网格</SelectItem>
+                  <SelectItem value="warning">重点关注{getLevelLabel(compareLevel)}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -211,7 +318,7 @@ export function DataComparison() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <ChartCard
-          title="趋势直方图"
+          title={`${getLevelLabel(compareLevel)}趋势直方图`}
           description={`${getMetricLabel(indicator)}当前值与参考值对比`}
           className="lg:col-span-3"
         >
@@ -221,7 +328,7 @@ export function DataComparison() {
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} />
                 <YAxis axisLine={false} tickLine={false} />
-                <Tooltip />
+                <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                 <Legend />
                 <Bar dataKey="当前值" fill="#4f46e5" radius={[4, 4, 0, 0]} barSize={30} />
                 <Bar dataKey="参考值" fill="#cbd5e1" radius={[4, 4, 0, 0]} barSize={30} />
@@ -260,7 +367,7 @@ export function DataComparison() {
               ) : rows.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={7} className="h-24 text-center text-gray-500">
-                    当前筛选范围内没有可对比的网格。
+                    当前筛选范围内没有可对比的{getLevelLabel(compareLevel)}。
                   </TableCell>
                 </TableRow>
               ) : (

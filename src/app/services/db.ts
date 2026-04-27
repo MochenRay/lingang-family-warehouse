@@ -1,5 +1,6 @@
 import { Grid, House, Notification, Person, VisitRecord, HousingHistory, ConflictRecord } from '../types/core';
 import { SEED_GRIDS, SEED_HOUSES, SEED_NOTIFICATIONS, SEED_PEOPLE, SEED_VISITS, SEED_HOUSING_HISTORY, SEED_CONFLICTS } from '../data/seeds';
+import { buildPhase10SeedBundle } from '../data/seeds/phase10';
 
 const STORAGE_KEYS = {
   PEOPLE: 'app_data_people',
@@ -9,7 +10,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'app_data_notifications',
   HOUSING_HISTORY: 'app_data_housing_history',
   CONFLICTS: 'app_data_conflicts',
-  INIT: 'app_data_v14_initialized' // 更新版本号以重新加载数据
+  INIT: 'app_data_v15_phase10_city_dashboard_initialized' // 更新版本号以重新加载数据
 };
 
 class DBService {
@@ -23,13 +24,22 @@ class DBService {
     const isInitialized = localStorage.getItem(STORAGE_KEYS.INIT);
     if (!isInitialized) {
       console.log('Initializing DB with seed data...');
-      localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify(SEED_PEOPLE));
-      localStorage.setItem(STORAGE_KEYS.HOUSES, JSON.stringify(SEED_HOUSES));
-      localStorage.setItem(STORAGE_KEYS.GRIDS, JSON.stringify(SEED_GRIDS));
-      localStorage.setItem(STORAGE_KEYS.VISITS, JSON.stringify(SEED_VISITS));
+      const seed = buildPhase10SeedBundle({
+        grids: SEED_GRIDS,
+        houses: SEED_HOUSES,
+        people: SEED_PEOPLE,
+        visits: SEED_VISITS,
+        notifications: SEED_NOTIFICATIONS,
+        housingHistory: SEED_HOUSING_HISTORY,
+        conflicts: SEED_CONFLICTS,
+      });
+      localStorage.setItem(STORAGE_KEYS.PEOPLE, JSON.stringify(seed.people));
+      localStorage.setItem(STORAGE_KEYS.HOUSES, JSON.stringify(seed.houses));
+      localStorage.setItem(STORAGE_KEYS.GRIDS, JSON.stringify(seed.grids));
+      localStorage.setItem(STORAGE_KEYS.VISITS, JSON.stringify(seed.visits));
       localStorage.setItem(STORAGE_KEYS.NOTIFICATIONS, JSON.stringify(SEED_NOTIFICATIONS));
-      localStorage.setItem(STORAGE_KEYS.HOUSING_HISTORY, JSON.stringify(SEED_HOUSING_HISTORY));
-      localStorage.setItem(STORAGE_KEYS.CONFLICTS, JSON.stringify(SEED_CONFLICTS));
+      localStorage.setItem(STORAGE_KEYS.HOUSING_HISTORY, JSON.stringify(seed.housingHistory));
+      localStorage.setItem(STORAGE_KEYS.CONFLICTS, JSON.stringify(seed.conflicts));
       localStorage.setItem(STORAGE_KEYS.INIT, 'true');
     }
   }

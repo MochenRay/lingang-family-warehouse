@@ -2,6 +2,7 @@ import type { Grid } from '../../types/core';
 import { callWithFallback, fetchJson } from '../api';
 import { db } from '../db';
 import { taskRepository } from './taskRepository';
+import { getRegionForGrid } from '../../config/regions';
 
 export interface StatsGenderItem {
   name: string;
@@ -61,10 +62,41 @@ export interface StatsGridItem {
   name: string;
   parentId?: string | null;
   managerName?: string | null;
+  districtName: string;
+  streetName: string;
+  communityName: string;
+  gridLabel: string;
   peopleCount: number;
   houseCount: number;
   visitCount: number;
   conflictCount: number;
+}
+
+export type StatsRegionLevel = 'city' | 'district' | 'street' | 'community' | 'grid';
+
+export interface StatsRegionSummary {
+  id: string;
+  level: StatsRegionLevel;
+  name: string;
+  parentName?: string | null;
+  peopleCount: number;
+  houseCount: number;
+  visitCount: number;
+  conflictCount: number;
+  floatingCount: number;
+  activeConflictCount: number;
+  riskCount: number;
+  score: number;
+}
+
+export interface StatsActionItem {
+  id: string;
+  title: string;
+  description: string;
+  area: string;
+  priority: '高' | '中' | '低' | string;
+  metric: string;
+  route: string;
 }
 
 export interface StatsMetadata {
@@ -88,6 +120,8 @@ export interface DashboardStatsResponse {
   conflictStats: StatsConflictStats;
   mobilePeopleStats: StatsMobilePeopleStats;
   grids: StatsGridItem[];
+  regionSummaries: StatsRegionSummary[];
+  actionItems: StatsActionItem[];
 }
 
 export interface GridStatsResponse {
@@ -168,9 +202,20 @@ function average(values: number[]): number {
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1));
 }
 
-function parseGridHierarchy(name: string): { districtName: string; streetName: string; communityName: string } {
+function parseGridHierarchy(name: string, gridId?: string): { districtName: string; streetName: string; communityName: string; gridLabel: string } {
+  const region = getRegionForGrid(gridId, name);
+  if (region) {
+    return {
+      districtName: region.district,
+      streetName: region.street,
+      communityName: region.community,
+      gridLabel: region.gridLabel,
+    };
+  }
+
   let streetName = name;
   let communityName = name;
+  let gridLabel = name;
 
   if (name.includes('街道')) {
     const [prefix] = name.split('街道', 1);
@@ -183,8 +228,10 @@ function parseGridHierarchy(name: string): { districtName: string; streetName: s
   }
 
   if (communityName.includes('第') && communityName.includes('网格')) {
+    gridLabel = `第${communityName.split('第', 1)[1]}`;
     communityName = communityName.split('第', 1)[0];
   } else if (communityName.includes('网格')) {
+    gridLabel = `${communityName.split('网格', 1)[0]}网格`;
     communityName = communityName.split('网格', 1)[0];
   }
 
@@ -192,6 +239,7 @@ function parseGridHierarchy(name: string): { districtName: string; streetName: s
     districtName: PERFORMANCE_DISTRICT_NAME,
     streetName: streetName.trim() || name,
     communityName: communityName.trim() || name,
+    gridLabel: gridLabel.trim() || name,
   };
 }
 
@@ -268,7 +316,7 @@ async function buildFallbackPerformance(): Promise<PerformanceStatsResponse> {
       const gridHouses = houses.filter((house) => house.gridId === grid.id);
       const gridVisits = visits.filter((visit) => visit.gridId === grid.id);
       const gridTasks = tasksByGrid.get(grid.id) ?? { pending: [], completed: [] };
-      const { districtName, streetName, communityName } = parseGridHierarchy(grid.name);
+      const { districtName, streetName, communityName } = parseGridHierarchy(grid.name, grid.id);
 
       const visitCount = gridVisits.length;
       const visitFreq = Number(((visitCount / maxVisitCount) * 100).toFixed(1));
@@ -407,6 +455,91 @@ async function buildFallbackPerformance(): Promise<PerformanceStatsResponse> {
   };
 }
 
+function buildFallbackRegionSummaries(
+  grids: StatsGridItem[],
+  people: ReturnType<typeof db.getPeople>,
+  conflicts: ReturnType<typeof db.getConflicts>,
+): StatsRegionSummary[] {
+  const peopleByGrid = new Map<string, typeof people>();
+  const conflictsByGrid = new Map<string, typeof conflicts>();
+  for (const person of people) {
+    const bucket = peopleByGrid.get(person.gridId) ?? [];
+    bucket.push(person);
+    peopleByGrid.set(person.gridId, bucket);
+  }
+  for (const conflict of conflicts) {
+    const bucket = conflictsByGrid.get(conflict.gridId) ?? [];
+    bucket.push(conflict);
+    conflictsByGrid.set(conflict.gridId, bucket);
+  }
+
+  const buckets = new Map<string, StatsRegionSummary>();
+  const add = (level: StatsRegionLevel, name: string, parentName: string | null, grid: StatsGridItem) => {
+    const key = `${level}:${name}`;
+    const item = buckets.get(key) ?? {
+      id: key,
+      level,
+      name,
+      parentName,
+      peopleCount: 0,
+      houseCount: 0,
+      visitCount: 0,
+      conflictCount: 0,
+      floatingCount: 0,
+      activeConflictCount: 0,
+      riskCount: 0,
+      score: 0,
+    };
+    const gridPeople = peopleByGrid.get(grid.id) ?? [];
+    const gridConflicts = conflictsByGrid.get(grid.id) ?? [];
+    item.peopleCount += grid.peopleCount;
+    item.houseCount += grid.houseCount;
+    item.visitCount += grid.visitCount;
+    item.conflictCount += grid.conflictCount;
+    item.floatingCount += gridPeople.filter((person) => person.type === '流动').length;
+    item.activeConflictCount += gridConflicts.filter((conflict) => conflict.status !== '已化解').length;
+    item.riskCount += gridPeople.filter((person) => person.risk === 'High' || person.risk === 'Medium').length;
+    buckets.set(key, item);
+  };
+
+  for (const grid of grids) {
+    add('city', '烟台市', null, grid);
+    add('district', grid.districtName, '烟台市', grid);
+    add('street', grid.streetName, grid.districtName, grid);
+    add('community', grid.communityName, grid.streetName, grid);
+    add('grid', `${grid.communityName}${grid.gridLabel}`, grid.communityName, grid);
+  }
+
+  const levelRank: Record<StatsRegionLevel, number> = { city: 0, district: 1, street: 2, community: 3, grid: 4 };
+  return Array.from(buckets.values())
+    .map((item) => ({
+      ...item,
+      score: Number(Math.min(
+        100,
+        item.riskCount * 0.9
+          + item.activeConflictCount * 8
+          + item.floatingCount * 0.35
+          + Math.max(0, item.peopleCount - item.visitCount) * 0.06,
+      ).toFixed(1)),
+    }))
+    .sort((left, right) => levelRank[left.level] - levelRank[right.level] || right.score - left.score || left.name.localeCompare(right.name, 'zh-CN'));
+}
+
+function buildFallbackActionItems(regionSummaries: StatsRegionSummary[]): StatsActionItem[] {
+  const districts = regionSummaries.filter((item) => item.level === 'district');
+  if (districts.length === 0) {
+    return [];
+  }
+  const byRisk = [...districts].sort((left, right) => right.riskCount - left.riskCount || right.score - left.score)[0];
+  const byConflict = [...districts].sort((left, right) => right.activeConflictCount - left.activeConflictCount || right.score - left.score)[0];
+  const byFloating = [...districts].sort((left, right) => right.floatingCount - left.floatingCount || right.score - left.score)[0];
+  return [
+    { id: 'risk-focus', title: '重点对象压降', description: '先按区县定位重点对象，再下钻到社区与网格核对责任清单。', area: byRisk.name, priority: '高', metric: `${byRisk.riskCount} 人`, route: 'population-tags' },
+    { id: 'conflict-followup', title: '矛盾纠纷清零', description: '优先处理仍在调解中的事件，避免跨月积压。', area: byConflict.name, priority: '高', metric: `${byConflict.activeConflictCount} 起`, route: 'conflict-management' },
+    { id: 'floating-scan', title: '流动人口复核', description: '联动出租房、走访和移动端任务做集中复核。', area: byFloating.name, priority: '中', metric: `${byFloating.floatingCount} 人`, route: 'migration-trends' },
+  ];
+}
+
 function buildFallbackDashboard(): DashboardStatsResponse {
   const people = db.getPeople();
   const houses = db.getHouses();
@@ -426,6 +559,24 @@ function buildFallbackDashboard(): DashboardStatsResponse {
 
   const visits = db.getVisits();
   const conflicts = db.getConflicts();
+  const gridItems: StatsGridItem[] = grids.map((grid) => {
+    const { districtName, streetName, communityName, gridLabel } = parseGridHierarchy(grid.name, grid.id);
+    return {
+      id: grid.id,
+      name: grid.name,
+      parentId: grid.parentId,
+      managerName: grid.managerName,
+      districtName,
+      streetName,
+      communityName,
+      gridLabel,
+      peopleCount: people.filter((person) => person.gridId === grid.id).length,
+      houseCount: houses.filter((house) => house.gridId === grid.id).length,
+      visitCount: visits.filter((visit) => visit.gridId === grid.id).length,
+      conflictCount: conflicts.filter((conflict) => conflict.gridId === grid.id).length,
+    };
+  });
+  const regionSummaries = buildFallbackRegionSummaries(gridItems, people, conflicts);
   const housingStats: StatsHousingStats = {
     total: houses.length,
     selfOccupied: houses.filter((house) => house.type === '自住').length,
@@ -475,16 +626,9 @@ function buildFallbackDashboard(): DashboardStatsResponse {
       mediumRisk: people.filter((person) => person.risk === 'Medium').length,
       lowRisk: people.filter((person) => person.risk === 'Low').length,
     },
-    grids: grids.map((grid) => ({
-      id: grid.id,
-      name: grid.name,
-      parentId: grid.parentId,
-      managerName: grid.managerName,
-      peopleCount: people.filter((person) => person.gridId === grid.id).length,
-      houseCount: houses.filter((house) => house.gridId === grid.id).length,
-      visitCount: visits.filter((visit) => visit.gridId === grid.id).length,
-      conflictCount: conflicts.filter((conflict) => conflict.gridId === grid.id).length,
-    })),
+    grids: gridItems,
+    regionSummaries,
+    actionItems: buildFallbackActionItems(regionSummaries),
   };
 }
 

@@ -15,6 +15,7 @@ import {
 import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
+import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
 type ScopeKey = 'all' | 'hot' | 'stable';
 
@@ -99,7 +100,7 @@ export function MigrationTrends() {
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">人口流动趋势</h2>
-          <p className="text-muted-foreground">基于真实住房历史记录与近六个月迁入迁出数据的趋势分析。</p>
+          <p className="text-muted-foreground">默认先看区县级迁入迁出，再下钻街镇、社区和网格。</p>
         </div>
         <div className="flex gap-3">
           <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
@@ -107,9 +108,9 @@ export function MigrationTrends() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">全部热点</SelectItem>
-              <SelectItem value="hot">高活跃社区</SelectItem>
-              <SelectItem value="stable">低波动社区</SelectItem>
+              <SelectItem value="all">全部区县</SelectItem>
+              <SelectItem value="hot">高活跃区县</SelectItem>
+              <SelectItem value="stable">低波动区县</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -140,7 +141,7 @@ export function MigrationTrends() {
 
       <ChartCard
         title="近六个月迁入迁出对比"
-        description="使用真实住房历史记录的起止日期聚合，不再引用手写年度样例。"
+        description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
         action={(
           <button type="button" className="text-sm text-muted-foreground hover:text-foreground" onClick={handleExport}>
             <Download className="h-4 w-4" />
@@ -163,7 +164,7 @@ export function MigrationTrends() {
               <XAxis dataKey="month" />
               <YAxis />
               <CartesianGrid strokeDasharray="3 3" />
-              <Tooltip />
+              <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
               <Legend />
               <Area type="monotone" dataKey="迁入" stroke="#8884d8" fillOpacity={1} fill="url(#colorIn)" />
               <Area type="monotone" dataKey="迁出" stroke="#82ca9d" fillOpacity={1} fill="url(#colorOut)" />
@@ -173,7 +174,7 @@ export function MigrationTrends() {
       </ChartCard>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <ChartCard title="迁入活跃社区 (Top 5)">
+        <ChartCard title="迁入活跃区县 (Top 5)">
           <div className="space-y-4 px-4">
             {filteredInbound.map((item) => (
               <div key={item.name} className="flex items-center justify-between">
@@ -192,7 +193,7 @@ export function MigrationTrends() {
           </div>
         </ChartCard>
 
-        <ChartCard title="迁出活跃社区 (Top 5)">
+        <ChartCard title="迁出活跃区县 (Top 5)">
           <div className="space-y-4 px-4">
             {filteredOutbound.map((item) => (
               <div key={item.name} className="flex items-center justify-between">

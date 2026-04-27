@@ -4,6 +4,7 @@ import { houseRepository } from './houseRepository';
 import { personRepository } from './personRepository';
 import { taskRepository, type MobileTaskItem } from './taskRepository';
 import { visitRepository } from './visitRepository';
+import { getRegionForGrid } from '../../config/regions';
 
 export type AnalysisSeverity = 'high' | 'medium' | 'low';
 
@@ -13,6 +14,7 @@ export interface AnalysisGridMetric {
   districtName: string;
   streetName: string;
   communityName: string;
+  gridLabel: string;
   peopleCount: number;
   houseCount: number;
   visitCount: number;
@@ -111,9 +113,20 @@ function clamp(value: number, min = 0, max = 100): number {
   return Math.max(min, Math.min(max, value));
 }
 
-function parseGridHierarchy(name: string): { districtName: string; streetName: string; communityName: string } {
+function parseGridHierarchy(name: string, gridId?: string): { districtName: string; streetName: string; communityName: string; gridLabel: string } {
+  const region = getRegionForGrid(gridId, name);
+  if (region) {
+    return {
+      districtName: region.district,
+      streetName: region.street,
+      communityName: region.community,
+      gridLabel: region.gridLabel,
+    };
+  }
+
   let streetName = name;
   let communityName = name;
+  let gridLabel = name;
 
   if (name.includes('街道')) {
     const [prefix] = name.split('街道', 1);
@@ -126,8 +139,10 @@ function parseGridHierarchy(name: string): { districtName: string; streetName: s
   }
 
   if (communityName.includes('第') && communityName.includes('网格')) {
+    gridLabel = `第${communityName.split('第', 1)[1]}`;
     communityName = communityName.split('第', 1)[0];
   } else if (communityName.includes('网格')) {
+    gridLabel = `${communityName.split('网格', 1)[0]}网格`;
     communityName = communityName.split('网格', 1)[0];
   }
 
@@ -135,6 +150,7 @@ function parseGridHierarchy(name: string): { districtName: string; streetName: s
     districtName: '蓬莱示范片区',
     streetName: streetName.trim() || name,
     communityName: communityName.trim() || name,
+    gridLabel: gridLabel.trim() || name,
   };
 }
 
@@ -229,7 +245,7 @@ function buildGridMetric(
   pendingTasks: MobileTaskItem[],
   completedTasks: MobileTaskItem[],
 ): AnalysisGridMetric {
-  const { districtName, streetName, communityName } = parseGridHierarchy(grid.name);
+  const { districtName, streetName, communityName, gridLabel } = parseGridHierarchy(grid.name, grid.id);
   const peopleCount = people.length;
   const houseCount = houses.length;
   const visitCount = visits.length;
@@ -297,6 +313,7 @@ function buildGridMetric(
     districtName,
     streetName,
     communityName,
+    gridLabel,
     peopleCount,
     houseCount,
     visitCount,
@@ -505,7 +522,8 @@ export const analysisRepository = {
     const outboundCounts = new Map<string, number>();
     for (const history of histories) {
       const house = housesById.get(history.houseId);
-      const areaName = house?.communityName ?? house?.address ?? '未识别房屋';
+      const region = house ? getRegionForGrid(house.gridId) : undefined;
+      const areaName = region?.district ?? house?.communityName ?? house?.address ?? '未识别房屋';
       const { start, end } = getHistoryPeriod(history);
       if (start) {
         const point = monthMap.get(getMonthKey(start));

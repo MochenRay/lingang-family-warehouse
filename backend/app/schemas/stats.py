@@ -61,6 +61,10 @@ class StatsGridItemRead(ReadSchema):
     name: str
     parentId: str | None = None
     managerName: str | None = None
+    districtName: str
+    streetName: str
+    communityName: str
+    gridLabel: str
     peopleCount: int
     houseCount: int
     visitCount: int
@@ -76,6 +80,31 @@ class StatsMetadataRead(ReadSchema):
     totalConflicts: int
 
 
+class StatsRegionSummaryRead(ReadSchema):
+    id: str
+    level: str
+    name: str
+    parentName: str | None = None
+    peopleCount: int
+    houseCount: int
+    visitCount: int
+    conflictCount: int
+    floatingCount: int
+    activeConflictCount: int
+    riskCount: int
+    score: float
+
+
+class StatsActionItemRead(ReadSchema):
+    id: str
+    title: str
+    description: str
+    area: str
+    priority: str
+    metric: str
+    route: str
+
+
 class StatsDashboardRead(ReadSchema):
     metadata: StatsMetadataRead
     totalPopulation: int
@@ -88,6 +117,8 @@ class StatsDashboardRead(ReadSchema):
     conflictStats: StatsConflictStatsRead
     mobilePeopleStats: StatsMobilePeopleStatsRead
     grids: list[StatsGridItemRead] = Field(default_factory=list)
+    regionSummaries: list[StatsRegionSummaryRead] = Field(default_factory=list)
+    actionItems: list[StatsActionItemRead] = Field(default_factory=list)
 
 
 class StatsGridListRead(ReadSchema):

@@ -176,10 +176,7 @@ def main() -> None:
             click_first_visible_button(
                 page,
                 [
-                    "打开移动端工作台",
-                    "体验移动端主链",
-                    "直接体验移动端",
-                    "移动端小程序入口（演示用）",
+                    "体验移动端工作台",
                 ],
             )
             wait_for_text(page, "首次体验建议")
