@@ -101,6 +101,13 @@ interface Population extends Person {
 const HIGH_RISK_KEYWORDS = ["矫正", "信访", "涉诉", "精神障碍", "吸毒", "邪教"];
 const MEDIUM_RISK_KEYWORDS = ["独居", "失业", "残疾", "低保", "困境", "留守"];
 const PAGE_SIZE = 20;
+const DARK_CARD_CLASS =
+  "gap-4 rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none hover:shadow-[var(--shadow-02)]";
+const DARK_DIALOG_CLASS =
+  "border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl";
+const DARK_PANEL_CLASS = "border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]";
+const DARK_INPUT_CLASS =
+  "border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]";
 
 const extractInfoFromIdCard = (idCard: string) => {
   if (!idCard || idCard.length !== 18) return null;
@@ -582,9 +589,9 @@ export function PopulationManagement() {
 
   const getResidenceTypeBadge = (type: string) => {
     switch (type) {
-      case "常住": return "bg-blue-100 text-blue-800";
-      case "流动": return "bg-orange-100 text-orange-800";
-      case "户籍": return "bg-green-100 text-green-800";
+      case "常住": return "bg-[rgba(78,134,223,0.16)] text-[#B8D0FF]";
+      case "流动": return "bg-[rgba(214,115,13,0.16)] text-[#FFD2A3]";
+      case "户籍": return "bg-[rgba(25,177,114,0.16)] text-[#A5F3C6]";
       default: return "";
     }
   };
@@ -878,54 +885,54 @@ export function PopulationManagement() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 text-[var(--color-neutral-10)]">
       <div>
-        <h1 className="mb-2">人口管理</h1>
-        <p className="text-gray-500">支持按区县/街道/社区筛选的人口信息全生命周期管理</p>
+        <h1 className="mb-1 text-xl font-semibold text-[var(--color-neutral-11)]">人口管理</h1>
+        <p className="text-[var(--color-neutral-08)]">支持按区县/街道/社区筛选的人口信息全生命周期管理</p>
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>总人口数</CardDescription>
-            <CardTitle className="text-3xl">{stats.total}</CardTitle>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="px-4 py-3">
+            <CardDescription className="text-xs text-[var(--color-neutral-08)]">总人口数</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[var(--color-neutral-11)]">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>正常人口</CardDescription>
-            <CardTitle className="text-3xl">{stats.normal}</CardTitle>
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="px-4 py-3">
+            <CardDescription className="text-xs text-[var(--color-neutral-08)]">正常人口</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#19B172]">{stats.normal}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>户籍人口</CardDescription>
-            <CardTitle className="text-3xl">{stats.resident}</CardTitle>
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="px-4 py-3">
+            <CardDescription className="text-xs text-[var(--color-neutral-08)]">户籍人口</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#4E86DF]">{stats.resident}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>流动人口</CardDescription>
-            <CardTitle className="text-3xl">{stats.floating}</CardTitle>
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="px-4 py-3">
+            <CardDescription className="text-xs text-[var(--color-neutral-08)]">流动人口</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#D6730D]">{stats.floating}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
       {/* 操作栏 */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-4">
+      <Card className={DARK_CARD_CLASS}>
+        <CardContent className="px-4 py-4">
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-3">
               {/* 第一行：搜索与区域筛选 */}
               <div className="flex gap-3 flex-wrap">
                 <div className="flex-1 relative min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[var(--color-neutral-08)] w-4 h-4" />
                   <Input
                     placeholder="搜索姓名、身份证号..."
                     value={searchKeyword}
                     onChange={(e) => setSearchKeyword(e.target.value)}
-                    className="pl-10"
+                    className={`pl-10 ${DARK_INPUT_CLASS}`}
                   />
                 </div>
                 
@@ -986,7 +993,7 @@ export function PopulationManagement() {
               <div className="flex gap-3 flex-wrap items-center justify-between">
                 <div className="flex gap-3">
                   <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-gray-500" />
+                    <Filter className="w-4 h-4 text-[var(--color-neutral-08)]" />
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-[132px]">
                         <SelectValue placeholder="状态" />
@@ -1021,19 +1028,19 @@ export function PopulationManagement() {
                       <SelectItem value="all">全部风险</SelectItem>
                       <SelectItem value="High">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-red-500" />
+                          <span className="w-2 h-2 rounded-full bg-[#D52132]" />
                           高危
                         </span>
                       </SelectItem>
                       <SelectItem value="Medium">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                          <span className="w-2 h-2 rounded-full bg-[#D6730D]" />
                           关注
                         </span>
                       </SelectItem>
                       <SelectItem value="Low">
                         <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-green-500" />
+                          <span className="w-2 h-2 rounded-full bg-[#19B172]" />
                           正常
                         </span>
                       </SelectItem>
@@ -1151,8 +1158,8 @@ export function PopulationManagement() {
             
             {/* 批量操作栏 */}
             {selectedRows.length > 0 && (
-              <div className="flex items-center gap-3 bg-blue-50 p-3 rounded-lg">
-                <span className="text-sm text-blue-900">
+              <div className="flex items-center gap-3 bg-[rgba(78,134,223,0.12)] p-3 rounded-lg">
+                <span className="text-sm text-[#B8D0FF]">
                   已选择 <span className="font-semibold">{selectedRows.length}</span> 条记录
                 </span>
                 <Button size="sm" variant="outline" onClick={handleBatchTag}>
@@ -1169,16 +1176,16 @@ export function PopulationManagement() {
       </Card>
 
       {/* 数据表格 */}
-      <Card className="overflow-hidden">
+      <Card className={`${DARK_CARD_CLASS} overflow-hidden`}>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
             <Table className="min-w-[1900px]">
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-12 sticky left-0 z-20 bg-gray-50">
+                  <TableHead className="w-12 sticky left-0 z-20 bg-[var(--color-neutral-02)]">
                     <input type="checkbox" checked={isCurrentPageFullySelected} onChange={toggleAllSelection} className="rounded" />
                   </TableHead>
-                  <TableHead className="sticky left-12 z-20 bg-gray-50 min-w-[120px] shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">姓名</TableHead>
+                  <TableHead className="sticky left-12 z-20 bg-[var(--color-neutral-02)] min-w-[120px] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.85)]">姓名</TableHead>
                   {visibleColumns.gender && <TableHead>性别</TableHead>}
                   {visibleColumns.nation && <TableHead>民族</TableHead>}
                   {visibleColumns.age && <TableHead>年龄</TableHead>}
@@ -1193,7 +1200,7 @@ export function PopulationManagement() {
                   {visibleColumns.tags && <TableHead>标签</TableHead>}
                   {visibleColumns.type && <TableHead>居住类型</TableHead>}
                   {visibleColumns.status && <TableHead>状态</TableHead>}
-                  <TableHead className="text-right sticky right-0 z-20 bg-gray-50 shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">操作</TableHead>
+                  <TableHead className="text-right sticky right-0 z-20 bg-[var(--color-neutral-02)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.85)]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1202,17 +1209,17 @@ export function PopulationManagement() {
                     const visitDisplay = getVisitDisplay(pop, visitsByPersonId);
                     return (
                       <TableRow key={pop.id}>
-                        <TableCell className="sticky left-0 z-10 bg-white">
+                        <TableCell className="sticky left-0 z-10 bg-[var(--color-neutral-01)]">
                           <input type="checkbox" checked={selectedRows.includes(pop.id)} onChange={() => toggleRowSelection(pop.id)} className="rounded" />
                         </TableCell>
-                        <TableCell className="sticky left-12 z-10 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                        <TableCell className="sticky left-12 z-10 bg-[var(--color-neutral-01)] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.85)]">
                           <div className="flex items-center gap-2">
                             <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
-                              pop.risk === 'High' ? 'bg-red-500 shadow-sm shadow-red-200' :
-                              pop.risk === 'Medium' ? 'bg-yellow-500 shadow-sm shadow-yellow-200' :
-                              'bg-green-500 shadow-sm shadow-green-200'
+                              pop.risk === 'High' ? 'bg-[#D52132] shadow-[0_0_0_3px_rgba(213,33,50,0.16)]' :
+                              pop.risk === 'Medium' ? 'bg-[#D6730D] shadow-[0_0_0_3px_rgba(214,115,13,0.16)]' :
+                              'bg-[#19B172] shadow-[0_0_0_3px_rgba(25,177,114,0.16)]'
                             }`} title={`风险等级: ${pop.risk}`} />
-                            <span className="font-medium text-gray-900">{pop.name}</span>
+                            <span className="font-medium text-[var(--color-neutral-11)]">{pop.name}</span>
                           </div>
                         </TableCell>
                         {visibleColumns.gender && <TableCell>{pop.gender}</TableCell>}
@@ -1224,41 +1231,41 @@ export function PopulationManagement() {
                           <TableCell className="text-sm">
                             {pop.district && pop.street ? (
                               <div className="flex flex-col">
-                                <span className="font-medium text-gray-900">{pop.community}</span>
-                                <span className="text-xs text-gray-500">{pop.district}/{pop.street}</span>
+                                <span className="font-medium text-[var(--color-neutral-11)]">{pop.community}</span>
+                                <span className="text-xs text-[var(--color-neutral-08)]">{pop.district}/{pop.street}</span>
                               </div>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-[var(--color-neutral-08)]">-</span>
                             )}
                           </TableCell>
                         )}
                         {visibleColumns.address && <TableCell className="max-w-[200px] truncate" title={pop.address}>{pop.address}</TableCell>}
                         {visibleColumns.family && (
                           <TableCell className="max-w-[220px] text-sm">
-                            <div className="truncate font-medium text-gray-900" title={getHouseDisplay(pop, houseMap)}>
+                            <div className="truncate font-medium text-[var(--color-neutral-11)]" title={getHouseDisplay(pop, houseMap)}>
                               {getHouseDisplay(pop, houseMap)}
                             </div>
-                            <div className="mt-1 text-xs text-gray-500">
+                            <div className="mt-1 text-xs text-[var(--color-neutral-08)]">
                               {pop.houseId ? `房屋 ID：${pop.houseId}` : "待补人房关联"}
                             </div>
                           </TableCell>
                         )}
                         {visibleColumns.relation && (
                           <TableCell className="max-w-[160px] text-sm">
-                            <span className="text-gray-700">{getRelationDisplay(pop, peopleByHouseId)}</span>
+                            <span className="text-[var(--color-neutral-10)]">{getRelationDisplay(pop, peopleByHouseId)}</span>
                           </TableCell>
                         )}
                         {visibleColumns.biography && (
                           <TableCell className="max-w-[240px] text-sm">
-                            <div className="line-clamp-2 text-gray-700" title={getBiographyDisplay(pop)}>
+                            <div className="line-clamp-2 text-[var(--color-neutral-10)]" title={getBiographyDisplay(pop)}>
                               {getBiographyDisplay(pop)}
                             </div>
                           </TableCell>
                         )}
                         {visibleColumns.visits && (
                           <TableCell className="text-sm">
-                            <div className="font-medium text-gray-900">{visitDisplay.title}</div>
-                            <div className="mt-1 text-xs text-gray-500">{visitDisplay.detail}</div>
+                            <div className="font-medium text-[var(--color-neutral-11)]">{visitDisplay.title}</div>
+                            <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{visitDisplay.detail}</div>
                           </TableCell>
                         )}
                         {visibleColumns.tags && (
@@ -1275,7 +1282,7 @@ export function PopulationManagement() {
                                     <TooltipProvider>
                                       <Tooltip delayDuration={0}>
                                         <TooltipTrigger asChild>
-                                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-5 cursor-help hover:bg-gray-100">
+                                          <Badge variant="outline" className="text-[10px] px-1 py-0 h-5 cursor-help hover:bg-[var(--color-neutral-03)]">
                                             +{pop.tags.length - 2}
                                           </Badge>
                                         </TooltipTrigger>
@@ -1291,7 +1298,7 @@ export function PopulationManagement() {
                                   )}
                                 </>
                               ) : (
-                                <span className="text-gray-300 text-xs">-</span>
+                                <span className="text-[var(--color-neutral-08)] text-xs">-</span>
                               )}
                             </div>
                           </TableCell>
@@ -1306,7 +1313,7 @@ export function PopulationManagement() {
                             <Badge variant={getStatusBadgeVariant(pop.status) as any}>{pop.status}</Badge>
                           </TableCell>
                         )}
-                        <TableCell className="text-right sticky right-0 z-10 bg-white shadow-[-2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                        <TableCell className="text-right sticky right-0 z-10 bg-[var(--color-neutral-01)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.85)]">
                           <div className="flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => handleView(pop)}>
                               <Eye className="w-4 h-4" />
@@ -1315,7 +1322,7 @@ export function PopulationManagement() {
                               <Edit className="w-4 h-4" />
                             </Button>
                             <Button variant="ghost" size="sm" onClick={() => void handleDelete(pop.id)} disabled={isSaving}>
-                              <Trash2 className="w-4 h-4 text-red-500" />
+                              <Trash2 className="w-4 h-4 text-[#D52132]" />
                             </Button>
                           </div>
                         </TableCell>
@@ -1324,7 +1331,7 @@ export function PopulationManagement() {
                   })
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={13} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={13} className="text-center py-8 text-[var(--color-neutral-08)]">
                       {isLoading ? "正在加载人口数据..." : "暂无数据"}
                     </TableCell>
                   </TableRow>
@@ -1332,8 +1339,8 @@ export function PopulationManagement() {
               </TableBody>
             </Table>
           </div>
-          <div className="flex flex-col gap-3 border-t border-gray-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="text-sm text-gray-500">
+          <div className="flex flex-col gap-3 border-t border-[var(--color-neutral-03)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="text-sm text-[var(--color-neutral-08)]">
               共 {filteredPopulations.length} 条，当前显示 {filteredPopulations.length === 0 ? 0 : pageStart + 1}-
               {Math.min(pageStart + PAGE_SIZE, filteredPopulations.length)} 条
             </div>
@@ -1346,7 +1353,7 @@ export function PopulationManagement() {
               >
                 上一页
               </Button>
-              <div className="min-w-[92px] text-center text-sm text-gray-600">
+              <div className="min-w-[92px] text-center text-sm text-[var(--color-neutral-08)]">
                 第 {safeCurrentPage} / {totalPages} 页
               </div>
               <Button
@@ -1364,7 +1371,7 @@ export function PopulationManagement() {
 
       {/* 查看详情对话框 */}
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogContent className={`max-w-5xl max-h-[90vh] overflow-hidden flex flex-col ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>人口详情</DialogTitle>
             <DialogDescription>
@@ -1383,19 +1390,19 @@ export function PopulationManagement() {
                 
                 <TabsContent value="basic" className="space-y-4">
                   {/* 个人概览卡片 */}
-                  <Card>
+                  <Card className={DARK_CARD_CLASS}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">个人概览</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-3 gap-4">
-                        <div><Label className="text-gray-500">姓名</Label><p className="mt-1 font-medium">{selectedPopulation.name}</p></div>
-                        <div><Label className="text-gray-500">性别</Label><p className="mt-1">{selectedPopulation.gender}</p></div>
-                        <div><Label className="text-gray-500">年龄</Label><p className="mt-1">{selectedPopulation.age}岁</p></div>
-                        <div><Label className="text-gray-500">民族</Label><p className="mt-1">{selectedPopulation.nation || '-'}</p></div>
-                        <div><Label className="text-gray-500">教育程度</Label><p className="mt-1">{selectedPopulation.education || '-'}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">姓名</Label><p className="mt-1 font-medium">{selectedPopulation.name}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">性别</Label><p className="mt-1">{selectedPopulation.gender}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">年龄</Label><p className="mt-1">{selectedPopulation.age}岁</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">民族</Label><p className="mt-1">{selectedPopulation.nation || '-'}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">教育程度</Label><p className="mt-1">{selectedPopulation.education || '-'}</p></div>
                         <div>
-                          <Label className="text-gray-500">居住类型</Label>
+                          <Label className="text-[var(--color-neutral-08)]">居住类型</Label>
                           <p className="mt-1"><Badge className={getResidenceTypeBadge(selectedPopulation.type)}>{selectedPopulation.type}</Badge></p>
                         </div>
                       </div>
@@ -1403,31 +1410,31 @@ export function PopulationManagement() {
                   </Card>
 
                   {/* 联系信息 */}
-                  <Card>
+                  <Card className={DARK_CARD_CLASS}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">联系信息</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-4">
-                        <div><Label className="text-gray-500">身份证号</Label><p className="mt-1 font-mono text-sm">{selectedPopulation.idCard}</p></div>
-                        <div><Label className="text-gray-500">电话</Label><p className="mt-1">{selectedPopulation.phone}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">身份证号</Label><p className="mt-1 font-mono text-sm">{selectedPopulation.idCard}</p></div>
+                        <div><Label className="text-[var(--color-neutral-08)]">电话</Label><p className="mt-1">{selectedPopulation.phone}</p></div>
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* 居住信息 */}
-                  <Card>
+                  <Card className={DARK_CARD_CLASS}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">居住信息</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
                         <div>
-                          <Label className="text-gray-500">所属区域</Label>
+                          <Label className="text-[var(--color-neutral-08)]">所属区域</Label>
                           <p className="mt-1">{selectedPopulation.district || '-'} / {selectedPopulation.street || '-'} / {selectedPopulation.community || '-'}</p>
                         </div>
                         <div>
-                          <Label className="text-gray-500">详细地址</Label>
+                          <Label className="text-[var(--color-neutral-08)]">详细地址</Label>
                           <p className="mt-1">{selectedPopulation.address}</p>
                         </div>
                       </div>
@@ -1435,7 +1442,7 @@ export function PopulationManagement() {
                   </Card>
 
                   {/* 标签信息 */}
-                  <Card>
+                  <Card className={DARK_CARD_CLASS}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-base">人员标签</CardTitle>
                     </CardHeader>
@@ -1446,14 +1453,14 @@ export function PopulationManagement() {
                             <Badge key={tag.id} variant="outline" className="text-sm">{tag.name}</Badge>
                           ))
                         ) : (
-                          <span className="text-sm text-gray-500">暂无人员标签</span>
+                          <span className="text-sm text-[var(--color-neutral-08)]">暂无人员标签</span>
                         )}
                       </div>
                     </CardContent>
                   </Card>
 
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Shield className="w-4 h-4 text-amber-600" />
@@ -1466,26 +1473,26 @@ export function PopulationManagement() {
                           <Badge
                             className={
                               selectedPopulation.risk === "High"
-                                ? "bg-red-100 text-red-700"
+                                ? "bg-[rgba(213,33,50,0.16)] text-[#FFB4B4]"
                                 : selectedPopulation.risk === "Medium"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-green-100 text-green-700"
+                                  ? "bg-[rgba(214,115,13,0.16)] text-[#FFE1A6]"
+                                  : "bg-[rgba(25,177,114,0.16)] text-[#A5F3C6]"
                             }
                           >
                             {selectedPopulation.risk}
                           </Badge>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-[var(--color-neutral-08)]">
                             最近走访：{getLastVisitDate(selectedPopulationVisits) ?? "暂无记录"}
                           </span>
                         </div>
-                        <p className="text-sm leading-6 text-gray-700">{selectedRiskSummary}</p>
+                        <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{selectedRiskSummary}</p>
                       </CardContent>
                     </Card>
 
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-blue-600" />
+                          <Calendar className="w-4 h-4 text-[#4E86DF]" />
                           推荐动作
                         </CardTitle>
                         <CardDescription>为数据画像智能体预留的业务嵌入位</CardDescription>
@@ -1493,7 +1500,7 @@ export function PopulationManagement() {
                       <CardContent>
                         <div className="space-y-2">
                           {selectedRecommendedActions.map((action, index) => (
-                            <div key={index} className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+                            <div key={index} className="rounded-lg border border-[#4E86DF]/30 bg-[rgba(78,134,223,0.12)] p-3 text-sm text-[#B8D0FF]">
                               {action}
                             </div>
                           ))}
@@ -1507,7 +1514,7 @@ export function PopulationManagement() {
                     selectedPopulation.religion || selectedPopulation.politicalStatus || selectedPopulation.militaryService !== undefined ||
                     selectedPopulation.graduationInfo || selectedPopulation.workplace || selectedPopulation.communityVolunteer !== undefined ||
                     selectedPopulation.skills || selectedPopulation.pets) && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Briefcase className="w-4 h-4" />
@@ -1517,37 +1524,37 @@ export function PopulationManagement() {
                       <CardContent>
                         <div className="grid grid-cols-3 gap-4">
                           {selectedPopulation.birthDate && (
-                            <div><Label className="text-gray-500">出生年月</Label><p className="mt-1">{selectedPopulation.birthDate}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">出生年月</Label><p className="mt-1">{selectedPopulation.birthDate}</p></div>
                           )}
                           {selectedPopulation.birthplace && (
-                            <div><Label className="text-gray-500">籍贯</Label><p className="mt-1">{selectedPopulation.birthplace}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">籍贯</Label><p className="mt-1">{selectedPopulation.birthplace}</p></div>
                           )}
                           {selectedPopulation.maritalStatus && (
-                            <div><Label className="text-gray-500">婚姻状况</Label><p className="mt-1">{selectedPopulation.maritalStatus}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">婚姻状况</Label><p className="mt-1">{selectedPopulation.maritalStatus}</p></div>
                           )}
                           {selectedPopulation.religion && (
-                            <div><Label className="text-gray-500">宗教信仰</Label><p className="mt-1">{selectedPopulation.religion}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">宗教信仰</Label><p className="mt-1">{selectedPopulation.religion}</p></div>
                           )}
                           {selectedPopulation.politicalStatus && (
-                            <div><Label className="text-gray-500">政治面貌</Label><p className="mt-1">{selectedPopulation.politicalStatus}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">政治面貌</Label><p className="mt-1">{selectedPopulation.politicalStatus}</p></div>
                           )}
                           {selectedPopulation.militaryService !== undefined && (
-                            <div><Label className="text-gray-500">服役情况</Label><p className="mt-1">{selectedPopulation.militaryService ? '是' : '否'}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">服役情况</Label><p className="mt-1">{selectedPopulation.militaryService ? '是' : '否'}</p></div>
                           )}
                           {selectedPopulation.graduationInfo && (
-                            <div className="col-span-2"><Label className="text-gray-500">毕业院校及专业</Label><p className="mt-1">{selectedPopulation.graduationInfo}</p></div>
+                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">毕业院校及专业</Label><p className="mt-1">{selectedPopulation.graduationInfo}</p></div>
                           )}
                           {selectedPopulation.workplace && (
-                            <div className="col-span-2"><Label className="text-gray-500">工作单位</Label><p className="mt-1">{selectedPopulation.workplace}</p></div>
+                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">工作单位</Label><p className="mt-1">{selectedPopulation.workplace}</p></div>
                           )}
                           {selectedPopulation.communityVolunteer !== undefined && (
-                            <div><Label className="text-gray-500">社区志愿者</Label><p className="mt-1">{selectedPopulation.communityVolunteer ? '是' : '否'}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">社区志愿者</Label><p className="mt-1">{selectedPopulation.communityVolunteer ? '是' : '否'}</p></div>
                           )}
                           {selectedPopulation.skills && (
-                            <div className="col-span-2"><Label className="text-gray-500">技能特长</Label><p className="mt-1">{selectedPopulation.skills}</p></div>
+                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">技能特长</Label><p className="mt-1">{selectedPopulation.skills}</p></div>
                           )}
                           {selectedPopulation.pets && (
-                            <div><Label className="text-gray-500">宠物情况</Label><p className="mt-1">{selectedPopulation.pets}</p></div>
+                            <div><Label className="text-[var(--color-neutral-08)]">宠物情况</Label><p className="mt-1">{selectedPopulation.pets}</p></div>
                           )}
                         </div>
                       </CardContent>
@@ -1556,7 +1563,7 @@ export function PopulationManagement() {
 
                   {/* 重点关爱标签 */}
                   {selectedPopulation.careLabels && selectedPopulation.careLabels.length > 0 && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Shield className="w-4 h-4" />
@@ -1566,7 +1573,7 @@ export function PopulationManagement() {
                       <CardContent>
                         <div className="flex gap-2 flex-wrap">
                           {selectedPopulation.careLabels.map((label, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-sm bg-orange-100 text-orange-800">{label}</Badge>
+                            <Badge key={idx} variant="secondary" className="text-sm bg-[rgba(214,115,13,0.16)] text-[#FFD2A3]">{label}</Badge>
                           ))}
                         </div>
                       </CardContent>
@@ -1575,7 +1582,7 @@ export function PopulationManagement() {
 
                   {/* 人员类别标签 */}
                   {selectedPopulation.categoryLabels && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Award className="w-4 h-4" />
@@ -1586,25 +1593,25 @@ export function PopulationManagement() {
                         <div className="space-y-3">
                           {selectedPopulation.categoryLabels.isFloorLeader && (
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-blue-50">楼长</Badge>
+                              <Badge variant="outline" className="bg-[rgba(78,134,223,0.12)]">楼长</Badge>
                             </div>
                           )}
                           {selectedPopulation.categoryLabels.isUnitLeader && (
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-blue-50">单元长</Badge>
+                              <Badge variant="outline" className="bg-[rgba(78,134,223,0.12)]">单元长</Badge>
                             </div>
                           )}
                           {selectedPopulation.categoryLabels.isAssistant && (
                             <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-blue-50">网格助理</Badge>
+                              <Badge variant="outline" className="bg-[rgba(78,134,223,0.12)]">网格助理</Badge>
                             </div>
                           )}
                           {selectedPopulation.categoryLabels.focusType && selectedPopulation.categoryLabels.focusType.length > 0 && (
                             <div>
-                              <Label className="text-gray-500">重点关注类型</Label>
+                              <Label className="text-[var(--color-neutral-08)]">重点关注类型</Label>
                               <div className="flex gap-2 flex-wrap mt-2">
                                 {selectedPopulation.categoryLabels.focusType.map((type, idx) => (
-                                  <Badge key={idx} variant="secondary" className="text-sm bg-red-100 text-red-800">{type}</Badge>
+                                  <Badge key={idx} variant="secondary" className="text-sm bg-[rgba(213,33,50,0.16)] text-[#FFB4B4]">{type}</Badge>
                                 ))}
                               </div>
                             </div>
@@ -1616,7 +1623,7 @@ export function PopulationManagement() {
 
                   {/* 个人经历 */}
                   {selectedPopulation.biography && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <FileText className="w-4 h-4" />
@@ -1624,14 +1631,14 @@ export function PopulationManagement() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedPopulation.biography}</p>
+                        <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.biography}</p>
                       </CardContent>
                     </Card>
                   )}
 
                   {/* 活动参与 */}
                   {selectedPopulation.activityParticipation && (selectedPopulation.activityParticipation.activities || selectedPopulation.activityParticipation.needs) && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Activity className="w-4 h-4" />
@@ -1642,14 +1649,14 @@ export function PopulationManagement() {
                         <div className="space-y-3">
                           {selectedPopulation.activityParticipation.activities && (
                             <div>
-                              <Label className="text-gray-500">参与活动</Label>
-                              <p className="mt-1 text-sm text-gray-700">{selectedPopulation.activityParticipation.activities}</p>
+                              <Label className="text-[var(--color-neutral-08)]">参与活动</Label>
+                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.activities}</p>
                             </div>
                           )}
                           {selectedPopulation.activityParticipation.needs && (
                             <div>
-                              <Label className="text-gray-500">需求建议</Label>
-                              <p className="mt-1 text-sm text-gray-700">{selectedPopulation.activityParticipation.needs}</p>
+                              <Label className="text-[var(--color-neutral-08)]">需求建议</Label>
+                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.needs}</p>
                             </div>
                           )}
                         </div>
@@ -1659,7 +1666,7 @@ export function PopulationManagement() {
 
                   {/* 健康档案 */}
                   {selectedPopulation.healthRecord && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
@@ -1670,50 +1677,50 @@ export function PopulationManagement() {
                         <div className="grid grid-cols-2 gap-4">
                           {selectedPopulation.healthRecord.hasChronic !== undefined && (
                             <div>
-                              <Label className="text-gray-500">是否患慢性病</Label>
+                              <Label className="text-[var(--color-neutral-08)]">是否患慢性病</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.hasChronic ? '是' : '否'}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.chronicDetails && (
                             <div className="col-span-2">
-                              <Label className="text-gray-500">慢性病详情</Label>
-                              <p className="mt-1 text-sm text-gray-700">{selectedPopulation.healthRecord.chronicDetails}</p>
+                              <Label className="text-[var(--color-neutral-08)]">慢性病详情</Label>
+                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.healthRecord.chronicDetails}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.needsRegularMedicine !== undefined && (
                             <div>
-                              <Label className="text-gray-500">是否需定期服药</Label>
+                              <Label className="text-[var(--color-neutral-08)]">是否需定期服药</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.needsRegularMedicine ? '是' : '否'}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.medicineFrequency && (
                             <div>
-                              <Label className="text-gray-500">服药频率</Label>
+                              <Label className="text-[var(--color-neutral-08)]">服药频率</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.medicineFrequency}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.medicalVisitFrequency && (
                             <div>
-                              <Label className="text-gray-500">就医频率</Label>
+                              <Label className="text-[var(--color-neutral-08)]">就医频率</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.medicalVisitFrequency}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.isSeverePatient !== undefined && (
                             <div>
-                              <Label className="text-gray-500">是否重症患者</Label>
+                              <Label className="text-[var(--color-neutral-08)]">是否重症患者</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.isSeverePatient ? '是' : '否'}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.isPregnant !== undefined && (
                             <div>
-                              <Label className="text-gray-500">是否孕妇</Label>
+                              <Label className="text-[var(--color-neutral-08)]">是否孕妇</Label>
                               <p className="mt-1">{selectedPopulation.healthRecord.isPregnant ? '是' : '否'}</p>
                             </div>
                           )}
                           {selectedPopulation.healthRecord.specialNotes && (
                             <div className="col-span-2">
-                              <Label className="text-gray-500">特殊备注</Label>
-                              <p className="mt-1 text-sm text-gray-700">{selectedPopulation.healthRecord.specialNotes}</p>
+                              <Label className="text-[var(--color-neutral-08)]">特殊备注</Label>
+                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.healthRecord.specialNotes}</p>
                             </div>
                           )}
                         </div>
@@ -1723,7 +1730,7 @@ export function PopulationManagement() {
 
                   {/* 重要事件记录 */}
                   {selectedPopulation.importantEvents && (
-                    <Card>
+                    <Card className={DARK_CARD_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
                           <FileText className="w-4 h-4" />
@@ -1731,7 +1738,7 @@ export function PopulationManagement() {
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">{selectedPopulation.importantEvents}</p>
+                        <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.importantEvents}</p>
                       </CardContent>
                     </Card>
                   )}
@@ -1740,10 +1747,10 @@ export function PopulationManagement() {
                 <TabsContent value="relation" className="space-y-4">
                   <>
                         {/* 同住关系 */}
-                        <Card>
+                        <Card className={DARK_CARD_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Home className="w-4 h-4 text-blue-600" />
+                              <Home className="w-4 h-4 text-[#4E86DF]" />
                               同住关系
                               <Badge variant="secondary" className="ml-1">{selectedHousemates.length}</Badge>
                             </CardTitle>
@@ -1753,14 +1760,14 @@ export function PopulationManagement() {
                             {selectedHousemates.length > 0 ? (
                               <div className="space-y-3">
                                 {selectedHousemates.map((person) => (
-                                  <div key={person.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                  <div key={person.id} className="flex items-center justify-between p-3 bg-[var(--color-neutral-02)] rounded-lg">
                                     <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                        <Users className="w-5 h-5 text-blue-600" />
+                                      <div className="w-10 h-10 rounded-full bg-[rgba(78,134,223,0.16)] flex items-center justify-center">
+                                        <Users className="w-5 h-5 text-[#4E86DF]" />
                                       </div>
                                       <div>
                                         <p className="font-medium">{person.name}</p>
-                                        <p className="text-sm text-gray-500">{person.gender} · {person.age}岁</p>
+                                        <p className="text-sm text-[var(--color-neutral-08)]">{person.gender} · {person.age}岁</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -1773,16 +1780,16 @@ export function PopulationManagement() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-gray-500 text-sm text-center py-4">暂无同住人员</p>
+                              <p className="text-[var(--color-neutral-08)] text-sm text-center py-4">暂无同住人员</p>
                             )}
                           </CardContent>
                         </Card>
 
                         {/* 血缘关系 */}
-                        <Card>
+                        <Card className={DARK_CARD_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Heart className="w-4 h-4 text-red-600" />
+                              <Heart className="w-4 h-4 text-[#D52132]" />
                               血缘关系
                               <Badge variant="secondary" className="ml-1">{selectedFamilyMembers.length}</Badge>
                             </CardTitle>
@@ -1792,19 +1799,19 @@ export function PopulationManagement() {
                             {selectedFamilyMembers.length > 0 ? (
                               <div className="space-y-3">
                                 {selectedFamilyMembers.map((item, idx: number) => (
-                                  <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                                  <div key={idx} className="flex items-center justify-between p-3 bg-[rgba(213,33,50,0.10)] rounded-lg">
                                     <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
-                                        <Heart className="w-5 h-5 text-red-600" />
+                                      <div className="w-10 h-10 rounded-full bg-[rgba(213,33,50,0.16)] flex items-center justify-center">
+                                        <Heart className="w-5 h-5 text-[#D52132]" />
                                       </div>
                                       <div>
                                         <div className="flex items-center gap-2">
                                           <p className="font-medium">{item.person.name}</p>
-                                          <Badge variant="outline" className="text-xs bg-red-100 text-red-700 border-red-200">
+                                          <Badge variant="outline" className="text-xs bg-[rgba(213,33,50,0.16)] text-[#FFB4B4] border-[#D52132]/35">
                                             {item.relationType}
                                           </Badge>
                                         </div>
-                                        <p className="text-sm text-gray-500">{item.person.gender} · {item.person.age}岁 · {item.person.address}</p>
+                                        <p className="text-sm text-[var(--color-neutral-08)]">{item.person.gender} · {item.person.age}岁 · {item.person.address}</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -1816,25 +1823,25 @@ export function PopulationManagement() {
                                 ))}
                               </div>
                             ) : (
-                              <p className="text-gray-500 text-sm text-center py-4">暂无血缘关系记录</p>
+                              <p className="text-[var(--color-neutral-08)] text-sm text-center py-4">暂无血缘关系记录</p>
                             )}
                           </CardContent>
                         </Card>
 
                         {/* 关系网络图 */}
-                        <Card>
+                        <Card className={DARK_CARD_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Network className="w-4 h-4 text-purple-600" />
+                              <Network className="w-4 h-4 text-[#8B5CF6]" />
                               关系网络
                             </CardTitle>
                             <CardDescription>可视化展示人员关系网络</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <div className="relative w-full h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
+                            <div className="relative w-full h-64 bg-gradient-to-br from-[rgba(78,134,223,0.12)] to-[rgba(139,92,246,0.10)] rounded-lg flex items-center justify-center">
                               {/* 中心节点 */}
                               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-                                <div className="w-16 h-16 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg px-1" style={{ fontSize: selectedPopulation.name.length > 3 ? '12px' : '18px' }}>
+                                <div className="w-16 h-16 rounded-full bg-[#2761CB] flex items-center justify-center text-white font-bold shadow-[0_12px_28px_rgba(0,0,0,0.35)] px-1" style={{ fontSize: selectedPopulation.name.length > 3 ? '12px' : '18px' }}>
                                   {selectedPopulation.name}
                                 </div>
                                 <p className="text-center mt-1 text-xs font-medium">{selectedPopulation.name}</p>
@@ -1895,17 +1902,17 @@ export function PopulationManagement() {
                                   
                                   if (isBoth) {
                                     // 既有血缘又有同住：紫色
-                                    nodeColor = 'bg-purple-500';
+                                    nodeColor = 'bg-[#8B5CF6]';
                                     strokeColor = '#a855f7';
                                     strokeDasharray = '';
                                   } else if (hasFamily) {
                                     // 只有血缘：红色虚线
-                                    nodeColor = 'bg-red-500';
+                                    nodeColor = 'bg-[#D52132]';
                                     strokeColor = '#ef4444';
                                     strokeDasharray = '4 4';
                                   } else {
                                     // 只有同住：蓝色实线
-                                    nodeColor = 'bg-blue-500';
+                                    nodeColor = 'bg-[#4E86DF]';
                                     strokeColor = '#3b82f6';
                                     strokeDasharray = '';
                                   }
@@ -1954,16 +1961,16 @@ export function PopulationManagement() {
                             </div>
                             <div className="mt-4 flex items-center justify-center gap-6 text-sm">
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                <span className="text-gray-600">血缘关系</span>
+                                <div className="w-3 h-3 rounded-full bg-[#D52132]"></div>
+                                <span className="text-[var(--color-neutral-08)]">血缘关系</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                                <span className="text-gray-600">同住关系</span>
+                                <div className="w-3 h-3 rounded-full bg-[#4E86DF]"></div>
+                                <span className="text-[var(--color-neutral-08)]">同住关系</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-purple-500"></div>
-                                <span className="text-gray-600">血缘+同住</span>
+                                <div className="w-3 h-3 rounded-full bg-[#8B5CF6]"></div>
+                                <span className="text-[var(--color-neutral-08)]">血缘+同住</span>
                               </div>
                             </div>
                           </CardContent>
@@ -1972,22 +1979,22 @@ export function PopulationManagement() {
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-4">
-                  <Card>
+                  <Card className={DARK_CARD_CLASS}>
                     <CardHeader>
                       <CardTitle className="text-base">访问记录</CardTitle>
                       <CardDescription>最近的入户访问和服务记录</CardDescription>
                     </CardHeader>
                     <CardContent>
                       {isDetailLoading ? (
-                        <p className="text-gray-500 text-sm text-center py-8">正在加载历史走访...</p>
+                        <p className="text-[var(--color-neutral-08)] text-sm text-center py-8">正在加载历史走访...</p>
                       ) : selectedPopulationVisits.length > 0 ? (
                         <div className="space-y-3">
                           {selectedPopulationVisits.map((visit) => (
-                            <div key={visit.id} className="rounded-lg border border-gray-200 p-4">
+                            <div key={visit.id} className="rounded-lg border border-[var(--color-neutral-03)] p-4">
                               <div className="flex items-center justify-between gap-3">
                                 <div>
-                                  <p className="font-medium text-gray-900">{visit.visitorName}</p>
-                                  <p className="text-xs text-gray-500">{visit.date}</p>
+                                  <p className="font-medium text-[var(--color-neutral-11)]">{visit.visitorName}</p>
+                                  <p className="text-xs text-[var(--color-neutral-08)]">{visit.date}</p>
                                 </div>
                                 {visit.tags && visit.tags.length > 0 && (
                                   <div className="flex flex-wrap justify-end gap-1">
@@ -1999,12 +2006,12 @@ export function PopulationManagement() {
                                   </div>
                                 )}
                               </div>
-                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-gray-700">{visit.content}</p>
+                              <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-[var(--color-neutral-10)]">{visit.content}</p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-gray-500 text-sm text-center py-8">暂无历史记录</p>
+                        <p className="text-[var(--color-neutral-08)] text-sm text-center py-8">暂无历史记录</p>
                       )}
                     </CardContent>
                   </Card>
@@ -2018,7 +2025,7 @@ export function PopulationManagement() {
    
       {/* 新增/编辑对话框 */}
       <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsAddDialogOpen(false); setIsEditDialogOpen(false); setFormData({}); setRecommendedTags([]); setSelectedPersonTags([]); setExpandedSections({ detail: false, biography: false, activity: false, health: false, events: false }); } }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
+        <DialogContent className={`max-w-2xl max-h-[90vh] flex flex-col ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>{isAddDialogOpen ? "新增人口" : "编辑人口"}</DialogTitle>
             <DialogDescription>
@@ -2152,7 +2159,7 @@ export function PopulationManagement() {
                  {expandedSections.detail ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                </Button>
                {expandedSections.detail && (
-                 <div className="grid grid-cols-2 gap-4 mt-4 p-4 border rounded-md">
+                 <div className={`grid grid-cols-2 gap-4 mt-4 p-4 rounded-md ${DARK_PANEL_CLASS}`}>
                    <div><Label>出生年月</Label><Input value={formData.birthDate || ""} onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })} placeholder="例:1989-01" /></div>
                    <div><Label>籍贯</Label><Input value={formData.birthplace || ""} onChange={(e) => setFormData({ ...formData, birthplace: e.target.value })} /></div>
                    <div>
@@ -2205,7 +2212,7 @@ export function PopulationManagement() {
                  {expandedSections.biography ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                </Button>
                {expandedSections.biography && (
-                 <div className="mt-4 p-4 border rounded-md">
+                 <div className={`mt-4 p-4 rounded-md ${DARK_PANEL_CLASS}`}>
                    <Textarea
                      value={formData.biography || ""}
                      onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
@@ -2228,7 +2235,7 @@ export function PopulationManagement() {
                  {expandedSections.activity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                </Button>
                {expandedSections.activity && (
-                 <div className="mt-4 p-4 border rounded-md space-y-3">
+                 <div className={`mt-4 p-4 rounded-md space-y-3 ${DARK_PANEL_CLASS}`}>
                    <div>
                      <Label>参与活动</Label>
                      <Textarea
@@ -2275,7 +2282,7 @@ export function PopulationManagement() {
                  {expandedSections.health ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                </Button>
                {expandedSections.health && (
-                 <div className="mt-4 p-4 border rounded-md space-y-3">
+                 <div className={`mt-4 p-4 rounded-md space-y-3 ${DARK_PANEL_CLASS}`}>
                    <div className="flex items-center space-x-2">
                      <Checkbox
                        id="hasChronic"
@@ -2381,7 +2388,7 @@ export function PopulationManagement() {
                  {expandedSections.events ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                </Button>
                {expandedSections.events && (
-                 <div className="mt-4 p-4 border rounded-md">
+                 <div className={`mt-4 p-4 rounded-md ${DARK_PANEL_CLASS}`}>
                    <Textarea
                      value={formData.importantEvents || ""}
                      onChange={(e) => setFormData({ ...formData, importantEvents: e.target.value })}
@@ -2396,10 +2403,10 @@ export function PopulationManagement() {
                <Label>人员标签</Label>
                
                {/* 推荐标签区域 - 始终显示 */}
-               <div className="mt-2 p-3 bg-blue-50 rounded-md border border-blue-200">
+               <div className="mt-2 p-3 bg-[rgba(78,134,223,0.12)] rounded-md border border-[#4E86DF]/40">
                  <div className="flex items-center justify-between mb-2">
-                   <span className="text-xs font-medium text-blue-900">推荐标签</span>
-                   <span className="text-xs text-blue-600">
+                   <span className="text-xs font-medium text-[#B8D0FF]">推荐标签</span>
+                   <span className="text-xs text-[#4E86DF]">
                      {recommendedTags.length > 0 ? '点击可取消选中' : '暂无推荐'}
                    </span>
                  </div>
@@ -2411,7 +2418,7 @@ export function PopulationManagement() {
                          <Badge
                            key={index}
                            variant={isSelected ? "default" : "outline"}
-                           className="cursor-pointer hover:opacity-80 bg-blue-500 hover:bg-blue-600"
+                           className="cursor-pointer bg-[#4E86DF] text-white hover:bg-[#2761CB]"
                            onClick={() => {
                              if (isSelected) {
                                setSelectedPersonTags(selectedPersonTags.filter(t => t !== tagName));
@@ -2425,15 +2432,15 @@ export function PopulationManagement() {
                        );
                      })
                    ) : (
-                     <span className="text-xs text-gray-400 italic">根据填写内容自动推荐标签</span>
+                     <span className="text-xs text-[var(--color-neutral-08)] italic">根据填写内容自动推荐标签</span>
                    )}
                  </div>
                </div>
                
                {/* 手动添加标签区域 - 始终显示 */}
-               <div className="mt-2 p-3 border rounded-md">
+               <div className={`mt-2 p-3 rounded-md ${DARK_PANEL_CLASS}`}>
                  <div className="mb-2">
-                   <span className="text-xs font-medium text-gray-700">手动添加</span>
+                   <span className="text-xs font-medium text-[var(--color-neutral-10)]">手动添加</span>
                  </div>
                  <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
                    {enabledTags
@@ -2474,7 +2481,7 @@ export function PopulationManagement() {
       
       {/* 标签管理相关对话框 */}
       <Dialog open={isTagDialogOpen} onOpenChange={setIsTagDialogOpen}>
-        <DialogContent>
+        <DialogContent className={DARK_DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>管理标签</DialogTitle>
             <DialogDescription>
@@ -2482,12 +2489,12 @@ export function PopulationManagement() {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-wrap gap-2 py-4">
-             <div className="w-full text-center text-gray-500">标签选择功能保持不变</div>
+             <div className="w-full text-center text-[var(--color-neutral-08)]">标签选择功能保持不变</div>
           </div>
         </DialogContent>
       </Dialog>
       <Dialog open={isBatchTagDialogOpen} onOpenChange={setIsBatchTagDialogOpen}>
-         <DialogContent>
+         <DialogContent className={DARK_DIALOG_CLASS}>
            <DialogHeader>
              <DialogTitle>批量打标签</DialogTitle>
              <DialogDescription>
@@ -2499,7 +2506,7 @@ export function PopulationManagement() {
 
       {/* 房屋选择对话框 */}
       <Dialog open={isHouseSelectDialogOpen} onOpenChange={setIsHouseSelectDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>选择房屋</DialogTitle>
             <DialogDescription>
@@ -2624,7 +2631,7 @@ export function PopulationManagement() {
 
       {/* 网格选择对话框 */}
       <Dialog open={isGridSelectDialogOpen} onOpenChange={setIsGridSelectDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>选择网格</DialogTitle>
             <DialogDescription>
