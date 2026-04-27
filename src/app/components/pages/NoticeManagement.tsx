@@ -230,15 +230,16 @@ export function NoticeManagement() {
         </CardHeader>
         <CardContent className="p-0">
           {filteredNotices.length > 0 ? (
-            <Table>
+            <div className="overflow-x-auto">
+              <Table className="min-w-[760px]">
               <TableHeader>
                 <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                  <TableHead>标题</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>通知范围</TableHead>
-                  <TableHead>发布时间</TableHead>
-                  <TableHead>发布人</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                  <TableHead className="w-[38%] min-w-[260px]">标题</TableHead>
+                  <TableHead className="whitespace-nowrap">类型</TableHead>
+                  <TableHead className="whitespace-nowrap">通知范围</TableHead>
+                  <TableHead className="whitespace-nowrap">发布时间</TableHead>
+                  <TableHead className="whitespace-nowrap">发布人</TableHead>
+                  <TableHead className="w-24 text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,30 +247,30 @@ export function NoticeManagement() {
                   const typeConfig = getTypeConfig(notice.type);
                   return (
                     <TableRow key={notice.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]/70">
-                      <TableCell className="font-medium max-w-md">
+                      <TableCell className="w-[38%] min-w-[260px] max-w-[360px] font-medium">
                         <div className="truncate text-[var(--color-neutral-11)]">{notice.title}</div>
                         <div className="text-xs text-[var(--color-neutral-08)] truncate mt-1">
                           {notice.content}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge variant="outline" className={typeConfig.color}>
                           {typeConfig.label}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-1 text-sm text-[var(--color-neutral-08)]">
                           <Users className="w-3 h-3" />
                           {getScopeText(notice.scope)}
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <div className="flex items-center gap-1 text-sm text-[var(--color-neutral-08)]">
                           <Calendar className="w-3 h-3" />
                           {formatNoticeTime(notice.publishedAt)}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-[var(--color-neutral-08)]">
+                      <TableCell className="whitespace-nowrap text-sm text-[var(--color-neutral-08)]">
                         {notice.publisher}
                       </TableCell>
                       <TableCell className="text-right">
@@ -296,7 +297,8 @@ export function NoticeManagement() {
                   );
                 })}
               </TableBody>
-            </Table>
+              </Table>
+            </div>
           ) : (
             <div className="text-center py-12">
               <Bell className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-4" />

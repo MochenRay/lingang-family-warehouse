@@ -444,18 +444,18 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-[var(--color-neutral-03)]">
-            <Table>
+          <div className="overflow-x-auto rounded-lg border border-[var(--color-neutral-03)]">
+            <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                  <TableHead className="text-[var(--color-neutral-08)]">标题</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">来源</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">类型</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">当事人</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">所属网格</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">状态</TableHead>
-                  <TableHead className="text-[var(--color-neutral-08)]">更新时间</TableHead>
-                  <TableHead className="text-right text-[var(--color-neutral-08)]">操作</TableHead>
+                  <TableHead className="w-[24%] min-w-[220px] text-[var(--color-neutral-08)]">标题</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">来源</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">类型</TableHead>
+                  <TableHead className="min-w-[150px] text-[var(--color-neutral-08)]">当事人</TableHead>
+                  <TableHead className="min-w-[150px] text-[var(--color-neutral-08)]">所属网格</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">状态</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">更新时间</TableHead>
+                  <TableHead className="w-20 text-right text-[var(--color-neutral-08)]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -481,13 +481,13 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                       className="cursor-pointer border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[rgba(78,134,223,0.08)]"
                       onClick={() => void handleOpenDetail(conflict)}
                     >
-                      <TableCell className="font-medium max-w-[220px] truncate text-white">{conflict.title}</TableCell>
-                      <TableCell>
+                      <TableCell className="w-[24%] min-w-[220px] max-w-[260px] truncate font-medium text-white">{conflict.title}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge variant="secondary" className={getSourceClass(conflict.source)}>
                           {conflict.source}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-[var(--color-neutral-10)]">{conflict.type}</TableCell>
+                      <TableCell className="whitespace-nowrap text-[var(--color-neutral-10)]">{conflict.type}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap max-w-[180px]">
                           {conflict.involvedParties.length === 0 ? (
@@ -504,13 +504,13 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate text-[var(--color-neutral-10)]" title={getGridName(conflict.gridId)}>
+                      <TableCell className="max-w-[170px] truncate text-[var(--color-neutral-10)]" title={getGridName(conflict.gridId)}>
                         {getGridName(conflict.gridId)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge className={getConflictStatusClass(conflict.status)}>{conflict.status}</Badge>
                       </TableCell>
-                      <TableCell className="text-[var(--color-neutral-08)] text-sm">
+                      <TableCell className="whitespace-nowrap text-sm text-[var(--color-neutral-08)]">
                         {conflict.updatedAt.split(" ")[0]}
                       </TableCell>
                       <TableCell className="text-right">
