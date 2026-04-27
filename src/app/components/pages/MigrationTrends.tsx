@@ -16,6 +16,7 @@ import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../servi
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { HorizontalBarList } from '../statistics/HorizontalBarList';
 
 type ScopeKey = 'all' | 'hot' | 'stable';
 
@@ -175,39 +176,25 @@ export function MigrationTrends() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <ChartCard title="迁入活跃区县 (Top 5)">
-          <div className="space-y-3">
-            {filteredInbound.map((item) => (
-              <div key={item.name} className="grid grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px] items-center gap-3 text-sm">
-                <span className="truncate text-[var(--color-neutral-10)]">{item.name}</span>
-                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                    <div
-                      className="h-full rounded-full bg-[#4E86DF]"
-                      style={{ width: `${(item.value / Math.max(filteredInbound[0]?.value ?? 1, 1)) * 100}%` }}
-                    />
-                </div>
-                <span className="text-right font-semibold tabular-nums text-[#4E86DF]">{item.value}</span>
-              </div>
-            ))}
-            {filteredInbound.length === 0 ? <div className="text-sm text-[var(--color-neutral-08)]">暂无匹配区县</div> : null}
-          </div>
+          <HorizontalBarList
+            items={filteredInbound.map((item) => ({
+              label: item.name,
+              value: item.value,
+              color: '#4E86DF',
+            }))}
+            emptyText="暂无匹配区县"
+          />
         </ChartCard>
 
         <ChartCard title="迁出活跃区县 (Top 5)">
-          <div className="space-y-3">
-            {filteredOutbound.map((item) => (
-              <div key={item.name} className="grid grid-cols-[minmax(96px,1fr)_minmax(120px,0.9fr)_40px] items-center gap-3 text-sm">
-                <span className="truncate text-[var(--color-neutral-10)]">{item.name}</span>
-                <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                    <div
-                      className="h-full rounded-full bg-[#D6730D]"
-                      style={{ width: `${(item.value / Math.max(filteredOutbound[0]?.value ?? 1, 1)) * 100}%` }}
-                    />
-                </div>
-                <span className="text-right font-semibold tabular-nums text-[#D6730D]">{item.value}</span>
-              </div>
-            ))}
-            {filteredOutbound.length === 0 ? <div className="text-sm text-[var(--color-neutral-08)]">暂无匹配区县</div> : null}
-          </div>
+          <HorizontalBarList
+            items={filteredOutbound.map((item) => ({
+              label: item.name,
+              value: item.value,
+              color: '#D6730D',
+            }))}
+            emptyText="暂无匹配区县"
+          />
         </ChartCard>
       </div>
     </div>

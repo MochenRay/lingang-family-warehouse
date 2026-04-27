@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle,
-  ArrowDown,
   ArrowRight,
-  ArrowUp,
-  ArrowUpDown,
   Database,
   Home,
   Loader2,
@@ -21,6 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { HorizontalBarList } from '../statistics/HorizontalBarList';
+import { SortableHeader } from '../statistics/SortableHeader';
 
 interface StatisticsOverviewProps {
   onRouteChange?: (route: string) => void;
@@ -50,6 +49,8 @@ const DEFAULT_DISTRICT_SORT: { key: DistrictSortKey; direction: SortDirection } 
   key: 'score',
   direction: 'desc',
 };
+
+const RISK_TAG_COLORS = ['#2AA3CF', '#D6730D', '#8B5CF6', '#D52132', '#EC4899', '#4F46E5'];
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat('zh-CN').format(value);
@@ -149,7 +150,6 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const topRiskTags = [...(dashboard?.riskTagsSummary ?? [])]
     .sort((left, right) => right.count - left.count)
     .slice(0, 6);
-  const maxRiskTagCount = Math.max(1, ...topRiskTags.map((item) => item.count));
   const totalPopulation = dashboard?.totalPopulation ?? 0;
   const totalHouses = dashboard?.totalHouses ?? 0;
   const totalVisits = dashboard?.metadata.totalVisits ?? 0;
@@ -181,44 +181,6 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
     link.remove();
     URL.revokeObjectURL(url);
     toast.success('驾驶舱快照已导出');
-  };
-
-  const renderSortIcon = (key: DistrictSortKey) => {
-    if (districtSort.key !== key) {
-      return <ArrowUpDown className="h-3.5 w-3.5 opacity-55" />;
-    }
-
-    return districtSort.direction === 'asc'
-      ? <ArrowUp className="h-3.5 w-3.5" />
-      : <ArrowDown className="h-3.5 w-3.5" />;
-  };
-
-  const renderSortableHeader = (
-    key: DistrictSortKey,
-    label: string,
-    align: 'left' | 'right' = 'right',
-    className = '',
-  ) => {
-    const isActive = districtSort.key === key;
-    const ariaSort = isActive ? (districtSort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
-
-    return (
-      <th
-        aria-sort={ariaSort}
-        className={`px-4 py-3 text-xs font-medium ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
-      >
-        <button
-          type="button"
-          onClick={() => handleDistrictSort(key)}
-          className={`inline-flex w-full items-center gap-1.5 rounded px-1 py-1 transition-colors hover:bg-[rgba(39,97,203,0.12)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E86DF] ${
-            align === 'right' ? 'justify-end' : 'justify-start'
-          } ${isActive ? 'text-[#4E86DF]' : 'text-[var(--color-neutral-08)]'}`}
-        >
-          <span>{label}</span>
-          {renderSortIcon(key)}
-        </button>
-      </th>
-    );
   };
 
   const recommendedJourney = [
@@ -418,22 +380,19 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
 
         <section className="flex h-full flex-col rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
           <h2 className="text-base font-semibold text-white">重点标签人员</h2>
-          <div className="mt-5 flex-1 space-y-3.5">
-            {topRiskTags.map((tag, index) => {
-              const colors = ['#2AA3CF', '#D6730D', '#8B5CF6', '#D52132', '#EC4899', '#4F46E5'];
-              const color = colors[index % colors.length];
-              return (
-                <div key={tag.name} className="grid grid-cols-[88px_minmax(96px,1fr)_48px] items-center gap-3 text-sm xl:grid-cols-[104px_minmax(120px,1fr)_54px]">
-                  <span className="truncate text-right text-[var(--color-neutral-10)]">{tag.name}</span>
-                  <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                    <div className="h-full rounded-full" style={{ width: `${Math.max(4, (tag.count / maxRiskTagCount) * 100)}%`, backgroundColor: color }} />
-                  </div>
-                  <span className="text-right font-semibold tabular-nums" style={{ color }}>{formatNumber(tag.count)}</span>
-                </div>
-              );
-            })}
-            {topRiskTags.length === 0 ? <div className="text-sm text-[var(--color-neutral-08)]">暂无重点标签数据</div> : null}
-          </div>
+          <HorizontalBarList
+            className="mt-5 flex-1 space-y-3.5"
+            columnsClassName="grid-cols-[88px_minmax(96px,1fr)_48px] xl:grid-cols-[104px_minmax(120px,1fr)_54px]"
+            emptyText="暂无重点标签数据"
+            labelClassName="text-right"
+            minBarPercent={4}
+            valueFormatter={formatNumber}
+            items={topRiskTags.map((tag, index) => ({
+              label: tag.name,
+              value: tag.count,
+              color: RISK_TAG_COLORS[index % RISK_TAG_COLORS.length],
+            }))}
+          />
         </section>
       </div>
 
@@ -449,14 +408,14 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
           <table className="w-full min-w-[900px] border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-neutral-03)]">
-                {renderSortableHeader('rank', '排名', 'left', 'w-16')}
-                {renderSortableHeader('name', '区县名称', 'left')}
-                {renderSortableHeader('peopleCount', '人口数')}
-                {renderSortableHeader('houseCount', '房屋数')}
-                {renderSortableHeader('visitCount', '走访次')}
-                {renderSortableHeader('activeConflictCount', '待化解')}
-                {renderSortableHeader('floatingCount', '流动人口')}
-                {renderSortableHeader('score', '风险指数', 'right', 'w-[260px]')}
+                <SortableHeader sortKey="rank" currentKey={districtSort.key} direction={districtSort.direction} label="排名" align="left" className="w-16 py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="name" currentKey={districtSort.key} direction={districtSort.direction} label="区县名称" align="left" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="peopleCount" currentKey={districtSort.key} direction={districtSort.direction} label="人口数" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="houseCount" currentKey={districtSort.key} direction={districtSort.direction} label="房屋数" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="visitCount" currentKey={districtSort.key} direction={districtSort.direction} label="走访次" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="activeConflictCount" currentKey={districtSort.key} direction={districtSort.direction} label="待化解" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="floatingCount" currentKey={districtSort.key} direction={districtSort.direction} label="流动人口" className="py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="score" currentKey={districtSort.key} direction={districtSort.direction} label="风险指数" className="w-[260px] py-3 text-xs" onSort={handleDistrictSort} />
               </tr>
             </thead>
             <tbody>

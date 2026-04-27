@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowLeftRight, ArrowUp, ArrowUpDown, Download, Filter, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, Download, Filter, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { ChartCard } from '../statistics/ChartCard';
 import { Button } from '../ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Label } from '../ui/label';
@@ -12,6 +12,7 @@ import { analysisRepository, type AnalysisGridMetric, type GovernanceAnalysisSna
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { SortableHeader } from '../statistics/SortableHeader';
 
 type CompareMode = 'average' | 'target';
 type CompareLevel = 'district' | 'street' | 'community' | 'grid';
@@ -266,42 +267,6 @@ export function DataComparison() {
     });
   };
 
-  const renderSortIcon = (key: ComparisonSortKey) => {
-    if (sortState.key !== key) {
-      return <ArrowUpDown className="h-3.5 w-3.5 opacity-55" />;
-    }
-
-    return sortState.direction === 'asc'
-      ? <ArrowUp className="h-3.5 w-3.5" />
-      : <ArrowDown className="h-3.5 w-3.5" />;
-  };
-
-  const renderSortableHeader = (
-    key: ComparisonSortKey,
-    label: string,
-    align: 'left' | 'right' | 'center' = 'right',
-    className = '',
-  ) => {
-    const isActive = sortState.key === key;
-    const ariaSort = isActive ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none';
-    const alignClass = align === 'right' ? 'justify-end text-right' : align === 'center' ? 'justify-center text-center' : 'justify-start text-left';
-
-    return (
-      <TableHead aria-sort={ariaSort} className={className}>
-        <button
-          type="button"
-          onClick={() => handleSort(key)}
-          className={`inline-flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs transition-colors hover:bg-[rgba(39,97,203,0.12)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E86DF] ${alignClass} ${
-            isActive ? 'text-[#4E86DF]' : 'text-[var(--color-neutral-08)]'
-          }`}
-        >
-          <span>{label}</span>
-          {renderSortIcon(key)}
-        </button>
-      </TableHead>
-    );
-  };
-
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div>
@@ -418,13 +383,13 @@ export function DataComparison() {
           <Table className="min-w-[900px]">
             <TableHeader>
               <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                {renderSortableHeader('rank', '排名', 'left', 'w-[80px]')}
-                {renderSortableHeader('name', '区域名称', 'left')}
-                {renderSortableHeader('current', '当前值')}
-                {renderSortableHeader('benchmark', '参考值')}
-                {renderSortableHeader('diff', '差值')}
-                {renderSortableHeader('diffRate', '变化率')}
-                {renderSortableHeader('heatScore', '趋势判定', 'center')}
+                <SortableHeader sortKey="rank" currentKey={sortState.key} direction={sortState.direction} label="排名" align="left" className="w-[80px]" onSort={handleSort} />
+                <SortableHeader sortKey="name" currentKey={sortState.key} direction={sortState.direction} label="区域名称" align="left" onSort={handleSort} />
+                <SortableHeader sortKey="current" currentKey={sortState.key} direction={sortState.direction} label="当前值" onSort={handleSort} />
+                <SortableHeader sortKey="benchmark" currentKey={sortState.key} direction={sortState.direction} label="参考值" onSort={handleSort} />
+                <SortableHeader sortKey="diff" currentKey={sortState.key} direction={sortState.direction} label="差值" onSort={handleSort} />
+                <SortableHeader sortKey="diffRate" currentKey={sortState.key} direction={sortState.direction} label="变化率" onSort={handleSort} />
+                <SortableHeader sortKey="heatScore" currentKey={sortState.key} direction={sortState.direction} label="趋势判定" align="center" onSort={handleSort} />
               </TableRow>
             </TableHeader>
             <TableBody>
