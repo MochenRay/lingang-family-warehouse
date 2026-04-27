@@ -60,6 +60,15 @@ const SCORE_LABELS: Record<PerformanceScoreKey, { label: string; short: string; 
   taskSpeed: { label: '响应速度', short: '速度', desc: '完成任务的平均耗时，越快得分越高' },
 };
 
+const DARK_CARD_CLASS =
+  'rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const DARK_DIALOG_CLASS =
+  'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
+const DARK_INPUT_CLASS =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
+const DARK_BADGE_CLASS =
+  'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]';
+
 function avgScores(items: { scores: AggregatedItem['scores']; totalScore: number }[]): { scores: AggregatedItem['scores']; totalScore: number } {
   if (items.length === 0) return { scores: { visitFreq: 0, visitQuality: 0, infoComplete: 0, taskCount: 0, taskSpeed: 0 }, totalScore: 0 };
   const sum = { visitFreq: 0, visitQuality: 0, infoComplete: 0, taskCount: 0, taskSpeed: 0 };
@@ -264,40 +273,40 @@ export function BehaviorSupervision() {
 
   // 得分颜色
   const scoreColor = (score: number) => {
-    if (score >= 85) return 'text-green-500';
-    if (score >= 70) return 'text-blue-400';
-    if (score >= 55) return 'text-yellow-500';
-    return 'text-red-500';
+    if (score >= 85) return 'text-[#19B172]';
+    if (score >= 70) return 'text-[#4E86DF]';
+    if (score >= 55) return 'text-[#D6730D]';
+    return 'text-[#D52132]';
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 text-[var(--color-neutral-10)]">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-[var(--color-neutral-11)]">行为督导中心</h1>
-          <p className="text-sm text-gray-500 dark:text-[var(--color-neutral-08)] mt-1">
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">行为督导中心</h1>
+          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
             监控网格员工作绩效，提升数据采集质量与效率。
           </p>
         </div>
         <div className="flex gap-2">
           <Dialog open={isBriefingOpen} onOpenChange={setIsBriefingOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
+              <Button variant="outline" className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                 <FileText className="w-4 h-4" />
                 生成简报
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl" aria-describedby="briefing-desc">
+            <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="briefing-desc">
               <DialogHeader>
                 <DialogTitle>自动生成绩效简报</DialogTitle>
-                <DialogDescription id="briefing-desc">基于当前数据自动生成工作汇报，支持导出PDF或发送邮件。</DialogDescription>
+                <DialogDescription id="briefing-desc" className="text-[var(--color-neutral-08)]">基于当前数据自动生成工作汇报，支持导出PDF或发送邮件。</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>简报类型</Label>
                     <Select value={briefingType} onValueChange={setBriefingType}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className={DARK_INPUT_CLASS}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="daily">日报</SelectItem>
                         <SelectItem value="weekly">周报</SelectItem>
@@ -308,7 +317,7 @@ export function BehaviorSupervision() {
                   <div className="space-y-2">
                     <Label>数据范围</Label>
                     <Select defaultValue="all">
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectTrigger className={DARK_INPUT_CLASS}><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">全辖区</SelectItem>
                         <SelectItem value="district">按区县</SelectItem>
@@ -319,9 +328,9 @@ export function BehaviorSupervision() {
                 </div>
                 <div className="space-y-2">
                   <Label>简报预览</Label>
-                  <div className="border rounded-md p-4 bg-gray-50 text-sm leading-relaxed text-gray-700 min-h-[200px]">
+                  <div className="min-h-[200px] rounded-md border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4 text-sm leading-relaxed text-[var(--color-neutral-10)]">
                     <p className="font-bold mb-2 text-center text-lg">{briefingType === 'daily' ? '每日' : briefingType === 'weekly' ? '每周' : '每月'}工作绩效简报</p>
-                    <p className="mb-2 text-gray-500 text-center text-xs">生成时间: {generatedAt || '数据加载中'}</p>
+                    <p className="mb-2 text-center text-xs text-[var(--color-neutral-08)]">生成时间: {generatedAt || '数据加载中'}</p>
                     <div className="space-y-2">
                       <p><strong>一、总体情况</strong></p>
                       <p>本{briefingType === 'daily' ? '日' : briefingType === 'weekly' ? '周' : '月'}辖区累计沉淀 {totals.visits} 条走访记录，覆盖 {totals.people} 名居民、{totals.houses} 套房屋，当前平均综合得分为 {overviewStats.avgScore}。</p>
@@ -334,8 +343,8 @@ export function BehaviorSupervision() {
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsBriefingOpen(false)}>取消</Button>
-                <Button className="gap-2">
+                <Button variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]" onClick={() => setIsBriefingOpen(false)}>取消</Button>
+                <Button className="gap-2 bg-[#4E86DF] text-white hover:bg-[#3f75c8]">
                   <Download className="w-4 h-4" /> 导出 PDF
                 </Button>
               </DialogFooter>
@@ -345,45 +354,45 @@ export function BehaviorSupervision() {
       </div>
 
       {loading && (
-        <Card className="border-dashed">
+        <Card className={`${DARK_CARD_CLASS} border-dashed`}>
           <CardContent className="p-4 text-sm text-[var(--color-neutral-08)]">正在刷新真实督导口径...</CardContent>
         </Card>
       )}
 
       {/* 数据主链状态 */}
-      <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-        <CardContent className="p-6">
+      <Card className={DARK_CARD_CLASS}>
+        <CardContent className="p-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-blue-500/20 rounded-lg border border-blue-400/30">
-                <RefreshCw className="w-6 h-6 text-blue-400" />
+              <div className="rounded-lg border border-[#4E86DF]/30 bg-[#4E86DF]/15 p-3">
+                <RefreshCw className="w-6 h-6 text-[#4E86DF]" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-[var(--color-neutral-11)]">治理数据主链已联通</h3>
                 <div className="flex items-center gap-2 text-sm text-[var(--color-neutral-08)] mt-1">
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                    <span className="w-2 h-2 rounded-full bg-[#19B172]"></span>
                     连接状态: 正常
                   </span>
-                  <span className="w-px h-3 bg-gray-300"></span>
+                  <span className="w-px h-3 bg-[var(--color-neutral-03)]"></span>
                   <span>统计口径: 真实走访 / 待办 / 档案完整度</span>
-                  <span className="w-px h-3 bg-gray-300"></span>
+                  <span className="w-px h-3 bg-[var(--color-neutral-03)]"></span>
                   <span>最近刷新: {generatedAt || '加载中'}</span>
                 </div>
               </div>
             </div>
             <div className="flex gap-8">
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">居民档案</div>
-                <div className="text-xl font-bold text-gray-900">{totals.people}</div>
+                <div className="mb-1 text-sm text-[var(--color-neutral-08)]">居民档案</div>
+                <div className="text-xl font-bold text-[var(--color-neutral-11)]">{totals.people}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">房屋档案</div>
-                <div className="text-xl font-bold text-gray-900">{totals.houses}</div>
+                <div className="mb-1 text-sm text-[var(--color-neutral-08)]">房屋档案</div>
+                <div className="text-xl font-bold text-[var(--color-neutral-11)]">{totals.houses}</div>
               </div>
               <div className="text-center">
-                <div className="text-sm text-gray-500 mb-1">走访记录</div>
-                <div className="text-xl font-bold text-gray-900">{totals.visits}</div>
+                <div className="mb-1 text-sm text-[var(--color-neutral-08)]">走访记录</div>
+                <div className="text-xl font-bold text-[var(--color-neutral-11)]">{totals.visits}</div>
               </div>
             </div>
           </div>
@@ -392,54 +401,54 @@ export function BehaviorSupervision() {
 
       {/* 概览卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-blue-100 rounded-full text-blue-600">
+        <Card className={DARK_CARD_CLASS}>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-[#4E86DF]/15 p-3 text-[#4E86DF]">
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">活跃网格员</div>
-              <div className="text-2xl font-bold">{overviewStats.workerCount}</div>
+              <div className="text-sm text-[var(--color-neutral-08)]">活跃网格员</div>
+              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.workerCount}</div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-green-100 rounded-full text-green-600">
+        <Card className={DARK_CARD_CLASS}>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-[#19B172]/15 p-3 text-[#19B172]">
               <Trophy className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">平均综合得分</div>
-              <div className="text-2xl font-bold">{overviewStats.avgScore}</div>
+              <div className="text-sm text-[var(--color-neutral-08)]">平均综合得分</div>
+              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.avgScore}</div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-purple-100 rounded-full text-purple-600">
+        <Card className={DARK_CARD_CLASS}>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-[#4E86DF]/15 p-3 text-[#4E86DF]">
               <CheckCircle2 className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">最优社区</div>
-              <div className="text-2xl font-bold">{overviewStats.bestCommunity}</div>
+              <div className="text-sm text-[var(--color-neutral-08)]">最优社区</div>
+              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.bestCommunity}</div>
             </div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="p-3 bg-orange-100 rounded-full text-orange-600">
+        <Card className={DARK_CARD_CLASS}>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="rounded-full bg-[#D6730D]/15 p-3 text-[#D6730D]">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <div className="text-sm text-gray-500">待改进网格员</div>
-              <div className="text-2xl font-bold">{overviewStats.needImproveCount}</div>
+              <div className="text-sm text-[var(--color-neutral-08)]">待改进网格员</div>
+              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.needImproveCount}</div>
             </div>
           </CardContent>
         </Card>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList>
+        <TabsList className="border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
           <TabsTrigger value="performance" className="gap-2">
             <Trophy className="w-4 h-4" />
             绩效排名
@@ -452,15 +461,15 @@ export function BehaviorSupervision() {
 
         <TabsContent value="performance" className="space-y-4">
           {/* 评分公式说明 */}
-          <Card>
+          <Card className={DARK_CARD_CLASS}>
             <button
-              className="w-full flex items-center justify-between px-6 py-4 text-left hover:bg-[var(--color-neutral-02)] transition-colors"
+              className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-[var(--color-neutral-03)]"
               onClick={() => setShowFormula(!showFormula)}
             >
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-blue-500" />
+                <Info className="w-4 h-4 text-[#4E86DF]" />
                 <span className="font-semibold text-[var(--color-neutral-11)]">评分规则说明</span>
-                <Badge variant="secondary" className="text-xs">
+                <Badge variant="secondary" className={DARK_BADGE_CLASS}>
                   综合得分 = 走访频次×25% + 走访质量×25% + 信息完善度×20% + 任务完成量×15% + 响应速度×15%
                 </Badge>
               </div>
@@ -474,13 +483,13 @@ export function BehaviorSupervision() {
                       <div key={key} className="p-3 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
                         <div className="flex items-center justify-between mb-1">
                           <span className="font-semibold text-sm text-[var(--color-neutral-11)]">{meta.label}</span>
-                          <Badge variant="outline" className="text-xs">{(PERFORMANCE_SCORE_WEIGHTS[key] * 100)}%</Badge>
+                          <Badge variant="outline" className={DARK_BADGE_CLASS}>{(PERFORMANCE_SCORE_WEIGHTS[key] * 100)}%</Badge>
                         </div>
                         <p className="text-xs text-[var(--color-neutral-08)]">{meta.desc}</p>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-lg text-xs text-blue-700 dark:text-blue-300">
+                  <div className="mt-3 rounded-lg border border-[#4E86DF]/25 bg-[#4E86DF]/10 p-3 text-xs text-[#4E86DF]">
                     <strong>聚合规则：</strong>上级单位得分 = 下辖单位得分的算术平均。区县视角排名街道/镇，街道视角排名社区，社区视角排名网格员。不越级考核。
                   </div>
                 </div>
@@ -489,7 +498,7 @@ export function BehaviorSupervision() {
           </Card>
 
           {/* 排名列表 */}
-          <Card>
+          <Card className={DARK_CARD_CLASS}>
             <CardHeader className="pb-2">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <Tabs value={viewLevel} onValueChange={(v) => handleLevelChange(v as ViewLevel)} className="w-auto">
@@ -498,7 +507,7 @@ export function BehaviorSupervision() {
                       <TabsTrigger
                         key={level}
                         value={level}
-                        className="data-[state=active]:border-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none border border-transparent rounded px-4 py-1.5 font-bold text-gray-600 hover:text-gray-900 transition-all"
+                        className="rounded border border-transparent px-4 py-1.5 font-bold text-[var(--color-neutral-08)] transition-all hover:text-[var(--color-neutral-11)] data-[state=active]:border-2 data-[state=active]:border-[#4E86DF] data-[state=active]:bg-transparent data-[state=active]:text-[#4E86DF] data-[state=active]:shadow-none"
                       >
                         {VIEW_LABELS[level]}排名
                       </TabsTrigger>
@@ -509,7 +518,7 @@ export function BehaviorSupervision() {
                 <div className="flex gap-2 w-full md:w-auto">
                   <Input
                     placeholder={`搜索${VIEW_LABELS[viewLevel]}...`}
-                    className="w-full md:w-64"
+                    className={`w-full md:w-64 ${DARK_INPUT_CLASS}`}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
@@ -517,12 +526,12 @@ export function BehaviorSupervision() {
               </div>
 
               {(selectedDistrict || selectedStreet || selectedCommunity) && (
-                <div className="flex items-center gap-2 text-xs text-gray-500 mt-2">
+                <div className="mt-2 flex items-center gap-2 text-xs text-[var(--color-neutral-08)]">
                   <span>当前筛选:</span>
-                  {selectedDistrict && <Badge variant="secondary">{selectedDistrict}</Badge>}
-                  {selectedStreet && <Badge variant="secondary">{selectedStreet}</Badge>}
-                  {selectedCommunity && <Badge variant="secondary">{selectedCommunity}</Badge>}
-                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs" onClick={() => {
+                  {selectedDistrict && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedDistrict}</Badge>}
+                  {selectedStreet && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedStreet}</Badge>}
+                  {selectedCommunity && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedCommunity}</Badge>}
+                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-[#4E86DF] hover:bg-[var(--color-neutral-03)] hover:text-[#4E86DF]" onClick={() => {
                     setSelectedDistrict(null); setSelectedStreet(null); setSelectedCommunity(null);
                   }}>
                     清除筛选
@@ -543,7 +552,7 @@ export function BehaviorSupervision() {
 
               <div className="space-y-2">
                 {statsData.length === 0 && (
-                  <div className="text-center py-10 text-gray-500">暂无数据</div>
+                  <div className="py-10 text-center text-[var(--color-neutral-08)]">暂无数据</div>
                 )}
                 {statsData.map((item) => (
                   <div
@@ -554,9 +563,9 @@ export function BehaviorSupervision() {
                     {/* 排名 */}
                     <div className="flex justify-center">
                       <div className={`w-9 h-9 flex items-center justify-center rounded-full font-bold text-sm ${
-                        item.rank === 1 ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-400/30' :
-                        item.rank === 2 ? 'bg-gray-400/20 text-gray-400 border border-gray-400/30' :
-                        item.rank === 3 ? 'bg-orange-500/20 text-orange-400 border border-orange-400/30' :
+                        item.rank === 1 ? 'bg-[#D6730D]/20 text-[#D6730D] border border-[#D6730D]/35' :
+                        item.rank === 2 ? 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-08)]/30' :
+                        item.rank === 3 ? 'bg-[#4E86DF]/15 text-[#4E86DF] border border-[#4E86DF]/30' :
                         'bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)] border border-[var(--color-neutral-04)]'
                       }`}>
                         {item.rank}
@@ -565,7 +574,7 @@ export function BehaviorSupervision() {
 
                     {/* 名称 */}
                     <div>
-                      <div className="font-bold text-[var(--color-neutral-11)] group-hover:text-blue-400 transition-colors">
+                      <div className="font-bold text-[var(--color-neutral-11)] transition-colors group-hover:text-[#4E86DF]">
                         {item.name}
                       </div>
                       <div className="text-xs text-[var(--color-neutral-08)]">
@@ -604,19 +613,19 @@ export function BehaviorSupervision() {
         <TabsContent value="quality" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {qualityAlerts.map((alert) => (
-              <Card key={alert.id} className="border-l-4 border-l-red-500">
-                <CardContent className="p-6">
+              <Card key={alert.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[#D52132]`}>
+                <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-red-500" />
-                      <span className="font-bold text-gray-800">{alert.type}</span>
+                      <AlertCircle className="w-5 h-5 text-[#D52132]" />
+                      <span className="font-bold text-[var(--color-neutral-11)]">{alert.type}</span>
                     </div>
                     <Badge variant="destructive">{alert.count} 条待修正</Badge>
                   </div>
-                  <p className="text-gray-600 mb-4">{alert.desc}</p>
+                  <p className="mb-4 text-[var(--color-neutral-08)]">{alert.desc}</p>
                   <div className="flex items-center justify-between mt-4 text-sm">
-                    <span className="text-gray-500 bg-gray-100 px-2 py-1 rounded">高发区域: {alert.area}</span>
-                    <Button variant="link" className="text-blue-600 p-0 h-auto">查看详情 &gt;</Button>
+                    <span className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] px-2 py-1 text-[var(--color-neutral-08)]">高发区域: {alert.area}</span>
+                    <Button variant="link" className="h-auto p-0 text-[#4E86DF]">查看详情 &gt;</Button>
                   </div>
                 </CardContent>
               </Card>
