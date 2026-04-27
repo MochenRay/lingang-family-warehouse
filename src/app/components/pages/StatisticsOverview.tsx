@@ -387,13 +387,13 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
         })}
       </div>
 
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1.45fr,0.95fr]">
-        <section className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
+        <section className="h-full rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
           <div>
             <h2 className="text-base font-semibold text-white">人口变化趋势</h2>
             <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{RANGE_LABELS[selectedRange]} · 烟台市样本</div>
           </div>
-          <div className="mt-4 h-[260px] w-full">
+          <div className="mt-4 h-[238px] w-full xl:h-[252px]">
             {mounted ? (
               <ResponsiveContainer width="100%" height="100%" debounce={50} minWidth={0}>
                 <AreaChart data={dashboard?.trendData ?? []} margin={{ top: 10, right: 22, left: 0, bottom: 0 }}>
@@ -416,21 +416,19 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
           </div>
         </section>
 
-        <section className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
+        <section className="flex h-full flex-col rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
           <h2 className="text-base font-semibold text-white">重点标签人员</h2>
-          <div className="mt-5 space-y-4">
+          <div className="mt-5 flex-1 space-y-3.5">
             {topRiskTags.map((tag, index) => {
               const colors = ['#2AA3CF', '#D6730D', '#8B5CF6', '#D52132', '#EC4899', '#4F46E5'];
               const color = colors[index % colors.length];
               return (
-                <div key={tag.name}>
-                  <div className="mb-1 flex items-center justify-between text-sm">
-                    <span className="text-[var(--color-neutral-10)]">{tag.name}</span>
-                    <span className="font-semibold tabular-nums" style={{ color }}>{formatNumber(tag.count)}</span>
-                  </div>
+                <div key={tag.name} className="grid grid-cols-[88px_minmax(96px,1fr)_48px] items-center gap-3 text-sm xl:grid-cols-[104px_minmax(120px,1fr)_54px]">
+                  <span className="truncate text-right text-[var(--color-neutral-10)]">{tag.name}</span>
                   <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
                     <div className="h-full rounded-full" style={{ width: `${Math.max(4, (tag.count / maxRiskTagCount) * 100)}%`, backgroundColor: color }} />
                   </div>
+                  <span className="text-right font-semibold tabular-nums" style={{ color }}>{formatNumber(tag.count)}</span>
                 </div>
               );
             })}
