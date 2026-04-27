@@ -242,28 +242,28 @@ export function BatchImport() {
         );
       case '成功':
         return (
-          <Badge className="gap-1 bg-green-500/20 text-green-400 border-green-400/30">
+          <Badge className="gap-1 border-[#19B172]/35 bg-[#19B172]/16 text-[#6FE0B3]">
             <CheckCircle2 className="w-3 h-3" />
             成功
           </Badge>
         );
       case '部分失败':
         return (
-          <Badge className="gap-1 bg-orange-500/20 text-orange-400 border-orange-400/30">
+          <Badge className="gap-1 border-[#D6730D]/35 bg-[#D6730D]/18 text-[#F0A64F]">
             <AlertCircle className="w-3 h-3" />
             部分失败
           </Badge>
         );
       case '失败':
         return (
-          <Badge className="gap-1 bg-red-500/20 text-red-400 border-red-400/30">
+          <Badge className="gap-1 border-[#D52132]/35 bg-[#D52132]/16 text-[#FF7A85]">
             <CircleX className="w-3 h-3" />
             失败
           </Badge>
         );
       case '进行中':
         return (
-          <Badge className="gap-1 bg-blue-500/20 text-blue-400 border-blue-400/30">
+          <Badge className="gap-1 border-[#4E86DF]/35 bg-[#4E86DF]/18 text-[#8FB6FF]">
             进行中
           </Badge>
         );
@@ -278,19 +278,19 @@ export function BatchImport() {
     : null;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-4 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       {/* 页面标题和历史入口 */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">批量导入</h2>
-          <p className="text-[var(--color-neutral-08)] mt-1">
+          <h2 className="text-2xl font-semibold tracking-tight text-white">批量导入</h2>
+          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
             通过 Excel 模板批量导入人口、房屋、人房关系等数据
           </p>
         </div>
         <Button 
           variant="outline" 
           onClick={() => setShowHistoryDialog(true)}
-          className="gap-2"
+          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
         >
           <History className="w-4 h-4" />
           导入历史
@@ -306,30 +306,30 @@ export function BatchImport() {
           setSelectedFile(null); // 切换Tab时清空已选文件
         }}
       >
-        <TabsList className="grid w-full max-w-2xl grid-cols-3">
-          <TabsTrigger value="人口数据">人口数据</TabsTrigger>
-          <TabsTrigger value="房屋数据">房屋数据</TabsTrigger>
-          <TabsTrigger value="人房关系">人房关系</TabsTrigger>
+        <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-[var(--color-neutral-01)]">
+          <TabsTrigger value="人口数据" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">人口数据</TabsTrigger>
+          <TabsTrigger value="房屋数据" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">房屋数据</TabsTrigger>
+          <TabsTrigger value="人房关系" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">人房关系</TabsTrigger>
         </TabsList>
 
         {/* 通用导入内容 */}
         {(['人口数据', '房屋数据', '人房关系'] as const).map((type) => (
-          <TabsContent key={type} value={type} className="space-y-6">
-            <div className="grid gap-6 lg:grid-cols-3">
+          <TabsContent key={type} value={type} className="space-y-4">
+            <div className="grid gap-4 lg:grid-cols-3">
               {/* 左侧：导入操作 */}
-              <div className="lg:col-span-2 space-y-6">
-                <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-                  <CardHeader>
+              <div className="space-y-4 lg:col-span-2">
+                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+                  <CardHeader className="pb-3 pt-4">
                     <CardTitle className="text-[var(--color-neutral-11)]">{currentConfig.title}</CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">
                       {currentConfig.description}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent className="space-y-6">
+                  <CardContent className="space-y-4">
                     {/* 步骤1：下载模板 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-medium text-sm">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
                           1
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">下载导入模板</h3>
@@ -342,7 +342,7 @@ export function BatchImport() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => handleDownloadTemplate(type)}
-                          className="gap-2"
+                          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
                         >
                           <Download className="w-4 h-4" />
                           下载 {type} 模板
@@ -350,21 +350,21 @@ export function BatchImport() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-[var(--color-neutral-04)]" />
+                    <div className="h-px bg-[var(--color-neutral-03)]" />
 
                     {/* 步骤2：上传文件 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-medium text-sm">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
                           2
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">上传数据文件</h3>
                       </div>
                       <div className="pl-10 space-y-4">
-                        <div className="relative border-2 border-dashed border-[var(--color-neutral-04)] rounded-lg p-6 hover:border-blue-400/50 transition-colors bg-[var(--color-neutral-01)]">
+                        <div className="relative rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-5 transition-colors hover:border-[#4E86DF]/55">
                           <div className="flex flex-col items-center gap-3">
-                            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                              <Upload className="w-6 h-6 text-blue-400" />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#4E86DF]/12">
+                              <Upload className="h-6 w-6 text-[#8FB6FF]" />
                             </div>
                             <div className="text-center">
                               <p className="text-sm font-medium text-[var(--color-neutral-10)]">
@@ -384,8 +384,8 @@ export function BatchImport() {
                         </div>
 
                         {selectedFile && (
-                          <div className="flex items-center gap-3 p-3 bg-blue-500/10 border border-blue-400/30 rounded-lg">
-                            <FileText className="w-5 h-5 text-blue-400 flex-shrink-0" />
+                          <div className="flex items-center gap-3 rounded-lg border border-[#4E86DF]/35 bg-[#4E86DF]/12 p-3">
+                            <FileText className="w-5 h-5 text-[#8FB6FF] flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-[var(--color-neutral-11)] truncate">
                                 {selectedFile.name}
@@ -398,7 +398,7 @@ export function BatchImport() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedFile(null)}
-                              className="flex-shrink-0"
+                              className="flex-shrink-0 hover:bg-[#D52132]/12 hover:text-[#FF7A85]"
                             >
                               移除
                             </Button>
@@ -407,12 +407,12 @@ export function BatchImport() {
                       </div>
                     </div>
 
-                    <div className="h-px bg-[var(--color-neutral-04)]" />
+                    <div className="h-px bg-[var(--color-neutral-03)]" />
 
                     {/* 步骤3：开始导入 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-400/30 flex items-center justify-center text-blue-400 font-medium text-sm">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
                           3
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">提交校验</h3>
@@ -424,7 +424,7 @@ export function BatchImport() {
                         <Button 
                           onClick={handleImport} 
                           disabled={!selectedFile}
-                          className="w-full h-10"
+                          className="h-10 w-full bg-[#4E86DF] text-white hover:bg-[#3E72C3] disabled:bg-[var(--color-neutral-03)] disabled:text-[var(--color-neutral-08)]"
                           size="lg"
                         >
                           提交校验
@@ -446,12 +446,12 @@ export function BatchImport() {
               </div>
 
               {/* 右侧：说明信息 */}
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {/* 必填字段 */}
-                <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base text-[var(--color-neutral-11)] flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-blue-400" />
+                      <FileSpreadsheet className="w-4 h-4 text-[#8FB6FF]" />
                       必填字段
                     </CardTitle>
                   </CardHeader>
@@ -461,7 +461,7 @@ export function BatchImport() {
                         <Badge 
                           key={index}
                           variant="outline"
-                          className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-10)]"
+                          className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]"
                         >
                           {field}
                         </Badge>
@@ -471,10 +471,10 @@ export function BatchImport() {
                 </Card>
 
                 {/* 导入说明 */}
-                <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base text-[var(--color-neutral-11)] flex items-center gap-2">
-                      <Info className="w-4 h-4 text-blue-400" />
+                      <Info className="w-4 h-4 text-[#8FB6FF]" />
                       导入说明
                     </CardTitle>
                   </CardHeader>
@@ -482,7 +482,7 @@ export function BatchImport() {
                     <ul className="space-y-2 text-sm text-[var(--color-neutral-08)]">
                       {currentConfig.notes.map((note, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <span className="text-blue-400 mt-0.5 flex-shrink-0">•</span>
+                          <span className="mt-0.5 flex-shrink-0 text-[#8FB6FF]">•</span>
                           <span>{note}</span>
                         </li>
                       ))}
@@ -497,10 +497,10 @@ export function BatchImport() {
 
       {/* 导入历史对话框 */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className="max-w-5xl bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <DialogContent className="max-w-5xl border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
           <DialogHeader>
             <DialogTitle className="text-[var(--color-neutral-11)] flex items-center gap-2">
-              <History className="w-5 h-5 text-blue-400" />
+              <History className="w-5 h-5 text-[#8FB6FF]" />
               导入历史记录
             </DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
@@ -511,7 +511,7 @@ export function BatchImport() {
           <ScrollArea className="max-h-[500px]">
             <Table>
               <TableHeader>
-                <TableRow className="border-[var(--color-neutral-04)]">
+                <TableRow className="border-[var(--color-neutral-03)] hover:bg-transparent">
                   <TableHead className="text-[var(--color-neutral-10)]">文件名</TableHead>
                   <TableHead className="text-[var(--color-neutral-10)]">数据类型</TableHead>
                   <TableHead className="text-[var(--color-neutral-10)]">总行数</TableHead>
@@ -525,18 +525,18 @@ export function BatchImport() {
               </TableHeader>
               <TableBody>
                 {importHistory.map((record) => (
-                  <TableRow key={record.id} className="border-[var(--color-neutral-04)]">
+                  <TableRow key={record.id} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
                     <TableCell className="font-medium text-[var(--color-neutral-11)]">
                       {record.fileName}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline" className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-10)]">
+                      <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
                         {record.type}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-[var(--color-neutral-10)]">{record.totalRows ?? '--'}</TableCell>
-                    <TableCell className="text-green-400">{record.successRows ?? '--'}</TableCell>
-                    <TableCell className="text-red-400">{record.failedRows ?? '--'}</TableCell>
+                    <TableCell className="text-[#6FE0B3]">{record.successRows ?? '--'}</TableCell>
+                    <TableCell className="text-[#FF7A85]">{record.failedRows ?? '--'}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                     <TableCell className="text-sm text-[var(--color-neutral-08)]">
                       {record.importTime}
@@ -548,7 +548,7 @@ export function BatchImport() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => setSelectedErrorRecord(record.id)}
-                          className="text-red-400 hover:text-red-300"
+                          className="text-[#FF7A85] hover:bg-[#D52132]/12 hover:text-[#FFA1A8]"
                         >
                           查看错误
                         </Button>
@@ -564,10 +564,10 @@ export function BatchImport() {
 
       {/* 错误详情对话框 */}
       <Dialog open={!!selectedErrorRecord} onOpenChange={() => setSelectedErrorRecord(null)}>
-        <DialogContent className="max-w-4xl bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <DialogContent className="max-w-4xl border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
           <DialogHeader>
             <DialogTitle className="text-[var(--color-neutral-11)] flex items-center gap-2">
-              <CircleX className="w-5 h-5 text-red-400" />
+              <CircleX className="w-5 h-5 text-[#FF7A85]" />
               导入错误详情
             </DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
@@ -578,7 +578,7 @@ export function BatchImport() {
           <ScrollArea className="max-h-[400px]">
             <Table>
               <TableHeader>
-                <TableRow className="border-[var(--color-neutral-04)]">
+                <TableRow className="border-[var(--color-neutral-03)] hover:bg-transparent">
                   <TableHead className="text-[var(--color-neutral-10)]">行号</TableHead>
                   <TableHead className="text-[var(--color-neutral-10)]">字段</TableHead>
                   <TableHead className="text-[var(--color-neutral-10)]">错误值</TableHead>
@@ -587,13 +587,13 @@ export function BatchImport() {
               </TableHeader>
               <TableBody>
                 {selectedErrorRecord && errorDetails[selectedErrorRecord]?.map((error, index) => (
-                  <TableRow key={index} className="border-[var(--color-neutral-04)]">
+                  <TableRow key={index} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
                     <TableCell className="text-[var(--color-neutral-10)]">第 {error.row} 行</TableCell>
                     <TableCell className="text-[var(--color-neutral-10)]">{error.field}</TableCell>
                     <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">
                       {error.value || '(空值)'}
                     </TableCell>
-                    <TableCell className="text-red-400">{error.error}</TableCell>
+                    <TableCell className="text-[#FF7A85]">{error.error}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -601,7 +601,7 @@ export function BatchImport() {
           </ScrollArea>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setSelectedErrorRecord(null)}>
+            <Button variant="outline" onClick={() => setSelectedErrorRecord(null)} className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white">
               关闭
             </Button>
             <Button 
