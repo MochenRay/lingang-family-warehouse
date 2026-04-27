@@ -6,6 +6,14 @@ import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
+const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
+const DARK_SELECT_TRIGGER_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
+const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
+const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
+const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
+
 export function LogManagement() {
   const [logType, setLogType] = useState('all');
   const [timeRange, setTimeRange] = useState('today');
@@ -170,7 +178,7 @@ export function LogManagement() {
     { type: 'update', label: '编辑', count: 3, color: '#f59e0b' },
     { type: 'delete', label: '删除', count: 1, color: '#ef4444' },
     { type: 'export', label: '导出', count: 1, color: '#8b5cf6' },
-    { type: 'view', label: '查看', count: 1, color: '#6b7280' }
+    { type: 'view', label: '查看', count: 1, color: '#6B7599' }
   ];
 
   // 模块分布
@@ -184,22 +192,22 @@ export function LogManagement() {
 
   const getTypeBadge = (type: string) => {
     const config: Record<string, { label: string; className: string }> = {
-      login: { label: '登录', className: 'bg-blue-100 text-blue-800' },
-      create: { label: '新建', className: 'bg-green-100 text-green-800' },
-      update: { label: '编辑', className: 'bg-yellow-100 text-yellow-800' },
-      delete: { label: '删除', className: 'bg-red-100 text-red-800' },
-      export: { label: '导出', className: 'bg-purple-100 text-purple-800' },
-      view: { label: '查看', className: 'bg-gray-100 text-gray-800' }
+      login: { label: '登录', className: 'border border-[#4E86DF]/35 bg-[#4E86DF]/10 text-[#9EC3FF]' },
+      create: { label: '新建', className: 'border border-[#19B172]/35 bg-[#19B172]/15 text-[#7DE2B7]' },
+      update: { label: '编辑', className: 'border border-[#D6730D]/35 bg-[#D6730D]/15 text-[#F6C27A]' },
+      delete: { label: '删除', className: 'border border-[#D52132]/35 bg-[#D52132]/15 text-[#FFB4B4]' },
+      export: { label: '导出', className: 'border border-[#8B5CF6]/35 bg-[#8B5CF6]/15 text-[#C7B6FF]' },
+      view: { label: '查看', className: 'border border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]' }
     };
-    const { label, className } = config[type] || { label: type, className: 'bg-gray-100 text-gray-800' };
+    const { label, className } = config[type] || { label: type, className: INFO_BADGE_CLASS };
     return <Badge className={className}>{label}</Badge>;
   };
 
   const getStatusBadge = (status: string) => {
     return status === 'success' ? (
-      <Badge className="bg-green-100 text-green-800">成功</Badge>
+      <Badge className="border border-[#19B172]/35 bg-[#19B172]/15 text-[#7DE2B7]">成功</Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-800">失败</Badge>
+      <Badge className="border border-[#D52132]/35 bg-[#D52132]/15 text-[#FFB4B4]">失败</Badge>
     );
   };
 
@@ -214,15 +222,15 @@ export function LogManagement() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       {/* 页面标题 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="mb-2">日志管理</h1>
-          <p className="text-gray-500">系统操作日志的查询、检索与导出</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">日志管理</h1>
+          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>系统操作日志的查询、检索与导出</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline">
+        <div className="flex gap-2">
+          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
             <Download className="w-4 h-4 mr-2" />
             导出日志
           </Button>
@@ -231,50 +239,50 @@ export function LogManagement() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
+            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT_CLASS}`}>
               <FileText className="w-4 h-4" />
               日志总数
             </CardDescription>
-            <CardTitle className="text-3xl">{stats.total}</CardTitle>
+            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{stats.total}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">系统运行记录</p>
+            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>系统运行记录</p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>今日日志</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">{stats.today}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>今日日志</CardDescription>
+            <CardTitle className="text-3xl text-[#4E86DF]">{stats.today}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">
+            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
               2026-01-20
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>成功操作</CardDescription>
-            <CardTitle className="text-3xl text-green-600">{stats.success}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>成功操作</CardDescription>
+            <CardTitle className="text-3xl text-[#19B172]">{stats.success}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">
+            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
               成功率 {((stats.success / stats.total) * 100).toFixed(0)}%
             </p>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>失败操作</CardDescription>
-            <CardTitle className="text-3xl text-red-600">{stats.failed}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>失败操作</CardDescription>
+            <CardTitle className="text-3xl text-[#D52132]">{stats.failed}</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-gray-500">
+            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
               需要关注
             </p>
           </CardContent>
@@ -283,10 +291,10 @@ export function LogManagement() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 操作类型分布 */}
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader>
-            <CardTitle>操作类型</CardTitle>
-            <CardDescription>操作统计</CardDescription>
+            <CardTitle className="text-base text-[var(--color-neutral-11)]">操作类型</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>操作统计</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -297,20 +305,20 @@ export function LogManagement() {
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: item.color }}
                     />
-                    <span className="text-sm">{item.label}</span>
+                    <span className="text-sm text-[var(--color-neutral-10)]">{item.label}</span>
                   </div>
-                  <Badge variant="outline">{item.count}</Badge>
+                  <Badge variant="outline" className={INFO_BADGE_CLASS}>{item.count}</Badge>
                 </div>
               ))}
             </div>
 
             <div className="mt-6">
-              <p className="text-sm font-medium text-gray-700 mb-2">模块分布</p>
+              <p className={`text-sm font-medium ${MUTED_TEXT_CLASS} mb-2`}>模块分布</p>
               <div className="space-y-2">
                 {moduleDistribution.map((item) => (
                   <div key={item.module} className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">{item.module}</span>
-                    <span className="font-medium">{item.count}</span>
+                    <span className={MUTED_TEXT_CLASS}>{item.module}</span>
+                    <span className="font-medium text-[var(--color-neutral-11)]">{item.count}</span>
                   </div>
                 ))}
               </div>
@@ -319,19 +327,19 @@ export function LogManagement() {
         </Card>
 
         {/* 日志列表 */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <Card className={`lg:col-span-3 ${DARK_CARD_CLASS} overflow-hidden`}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)]">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <CardTitle>操作日志</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base text-[var(--color-neutral-11)]">操作日志</CardTitle>
+                <CardDescription className={MUTED_TEXT_CLASS}>
                   共 {filteredLogs.length} 条记录
                   {(logType !== 'all' || searchQuery) && ` (已筛选)`}
                 </CardDescription>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2">
                 <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
                     <Calendar className="w-4 h-4 mr-2" />
                     <SelectValue />
                   </SelectTrigger>
@@ -343,7 +351,7 @@ export function LogManagement() {
                   </SelectContent>
                 </Select>
                 <Select value={logType} onValueChange={setLogType}>
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
                     <Filter className="w-4 h-4 mr-2" />
                     <SelectValue />
                   </SelectTrigger>
@@ -358,9 +366,9 @@ export function LogManagement() {
                   </SelectContent>
                 </Select>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${MUTED_TEXT_CLASS}`} />
                   <Input
-                    className="pl-9 w-[200px]"
+                    className={`w-[200px] pl-9 ${DARK_INPUT_CLASS}`}
                     placeholder="搜索日志..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -370,48 +378,48 @@ export function LogManagement() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="divide-y max-h-[600px] overflow-y-auto">
+            <div className="max-h-[600px] divide-y divide-[var(--color-neutral-03)] overflow-y-auto">
               {filteredLogs.map((log) => (
-                <div key={log.id} className="p-4 hover:bg-gray-50">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex items-center gap-2">
+                <div key={log.id} className="p-4 transition-colors hover:bg-[var(--color-neutral-03)]/70">
+                  <div className="mb-2 flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
                       {getTypeBadge(log.type)}
-                      <Badge variant="outline">{log.module}</Badge>
-                      <span className="font-medium">{log.action}</span>
+                      <Badge variant="outline" className={INFO_BADGE_CLASS}>{log.module}</Badge>
+                      <span className="font-medium text-[var(--color-neutral-11)]">{log.action}</span>
                       {getStatusBadge(log.status)}
                     </div>
-                    <span className="text-sm text-gray-500">{log.time}</span>
+                    <span className={`shrink-0 text-sm ${MUTED_TEXT_CLASS}`}>{log.time}</span>
                   </div>
 
-                  <p className="text-sm text-gray-600 mb-3">{log.detail}</p>
+                  <p className={`mb-3 text-sm ${MUTED_TEXT_CLASS}`}>{log.detail}</p>
 
-                  <div className="grid grid-cols-4 gap-4 text-sm">
+                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
                     <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-gray-400" />
+                      <User className={`w-4 h-4 ${MUTED_TEXT_CLASS}`} />
                       <div>
-                        <p className="text-gray-500">操作人</p>
-                        <p className="font-medium">{log.user}</p>
+                        <p className={MUTED_TEXT_CLASS}>操作人</p>
+                        <p className="font-medium text-[var(--color-neutral-11)]">{log.user}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Activity className="w-4 h-4 text-gray-400" />
+                      <Activity className={`w-4 h-4 ${MUTED_TEXT_CLASS}`} />
                       <div>
-                        <p className="text-gray-500">IP地址</p>
-                        <p className="font-medium font-mono">{log.ip}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4" />
-                      <div>
-                        <p className="text-gray-500">位置</p>
-                        <p className="font-medium">{log.location}</p>
+                        <p className={MUTED_TEXT_CLASS}>IP地址</p>
+                        <p className="font-mono font-medium text-[var(--color-neutral-11)]">{log.ip}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-4 h-4" />
                       <div>
-                        <p className="text-gray-500">耗时</p>
-                        <p className="font-medium">{log.duration}</p>
+                        <p className={MUTED_TEXT_CLASS}>位置</p>
+                        <p className="font-medium text-[var(--color-neutral-11)]">{log.location}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4" />
+                      <div>
+                        <p className={MUTED_TEXT_CLASS}>耗时</p>
+                        <p className="font-medium text-[var(--color-neutral-11)]">{log.duration}</p>
                       </div>
                     </div>
                   </div>
@@ -423,32 +431,32 @@ export function LogManagement() {
       </div>
 
       {/* 日志保留策略 */}
-      <Card>
+      <Card className={DARK_CARD_CLASS}>
         <CardHeader>
-          <CardTitle>日志保留策略</CardTitle>
-          <CardDescription>系统日志的存储和清理规则</CardDescription>
+          <CardTitle className="text-base text-[var(--color-neutral-11)]">日志保留策略</CardTitle>
+          <CardDescription className={MUTED_TEXT_CLASS}>系统日志的存储和清理规则</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">操作日志</p>
-              <p className="text-2xl font-bold text-blue-600 mb-1">90天</p>
-              <p className="text-sm text-gray-500">超���90天的日志将自动归档</p>
+            <div className={`${DARK_PANEL_CLASS} p-4`}>
+              <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>操作日志</p>
+              <p className="mb-1 text-2xl font-bold text-[#4E86DF]">90天</p>
+              <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过90天的日志将自动归档</p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">登录日志</p>
-              <p className="text-2xl font-bold text-green-600 mb-1">180天</p>
-              <p className="text-sm text-gray-500">超过180天的日志将自动归档</p>
+            <div className={`${DARK_PANEL_CLASS} p-4`}>
+              <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>登录日志</p>
+              <p className="mb-1 text-2xl font-bold text-[#19B172]">180天</p>
+              <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过180天的日志将自动归档</p>
             </div>
-            <div className="p-4 border rounded-lg">
-              <p className="text-sm font-medium text-gray-700 mb-2">系统日志</p>
-              <p className="text-2xl font-bold text-purple-600 mb-1">365天</p>
-              <p className="text-sm text-gray-500">超过1年的日志将自动归档</p>
+            <div className={`${DARK_PANEL_CLASS} p-4`}>
+              <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>系统日志</p>
+              <p className="mb-1 text-2xl font-bold text-[#8B5CF6]">365天</p>
+              <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过1年的日志将自动归档</p>
             </div>
           </div>
 
-          <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
+          <div className="mt-4 rounded-lg border border-[#D6730D]/35 bg-[#D6730D]/10 p-4">
+            <p className="text-sm text-[#F6C27A]">
               <span className="font-medium">提示：</span>
               归档的日志将压缩存储，如需查询请联系系统管理员。建议定期导出重要日志进行备份。
             </p>
@@ -457,7 +465,7 @@ export function LogManagement() {
       </Card>
 
       {/* 数据更新时间 */}
-      <div className="text-center text-sm text-gray-500">
+      <div className={`text-center text-sm ${MUTED_TEXT_CLASS}`}>
         日志实时记录 | 最后刷新时间：2026-01-20 16:00:00
       </div>
     </div>
