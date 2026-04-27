@@ -1,5 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, ArrowRight, Database, Home, Loader2, ShieldAlert, Sparkles, TrendingUp, Users, X } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowRight,
+  ArrowUp,
+  ArrowUpDown,
+  Database,
+  Home,
+  Loader2,
+  ShieldAlert,
+  Sparkles,
+  TrendingUp,
+  Users,
+  X,
+} from 'lucide-react';
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -20,6 +34,23 @@ const RANGE_LABELS = {
   quarter: '本季度',
 } as const;
 
+type DistrictSortKey =
+  | 'rank'
+  | 'name'
+  | 'peopleCount'
+  | 'houseCount'
+  | 'visitCount'
+  | 'activeConflictCount'
+  | 'floatingCount'
+  | 'score';
+
+type SortDirection = 'asc' | 'desc';
+
+const DEFAULT_DISTRICT_SORT: { key: DistrictSortKey; direction: SortDirection } = {
+  key: 'score',
+  direction: 'desc',
+};
+
 function formatNumber(value: number) {
   return new Intl.NumberFormat('zh-CN').format(value);
 }
@@ -34,9 +65,14 @@ function getScoreColor(score: number) {
   return '#19B172';
 }
 
+function formatScore(score: number) {
+  return Number.isInteger(score) ? String(score) : score.toFixed(1);
+}
+
 export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const [mounted, setMounted] = useState(false);
   const [selectedRange, setSelectedRange] = useState<'week' | 'month' | 'quarter'>('month');
+  const [districtSort, setDistrictSort] = useState(DEFAULT_DISTRICT_SORT);
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [showJourneyOverlay, setShowJourneyOverlay] = useState(() => {
@@ -82,13 +118,32 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
     };
   }, [selectedRange]);
 
-  const districtRows = useMemo(
-    () =>
-      (dashboard?.regionSummaries ?? [])
-        .filter((item) => item.level === 'district')
-        .sort((left, right) => right.score - left.score || right.peopleCount - left.peopleCount),
-    [dashboard],
-  );
+  const handleDistrictSort = (key: DistrictSortKey) => {
+    setDistrictSort((current) => {
+      if (current.key === key) {
+        return { key, direction: current.direction === 'asc' ? 'desc' : 'asc' };
+      }
+
+      return { key, direction: key === 'name' ? 'asc' : 'desc' };
+    });
+  };
+
+  const districtRows = useMemo(() => {
+    const rows = (dashboard?.regionSummaries ?? []).filter((item) => item.level === 'district');
+    const directionMultiplier = districtSort.direction === 'asc' ? 1 : -1;
+
+    return [...rows].sort((left, right) => {
+      if (districtSort.key === 'name') {
+        const result = left.name.localeCompare(right.name, 'zh-CN');
+        return result * directionMultiplier || right.score - left.score;
+      }
+
+      const leftValue = districtSort.key === 'rank' ? left.score : left[districtSort.key];
+      const rightValue = districtSort.key === 'rank' ? right.score : right[districtSort.key];
+      const result = leftValue - rightValue;
+      return result * directionMultiplier || right.score - left.score || right.peopleCount - left.peopleCount;
+    });
+  }, [dashboard, districtSort]);
 
   const actionItems = dashboard?.actionItems ?? [];
   const topRiskTags = [...(dashboard?.riskTagsSummary ?? [])]
@@ -126,6 +181,44 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
     link.remove();
     URL.revokeObjectURL(url);
     toast.success('驾驶舱快照已导出');
+  };
+
+  const renderSortIcon = (key: DistrictSortKey) => {
+    if (districtSort.key !== key) {
+      return <ArrowUpDown className="h-3.5 w-3.5 opacity-55" />;
+    }
+
+    return districtSort.direction === 'asc'
+      ? <ArrowUp className="h-3.5 w-3.5" />
+      : <ArrowDown className="h-3.5 w-3.5" />;
+  };
+
+  const renderSortableHeader = (
+    key: DistrictSortKey,
+    label: string,
+    align: 'left' | 'right' = 'right',
+    className = '',
+  ) => {
+    const isActive = districtSort.key === key;
+    const ariaSort = isActive ? (districtSort.direction === 'asc' ? 'ascending' : 'descending') : 'none';
+
+    return (
+      <th
+        aria-sort={ariaSort}
+        className={`px-4 py-3 text-xs font-medium ${align === 'right' ? 'text-right' : 'text-left'} ${className}`}
+      >
+        <button
+          type="button"
+          onClick={() => handleDistrictSort(key)}
+          className={`inline-flex w-full items-center gap-1.5 rounded px-1 py-1 transition-colors hover:bg-[rgba(39,97,203,0.12)] hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E86DF] ${
+            align === 'right' ? 'justify-end' : 'justify-start'
+          } ${isActive ? 'text-[#4E86DF]' : 'text-[var(--color-neutral-08)]'}`}
+        >
+          <span>{label}</span>
+          {renderSortIcon(key)}
+        </button>
+      </th>
+    );
   };
 
   const recommendedJourney = [
@@ -358,14 +451,14 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
           <table className="w-full min-w-[900px] border-collapse">
             <thead>
               <tr className="border-b border-[var(--color-neutral-03)]">
-                <th className="w-16 px-4 py-3 text-left text-xs font-medium text-[var(--color-neutral-08)]">排名</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-[var(--color-neutral-08)]">区县名称</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-neutral-08)]">人口数</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-neutral-08)]">房屋数</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-neutral-08)]">走访次</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-neutral-08)]">待化解</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[var(--color-neutral-08)]">流动人口</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-[#4E86DF]">风险指数 ↓</th>
+                {renderSortableHeader('rank', '排名', 'left', 'w-16')}
+                {renderSortableHeader('name', '区县名称', 'left')}
+                {renderSortableHeader('peopleCount', '人口数')}
+                {renderSortableHeader('houseCount', '房屋数')}
+                {renderSortableHeader('visitCount', '走访次')}
+                {renderSortableHeader('activeConflictCount', '待化解')}
+                {renderSortableHeader('floatingCount', '流动人口')}
+                {renderSortableHeader('score', '风险指数', 'right', 'w-[260px]')}
               </tr>
             </thead>
             <tbody>
@@ -381,12 +474,12 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[#D6730D]">{formatNumber(row.activeConflictCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.floatingCount)}</td>
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-3">
-                        <div className="h-1.5 w-24 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
+                      <div className="ml-auto grid w-[236px] grid-cols-[148px_64px] items-center justify-end gap-4">
+                        <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
                           <div className="h-full rounded-full" style={{ width: `${Math.min(100, row.score)}%`, backgroundColor: scoreColor }} />
                         </div>
-                        <span className="min-w-10 rounded bg-[rgba(39,97,203,0.18)] px-2 py-0.5 text-center text-sm font-semibold tabular-nums" style={{ color: scoreColor }}>
-                          {row.score}
+                        <span className="inline-flex h-7 w-16 items-center justify-center rounded bg-[rgba(39,97,203,0.18)] text-sm font-semibold tabular-nums" style={{ color: scoreColor }}>
+                          {formatScore(row.score)}
                         </span>
                       </div>
                     </td>
