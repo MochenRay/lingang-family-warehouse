@@ -8,6 +8,10 @@ import { statsRepository, type DashboardStatsResponse, type StatsGridItem } from
 import type { House, Person } from '../../types/core';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
+const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const CHART_GRID_STROKE = '#3d4663';
+const AXIS_TICK = { fontSize: 12, fill: '#6b7599' };
+
 interface DistrictHousingItem {
   name: string;
   houseCount: number;
@@ -183,7 +187,7 @@ export function HousingStatistics() {
       { label: '自住房屋', count: dashboard.housingStats.selfOccupied, icon: Home, color: 'text-blue-400', bg: 'bg-[var(--color-neutral-02)]', iconBg: 'bg-[var(--color-neutral-03)]' },
       { label: '出租房屋', count: dashboard.housingStats.rental, icon: Hotel, color: 'text-orange-400', bg: 'bg-[var(--color-neutral-02)]', iconBg: 'bg-[var(--color-neutral-03)]' },
       { label: '经营场所', count: dashboard.housingStats.commercial, icon: Store, color: 'text-green-400', bg: 'bg-[var(--color-neutral-02)]', iconBg: 'bg-[var(--color-neutral-03)]' },
-      { label: '空置房屋', count: dashboard.housingStats.vacant, icon: Building, color: 'text-gray-400', bg: 'bg-[var(--color-neutral-02)]', iconBg: 'bg-[var(--color-neutral-03)]' },
+      { label: '空置房屋', count: dashboard.housingStats.vacant, icon: Building, color: 'text-[var(--color-neutral-08)]', bg: 'bg-[var(--color-neutral-02)]', iconBg: 'bg-[var(--color-neutral-03)]' },
     ];
   }, [dashboard]);
 
@@ -195,14 +199,14 @@ export function HousingStatistics() {
   }));
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-gray-900">房屋网格画像</h1>
-        <p className="text-gray-500">先看区县级房屋治理压力，再下钻街镇、社区和网格。</p>
+        <h1 className="text-2xl font-bold tracking-tight text-white">房屋网格画像</h1>
+        <p className="mt-1 text-sm text-[var(--color-neutral-08)]">先看区县级房屋治理压力，再下钻街镇、社区和网格。</p>
       </div>
 
       {error ? (
-        <Card className="border-destructive/40">
+        <Card className="border-destructive/40 bg-destructive/10 text-destructive">
           <CardContent className="p-6 text-sm text-destructive">{error}</CardContent>
         </Card>
       ) : null}
@@ -211,7 +215,7 @@ export function HousingStatistics() {
         {summaryCards.map((item) => {
           const Icon = item.icon;
           return (
-            <div key={item.label} className={`flex items-center gap-4 rounded-lg border border-[var(--color-neutral-03)] p-4 ${item.bg}`}>
+            <div key={item.label} className={`flex items-center gap-4 rounded-lg border border-[var(--color-neutral-03)] p-4 shadow-none ${item.bg}`}>
               <div className={`rounded-lg p-2 ${item.iconBg}`}>
                 <Icon className={`h-6 w-6 ${item.color}`} />
               </div>
@@ -225,9 +229,9 @@ export function HousingStatistics() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr,0.9fr]">
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
               <MapPinned className="h-5 w-5 text-blue-500" />
               区县房屋治理对比
             </CardTitle>
@@ -235,13 +239,13 @@ export function HousingStatistics() {
           <CardContent>
             <div className="h-[340px] w-full">
               {loading ? (
-                <div className="py-10 text-sm text-muted-foreground">正在汇总区县房屋画像...</div>
+                <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总区县房屋画像...</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={districtChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                    <YAxis allowDecimals={false} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                     <Bar dataKey="房屋" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="出租" fill="#f59e0b" radius={[4, 4, 0, 0]} />
@@ -253,9 +257,9 @@ export function HousingStatistics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
               <AlertTriangle className="h-5 w-5 text-orange-500" />
               重点区县清单
             </CardTitle>
@@ -299,14 +303,14 @@ export function HousingStatistics() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle>房屋用途分布</CardTitle>
+            <CardTitle className="text-base font-semibold text-white">房屋用途分布</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[300px] w-full">
               {loading || !dashboard ? (
-                <div className="py-10 text-sm text-muted-foreground">正在汇总房屋用途...</div>
+                <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总房屋用途...</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -318,7 +322,7 @@ export function HousingStatistics() {
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
-                      label
+                      label={{ fill: '#DCE6FF', fontSize: 12 }}
                     >
                       {houseUsageData.map((entry) => (
                         <Cell key={entry.name} fill={entry.color} />
@@ -332,9 +336,9 @@ export function HousingStatistics() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
               <Hotel className="h-5 w-5 text-orange-500" />
               出租房治理预警
             </CardTitle>
@@ -342,13 +346,13 @@ export function HousingStatistics() {
           <CardContent>
             <div className="h-[300px] w-full">
               {loading ? (
-                <div className="py-10 text-sm text-muted-foreground">正在计算治理预警...</div>
+                <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在计算治理预警...</div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={rentalWarnings} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} />
-                    <XAxis type="number" allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" width={80} tick={{ fontWeight: 'bold' }} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke={CHART_GRID_STROKE} />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ ...AXIS_TICK, fontWeight: 'bold' }} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                     <Bar dataKey="value" name="数量" radius={[0, 4, 4, 0]} barSize={40}>
                       {rentalWarnings.map((entry) => (

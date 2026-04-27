@@ -20,6 +20,9 @@ import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTo
 const COLORS = ['#2563eb', '#7c3aed', '#0f766e', '#f97316', '#dc2626', '#16a34a'];
 const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
 const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '研究生', '硕士', '博士', '其他', '未记录'];
+const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const CHART_GRID_STROKE = '#3d4663';
+const AXIS_TICK = { fontSize: 12, fill: '#6b7599' };
 const AGE_BUCKETS = [
   { name: '60岁以上', min: 60, max: 200 },
   { name: '36-59岁', min: 36, max: 59 },
@@ -168,56 +171,57 @@ export function DemographicsAnalysis() {
   }, [tagSnapshot]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">人口特征分析</h2>
+        <h2 className="text-2xl font-bold tracking-tight text-white">人口特征分析</h2>
+        <p className="mt-1 text-sm text-[var(--color-neutral-08)]">按年龄、类型、教育、民族与标签覆盖扫描人口结构。</p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">总人口</p>
-            <p className="mt-2 text-2xl font-bold">{dashboard?.totalPopulation ?? '--'}</p>
+            <p className="text-xs font-medium text-[var(--color-neutral-08)]">总人口</p>
+            <p className="mt-2 text-2xl font-bold leading-none text-white">{dashboard?.totalPopulation ?? '--'}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">老龄化比例</p>
-            <p className="mt-2 text-2xl font-bold">{elderlyRate}%</p>
+            <p className="text-xs font-medium text-[var(--color-neutral-08)]">老龄化比例</p>
+            <p className="mt-2 text-2xl font-bold leading-none text-white">{elderlyRate}%</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">户籍 / 流动</p>
-            <p className="mt-2 text-2xl font-bold">
+            <p className="text-xs font-medium text-[var(--color-neutral-08)]">户籍 / 流动</p>
+            <p className="mt-2 text-2xl font-bold leading-none text-white">
               {dashboard ? `${dashboard.mobilePeopleStats.registered} / ${dashboard.mobilePeopleStats.floating}` : '--'}
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">标签覆盖率</p>
-            <p className="mt-2 text-2xl font-bold">{taggedCoverage}%</p>
+            <p className="text-xs font-medium text-[var(--color-neutral-08)]">标签覆盖率</p>
+            <p className="mt-2 text-2xl font-bold leading-none text-white">{taggedCoverage}%</p>
           </CardContent>
         </Card>
       </div>
 
       {error ? (
-        <Card className="border-destructive/40">
+        <Card className="border-destructive/40 bg-destructive/10 text-destructive">
           <CardContent className="p-6 text-sm text-destructive">{error}</CardContent>
         </Card>
       ) : null}
 
-      <Card>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle>年龄性别人口金字塔</CardTitle>
+          <CardTitle className="text-base font-semibold text-white">年龄性别人口金字塔</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-10 text-sm text-muted-foreground">正在汇总年龄性别结构...</div>
+            <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总年龄性别结构...</div>
           ) : (
             <div className="space-y-3">
-              <div className="grid grid-cols-[1fr,92px,1fr] items-center text-xs font-medium text-muted-foreground">
+              <div className="grid grid-cols-[1fr,92px,1fr] items-center text-xs font-medium text-[var(--color-neutral-08)]">
                 <div className="text-right">男</div>
                 <div />
                 <div>女</div>
@@ -226,13 +230,13 @@ export function DemographicsAnalysis() {
                 <div key={row.name} className="grid grid-cols-[1fr,92px,1fr] items-center gap-3">
                   <div className="flex items-center justify-end gap-2">
                     <span className="w-8 text-right text-xs font-semibold text-[var(--color-neutral-10)]">{row.male}</span>
-                    <div className="flex h-7 flex-1 justify-end overflow-hidden rounded-l bg-[var(--color-neutral-02)]">
+                    <div className="flex h-7 flex-1 justify-end overflow-hidden rounded-l bg-[var(--color-neutral-03)]">
                       <div className="h-full rounded-l bg-[#4E86DF]" style={{ width: `${(row.male / pyramid.max) * 100}%` }} />
                     </div>
                   </div>
-                  <div className="text-center text-sm font-semibold text-[var(--color-neutral-09)]">{row.name}</div>
+                  <div className="text-center text-sm font-semibold text-[var(--color-neutral-10)]">{row.name}</div>
                   <div className="flex items-center gap-2">
-                    <div className="h-7 flex-1 overflow-hidden rounded-r bg-[var(--color-neutral-02)]">
+                    <div className="h-7 flex-1 overflow-hidden rounded-r bg-[var(--color-neutral-03)]">
                       <div className="h-full rounded-r bg-[#F97316]" style={{ width: `${(row.female / pyramid.max) * 100}%` }} />
                     </div>
                     <span className="w-8 text-xs font-semibold text-[var(--color-neutral-10)]">{row.female}</span>
@@ -245,19 +249,19 @@ export function DemographicsAnalysis() {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle>人口类型</CardTitle>
+            <CardTitle className="text-base font-semibold text-white">人口类型</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总人口类型...</div>
+              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总人口类型...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={typeData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {typeData.map((item) => (
@@ -270,19 +274,19 @@ export function DemographicsAnalysis() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle>教育程度</CardTitle>
+            <CardTitle className="text-base font-semibold text-white">教育程度</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总教育结构...</div>
+              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总教育结构...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={educationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} interval={0} />
-                  <YAxis allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} interval={0} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {educationData.map((item) => (
@@ -295,19 +299,19 @@ export function DemographicsAnalysis() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle>民族分布</CardTitle>
+            <CardTitle className="text-base font-semibold text-white">民族分布</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总民族分布...</div>
+              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总民族分布...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={nationData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {nationData.map((item) => (
@@ -321,20 +325,20 @@ export function DemographicsAnalysis() {
         </Card>
       </div>
 
-      <Card>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle>重点标签热度</CardTitle>
+          <CardTitle className="text-base font-semibold text-white">重点标签热度</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总标签热度...</div>
+              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总标签热度...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topTags}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {topTags.map((item) => (
@@ -348,7 +352,7 @@ export function DemographicsAnalysis() {
 
           <div className="flex flex-wrap gap-2">
             {(tagSnapshot?.tags ?? []).map((tag) => (
-              <Badge key={tag.id} variant="outline">
+              <Badge key={tag.id} variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
                 {tag.name} · {tag.coverageCount} 人
               </Badge>
             ))}
