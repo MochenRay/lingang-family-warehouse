@@ -35,6 +35,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { houseRepository } from '../../services/repositories/houseRepository';
 import type { Grid, House, HousingHistory, Person } from '../../types/core';
 
+const panelClassName =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
+const fieldClassName =
+  'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)] focus-visible:ring-[#4E86DF]/40';
+const labelClassName = 'text-xs font-semibold text-[var(--color-neutral-08)]';
+const selectTriggerClassName =
+  'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
+const outlineButtonClassName =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
+const finderColumnClassName = [
+  panelClassName,
+  'min-h-[440px]',
+  '[&_header]:!border-[var(--color-neutral-03)]',
+  '[&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[rgba(78,134,223,0.10)]',
+  '[&_button[aria-pressed=true]]:!bg-[rgba(78,134,223,0.18)] [&_button[aria-pressed=true]]:!ring-[#4E86DF]/35',
+  '[&_span]:!text-[var(--color-neutral-10)] [&_p]:!text-[var(--color-neutral-08)] [&_h3]:!text-[var(--color-neutral-11)]',
+  '[&_*]:!border-[var(--color-neutral-03)] [&_*]:!bg-transparent',
+  '[&_svg]:!text-[var(--color-neutral-08)]',
+].join(' ');
+const detailPanelClassName = [
+  panelClassName,
+  'min-h-[440px]',
+  '[&_header]:!border-[var(--color-neutral-03)]',
+  '[&_section]:!border-[var(--color-neutral-03)]',
+  '[&_h2]:!text-[var(--color-neutral-11)] [&_h3]:!text-[var(--color-neutral-11)]',
+  '[&_p]:!text-[var(--color-neutral-08)] [&_span]:!text-[var(--color-neutral-10)]',
+  '[&_button]:!border-[var(--color-neutral-03)] [&_button]:!bg-[var(--color-neutral-01)] [&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[var(--color-neutral-03)]',
+  '[&_div]:!border-[var(--color-neutral-03)] [&_div]:!bg-transparent',
+  '[&_svg]:!text-[#4E86DF]',
+].join(' ');
+const detailPanelShellClassName = [
+  '[&_section]:!border-[var(--color-neutral-03)] [&_section]:!bg-[var(--color-neutral-02)]',
+  '[&_h3]:!text-[var(--color-neutral-11)] [&_p]:!text-[var(--color-neutral-08)]',
+  '[&_div]:!border-[var(--color-neutral-03)] [&_div]:!bg-transparent',
+  '[&_button]:!border-[var(--color-neutral-03)] [&_button]:!bg-[var(--color-neutral-01)] [&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[var(--color-neutral-03)]',
+  '[&_svg]:!text-[#4E86DF]',
+].join(' ');
+
 function sameSelection(left: HousingFinderSelection, right: HousingFinderSelection) {
   return (
     left.community === right.community &&
@@ -440,9 +478,9 @@ export function HousingManagement() {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-4">
-      <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-4">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+    <div className="space-y-3 text-[var(--color-neutral-10)]">
+      <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-neutral-08)]">
               <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
@@ -476,14 +514,14 @@ export function HousingManagement() {
                 value={searchKeyword}
                 onChange={(event) => setSearchKeyword(event.target.value)}
                 placeholder="搜索地址、产权人、楼栋、单元、房号、标签"
-                className="h-10 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] pl-9 text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)]"
+                className={`${fieldClassName} pl-9`}
               />
             </div>
             <Button
               variant="outline"
               onClick={() => void loadData()}
               disabled={isLoading}
-              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]"
+              className={outlineButtonClassName}
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
               刷新
@@ -494,8 +532,8 @@ export function HousingManagement() {
 
       <FinderStatsStrip stats={finderModel.stats} />
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
-        <div className="grid min-h-[560px] gap-3 xl:grid-cols-5">
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
+        <div className="grid min-h-[440px] gap-3 xl:grid-cols-5">
           <FinderColumn
             title="社区"
             description="按现有房屋 communityName 派生"
@@ -506,7 +544,7 @@ export function HousingManagement() {
             onItemClick={selectCommunity}
             emptyTitle="没有社区数据"
             emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
-            className="bg-[var(--color-neutral-02)]"
+            className={finderColumnClassName}
           />
           <FinderColumn
             title="楼栋"
@@ -518,7 +556,7 @@ export function HousingManagement() {
             onItemClick={selectBuilding}
             emptyTitle="没有楼栋"
             emptyDescription="当前社区下没有可浏览楼栋，请切换社区或清空搜索条件。"
-            className="bg-[var(--color-neutral-02)]"
+            className={finderColumnClassName}
           />
           <FinderColumn
             title="单元"
@@ -530,7 +568,7 @@ export function HousingManagement() {
             onItemClick={selectUnit}
             emptyTitle="没有单元"
             emptyDescription="当前楼栋下没有可浏览单元，请切换楼栋或清空搜索条件。"
-            className="bg-[var(--color-neutral-02)]"
+            className={finderColumnClassName}
           />
           <FinderColumn
             title="楼层"
@@ -542,7 +580,7 @@ export function HousingManagement() {
             onItemClick={selectFloor}
             emptyTitle="没有楼层"
             emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
-            className="bg-[var(--color-neutral-02)]"
+            className={finderColumnClassName}
           />
           <FinderColumn
             title="房屋"
@@ -555,21 +593,24 @@ export function HousingManagement() {
             onItemClick={selectHouse}
             emptyTitle="没有房屋"
             emptyDescription="当前楼层下没有可浏览房屋，请切换楼层或清空搜索条件。"
-            className="bg-[var(--color-neutral-02)]"
+            className={finderColumnClassName}
           />
         </div>
 
-        <HouseDetailPanel
-          house={selectedHouse}
-          residents={residents}
-          history={history}
-          loading={isDetailLoading}
-          error={detailError}
-          onEdit={openEditDialog}
-          onDelete={(house) => void handleDelete(house)}
-          onRefresh={refreshSelectedHouse}
-          isDeleting={isSaving}
-        />
+        <div className={detailPanelShellClassName}>
+          <HouseDetailPanel
+            house={selectedHouse}
+            residents={residents}
+            history={history}
+            loading={isDetailLoading}
+            error={detailError}
+            onEdit={openEditDialog}
+            onDelete={(house) => void handleDelete(house)}
+            onRefresh={refreshSelectedHouse}
+            isDeleting={isSaving}
+            className={detailPanelClassName}
+          />
+        </div>
       </div>
 
       <Dialog open={Boolean(editingHouse)} onOpenChange={(open) => {
@@ -577,54 +618,54 @@ export function HousingManagement() {
           closeEditDialog();
         }
       }}>
-        <DialogContent className="max-w-3xl">
+        <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-2xl">
           <DialogHeader>
-            <DialogTitle>编辑房屋信息</DialogTitle>
-            <DialogDescription>保存后同步刷新房屋台账、详情面板和本地降级数据。</DialogDescription>
+            <DialogTitle className="text-[var(--color-neutral-11)]">编辑房屋信息</DialogTitle>
+            <DialogDescription className="text-[var(--color-neutral-08)]">保存后同步刷新房屋台账、详情面板和本地降级数据。</DialogDescription>
           </DialogHeader>
 
           {editForm ? (
-            <div className="grid gap-4 py-2 md:grid-cols-2">
+            <div className="grid gap-3 py-2 md:grid-cols-2">
               <div className="space-y-2">
-                <Label>社区 *</Label>
-                <Input value={editForm.communityName} onChange={(event) => updateEditForm('communityName', event.target.value)} />
+                <Label className={labelClassName}>社区 *</Label>
+                <Input className={fieldClassName} value={editForm.communityName} onChange={(event) => updateEditForm('communityName', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>楼栋 *</Label>
-                <Input value={editForm.building} onChange={(event) => updateEditForm('building', event.target.value)} />
+                <Label className={labelClassName}>楼栋 *</Label>
+                <Input className={fieldClassName} value={editForm.building} onChange={(event) => updateEditForm('building', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>单元 *</Label>
-                <Input value={editForm.unit} onChange={(event) => updateEditForm('unit', event.target.value)} />
+                <Label className={labelClassName}>单元 *</Label>
+                <Input className={fieldClassName} value={editForm.unit} onChange={(event) => updateEditForm('unit', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>房号 *</Label>
-                <Input value={editForm.room} onChange={(event) => updateEditForm('room', event.target.value)} />
+                <Label className={labelClassName}>房号 *</Label>
+                <Input className={fieldClassName} value={editForm.room} onChange={(event) => updateEditForm('room', event.target.value)} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>完整地址</Label>
-                <Input value={editForm.address} onChange={(event) => updateEditForm('address', event.target.value)} />
+                <Label className={labelClassName}>完整地址</Label>
+                <Input className={fieldClassName} value={editForm.address} onChange={(event) => updateEditForm('address', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>产权人 *</Label>
-                <Input value={editForm.ownerName} onChange={(event) => updateEditForm('ownerName', event.target.value)} />
+                <Label className={labelClassName}>产权人 *</Label>
+                <Input className={fieldClassName} value={editForm.ownerName} onChange={(event) => updateEditForm('ownerName', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>产权人电话</Label>
-                <Input value={editForm.ownerPhone} onChange={(event) => updateEditForm('ownerPhone', event.target.value)} />
+                <Label className={labelClassName}>产权人电话</Label>
+                <Input className={fieldClassName} value={editForm.ownerPhone} onChange={(event) => updateEditForm('ownerPhone', event.target.value)} />
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>产权人居住地址</Label>
-                <Input value={editForm.ownerAddress} onChange={(event) => updateEditForm('ownerAddress', event.target.value)} />
+                <Label className={labelClassName}>产权人居住地址</Label>
+                <Input className={fieldClassName} value={editForm.ownerAddress} onChange={(event) => updateEditForm('ownerAddress', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>建筑面积</Label>
-                <Input value={editForm.area} onChange={(event) => updateEditForm('area', event.target.value)} />
+                <Label className={labelClassName}>建筑面积</Label>
+                <Input className={fieldClassName} value={editForm.area} onChange={(event) => updateEditForm('area', event.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label>房屋用途</Label>
+                <Label className={labelClassName}>房屋用途</Label>
                 <Select value={editForm.type} onValueChange={(value) => updateEditForm('type', value as House['type'])}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger className={selectTriggerClassName}><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="自住">自住</SelectItem>
                     <SelectItem value="出租">出租</SelectItem>
@@ -635,9 +676,9 @@ export function HousingManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>房屋类型</Label>
+                <Label className={labelClassName}>房屋类型</Label>
                 <Select value={editForm.houseType || "none"} onValueChange={(value) => updateEditForm('houseType', value === "none" ? "" : value as HouseEditForm['houseType'])}>
-                  <SelectTrigger><SelectValue placeholder="选择房屋类型" /></SelectTrigger>
+                  <SelectTrigger className={selectTriggerClassName}><SelectValue placeholder="选择房屋类型" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">未设置</SelectItem>
                     <SelectItem value="普通住宅">普通住宅</SelectItem>
@@ -649,9 +690,9 @@ export function HousingManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>人房关系</Label>
+                <Label className={labelClassName}>人房关系</Label>
                 <Select value={editForm.occupancyStatus || "none"} onValueChange={(value) => updateEditForm('occupancyStatus', value === "none" ? "" : value as HouseEditForm['occupancyStatus'])}>
-                  <SelectTrigger><SelectValue placeholder="选择人房关系" /></SelectTrigger>
+                  <SelectTrigger className={selectTriggerClassName}><SelectValue placeholder="选择人房关系" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">未设置</SelectItem>
                     <SelectItem value="人在户在">人在户在</SelectItem>
@@ -662,9 +703,9 @@ export function HousingManagement() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>居住类型</Label>
+                <Label className={labelClassName}>居住类型</Label>
                 <Select value={editForm.residenceType || "none"} onValueChange={(value) => updateEditForm('residenceType', value === "none" ? "" : value as HouseEditForm['residenceType'])}>
-                  <SelectTrigger><SelectValue placeholder="选择居住类型" /></SelectTrigger>
+                  <SelectTrigger className={selectTriggerClassName}><SelectValue placeholder="选择居住类型" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">未设置</SelectItem>
                     <SelectItem value="自住">自住</SelectItem>
@@ -674,14 +715,14 @@ export function HousingManagement() {
                 </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label>标签</Label>
-                <Input value={editForm.tagsText} onChange={(event) => updateEditForm('tagsText', event.target.value)} placeholder="多个标签用逗号分隔" />
+                <Label className={labelClassName}>标签</Label>
+                <Input className={fieldClassName} value={editForm.tagsText} onChange={(event) => updateEditForm('tagsText', event.target.value)} placeholder="多个标签用逗号分隔" />
               </div>
             </div>
           ) : null}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={closeEditDialog} disabled={isSaving}>取消</Button>
+          <DialogFooter className="border-t border-[var(--color-neutral-03)] pt-3">
+            <Button variant="outline" className={outlineButtonClassName} onClick={closeEditDialog} disabled={isSaving}>取消</Button>
             <Button onClick={() => void handleSaveEdit()} disabled={isSaving}>
               {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               保存
