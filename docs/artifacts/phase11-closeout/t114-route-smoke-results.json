@@ -1,0 +1,314 @@
+{
+  "base": "http://127.0.0.1:5179",
+  "menu_route_count": 29,
+  "routes": [
+    {
+      "route_id": "statistics-overview",
+      "path": "/",
+      "pathname": "/",
+      "expected_text": "综合统计驾驶舱",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "demographics-analysis",
+      "path": "/analysis/demographics",
+      "pathname": "/analysis/demographics",
+      "expected_text": "人口特征分析",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "housing-statistics",
+      "path": "/analysis/housing",
+      "pathname": "/analysis/housing",
+      "expected_text": "房屋网格画像",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "migration-trends",
+      "path": "/analysis/migration-trends",
+      "pathname": "/analysis/migration-trends",
+      "expected_text": "人口流动趋势",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "population-tags",
+      "path": "/analysis/tags",
+      "pathname": "/analysis/tags",
+      "expected_text": "标签分析画像",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "data-comparison",
+      "path": "/analysis/comparison",
+      "pathname": "/analysis/comparison",
+      "expected_text": "数据对比分析",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "data-reports",
+      "path": "/analysis/reports",
+      "pathname": "/analysis/reports",
+      "expected_text": "数据报表中心",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "population",
+      "path": "/population",
+      "pathname": "/population",
+      "expected_text": "人口管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "housing",
+      "path": "/housing",
+      "pathname": "/housing",
+      "expected_text": "房屋管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "relationship",
+      "path": "/relationship",
+      "pathname": "/relationship",
+      "expected_text": "人房关系",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "batch-import",
+      "path": "/batch-import",
+      "pathname": "/batch-import",
+      "expected_text": "批量导入",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "tag-overview",
+      "path": "/tags",
+      "pathname": "/tags",
+      "expected_text": "标签管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "knowledge-accumulation",
+      "path": "/knowledge",
+      "pathname": "/knowledge",
+      "expected_text": "知识沉淀",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "policy-interpretation",
+      "path": "/ai/policy",
+      "pathname": "/ai/policy",
+      "expected_text": "政策解读",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "document-writing",
+      "path": "/ai/document-writing",
+      "pathname": "/ai/document-writing",
+      "expected_text": "公文写作",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "smart-query",
+      "path": "/ai/smart-query",
+      "pathname": "/ai/smart-query",
+      "expected_text": "智能问数",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "behavior-supervision",
+      "path": "/grid/behavior",
+      "pathname": "/grid/behavior",
+      "expected_text": "行为督导",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "activity-management",
+      "path": "/grid/activities",
+      "pathname": "/grid/activities",
+      "expected_text": "活动综合管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "conflict-management",
+      "path": "/grid/conflicts",
+      "pathname": "/grid/conflicts",
+      "expected_text": "矛盾调解",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "notice-management",
+      "path": "/grid/notices",
+      "pathname": "/grid/notices",
+      "expected_text": "公告管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "rule-config",
+      "path": "/grid/rules",
+      "pathname": "/grid/rules",
+      "expected_text": "待办规则配置",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "anomaly-analysis",
+      "path": "/attribution/anomaly",
+      "pathname": "/attribution/anomaly",
+      "expected_text": "异常结果分析",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "time-series",
+      "path": "/attribution/time-series",
+      "pathname": "/attribution/time-series",
+      "expected_text": "时序分析",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "factor-identification",
+      "path": "/attribution/factors",
+      "pathname": "/attribution/factors",
+      "expected_text": "影响因子识别",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "contribution-ranking",
+      "path": "/attribution/contribution",
+      "pathname": "/attribution/contribution",
+      "expected_text": "贡献程度排名",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "user-management",
+      "path": "/settings/users",
+      "pathname": "/settings/users",
+      "expected_text": "用户管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "role-management",
+      "path": "/settings/roles",
+      "pathname": "/settings/roles",
+      "expected_text": "角色管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "permission-management",
+      "path": "/settings/permissions",
+      "pathname": "/settings/permissions",
+      "expected_text": "权限管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    },
+    {
+      "route_id": "log-management",
+      "path": "/settings/logs",
+      "pathname": "/settings/logs",
+      "expected_text": "日志管理",
+      "has_expected_text": true,
+      "has_mobile_workbench_entry": true,
+      "ok": true
+    }
+  ],
+  "refresh": [
+    {
+      "path": "/",
+      "before": "/",
+      "after": "/",
+      "ok": true
+    },
+    {
+      "path": "/analysis/comparison",
+      "before": "/analysis/comparison",
+      "after": "/analysis/comparison",
+      "ok": true
+    },
+    {
+      "path": "/population",
+      "before": "/population",
+      "after": "/population",
+      "ok": true
+    },
+    {
+      "path": "/grid/conflicts",
+      "before": "/grid/conflicts",
+      "after": "/grid/conflicts",
+      "ok": true
+    },
+    {
+      "path": "/settings/users",
+      "before": "/settings/users",
+      "after": "/settings/users",
+      "ok": true
+    }
+  ],
+  "history": {
+    "back_path": "/analysis/demographics",
+    "forward_path": "/housing",
+    "ok": true
+  },
+  "mobile_direct": {
+    "path": "/mobile",
+    "ok": true,
+    "expected_text": [
+      "家庭数仓",
+      "治理总览",
+      "待办清单"
+    ]
+  },
+  "issues": []
+}

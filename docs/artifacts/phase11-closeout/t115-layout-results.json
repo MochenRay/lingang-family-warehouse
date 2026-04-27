@@ -1,0 +1,470 @@
+{
+  "base": "http://127.0.0.1:5179",
+  "checks": [
+    {
+      "route_id": "statistics-overview",
+      "path": "/",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "demographics-analysis",
+      "path": "/analysis/demographics",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "housing-statistics",
+      "path": "/analysis/housing",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "migration-trends",
+      "path": "/analysis/migration-trends",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "population-tags",
+      "path": "/analysis/tags",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "data-comparison",
+      "path": "/analysis/comparison",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "data-reports",
+      "path": "/analysis/reports",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "population",
+      "path": "/population",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "housing",
+      "path": "/housing",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "relationship",
+      "path": "/relationship",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "batch-import",
+      "path": "/batch-import",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "tag-overview",
+      "path": "/tags",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "knowledge-accumulation",
+      "path": "/knowledge",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "policy-interpretation",
+      "path": "/ai/policy",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "document-writing",
+      "path": "/ai/document-writing",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "smart-query",
+      "path": "/ai/smart-query",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "behavior-supervision",
+      "path": "/grid/behavior",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "activity-management",
+      "path": "/grid/activities",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "conflict-management",
+      "path": "/grid/conflicts",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "notice-management",
+      "path": "/grid/notices",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "rule-config",
+      "path": "/grid/rules",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "anomaly-analysis",
+      "path": "/attribution/anomaly",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "time-series",
+      "path": "/attribution/time-series",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "factor-identification",
+      "path": "/attribution/factors",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "contribution-ranking",
+      "path": "/attribution/contribution",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "user-management",
+      "path": "/settings/users",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "role-management",
+      "path": "/settings/roles",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "permission-management",
+      "path": "/settings/permissions",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "log-management",
+      "path": "/settings/logs",
+      "width": 1366,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "statistics-overview",
+      "path": "/",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "demographics-analysis",
+      "path": "/analysis/demographics",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "housing-statistics",
+      "path": "/analysis/housing",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "migration-trends",
+      "path": "/analysis/migration-trends",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "population-tags",
+      "path": "/analysis/tags",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "data-comparison",
+      "path": "/analysis/comparison",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "data-reports",
+      "path": "/analysis/reports",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "population",
+      "path": "/population",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "housing",
+      "path": "/housing",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "relationship",
+      "path": "/relationship",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "batch-import",
+      "path": "/batch-import",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "tag-overview",
+      "path": "/tags",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "knowledge-accumulation",
+      "path": "/knowledge",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "policy-interpretation",
+      "path": "/ai/policy",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "document-writing",
+      "path": "/ai/document-writing",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "smart-query",
+      "path": "/ai/smart-query",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "behavior-supervision",
+      "path": "/grid/behavior",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "activity-management",
+      "path": "/grid/activities",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "conflict-management",
+      "path": "/grid/conflicts",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "notice-management",
+      "path": "/grid/notices",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "rule-config",
+      "path": "/grid/rules",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "anomaly-analysis",
+      "path": "/attribution/anomaly",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "time-series",
+      "path": "/attribution/time-series",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "factor-identification",
+      "path": "/attribution/factors",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "contribution-ranking",
+      "path": "/attribution/contribution",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "user-management",
+      "path": "/settings/users",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "role-management",
+      "path": "/settings/roles",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "permission-management",
+      "path": "/settings/permissions",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    },
+    {
+      "route_id": "log-management",
+      "path": "/settings/logs",
+      "width": 1024,
+      "overflow": false,
+      "vertical": [],
+      "ok": true
+    }
+  ],
+  "issues": []
+}
