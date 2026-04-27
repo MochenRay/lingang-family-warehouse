@@ -33,25 +33,28 @@ export interface HouseDetailPanelProps {
   className?: string;
 }
 
+const neutralBadgeClass =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]';
+
 const houseTypeBadgeClass: Record<House['type'], string> = {
-  自住: 'border-blue-200 bg-blue-50 text-blue-700',
-  出租: 'border-orange-200 bg-orange-50 text-orange-700',
-  空置: 'border-gray-200 bg-gray-50 text-gray-700',
-  经营: 'border-purple-200 bg-purple-50 text-purple-700',
-  其他: 'border-slate-200 bg-slate-50 text-slate-700',
+  自住: 'border-blue-400/35 bg-blue-400/10 text-blue-200',
+  出租: 'border-orange-400/35 bg-orange-400/10 text-orange-200',
+  空置: neutralBadgeClass,
+  经营: 'border-purple-400/35 bg-purple-400/10 text-purple-200',
+  其他: neutralBadgeClass,
 };
 
 const historyTypeBadgeClass: Record<HousingHistory['type'], string> = {
-  业主: 'border-orange-200 bg-orange-50 text-orange-700',
-  租客: 'border-blue-200 bg-blue-50 text-blue-700',
-  家属: 'border-green-200 bg-green-50 text-green-700',
-  其他: 'border-gray-200 bg-gray-50 text-gray-700',
+  业主: 'border-orange-400/35 bg-orange-400/10 text-orange-200',
+  租客: 'border-blue-400/35 bg-blue-400/10 text-blue-200',
+  家属: 'border-green-400/35 bg-green-400/10 text-green-200',
+  其他: neutralBadgeClass,
 };
 
 const riskBadgeClass: Record<RiskLevel, string> = {
-  High: 'border-red-200 bg-red-50 text-red-700',
-  Medium: 'border-orange-200 bg-orange-50 text-orange-700',
-  Low: 'border-green-200 bg-green-50 text-green-700',
+  High: 'border-red-400/40 bg-red-400/10 text-red-200',
+  Medium: 'border-orange-400/40 bg-orange-400/10 text-orange-200',
+  Low: 'border-green-400/40 bg-green-400/10 text-green-200',
 };
 
 function displayValue(value: string | number | undefined | null, fallback = '-') {
@@ -100,13 +103,13 @@ function PanelState({
   iconClassName?: string;
 }) {
   return (
-    <section className="flex min-h-[420px] items-center justify-center rounded border border-gray-200 bg-white px-6 py-10">
+    <section className="flex min-h-[420px] items-center justify-center rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-6 py-10">
       <div className="max-w-sm text-center">
-        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-gray-50 text-gray-400 ring-1 ring-gray-200">
+        <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)] ring-1 ring-[var(--color-neutral-03)]">
           <Icon className={cn('h-5 w-5', iconClassName)} />
         </div>
-        <h3 className="text-sm font-semibold text-gray-900">{title}</h3>
-        <p className="mt-2 text-sm leading-6 text-gray-500">{description}</p>
+        <h3 className="text-sm font-semibold text-[var(--color-neutral-11)]">{title}</h3>
+        <p className="mt-2 text-sm leading-6 text-[var(--color-neutral-08)]">{description}</p>
         {action ? <div className="mt-4">{action}</div> : null}
       </div>
     </section>
@@ -125,12 +128,12 @@ function DetailItem({
   className?: string;
 }) {
   return (
-    <div className={cn('rounded border border-gray-200 bg-gray-50 px-3 py-2', className)}>
-      <div className="flex items-center gap-1.5 text-xs text-gray-500">
+    <div className={cn('rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2', className)}>
+      <div className="flex items-center gap-1.5 text-xs text-[var(--color-neutral-08)]">
         {icon}
         {label}
       </div>
-      <div className="mt-1 min-h-5 break-words text-sm font-medium text-gray-900">{value}</div>
+      <div className="mt-1 min-h-5 break-words text-sm font-medium text-[var(--color-neutral-11)]">{value}</div>
     </div>
   );
 }
@@ -193,8 +196,8 @@ export function HouseDetailPanel({
   const owner = residents.find((resident) => resident.name === house.ownerName);
 
   return (
-    <section className={cn('flex min-h-[520px] flex-col rounded border border-gray-200 bg-white', className)}>
-      <header className="border-b border-gray-200 px-4 py-3">
+    <section className={cn('flex min-h-[520px] flex-col rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]', className)}>
+      <header className="border-b border-[var(--color-neutral-03)] px-4 py-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="mb-1 flex flex-wrap items-center gap-2">
@@ -202,20 +205,20 @@ export function HouseDetailPanel({
                 {house.type}
               </Badge>
               {house.residenceType ? (
-                <Badge variant="outline" className="border-gray-200 bg-white text-gray-600">
+                <Badge variant="outline" className={neutralBadgeClass}>
                   {house.residenceType}
                 </Badge>
               ) : null}
               {house.occupancyStatus ? (
-                <Badge variant="outline" className="border-gray-200 bg-white text-gray-600">
+                <Badge variant="outline" className={neutralBadgeClass}>
                   {house.occupancyStatus}
                 </Badge>
               ) : null}
             </div>
-            <h2 className="truncate text-base font-semibold text-gray-950">
+            <h2 className="truncate text-base font-semibold text-[var(--color-neutral-11)]">
               {house.communityName} {house.building} {house.unit} {house.room}
             </h2>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-gray-500">
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-[var(--color-neutral-08)]">
               <MapPin className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{house.address}</span>
             </p>
@@ -236,7 +239,7 @@ export function HouseDetailPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                className="border-red-400/40 text-red-200 hover:bg-red-400/10 hover:text-red-100"
                 disabled={isDeleting}
                 onClick={() => onDelete(house)}
               >
@@ -252,11 +255,11 @@ export function HouseDetailPanel({
         <div className="space-y-5">
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
                 <Home className="h-4 w-4 text-[#2761CB]" />
                 基础信息
               </h3>
-              <span className="text-xs text-gray-500">更新于 {displayValue(house.updatedAt)}</span>
+              <span className="text-xs text-[var(--color-neutral-08)]">更新于 {displayValue(house.updatedAt)}</span>
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               <DetailItem label="产权人" value={displayValue(house.ownerName)} icon={<UserRound className="h-3.5 w-3.5" />} />
@@ -270,20 +273,20 @@ export function HouseDetailPanel({
           </section>
 
           <section>
-            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
               <Tag className="h-4 w-4 text-[#2761CB]" />
               房屋标签
             </h3>
             {house.tags.length > 0 ? (
-              <div className="flex flex-wrap gap-2 rounded border border-gray-200 bg-gray-50 p-3">
+              <div className="flex flex-wrap gap-2 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
                 {house.tags.map((tag) => (
-                  <Badge key={`${house.id}-${tag}`} variant="outline" className="border-gray-200 bg-white text-gray-700">
+                  <Badge key={`${house.id}-${tag}`} variant="outline" className={neutralBadgeClass}>
                     {tag}
                   </Badge>
                 ))}
               </div>
             ) : (
-              <div className="rounded border border-dashed border-gray-200 bg-gray-50 px-3 py-4 text-sm text-gray-500">
+              <div className="rounded border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-4 text-sm text-[var(--color-neutral-08)]">
                 该房屋当前没有单独标签，可先通过现居住户标签和居住历史判断治理关注点。
               </div>
             )}
@@ -291,40 +294,40 @@ export function HouseDetailPanel({
 
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
                 <Users className="h-4 w-4 text-blue-600" />
                 现居住户
               </h3>
-              <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+              <Badge variant="outline" className={neutralBadgeClass}>
                 {residents.length} 人
               </Badge>
             </div>
 
             {residents.length > 0 ? (
-              <div className="divide-y divide-gray-100 rounded border border-gray-200">
+              <div className="divide-y divide-[var(--color-neutral-03)] rounded border border-[var(--color-neutral-03)]">
                 {residents.map((person) => (
                   <div key={person.id} className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto]">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-blue-50 text-sm font-semibold text-blue-700 ring-1 ring-blue-100">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-blue-400/10 text-sm font-semibold text-blue-200 ring-1 ring-blue-400/30">
                         {getInitial(person.name)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium text-gray-900">{person.name}</span>
+                          <span className="font-medium text-[var(--color-neutral-11)]">{person.name}</span>
                           {person.id === owner?.id || person.name === house.ownerName ? (
-                            <Badge variant="outline" className="border-yellow-200 bg-yellow-50 text-yellow-700">
+                            <Badge variant="outline" className="border-yellow-400/35 bg-yellow-400/10 text-yellow-200">
                               户主
                             </Badge>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                        <p className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">
                           {person.gender} · {person.age} 岁 · {person.type} · {displayValue(person.phone)}
                         </p>
                       </div>
                     </div>
 
-                    <div className="min-w-0 text-xs text-gray-500">
-                      <div className="mb-1 text-gray-700">与户主关系：{getRelationToOwner(person, house, residents)}</div>
+                    <div className="min-w-0 text-xs text-[var(--color-neutral-08)]">
+                      <div className="mb-1 text-[var(--color-neutral-10)]">与户主关系：{getRelationToOwner(person, house, residents)}</div>
                       <div className="truncate">证件：{displayValue(person.idCard)}</div>
                     </div>
 
@@ -333,12 +336,12 @@ export function HouseDetailPanel({
                         {person.risk === 'High' ? '高风险' : person.risk === 'Medium' ? '中风险' : '低风险'}
                       </Badge>
                       {person.tags.slice(0, 2).map((tag) => (
-                        <Badge key={`${person.id}-${tag}`} variant="outline" className="border-gray-200 bg-white text-gray-600">
+                        <Badge key={`${person.id}-${tag}`} variant="outline" className={neutralBadgeClass}>
                           {tag}
                         </Badge>
                       ))}
                       {person.tags.length > 2 ? (
-                        <Badge variant="outline" className="border-gray-200 bg-white text-gray-600">
+                        <Badge variant="outline" className={neutralBadgeClass}>
                           +{person.tags.length - 2}
                         </Badge>
                       ) : null}
@@ -347,43 +350,43 @@ export function HouseDetailPanel({
                 ))}
               </div>
             ) : (
-              <div className="rounded border border-dashed border-gray-200 bg-gray-50 px-3 py-6 text-center">
-                <Users className="mx-auto mb-2 h-8 w-8 text-gray-300" />
-                <p className="text-sm font-medium text-gray-800">暂无现居住户</p>
-                <p className="mt-1 text-xs text-gray-500">这套房屋当前没有关联到现居人员，可结合居住历史继续核对。</p>
+              <div className="rounded border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-6 text-center">
+                <Users className="mx-auto mb-2 h-8 w-8 text-[var(--color-neutral-08)]" />
+                <p className="text-sm font-medium text-[var(--color-neutral-11)]">暂无现居住户</p>
+                <p className="mt-1 text-xs text-[var(--color-neutral-08)]">这套房屋当前没有关联到现居人员，可结合居住历史继续核对。</p>
               </div>
             )}
           </section>
 
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
                 <History className="h-4 w-4 text-purple-600" />
                 居住历史
               </h3>
-              <Badge variant="outline" className="border-gray-200 bg-gray-50 text-gray-600">
+              <Badge variant="outline" className={neutralBadgeClass}>
                 {history.length} 条
               </Badge>
             </div>
 
             {history.length > 0 ? (
-              <div className="relative space-y-3 rounded border border-gray-200 bg-gray-50 p-3 before:absolute before:bottom-5 before:left-[1.65rem] before:top-5 before:w-px before:bg-gray-200">
+              <div className="relative space-y-3 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3 before:absolute before:bottom-5 before:left-[1.65rem] before:top-5 before:w-px before:bg-[var(--color-neutral-03)]">
                 {history.map((item) => (
                   <div key={item.id} className="relative grid grid-cols-[auto_minmax(0,1fr)] gap-3">
-                    <div className="z-10 mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-white text-gray-400 ring-1 ring-gray-200">
+                    <div className="z-10 mt-1 flex h-7 w-7 items-center justify-center rounded-full bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)] ring-1 ring-[var(--color-neutral-03)]">
                       <Calendar className="h-3.5 w-3.5" />
                     </div>
-                    <div className="rounded border border-gray-200 bg-white px-3 py-2">
+                    <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-3 py-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{item.personName}</span>
+                        <span className="text-sm font-medium text-[var(--color-neutral-11)]">{item.personName}</span>
                         <Badge variant="outline" className={cn('border', historyTypeBadgeClass[item.type])}>
                           {item.type}
                         </Badge>
                       </div>
-                      <p className="mt-1 text-xs text-gray-500">{item.period}</p>
+                      <p className="mt-1 text-xs text-[var(--color-neutral-08)]">{item.period}</p>
                       {item.moveOutReason ? (
-                        <p className="mt-2 text-xs leading-5 text-gray-500">
-                          <span className="text-gray-700">迁出原因：</span>
+                        <p className="mt-2 text-xs leading-5 text-[var(--color-neutral-08)]">
+                          <span className="text-[var(--color-neutral-10)]">迁出原因：</span>
                           {item.moveOutReason}
                         </p>
                       ) : null}
@@ -392,10 +395,10 @@ export function HouseDetailPanel({
                 ))}
               </div>
             ) : (
-              <div className="rounded border border-dashed border-gray-200 bg-gray-50 px-3 py-6 text-center">
-                <History className="mx-auto mb-2 h-8 w-8 text-gray-300" />
-                <p className="text-sm font-medium text-gray-800">暂无居住历史</p>
-                <p className="mt-1 text-xs text-gray-500">历史记录为空不代表房屋不可用，需以现居人员和房屋状态继续判断。</p>
+              <div className="rounded border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-6 text-center">
+                <History className="mx-auto mb-2 h-8 w-8 text-[var(--color-neutral-08)]" />
+                <p className="text-sm font-medium text-[var(--color-neutral-11)]">暂无居住历史</p>
+                <p className="mt-1 text-xs text-[var(--color-neutral-08)]">历史记录为空不代表房屋不可用，需以现居人员和房屋状态继续判断。</p>
               </div>
             )}
           </section>

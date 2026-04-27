@@ -46,14 +46,28 @@ Playwright 覆盖 29 个侧栏 Web 菜单路径：
 静态扫描：
 
 - `src/app/components/pages/**` 中 `bg-white` 命中数：0
-- 默认裸 `<Tooltip />`：0
+- Recharts 默认裸 `<Tooltip />`：0
 - 浅灰 Recharts hover cursor：0
 
-全局浅色类扫描仍有命中，但均为本阶段记录例外：
+Claude 成果审核后补充的扫描边界：
+
+- 原 closeout 的 `bg-white` 扫描范围只覆盖 `src/app/components/pages/**`，不足以证明子层组件无浅色残留。
+- `Phase 11` patch 已将扫描范围扩为：
+  - `src/app/components/pages/**`
+  - `src/app/components/housing/**`
+  - `src/app/components/notices/**`
+  - `src/app/components/rules/**`
+  - `src/app/components/statistics/**`
+- 扩展范围内 `bg-white` 命中数：0。
+- 扩展范围内浅灰 Recharts hover cursor 命中数：0。
+- 扩展范围内仍可出现 shadcn UI 信息提示 `<Tooltip>`，例如 `ChartCard` 和 `PopulationManagement`；这不是 Recharts 默认浅色 tooltip。Recharts 图表 tooltip 已接入 `DarkChartTooltip`。
+
+全局浅色类扫描曾有命中，当前记录例外为：
 
 - `OverviewDashboard.tsx`：计划内无菜单入口文件，不在样式 PR 删除或改造。
 - `PublishNotice.tsx`：无侧栏入口，公告发布已由 `NoticeManagement` 内的深色弹窗承接。
 - `WarningMap.tsx`：路由存在但无侧栏入口，本阶段菜单范围不含此页。
+- `HouseDetailPanel.tsx / FinderColumn.tsx`：Claude 审核发现曾遗漏在 `housing/**` 子层，已在 `codex/phase11-housing-dark-patch` 补齐深色 token，不再作为例外。
 
 浏览器布局：
 
