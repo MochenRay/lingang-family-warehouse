@@ -46,11 +46,15 @@ interface RuleDraft {
 }
 
 const priorityConfig: Record<RulePriority, { label: string; badgeClass: string }> = {
-  critical: { label: '极高', badgeClass: 'text-red-400 bg-red-500/10 border-red-500/20' },
-  high: { label: '高', badgeClass: 'text-orange-400 bg-orange-500/10 border-orange-500/20' },
-  medium: { label: '中', badgeClass: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
-  low: { label: '低', badgeClass: 'text-[var(--color-neutral-08)] bg-[var(--color-neutral-03)] border-[var(--color-neutral-04)]' },
+  critical: { label: '极高', badgeClass: 'text-[#FFB4B4] bg-[#D52132]/10 border-[#D52132]/35' },
+  high: { label: '高', badgeClass: 'text-[#F6C27A] bg-[#D6730D]/10 border-[#D6730D]/35' },
+  medium: { label: '中', badgeClass: 'text-[#9EC3FF] bg-[#4E86DF]/10 border-[#4E86DF]/35' },
+  low: { label: '低', badgeClass: 'text-[var(--color-neutral-08)] bg-[var(--color-neutral-03)] border-[var(--color-neutral-03)]' },
 };
+
+const DARK_CARD_CLASS = 'bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]';
+const DARK_FIELD_CLASS = 'bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
+const DARK_BUTTON_CLASS = 'border-[var(--color-neutral-03)] text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 
 function readNumber(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
@@ -188,7 +192,7 @@ export function RuleConfig() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)]">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">待办规则配置</h1>
@@ -198,7 +202,7 @@ export function RuleConfig() {
         </div>
         <Button
           variant="outline"
-          className="gap-2 border-[var(--color-neutral-04)] text-[var(--color-neutral-09)] hover:bg-[var(--color-neutral-03)]"
+          className={`gap-2 ${DARK_BUTTON_CLASS}`}
           onClick={() => void load()}
           disabled={loading}
         >
@@ -207,50 +211,50 @@ export function RuleConfig() {
         </Button>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+      <div className="grid gap-3 md:grid-cols-4">
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">运行中规则</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <CheckCircle2 className="h-4 w-4 text-[#19B172]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{activeCount}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">当前共 {rules.length} 条规则配置</p>
+            <p className="text-xs text-[var(--color-neutral-08)]">当前共 {rules.length} 条规则配置</p>
           </CardContent>
         </Card>
-        <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">覆盖对象</CardTitle>
-            <Settings2 className="h-4 w-4 text-blue-500" />
+            <Settings2 className="h-4 w-4 text-[#4E86DF]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{totalCovered}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">按当前规则命中的待跟进对象</p>
+            <p className="text-xs text-[var(--color-neutral-08)]">按当前规则命中的待跟进对象</p>
           </CardContent>
         </Card>
-        <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">待办清单</CardTitle>
-            <Clock className="h-4 w-4 text-amber-500" />
+            <Clock className="h-4 w-4 text-[#D6730D]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.pending ?? 0}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">当前规则下生成的移动端待办数量</p>
+            <p className="text-xs text-[var(--color-neutral-08)]">当前规则下生成的移动端待办数量</p>
           </CardContent>
         </Card>
-        <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">超期跟进</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-500" />
+            <AlertTriangle className="h-4 w-4 text-[#D52132]" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.overdue ?? 0}</div>
-            <p className="text-xs text-[var(--color-neutral-06)]">规则变更后立即反映到待办摘要</p>
+            <p className="text-xs text-[var(--color-neutral-08)]">规则变更后立即反映到待办摘要</p>
           </CardContent>
         </Card>
       </div>
 
-      <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
+      <Card className={DARK_CARD_CLASS}>
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 md:flex-row">
             <div className="flex-1">
@@ -258,11 +262,11 @@ export function RuleConfig() {
                 placeholder="搜索规则名称或说明"
                 value={searchTerm}
                 onChange={(event) => setSearchTerm(event.target.value)}
-                className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)]"
+                className={DARK_FIELD_CLASS}
               />
             </div>
             <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as 'all' | RulePriority)}>
-              <SelectTrigger className="w-full md:w-44 bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)]">
+              <SelectTrigger className={`w-full md:w-44 ${DARK_FIELD_CLASS}`}>
                 <SelectValue placeholder="优先级筛选" />
               </SelectTrigger>
               <SelectContent>
@@ -277,8 +281,8 @@ export function RuleConfig() {
         </CardContent>
       </Card>
 
-      <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-        <CardHeader>
+      <Card className={`${DARK_CARD_CLASS} overflow-hidden`}>
+        <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-4">
           <CardTitle className="text-base text-[var(--color-neutral-11)]">规则总览</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
@@ -290,7 +294,7 @@ export function RuleConfig() {
           ) : (
             <Table>
               <TableHeader>
-                <TableRow className="border-[var(--color-neutral-03)]">
+                <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
                   <TableHead>规则</TableHead>
                   <TableHead>覆盖对象</TableHead>
                   <TableHead>优先级</TableHead>
@@ -301,17 +305,17 @@ export function RuleConfig() {
               </TableHeader>
               <TableBody>
                 {filteredRules.map((rule) => (
-                  <TableRow key={rule.id} className="border-[var(--color-neutral-03)]">
+                  <TableRow key={rule.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]/70">
                     <TableCell className="align-top">
                       <div className="space-y-1">
                         <div className="font-medium text-[var(--color-neutral-11)]">{rule.name}</div>
                         <div className="text-sm text-[var(--color-neutral-08)]">{rule.description}</div>
-                        <div className="text-xs text-[var(--color-neutral-06)]">{getRuleSummary(rule)}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)]">{getRuleSummary(rule)}</div>
                       </div>
                     </TableCell>
                     <TableCell className="align-top">
                       <div className="text-sm font-medium text-[var(--color-neutral-11)]">{rule.coveredCount}</div>
-                      <div className="text-xs text-[var(--color-neutral-06)]">当前命中对象</div>
+                      <div className="text-xs text-[var(--color-neutral-08)]">当前命中对象</div>
                     </TableCell>
                     <TableCell className="align-top">
                       <Badge variant="outline" className={priorityConfig[rule.priority].badgeClass}>
@@ -338,7 +342,7 @@ export function RuleConfig() {
                       <Button
                         variant="outline"
                         size="sm"
-                        className="border-[var(--color-neutral-04)]"
+                        className={DARK_BUTTON_CLASS}
                         onClick={() => openEditor(rule)}
                       >
                         调整阈值
@@ -360,10 +364,10 @@ export function RuleConfig() {
       </Card>
 
       <Dialog open={Boolean(editingRule && draft)} onOpenChange={(open) => !open && closeEditor()}>
-        <DialogContent className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-11)]">
+        <DialogContent className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] shadow-2xl">
           <DialogHeader>
             <DialogTitle>调整规则阈值</DialogTitle>
-            <DialogDescription className="text-[var(--color-neutral-07)]">
+            <DialogDescription className="text-[var(--color-neutral-08)]">
               这里的修改会直接影响移动端待办投影，不再只是页面演示。
             </DialogDescription>
           </DialogHeader>
@@ -372,17 +376,17 @@ export function RuleConfig() {
             <div className="grid gap-4 py-2">
               <div className="grid gap-2">
                 <Label>规则名称</Label>
-                <Input value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
+                <Input className={DARK_FIELD_CLASS} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} />
               </div>
               <div className="grid gap-2">
                 <Label>规则说明</Label>
-                <Input value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
+                <Input className={DARK_FIELD_CLASS} value={draft.description} onChange={(event) => setDraft({ ...draft, description: event.target.value })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>优先级</Label>
                   <Select value={draft.priority} onValueChange={(value) => setDraft({ ...draft, priority: value as RulePriority })}>
-                    <SelectTrigger>
+                    <SelectTrigger className={DARK_FIELD_CLASS}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -402,6 +406,7 @@ export function RuleConfig() {
                 <div className="grid gap-2">
                   <Label>触发阈值（天）</Label>
                   <Input
+                    className={DARK_FIELD_CLASS}
                     type="number"
                     min={1}
                     value={draft.maxIdleDays}
@@ -411,6 +416,7 @@ export function RuleConfig() {
                 <div className="grid gap-2">
                   <Label>{editingRule.id === 'rule_conflict_followup' ? '超期阈值（天）' : '升级紧急（天）'}</Label>
                   <Input
+                    className={DARK_FIELD_CLASS}
                     type="number"
                     min={1}
                     value={editingRule.id === 'rule_conflict_followup' ? (draft.overdueAfterDays ?? 7) : draft.urgentAfterDays}
@@ -429,6 +435,7 @@ export function RuleConfig() {
                 <div className="grid gap-2">
                   <Label>任务截止（天）</Label>
                   <Input
+                    className={DARK_FIELD_CLASS}
                     type="number"
                     min={1}
                     value={draft.deadlineDays}
@@ -440,8 +447,8 @@ export function RuleConfig() {
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={closeEditor}>取消</Button>
-            <Button onClick={() => void handleSave()} disabled={!draft || (editingRule ? savingId === editingRule.id : false)}>
+            <Button variant="outline" className={DARK_BUTTON_CLASS} onClick={closeEditor}>取消</Button>
+            <Button className="bg-[#4E86DF] text-white hover:bg-[#2761CB]" onClick={() => void handleSave()} disabled={!draft || (editingRule ? savingId === editingRule.id : false)}>
               保存并更新投影
             </Button>
           </DialogFooter>

@@ -56,6 +56,15 @@ interface ConflictManagementProps {
   onRouteChange?: (route: string) => void;
 }
 
+const DARK_CARD_CLASS =
+  "rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none";
+const DARK_DIALOG_CLASS =
+  "border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl";
+const DARK_PANEL_CLASS = "rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]";
+const DARK_INPUT_CLASS =
+  "border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]";
+const DARK_MUTED_TEXT = "text-[var(--color-neutral-08)]";
+
 function formatNow() {
   const now = new Date();
   const pad = (value: number) => String(value).padStart(2, "0");
@@ -89,37 +98,37 @@ function isSameDay(value?: string) {
 
 function getConflictStatusClass(status: ConflictRecord["status"]) {
   return status === "已化解"
-    ? "bg-green-100 text-green-700 hover:bg-green-200"
-    : "bg-orange-100 text-orange-700 hover:bg-orange-200";
+    ? "border border-[#19B172]/40 bg-[#19B172]/10 text-[#6EE7B7] hover:bg-[#19B172]/20"
+    : "border border-[#D6730D]/40 bg-[#D6730D]/10 text-[#FDBA74] hover:bg-[#D6730D]/20";
 }
 
 function getSourceClass(source: ConflictRecord["source"]) {
   return source === "上级下派"
-    ? "bg-purple-100 text-purple-700"
-    : "bg-blue-100 text-blue-700";
+    ? "border border-[#D6730D]/40 bg-[#D6730D]/10 text-[#FDBA74]"
+    : "border border-[#4E86DF]/40 bg-[#4E86DF]/10 text-[#93C5FD]";
 }
 
 function getRiskClass(risk: Person["risk"]) {
   switch (risk) {
     case "High":
-      return "bg-red-100 text-red-700";
+      return "border border-[#D52132]/40 bg-[#D52132]/10 text-[#FCA5A5]";
     case "Medium":
-      return "bg-amber-100 text-amber-700";
+      return "border border-[#D6730D]/40 bg-[#D6730D]/10 text-[#FDBA74]";
     default:
-      return "bg-emerald-100 text-emerald-700";
+      return "border border-[#19B172]/40 bg-[#19B172]/10 text-[#6EE7B7]";
   }
 }
 
 function getFollowUpClass(code?: string) {
   switch (code) {
     case "resolved":
-      return "bg-emerald-100 text-emerald-700";
+      return "border border-[#19B172]/40 bg-[#19B172]/10 text-[#6EE7B7]";
     case "overdue":
-      return "bg-red-100 text-red-700";
+      return "border border-[#D52132]/40 bg-[#D52132]/10 text-[#FCA5A5]";
     case "watch":
-      return "bg-amber-100 text-amber-700";
+      return "border border-[#D6730D]/40 bg-[#D6730D]/10 text-[#FDBA74]";
     default:
-      return "bg-blue-100 text-blue-700";
+      return "border border-[#4E86DF]/40 bg-[#4E86DF]/10 text-[#93C5FD]";
   }
 }
 
@@ -329,73 +338,73 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)]">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 mb-2">矛盾调解</h1>
-          <p className="text-gray-500">全域矛盾纠纷排查化解、任务下派与督导</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">矛盾调解</h1>
+          <p className="text-sm text-[var(--color-neutral-08)]">全域矛盾纠纷排查化解、任务下派与督导</p>
         </div>
-        <Button onClick={() => setIsDispatchDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsDispatchDialogOpen(true)} className="bg-[#4E86DF] text-white hover:bg-[#2761CB]">
           <Plus className="w-4 h-4 mr-2" />
           下派纠纷任务
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-white">
-          <CardHeader className="pb-2">
-            <CardDescription>纠纷总数</CardDescription>
-            <CardTitle className="text-3xl font-bold flex items-baseline gap-2">
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="pb-3">
+            <CardDescription className={DARK_MUTED_TEXT}>纠纷总数</CardDescription>
+            <CardTitle className="text-2xl font-semibold flex items-baseline gap-2 text-white">
               {stats.total}
-              <span className="text-sm font-normal text-gray-500">件</span>
+              <span className="text-sm font-normal text-[var(--color-neutral-08)]">件</span>
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="bg-white">
-          <CardHeader className="pb-2">
-            <CardDescription>今日新增</CardDescription>
-            <CardTitle className="text-3xl font-bold text-orange-600 flex items-baseline gap-2">
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="pb-3">
+            <CardDescription className={DARK_MUTED_TEXT}>今日新增</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#D6730D] flex items-baseline gap-2">
               {stats.today}
-              <span className="text-sm font-normal text-gray-500">件</span>
+              <span className="text-sm font-normal text-[var(--color-neutral-08)]">件</span>
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="bg-white">
-          <CardHeader className="pb-2">
-            <CardDescription>累计化解</CardDescription>
-            <CardTitle className="text-3xl font-bold text-green-600 flex items-baseline gap-2">
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="pb-3">
+            <CardDescription className={DARK_MUTED_TEXT}>累计化解</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#19B172] flex items-baseline gap-2">
               {stats.resolved}
-              <span className="text-sm font-normal text-gray-500">件</span>
+              <span className="text-sm font-normal text-[var(--color-neutral-08)]">件</span>
             </CardTitle>
           </CardHeader>
         </Card>
-        <Card className="bg-white">
-          <CardHeader className="pb-2">
-            <CardDescription>化解率</CardDescription>
-            <CardTitle className="text-3xl font-bold text-blue-600 flex items-baseline gap-2">
+        <Card className={DARK_CARD_CLASS}>
+          <CardHeader className="pb-3">
+            <CardDescription className={DARK_MUTED_TEXT}>化解率</CardDescription>
+            <CardTitle className="text-2xl font-semibold text-[#4E86DF] flex items-baseline gap-2">
               {stats.rate}
-              <span className="text-sm font-normal text-gray-500">%</span>
+              <span className="text-sm font-normal text-[var(--color-neutral-08)]">%</span>
             </CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <Card>
-        <CardContent className="pt-6 space-y-4">
+      <Card className={DARK_CARD_CLASS}>
+        <CardContent className="pt-4 space-y-4">
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 flex-1">
               <div className="relative w-64">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                 <Input
                   placeholder="搜索纠纷标题、地点、当事人..."
-                  className="pl-9"
+                  className={`pl-9 ${DARK_INPUT_CLASS}`}
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                 />
               </div>
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className={`w-[140px] ${DARK_INPUT_CLASS}`}>
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="状态" />
                 </SelectTrigger>
@@ -407,7 +416,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               </Select>
 
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className={`w-[140px] ${DARK_INPUT_CLASS}`}>
                   <SelectValue placeholder="类型" />
                 </SelectTrigger>
                 <SelectContent>
@@ -420,7 +429,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               </Select>
 
               <Select value={gridFilter} onValueChange={setGridFilter}>
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className={`w-[180px] ${DARK_INPUT_CLASS}`}>
                   <SelectValue placeholder="所属网格" />
                 </SelectTrigger>
                 <SelectContent>
@@ -435,25 +444,25 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
           </div>
 
-          <div className="rounded-md border">
-            <Table>
+          <div className="overflow-x-auto rounded-lg border border-[var(--color-neutral-03)]">
+            <Table className="min-w-[980px]">
               <TableHeader>
-                <TableRow>
-                  <TableHead>标题</TableHead>
-                  <TableHead>来源</TableHead>
-                  <TableHead>类型</TableHead>
-                  <TableHead>当事人</TableHead>
-                  <TableHead>所属网格</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead>更新时间</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+                <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                  <TableHead className="w-[24%] min-w-[220px] text-[var(--color-neutral-08)]">标题</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">来源</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">类型</TableHead>
+                  <TableHead className="min-w-[150px] text-[var(--color-neutral-08)]">当事人</TableHead>
+                  <TableHead className="min-w-[150px] text-[var(--color-neutral-08)]">所属网格</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">状态</TableHead>
+                  <TableHead className="whitespace-nowrap text-[var(--color-neutral-08)]">更新时间</TableHead>
+                  <TableHead className="w-20 text-right text-[var(--color-neutral-08)]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
                     <TableCell colSpan={8} className="py-10">
-                      <div className="flex items-center justify-center gap-2 text-gray-500">
+                      <div className="flex items-center justify-center gap-2 text-[var(--color-neutral-08)]">
                         <Loader2 className="w-4 h-4 animate-spin" />
                         <span>正在加载矛盾调解数据...</span>
                       </div>
@@ -461,7 +470,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                   </TableRow>
                 ) : conflicts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={8} className="text-center py-8 text-[var(--color-neutral-08)]">
                       暂无相关纠纷记录
                     </TableCell>
                   </TableRow>
@@ -469,25 +478,25 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                   conflicts.map((conflict) => (
                     <TableRow
                       key={conflict.id}
-                      className="cursor-pointer hover:bg-gray-50"
+                      className="cursor-pointer border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[rgba(78,134,223,0.08)]"
                       onClick={() => void handleOpenDetail(conflict)}
                     >
-                      <TableCell className="font-medium max-w-[220px] truncate">{conflict.title}</TableCell>
-                      <TableCell>
+                      <TableCell className="w-[24%] min-w-[220px] max-w-[260px] truncate font-medium text-white">{conflict.title}</TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge variant="secondary" className={getSourceClass(conflict.source)}>
                           {conflict.source}
                         </Badge>
                       </TableCell>
-                      <TableCell>{conflict.type}</TableCell>
+                      <TableCell className="whitespace-nowrap text-[var(--color-neutral-10)]">{conflict.type}</TableCell>
                       <TableCell>
                         <div className="flex gap-1 flex-wrap max-w-[180px]">
                           {conflict.involvedParties.length === 0 ? (
-                            <span className="text-xs text-gray-400">待补充</span>
+                            <span className="text-xs text-[var(--color-neutral-08)]">待补充</span>
                           ) : (
                             conflict.involvedParties.map((party) => (
                               <span
                                 key={`${conflict.id}-${party.id}-${party.name}`}
-                                className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-xs"
+                                className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-1.5 py-0.5 text-xs text-[var(--color-neutral-10)]"
                               >
                                 {party.name}
                               </span>
@@ -495,17 +504,17 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="max-w-[150px] truncate" title={getGridName(conflict.gridId)}>
+                      <TableCell className="max-w-[170px] truncate text-[var(--color-neutral-10)]" title={getGridName(conflict.gridId)}>
                         {getGridName(conflict.gridId)}
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="whitespace-nowrap">
                         <Badge className={getConflictStatusClass(conflict.status)}>{conflict.status}</Badge>
                       </TableCell>
-                      <TableCell className="text-gray-500 text-sm">
+                      <TableCell className="whitespace-nowrap text-sm text-[var(--color-neutral-08)]">
                         {conflict.updatedAt.split(" ")[0]}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" className="text-blue-600 hover:text-blue-700">
+                        <Button variant="ghost" size="sm" className="text-[#93C5FD] hover:bg-[#4E86DF]/10 hover:text-white">
                           查看详情
                         </Button>
                       </TableCell>
@@ -519,18 +528,19 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
       </Card>
 
       <Dialog open={isDispatchDialogOpen} onOpenChange={setIsDispatchDialogOpen}>
-        <DialogContent>
+        <DialogContent className={DARK_DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>下派矛盾纠纷任务</DialogTitle>
-            <DialogDescription>创建任务并下派给指定网格跟进核实与调解。</DialogDescription>
+            <DialogDescription className={DARK_MUTED_TEXT}>创建任务并下派给指定网格跟进核实与调解。</DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <Label htmlFor="title">
-                纠纷标题 <span className="text-red-500">*</span>
+                纠纷标题 <span className="text-[#FCA5A5]">*</span>
               </Label>
               <Input
                 id="title"
+                className={DARK_INPUT_CLASS}
                 value={dispatchForm.title}
                 onChange={(event) =>
                   setDispatchForm((prev) => ({ ...prev, title: event.target.value }))
@@ -540,13 +550,13 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="type">
-                纠纷类型 <span className="text-red-500">*</span>
+                纠纷类型 <span className="text-[#FCA5A5]">*</span>
               </Label>
               <Select
                 value={dispatchForm.type}
                 onValueChange={(value) => setDispatchForm((prev) => ({ ...prev, type: value }))}
               >
-                <SelectTrigger id="type">
+                <SelectTrigger id="type" className={DARK_INPUT_CLASS}>
                   <SelectValue placeholder="请选择" />
                 </SelectTrigger>
                 <SelectContent>
@@ -559,13 +569,13 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="grid">
-                所属网格 <span className="text-red-500">*</span>
+                所属网格 <span className="text-[#FCA5A5]">*</span>
               </Label>
               <Select
                 value={dispatchForm.gridId}
                 onValueChange={(value) => setDispatchForm((prev) => ({ ...prev, gridId: value }))}
               >
-                <SelectTrigger id="grid">
+                <SelectTrigger id="grid" className={DARK_INPUT_CLASS}>
                   <SelectValue placeholder="选择网格" />
                 </SelectTrigger>
                 <SelectContent>
@@ -581,6 +591,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               <Label htmlFor="person">主要当事人（可选）</Label>
               <Input
                 id="person"
+                className={DARK_INPUT_CLASS}
                 value={dispatchForm.targetPerson}
                 onChange={(event) =>
                   setDispatchForm((prev) => ({ ...prev, targetPerson: event.target.value }))
@@ -590,10 +601,11 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="desc">
-                详细描述 <span className="text-red-500">*</span>
+                详细描述 <span className="text-[#FCA5A5]">*</span>
               </Label>
               <Textarea
                 id="desc"
+                className={DARK_INPUT_CLASS}
                 value={dispatchForm.description}
                 onChange={(event) =>
                   setDispatchForm((prev) => ({ ...prev, description: event.target.value }))
@@ -603,10 +615,15 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDispatchDialogOpen(false)} disabled={isSaving}>
+            <Button
+              variant="outline"
+              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-white"
+              onClick={() => setIsDispatchDialogOpen(false)}
+              disabled={isSaving}
+            >
               取消
             </Button>
-            <Button onClick={() => void handleDispatch()} className="bg-blue-600 hover:bg-blue-700" disabled={isSaving}>
+            <Button onClick={() => void handleDispatch()} className="bg-[#4E86DF] text-white hover:bg-[#2761CB]" disabled={isSaving}>
               {isSaving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
               确认下派
             </Button>
@@ -615,7 +632,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
       </Dialog>
 
       <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className="max-w-5xl">
+        <DialogContent className={`max-w-5xl ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <div className="flex items-center gap-2">
               <DialogTitle>{selectedConflict?.title ?? "纠纷详情"}</DialogTitle>
@@ -626,7 +643,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               ) : null}
             </div>
             {selectedConflict ? (
-              <DialogDescription className="flex items-center gap-2 mt-1">
+              <DialogDescription className="flex items-center gap-2 mt-1 text-[var(--color-neutral-08)]">
                 <span>{selectedConflict.source}</span>
                 <span>•</span>
                 <span>{selectedConflict.type}</span>
@@ -638,7 +655,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
 
           {isDetailLoading ? (
             <div className="py-16">
-              <div className="flex items-center justify-center gap-2 text-gray-500">
+              <div className="flex items-center justify-center gap-2 text-[var(--color-neutral-08)]">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>正在加载案件上下文...</span>
               </div>
@@ -646,33 +663,33 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
           ) : selectedConflict ? (
             <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
               <div className="grid gap-4 lg:grid-cols-[1.5fr,1fr]">
-                <Card className="border-gray-200">
+                <Card className={DARK_CARD_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">案件概况</CardTitle>
-                    <CardDescription>以真实案件对象、地点和过程为准。</CardDescription>
+                    <CardDescription className={DARK_MUTED_TEXT}>以真实案件对象、地点和过程为准。</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="bg-gray-50 p-3 rounded-lg border text-sm text-gray-700">
+                    <div className={`${DARK_PANEL_CLASS} p-3 text-sm text-[var(--color-neutral-10)]`}>
                       {selectedConflict.description}
                     </div>
                     <div className="grid md:grid-cols-2 gap-3 text-sm">
-                      <div className="rounded-lg border bg-white p-3">
-                        <div className="text-gray-500 flex items-center gap-2">
+                      <div className={`${DARK_PANEL_CLASS} p-3`}>
+                        <div className="text-[var(--color-neutral-08)] flex items-center gap-2">
                           <MapPin className="w-4 h-4" />
                           发生地点
                         </div>
-                        <p className="mt-2 font-medium text-gray-900">{selectedConflict.location}</p>
+                        <p className="mt-2 font-medium text-white">{selectedConflict.location}</p>
                       </div>
-                      <div className="rounded-lg border bg-white p-3">
-                        <div className="text-gray-500 flex items-center gap-2">
+                      <div className={`${DARK_PANEL_CLASS} p-3`}>
+                        <div className="text-[var(--color-neutral-08)] flex items-center gap-2">
                           <Calendar className="w-4 h-4" />
                           最近更新时间
                         </div>
-                        <p className="mt-2 font-medium text-gray-900">{selectedConflict.updatedAt}</p>
+                        <p className="mt-2 font-medium text-white">{selectedConflict.updatedAt}</p>
                       </div>
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-gray-900 mb-2 flex items-center gap-2">
+                      <div className="text-sm font-medium text-white mb-2 flex items-center gap-2">
                         <Users className="w-4 h-4" />
                         当事人与参与方
                       </div>
@@ -682,33 +699,33 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                             <Badge
                               key={`${party.id}-${party.name}`}
                               variant="outline"
-                              className="px-3 py-1 bg-white"
+                              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1 text-[var(--color-neutral-10)]"
                             >
                               {party.name}
                               {party.type === "organization" ? (
-                                <span className="text-gray-400 ml-1">(单位)</span>
+                                <span className="text-[var(--color-neutral-08)] ml-1">(单位)</span>
                               ) : null}
                             </Badge>
                           ))
                         ) : (
-                          <span className="text-sm text-gray-400">暂无明确参与方</span>
+                          <span className="text-sm text-[var(--color-neutral-08)]">暂无明确参与方</span>
                         )}
                       </div>
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className={DARK_CARD_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">社工助手建议</CardTitle>
-                    <CardDescription>当前先基于真实案件上下文生成稳定的建议位。</CardDescription>
+                    <CardDescription className={DARK_MUTED_TEXT}>当前先基于真实案件上下文生成稳定的建议位。</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <div className="rounded-lg border bg-white p-3">
+                    <div className={`${DARK_PANEL_CLASS} p-3`}>
                       <div className="flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm text-gray-500">回访状态</p>
-                          <p className="mt-1 text-sm text-gray-700">
+                          <p className="text-sm text-[var(--color-neutral-08)]">回访状态</p>
+                          <p className="mt-1 text-sm text-[var(--color-neutral-10)]">
                             {selectedContext?.followUpStatus.detail ?? "暂无回访状态"}
                           </p>
                         </div>
@@ -719,8 +736,8 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                     </div>
 
                     <div className="space-y-2">
-                      <div className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-blue-600" />
+                      <div className="text-sm font-medium text-white flex items-center gap-2">
+                        <MessageSquare className="w-4 h-4 text-[#4E86DF]" />
                         建议动作
                       </div>
                       {selectedContext?.suggestedActions.length ? (
@@ -728,14 +745,14 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                           {selectedContext.suggestedActions.map((action, index) => (
                             <div
                               key={`${selectedConflict.id}-action-${index}`}
-                              className="rounded-lg border bg-blue-50/60 p-3 text-sm text-gray-700"
+                              className="rounded-lg border border-[#4E86DF]/30 bg-[#4E86DF]/10 p-3 text-sm text-[var(--color-neutral-10)]"
                             >
                               {action}
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <div className="rounded-lg border border-dashed p-3 text-sm text-gray-400">
+                        <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-3 text-sm text-[var(--color-neutral-08)]">
                           暂无建议动作
                         </div>
                       )}
@@ -745,26 +762,28 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               </div>
 
               <div className="grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
-                <Card className="border-gray-200">
+                <Card className={DARK_CARD_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">关联人员画像</CardTitle>
-                    <CardDescription>当前案件中的住户对象与风险信息。</CardDescription>
+                    <CardDescription className={DARK_MUTED_TEXT}>当前案件中的住户对象与风险信息。</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {selectedContext?.relatedPeople.length ? (
                       selectedContext.relatedPeople.map((person) => (
                         <div
                           key={person.id}
-                          className="rounded-lg border bg-white p-3 flex items-start justify-between gap-3"
+                          className={`${DARK_PANEL_CLASS} p-3 flex items-start justify-between gap-3`}
                         >
                           <div className="space-y-1">
                             <div className="flex items-center gap-2">
-                              <p className="font-medium text-gray-900">{person.name}</p>
+                              <p className="font-medium text-white">{person.name}</p>
                               <Badge className={getRiskClass(person.risk)}>{person.risk}</Badge>
-                              <Badge variant="outline">{person.type}</Badge>
+                              <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
+                                {person.type}
+                              </Badge>
                             </div>
-                            <p className="text-sm text-gray-600">{person.address}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="text-sm text-[var(--color-neutral-10)]">{person.address}</p>
+                            <p className="text-xs text-[var(--color-neutral-08)]">
                               标签：{(person.tags ?? []).slice(0, 3).join(" / ") || "暂无标签"}
                             </p>
                           </div>
@@ -772,6 +791,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                             <Button
                               variant="outline"
                               size="sm"
+                              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-white"
                               onClick={() =>
                                 handleRouteJump("population", "app_focus_person_id", person.id)
                               }
@@ -783,49 +803,50 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                         </div>
                       ))
                     ) : (
-                      <div className="rounded-lg border border-dashed p-4 text-sm text-gray-400">
+                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
                         当前案件暂无可关联的住户对象。
                       </div>
                     )}
                   </CardContent>
                 </Card>
 
-                <Card className="border-gray-200">
+                <Card className={DARK_CARD_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base">关联房屋节点</CardTitle>
-                    <CardDescription>用于校验人房一致性和居住状态。</CardDescription>
+                    <CardDescription className={DARK_MUTED_TEXT}>用于校验人房一致性和居住状态。</CardDescription>
                   </CardHeader>
                   <CardContent>
                     {selectedContext?.relatedHouse ? (
-                      <div className="rounded-lg border bg-white p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-gray-900">
-                          <Home className="w-4 h-4 text-blue-600" />
+                      <div className={`${DARK_PANEL_CLASS} p-4 space-y-3`}>
+                        <div className="flex items-center gap-2 text-white">
+                          <Home className="w-4 h-4 text-[#4E86DF]" />
                           <p className="font-medium">{selectedContext.relatedHouse.address}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-sm">
                           <div>
-                            <p className="text-gray-500">产权人</p>
-                            <p className="mt-1 text-gray-900">{selectedContext.relatedHouse.ownerName}</p>
+                            <p className="text-[var(--color-neutral-08)]">产权人</p>
+                            <p className="mt-1 text-white">{selectedContext.relatedHouse.ownerName}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">房屋类型</p>
-                            <p className="mt-1 text-gray-900">{selectedContext.relatedHouse.type}</p>
+                            <p className="text-[var(--color-neutral-08)]">房屋类型</p>
+                            <p className="mt-1 text-white">{selectedContext.relatedHouse.type}</p>
                           </div>
                           <div>
-                            <p className="text-gray-500">居住类型</p>
-                            <p className="mt-1 text-gray-900">
+                            <p className="text-[var(--color-neutral-08)]">居住类型</p>
+                            <p className="mt-1 text-white">
                               {selectedContext.relatedHouse.residenceType ?? "待补充"}
                             </p>
                           </div>
                           <div>
-                            <p className="text-gray-500">居住人数</p>
-                            <p className="mt-1 text-gray-900">{selectedContext.relatedHouse.memberCount} 人</p>
+                            <p className="text-[var(--color-neutral-08)]">居住人数</p>
+                            <p className="mt-1 text-white">{selectedContext.relatedHouse.memberCount} 人</p>
                           </div>
                         </div>
                         {onRouteChange ? (
                           <Button
                             variant="outline"
                             size="sm"
+                            className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-white"
                             onClick={() =>
                               handleRouteJump("housing", "app_focus_house_id", selectedContext.relatedHouse!.id)
                             }
@@ -836,7 +857,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                         ) : null}
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-dashed p-4 text-sm text-gray-400">
+                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
                         当前案件还未能稳定关联到具体房屋，建议先补地点和住户信息。
                       </div>
                     )}
@@ -844,51 +865,53 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                 </Card>
               </div>
 
-              <Card className="border-gray-200">
+              <Card className={DARK_CARD_CLASS}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">近期走访与处置过程</CardTitle>
-                  <CardDescription>用真实走访和处理时间线互相印证案件进度。</CardDescription>
+                  <CardDescription className={DARK_MUTED_TEXT}>用真实走访和处理时间线互相印证案件进度。</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div>
-                    <div className="text-sm font-medium text-gray-900 mb-3">最近走访记录</div>
+                    <div className="text-sm font-medium text-white mb-3">最近走访记录</div>
                     {selectedContext?.recentVisits.length ? (
                       <div className="space-y-2">
                         {selectedContext.recentVisits.map((visit) => (
                           <div
                             key={visit.id}
-                            className="rounded-lg border bg-white p-3 flex items-start justify-between gap-4"
+                            className={`${DARK_PANEL_CLASS} p-3 flex items-start justify-between gap-4`}
                           >
                             <div>
-                              <p className="text-sm font-medium text-gray-900">{visit.content}</p>
-                              <p className="mt-1 text-xs text-gray-500">
+                              <p className="text-sm font-medium text-white">{visit.content}</p>
+                              <p className="mt-1 text-xs text-[var(--color-neutral-08)]">
                                 {visit.date} · {visit.visitorName} · {visit.targetType === "person" ? "人员走访" : "房屋走访"}
                               </p>
                             </div>
                             {visit.tags?.length ? (
-                              <Badge variant="outline">{visit.tags[0]}</Badge>
+                              <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
+                                {visit.tags[0]}
+                              </Badge>
                             ) : null}
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-dashed p-4 text-sm text-gray-400">
+                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
                         当前案件暂无最近走访记录，建议补一次跟进。
                       </div>
                     )}
                   </div>
 
                   <div>
-                    <div className="text-sm font-medium text-gray-900 mb-3">处理进度</div>
-                    <div className="space-y-4 pl-2 border-l-2 border-gray-100 ml-2">
+                    <div className="text-sm font-medium text-white mb-3">处理进度</div>
+                    <div className="space-y-4 pl-2 border-l-2 border-[var(--color-neutral-03)] ml-2">
                       {[...selectedConflict.timeline].reverse().map((item, index) => (
                         <div key={`${selectedConflict.id}-timeline-${index}`} className="relative pl-6 pb-2">
-                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-2 ring-white" />
-                          <div className="flex justify-between text-xs text-gray-400 mb-1">
+                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[#4E86DF] ring-2 ring-[var(--color-neutral-01)]" />
+                          <div className="flex justify-between text-xs text-[var(--color-neutral-08)] mb-1">
                             <span>{item.date}</span>
                             <span>{item.operator}</span>
                           </div>
-                          <div className="text-sm text-gray-800">{item.content}</div>
+                          <div className="text-sm text-[var(--color-neutral-10)]">{item.content}</div>
                         </div>
                       ))}
                     </div>
@@ -897,16 +920,20 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               </Card>
             </div>
           ) : (
-            <div className="py-12 text-center text-gray-400">未找到案件详情</div>
+            <div className="py-12 text-center text-[var(--color-neutral-08)]">未找到案件详情</div>
           )}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
+            <Button
+              variant="outline"
+              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-white"
+              onClick={() => setIsDetailDialogOpen(false)}
+            >
               关闭
             </Button>
             {selectedConflict?.status !== "已化解" ? (
               <Button
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-[#19B172] text-white hover:bg-[#138F5B]"
                 onClick={() => void handleMarkResolved()}
                 disabled={isSaving}
               >
@@ -914,7 +941,11 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                 标记化解
               </Button>
             ) : (
-              <Button variant="outline" disabled className="text-green-700 border-green-200">
+              <Button
+                variant="outline"
+                disabled
+                className="border-[#19B172]/40 bg-[#19B172]/10 text-[#6EE7B7]"
+              >
                 <ShieldCheck className="w-4 h-4 mr-2" />
                 已进入回访观察
               </Button>

@@ -35,6 +35,16 @@ import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { MOCK_ACTIVITIES, Activity } from '../../data/activities';
 
+const DARK_CARD_CLASS =
+  'rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const DARK_DIALOG_CLASS =
+  'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
+const DARK_INPUT_CLASS =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
+const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
+const ACTION_BUTTON_CLASS =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
+
 export function ActivityManagement() {
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
   const [searchQuery, setSearchQuery] = useState('');
@@ -79,67 +89,67 @@ export function ActivityManagement() {
 
   const getTypeBadge = (category: string) => {
      return category === 'volunteer' 
-       ? <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-0">志愿服务</Badge>
-       : <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-0">文娱活动</Badge>;
+       ? <Badge className="border border-[#D6730D]/30 bg-[#D6730D]/15 text-[#D6730D] hover:bg-[#D6730D]/20">志愿服务</Badge>
+       : <Badge className="border border-[#4E86DF]/30 bg-[#4E86DF]/15 text-[#4E86DF] hover:bg-[#4E86DF]/20">文娱活动</Badge>;
   };
 
   return (
-    <div className="space-y-6 p-6 pb-20">
+    <div className="space-y-5 p-6 pb-16 text-[var(--color-neutral-10)]">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900">活动综合管理</h1>
-          <p className="text-gray-500 mt-1">审批活动申请，查看历史活动档案及执行情况。</p>
+          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">活动综合管理</h1>
+          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">审批活动申请，查看历史活动档案及执行情况。</p>
         </div>
       </div>
 
       {/* Section 1: Pending Approvals */}
       <section>
-        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-          <Clock className="w-5 h-5 text-blue-600" />
+        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
+          <Clock className="w-5 h-5 text-[#4E86DF]" />
           待办审批 ({pendingActivities.length})
         </h2>
         
         {pendingActivities.length === 0 ? (
-          <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-8 text-center text-gray-500">
+          <div className="rounded-[8px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-6 text-center text-[var(--color-neutral-08)]">
             暂无待审批的活动申请
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingActivities.map(activity => (
-              <Card key={activity.id} className="border-l-4 border-l-yellow-400 shadow-sm hover:shadow-md transition-all">
+              <Card key={activity.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[#D6730D] transition-colors hover:bg-[var(--color-neutral-03)]`}>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="mb-2">{activity.subcategory}</Badge>
-                    <span className="text-xs text-gray-500">{activity.createdAt.split(' ')[0]} 申请</span>
+                    <Badge variant="outline" className="mb-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">{activity.subcategory}</Badge>
+                    <span className="text-xs text-[var(--color-neutral-08)]">{activity.createdAt.split(' ')[0]} 申请</span>
                   </div>
-                  <CardTitle className="text-base font-bold text-gray-900 line-clamp-1">
+                  <CardTitle className="line-clamp-1 text-base font-bold text-[var(--color-neutral-11)]">
                     {activity.title}
                   </CardTitle>
-                  <CardDescription className="line-clamp-2 text-xs mt-1">
+                  <CardDescription className="mt-1 line-clamp-2 text-xs text-[var(--color-neutral-08)]">
                     {activity.description}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="pb-2">
                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Users className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
+                        <Users className="w-4 h-4 text-[var(--color-neutral-08)]" />
                         <span>申请人: {activity.creatorName}</span>
                       </div>
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-400" />
+                      <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
+                        <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
                         <span>{activity.date} {activity.startTime}</span>
                       </div>
-                      <div className="bg-blue-50 p-2 rounded text-xs text-blue-700 mt-2">
+                      <div className="mt-2 rounded border border-[#4E86DF]/25 bg-[#4E86DF]/10 p-2 text-xs text-[#4E86DF]">
                         <span className="font-bold">系统预测:</span> {activity.predictionText || '暂无预测'}
                       </div>
                    </div>
                 </CardContent>
                 <CardFooter className="pt-2 flex gap-2">
-                   <Button variant="outline" className="flex-1 text-xs h-8" onClick={() => setDetailDialog({ open: true, activity })}>
+                   <Button variant="outline" className={`h-8 flex-1 text-xs ${ACTION_BUTTON_CLASS}`} onClick={() => setDetailDialog({ open: true, activity })}>
                      查看详情
                    </Button>
                    <Button 
-                     className="flex-1 bg-green-600 hover:bg-green-700 text-xs h-8"
+                     className="h-8 flex-1 bg-[#19B172] text-xs text-white hover:bg-[#128b5a]"
                      onClick={() => handleApprove(activity.id)}
                    >
                      通过
@@ -159,32 +169,32 @@ export function ActivityManagement() {
       </section>
 
       {/* Section 2: History & Archives */}
-      <section className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center gap-2">
-            <HistoryIcon className="w-5 h-5 text-gray-600" />
+      <section className="mt-6">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
+            <HistoryIcon className="w-5 h-5 text-[var(--color-neutral-08)]" />
             历史活动档案
           </h2>
           <div className="flex items-center gap-2">
              <div className="relative w-64">
-               <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-neutral-08)]" />
                <Input 
                  placeholder="搜索活动名称或申请人..." 
-                 className="pl-8 h-9 text-sm"
+                 className={`h-9 pl-8 text-sm ${DARK_INPUT_CLASS}`}
                  value={searchQuery}
                  onChange={(e) => setSearchQuery(e.target.value)}
                />
              </div>
-             <Button variant="outline" size="sm" className="h-9">
+             <Button variant="outline" size="sm" className={`h-9 ${ACTION_BUTTON_CLASS}`}>
                <Filter className="w-4 h-4 mr-2" /> 筛选
              </Button>
           </div>
         </div>
 
-        <div className="rounded-md border bg-white shadow-sm">
+        <div className="overflow-hidden rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
           <Table>
             <TableHeader>
-              <TableRow className="bg-gray-50">
+              <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]">
                 <TableHead>活动名称</TableHead>
                 <TableHead>类型</TableHead>
                 <TableHead>时间/地点</TableHead>
@@ -196,47 +206,47 @@ export function ActivityManagement() {
             </TableHeader>
             <TableBody>
               {historyActivities.map(activity => (
-                <TableRow key={activity.id}>
-                  <TableCell className="font-medium">{activity.title}</TableCell>
+                <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]">
+                  <TableCell className="font-medium text-[var(--color-neutral-11)]">{activity.title}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
                        {getTypeBadge(activity.category)}
-                       <span className="text-xs text-gray-500">{activity.subcategory}</span>
+                       <span className="text-xs text-[var(--color-neutral-08)]">{activity.subcategory}</span>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="text-sm">{activity.date}</div>
-                    <div className="text-xs text-gray-500">{activity.location}</div>
+                    <div className="text-xs text-[var(--color-neutral-08)]">{activity.location}</div>
                   </TableCell>
                   <TableCell>{activity.creatorName}</TableCell>
                   <TableCell>
                     {activity.approvalStatus === 'rejected' ? (
                        <Badge variant="destructive">已驳回</Badge>
                     ) : (
-                       <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">已批准</Badge>
+                       <Badge variant="outline" className="border-[#19B172]/30 bg-[#19B172]/15 text-[#19B172]">已批准</Badge>
                     )}
                   </TableCell>
                   <TableCell>
                      {activity.approvalStatus === 'approved' && (
                        <div className="flex flex-col gap-1">
                          <span className={
-                           activity.executionStatus === 'in_progress' ? 'text-green-600 font-bold text-xs' : 
-                           activity.executionStatus === 'ended' ? 'text-gray-500 text-xs' : 'text-blue-600 text-xs'
+                           activity.executionStatus === 'in_progress' ? 'text-[#19B172] font-bold text-xs' :
+                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[#4E86DF] text-xs'
                          }>
                            {activity.executionStatus === 'in_progress' ? '进行中' : 
                             activity.executionStatus === 'ended' ? '已结束' : '待开始'}
                          </span>
-                         <span className="text-xs text-gray-400">
+                         <span className="text-xs text-[var(--color-neutral-08)]">
                            {activity.attendeeIds.length} 人参与
                          </span>
                        </div>
                      )}
-                     {activity.approvalStatus === 'rejected' && <span className="text-xs text-gray-400">-</span>}
+                     {activity.approvalStatus === 'rejected' && <span className="text-xs text-[var(--color-neutral-08)]">-</span>}
                   </TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                           <span className="sr-only">Open menu</span>
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
@@ -258,7 +268,7 @@ export function ActivityManagement() {
               ))}
               {historyActivities.length === 0 && (
                  <TableRow>
-                   <TableCell colSpan={7} className="text-center py-8 text-gray-400">
+                   <TableCell colSpan={7} className="py-8 text-center text-[var(--color-neutral-08)]">
                      暂无相关活动记录
                    </TableCell>
                  </TableRow>
@@ -270,10 +280,10 @@ export function ActivityManagement() {
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog.open} onOpenChange={(open) => setRejectDialog(prev => ({ ...prev, open }))}>
-        <DialogContent>
+        <DialogContent className={DARK_DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>驳回申请</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className={MUTED_TEXT_CLASS}>
               请输入驳回原因，该原因将反馈给申请人。
             </DialogDescription>
           </DialogHeader>
@@ -281,10 +291,10 @@ export function ActivityManagement() {
              placeholder="例如：预算过高，建议缩减开支..."
              value={rejectReason}
              onChange={e => setRejectReason(e.target.value)}
-             className="min-h-[100px]"
+             className={`min-h-[100px] ${DARK_INPUT_CLASS}`}
           />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setRejectDialog({ open: false, activityId: null })}>取消</Button>
+            <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={() => setRejectDialog({ open: false, activityId: null })}>取消</Button>
             <Button variant="destructive" onClick={handleReject}>确认驳回</Button>
           </DialogFooter>
         </DialogContent>
@@ -292,10 +302,10 @@ export function ActivityManagement() {
 
       {/* Detail Dialog */}
       <Dialog open={detailDialog.open} onOpenChange={(open) => setDetailDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className={`max-h-[80vh] max-w-2xl overflow-y-auto ${DARK_DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>活动详情</DialogTitle>
-            <DialogDescription>
+            <DialogDescription className={MUTED_TEXT_CLASS}>
               查看活动详细信息、执行情况及现场记录。
             </DialogDescription>
           </DialogHeader>
@@ -303,44 +313,44 @@ export function ActivityManagement() {
              <div className="space-y-6">
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <span className="text-sm text-gray-500 block">活动名称</span>
-                     <span className="font-medium">{detailDialog.activity.title}</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">活动名称</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.title}</span>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 block">申请人</span>
-                     <span className="font-medium">{detailDialog.activity.creatorName}</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">申请人</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.creatorName}</span>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 block">类型</span>
-                     <span className="font-medium">{detailDialog.activity.category} - {detailDialog.activity.subcategory}</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">类型</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.category} - {detailDialog.activity.subcategory}</span>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 block">时间</span>
-                     <span className="font-medium">{detailDialog.activity.date} {detailDialog.activity.startTime}-{detailDialog.activity.endTime}</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">时间</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.date} {detailDialog.activity.startTime}-{detailDialog.activity.endTime}</span>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 block">预计人数</span>
-                     <span className="font-medium">{detailDialog.activity.expectedParticipants}人</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">预计人数</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.expectedParticipants}人</span>
                    </div>
                    <div>
-                     <span className="text-sm text-gray-500 block">地点</span>
-                     <span className="font-medium">{detailDialog.activity.location}</span>
+                     <span className="block text-sm text-[var(--color-neutral-08)]">地点</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.location}</span>
                    </div>
                 </div>
                 
-                <div className="bg-gray-50 p-4 rounded-lg">
-                   <h4 className="font-bold mb-2 text-sm">申请详情 (策划方案)</h4>
-                   <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                <div className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+                   <h4 className="mb-2 text-sm font-bold text-[var(--color-neutral-11)]">申请详情 (策划方案)</h4>
+                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-neutral-10)]">
                      {detailDialog.activity.applicationDetails || '无详细方案'}
                    </p>
                 </div>
 
                 {detailDialog.activity.media.length > 0 && (
                    <div>
-                      <h4 className="font-bold mb-2 text-sm">现场记录</h4>
+                      <h4 className="mb-2 text-sm font-bold text-[var(--color-neutral-11)]">现场记录</h4>
                       <div className="flex gap-2">
                          {detailDialog.activity.media.map((m, i) => (
-                           <img key={i} src={m.url} className="w-24 h-24 object-cover rounded-lg border" alt="现场" />
+                           <img key={i} src={m.url} className="h-24 w-24 rounded-lg border border-[var(--color-neutral-03)] object-cover" alt="现场" />
                          ))}
                       </div>
                    </div>
@@ -348,7 +358,7 @@ export function ActivityManagement() {
              </div>
           )}
           <DialogFooter>
-             <Button onClick={() => setDetailDialog({ open: false, activity: null })}>关闭</Button>
+             <Button className="bg-[#4E86DF] text-white hover:bg-[#3f75c8]" onClick={() => setDetailDialog({ open: false, activity: null })}>关闭</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
