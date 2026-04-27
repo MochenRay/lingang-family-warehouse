@@ -31,6 +31,9 @@ export interface FinderColumnProps {
   className?: string;
 }
 
+const neutralBadgeClass =
+  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]';
+
 function ColumnState({
   icon: Icon,
   title,
@@ -47,12 +50,12 @@ function ColumnState({
   return (
     <div className="flex min-h-[220px] flex-1 items-center justify-center px-4 py-8">
       <div className="max-w-[220px] text-center">
-        <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded bg-gray-50 text-gray-400 ring-1 ring-gray-200">
+        <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)] ring-1 ring-[var(--color-neutral-03)]">
           <Icon className={cn('h-4 w-4', iconClassName)} />
         </div>
-        <p className="text-sm font-medium text-gray-800">{title}</p>
+        <p className="text-sm font-medium text-[var(--color-neutral-11)]">{title}</p>
         {description ? (
-          <p className="mt-1 text-xs leading-5 text-gray-500">{description}</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">{description}</p>
         ) : null}
         {action ? <div className="mt-3">{action}</div> : null}
       </div>
@@ -77,16 +80,16 @@ export function FinderColumn({
   const hasItems = items.length > 0;
 
   return (
-    <section className={cn('flex min-h-[360px] flex-col rounded border border-gray-200 bg-white', className)}>
-      <header className="border-b border-gray-200 px-3 py-2">
+    <section className={cn('flex min-h-[360px] flex-col rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]', className)}>
+      <header className="border-b border-[var(--color-neutral-03)] px-3 py-2">
         <div className="flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-gray-900">{title}</h3>
+            <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{title}</h3>
             {description ? (
-              <p className="mt-0.5 truncate text-xs text-gray-500">{description}</p>
+              <p className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{description}</p>
             ) : null}
           </div>
-          <Badge variant="outline" className="shrink-0 border-gray-200 bg-gray-50 text-gray-600">
+          <Badge variant="outline" className={cn('shrink-0', neutralBadgeClass)}>
             {items.length}
           </Badge>
         </div>
@@ -130,35 +133,35 @@ export function FinderColumn({
                   onClick={() => onItemClick?.(item)}
                   className={cn(
                     'group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded px-2.5 py-2 text-left transition-colors',
-                    'hover:bg-gray-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2761CB]/40',
-                    isActive && 'bg-[#2761CB]/10 text-[#2251A8] ring-1 ring-[#2761CB]/20 hover:bg-[#2761CB]/10',
+                    'hover:bg-[rgba(78,134,223,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4E86DF]/40',
+                    isActive && 'bg-[rgba(78,134,223,0.18)] text-blue-100 ring-1 ring-[#4E86DF]/35 hover:bg-[rgba(78,134,223,0.18)]',
                     item.disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
                   )}
                 >
                   <span
                     className={cn(
-                      'flex h-7 w-7 items-center justify-center rounded border border-gray-200 bg-gray-50 text-gray-500',
-                      isActive && 'border-[#2761CB]/30 bg-white text-[#2761CB]',
+                      'flex h-7 w-7 items-center justify-center rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]',
+                      isActive && 'border-[#4E86DF]/45 bg-[#4E86DF]/10 text-blue-200',
                     )}
                   >
                     {ItemIcon ? <ItemIcon className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
-                    <span className={cn('block truncate text-sm font-medium text-gray-900', isActive && 'text-[#2251A8]')}>
+                    <span className={cn('block truncate text-sm font-medium text-[var(--color-neutral-11)]', isActive && 'text-blue-100')}>
                       {item.label}
                     </span>
                     {item.subtitle ? (
-                      <span className="mt-0.5 block truncate text-xs text-gray-500">{item.subtitle}</span>
+                      <span className="mt-0.5 block truncate text-xs text-[var(--color-neutral-08)]">{item.subtitle}</span>
                     ) : null}
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
                     {item.trailing}
                     {item.count !== undefined && item.count !== null ? (
-                      <Badge variant="outline" className="border-gray-200 bg-white text-gray-600">
+                      <Badge variant="outline" className={neutralBadgeClass}>
                         {item.count}
                       </Badge>
                     ) : null}
-                    <ChevronRight className={cn('h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500', isActive && 'text-[#2761CB]')} />
+                    <ChevronRight className={cn('h-3.5 w-3.5 text-[var(--color-neutral-08)] group-hover:text-blue-200', isActive && 'text-blue-200')} />
                   </span>
                 </button>
               );
