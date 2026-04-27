@@ -9,6 +9,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '../ui/label';
 import { getCommunities, getDistricts, getStreets } from '../../config/regions';
 
+const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const DARK_DIALOG_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
+const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
+const DARK_SELECT_TRIGGER_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
+const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
+const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
+const TABLE_HEADER_CELL_CLASS = 'px-4 py-3 text-left text-xs font-medium uppercase whitespace-nowrap text-[var(--color-neutral-08)]';
+const TABLE_CELL_CLASS = 'px-4 py-3 text-sm text-[var(--color-neutral-10)]';
+
 export function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -106,12 +115,12 @@ export function UserManagement() {
 
   const getStatusBadge = (status: string) => {
     return status === 'active' ? (
-      <Badge className="bg-green-100 text-green-800">
+      <Badge className="border border-[#19B172]/35 bg-[#19B172]/15 text-[#7DE2B7]">
         <Unlock className="w-3 h-3 mr-1" />
         启用
       </Badge>
     ) : (
-      <Badge className="bg-red-100 text-red-800">
+      <Badge className="border border-[#D52132]/35 bg-[#D52132]/15 text-[#FFB4B4]">
         <Lock className="w-3 h-3 mr-1" />
         禁用
       </Badge>
@@ -130,19 +139,19 @@ export function UserManagement() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       {/* 页面标题 */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="mb-2">用户管理</h1>
-          <p className="text-gray-500">用户权限管理，支持设置用户的管辖范围（区县/街道/社区）</p>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">用户管理</h1>
+          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>用户权限管理，支持设置用户的管辖范围（区县/街道/社区）</p>
         </div>
-        <div className="flex gap-3">
-          <Button variant="outline">
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
             <RefreshCw className="w-4 h-4 mr-2" />
             刷新
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
             <Download className="w-4 h-4 mr-2" />
             导出
           </Button>
@@ -153,35 +162,35 @@ export function UserManagement() {
                 新建用户
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl" aria-describedby="new-user-desc">
+            <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="new-user-desc">
               <DialogHeader>
-                <DialogTitle>新建用户</DialogTitle>
-                <DialogDescription id="new-user-desc">填写用户信息并配置管辖范围</DialogDescription>
+                <DialogTitle className="text-[var(--color-neutral-11)]">新建用户</DialogTitle>
+                <DialogDescription id="new-user-desc" className={MUTED_TEXT_CLASS}>填写用户信息并配置管辖范围</DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-4 py-4">
                 <div className="space-y-2">
-                  <Label>用户名 *</Label>
-                  <Input placeholder="请输入用户名" value={newUserForm.username} onChange={e => setNewUserForm({...newUserForm, username: e.target.value})} />
+                  <Label className={MUTED_TEXT_CLASS}>用户名 *</Label>
+                  <Input className={DARK_INPUT_CLASS} placeholder="请输入用户名" value={newUserForm.username} onChange={e => setNewUserForm({...newUserForm, username: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label>真实姓名 *</Label>
-                  <Input placeholder="请输入真实姓名" value={newUserForm.realName} onChange={e => setNewUserForm({...newUserForm, realName: e.target.value})} />
+                  <Label className={MUTED_TEXT_CLASS}>真实姓名 *</Label>
+                  <Input className={DARK_INPUT_CLASS} placeholder="请输入真实姓名" value={newUserForm.realName} onChange={e => setNewUserForm({...newUserForm, realName: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label>邮箱 *</Label>
-                  <Input type="email" placeholder="请输入邮箱" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
+                  <Label className={MUTED_TEXT_CLASS}>邮箱 *</Label>
+                  <Input className={DARK_INPUT_CLASS} type="email" placeholder="请输入邮箱" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <Label>手机号 *</Label>
-                  <Input placeholder="请输入手机号" value={newUserForm.phone} onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})} />
+                  <Label className={MUTED_TEXT_CLASS}>手机号 *</Label>
+                  <Input className={DARK_INPUT_CLASS} placeholder="请输入手机号" value={newUserForm.phone} onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})} />
                 </div>
                 
-                <div className="col-span-2 border-t my-2"></div>
+                <div className="col-span-2 my-2 border-t border-[var(--color-neutral-03)]"></div>
                 
                 <div className="space-y-2">
-                  <Label>角色 *</Label>
+                  <Label className={MUTED_TEXT_CLASS}>角色 *</Label>
                   <Select onValueChange={v => setNewUserForm({...newUserForm, role: v})}>
-                    <SelectTrigger>
+                    <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
                       <SelectValue placeholder="选择角色" />
                     </SelectTrigger>
                     <SelectContent>
@@ -193,15 +202,15 @@ export function UserManagement() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>所属部门</Label>
-                  <Input placeholder="请输入所属部门" value={newUserForm.department} onChange={e => setNewUserForm({...newUserForm, department: e.target.value})} />
+                  <Label className={MUTED_TEXT_CLASS}>所属部门</Label>
+                  <Input className={DARK_INPUT_CLASS} placeholder="请输入所属部门" value={newUserForm.department} onChange={e => setNewUserForm({...newUserForm, department: e.target.value})} />
                 </div>
 
                 <div className="col-span-2 space-y-2">
-                  <Label>管辖范围配置</Label>
+                  <Label className={MUTED_TEXT_CLASS}>管辖范围配置</Label>
                   <div className="grid grid-cols-3 gap-2">
                     <Select onValueChange={v => setNewUserForm({...newUserForm, district: v, street: '', community: ''})}>
-                      <SelectTrigger>
+                      <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
                         <SelectValue placeholder="区县" />
                       </SelectTrigger>
                       <SelectContent>
@@ -215,7 +224,7 @@ export function UserManagement() {
                       disabled={!newUserForm.district}
                       onValueChange={v => setNewUserForm({...newUserForm, street: v, community: ''})}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
                         <SelectValue placeholder="街道/乡镇" />
                       </SelectTrigger>
                       <SelectContent>
@@ -229,7 +238,7 @@ export function UserManagement() {
                       disabled={!newUserForm.street}
                       onValueChange={v => setNewUserForm({...newUserForm, community: v})}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
                         <SelectValue placeholder="社区/村" />
                       </SelectTrigger>
                       <SelectContent>
@@ -239,13 +248,13 @@ export function UserManagement() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className={`mt-1 text-xs ${MUTED_TEXT_CLASS}`}>
                     注：如果不选择下级区域，则默认为管辖上级区域下的所有范围。例如只选"蓬莱区"，则拥有全区权限。
                   </p>
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+                <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={() => setIsCreateDialogOpen(false)}>
                   取消
                 </Button>
                 <Button onClick={() => setIsCreateDialogOpen(false)}>
@@ -259,41 +268,41 @@ export function UserManagement() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
+            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT_CLASS}`}>
               <UserCog className="w-4 h-4" />
               用户总数
             </CardDescription>
-            <CardTitle className="text-3xl">{stats.total}</CardTitle>
+            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{stats.total}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>启用账号</CardDescription>
-            <CardTitle className="text-3xl text-green-600">{stats.active}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>启用账号</CardDescription>
+            <CardTitle className="text-3xl text-[#19B172]">{stats.active}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>禁用账号</CardDescription>
-            <CardTitle className="text-3xl text-red-600">{stats.disabled}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>禁用账号</CardDescription>
+            <CardTitle className="text-3xl text-[#D52132]">{stats.disabled}</CardTitle>
           </CardHeader>
         </Card>
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader className="pb-3">
-            <CardDescription>在线用户</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">{stats.online}</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>在线用户</CardDescription>
+            <CardTitle className="text-3xl text-[#4E86DF]">{stats.online}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 角色分布 */}
-        <Card>
+        <Card className={DARK_CARD_CLASS}>
           <CardHeader>
-            <CardTitle>角色分布</CardTitle>
-            <CardDescription>用户角色统计</CardDescription>
+            <CardTitle className="text-base text-[var(--color-neutral-11)]">角色分布</CardTitle>
+            <CardDescription className={MUTED_TEXT_CLASS}>用户角色统计</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -305,11 +314,11 @@ export function UserManagement() {
                         className="w-3 h-3 rounded-full"
                         style={{ backgroundColor: item.color }}
                       />
-                      <span className="text-sm">{item.role}</span>
+                      <span className="text-sm text-[var(--color-neutral-10)]">{item.role}</span>
                     </div>
-                    <span className="text-sm font-semibold">{item.count}</span>
+                    <span className="text-sm font-semibold text-[var(--color-neutral-11)]">{item.count}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="h-2 w-full rounded-full bg-[var(--color-neutral-03)]">
                     <div
                       className="h-2 rounded-full"
                       style={{
@@ -325,18 +334,18 @@ export function UserManagement() {
         </Card>
 
         {/* 用户列表 */}
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <div className="flex items-center justify-between">
+        <Card className={`lg:col-span-3 ${DARK_CARD_CLASS} overflow-hidden`}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)]">
+            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <CardTitle>用户列表</CardTitle>
-                <CardDescription>
+                <CardTitle className="text-base text-[var(--color-neutral-11)]">用户列表</CardTitle>
+                <CardDescription className={MUTED_TEXT_CLASS}>
                   共 {filteredUsers.length} 个用户
                 </CardDescription>
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-2">
                 <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className={`w-[140px] ${DARK_SELECT_TRIGGER_CLASS}`}>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -348,9 +357,9 @@ export function UserManagement() {
                   </SelectContent>
                 </Select>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${MUTED_TEXT_CLASS}`} />
                   <Input
-                    className="pl-9 w-[200px]"
+                    className={`w-[200px] pl-9 ${DARK_INPUT_CLASS}`}
                     placeholder="搜索用户..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -361,55 +370,55 @@ export function UserManagement() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b">
+              <table className="w-full min-w-[920px] border-collapse">
+                <thead className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">用户</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">角色</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">部门</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">管辖范围</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">关联账户</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">状态</th>
-                    <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase">操作</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[132px]`}>用户</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[116px]`}>角色</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[156px]`}>部门</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[170px]`}>管辖范围</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[172px]`}>关联账户</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} text-center min-w-[92px]`}>状态</th>
+                    <th className={`${TABLE_HEADER_CELL_CLASS} text-center min-w-[92px]`}>操作</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-[var(--color-neutral-03)]">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
+                    <tr key={user.id} className="transition-colors hover:bg-[var(--color-neutral-03)]/70">
+                      <td className={TABLE_CELL_CLASS}>
                         <div>
-                          <p className="font-medium">{user.realName}</p>
-                          <p className="text-sm text-gray-500">{user.username}</p>
+                          <p className="font-medium text-[var(--color-neutral-11)]">{user.realName}</p>
+                          <p className={`text-sm ${MUTED_TEXT_CLASS}`}>{user.username}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <Badge variant="outline">{user.role}</Badge>
+                      <td className={TABLE_CELL_CLASS}>
+                        <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">{user.role}</Badge>
                       </td>
-                      <td className="px-6 py-4 text-sm">{user.department}</td>
-                      <td className="px-6 py-4 text-sm max-w-[200px] truncate" title={user.scope}>
+                      <td className={`${TABLE_CELL_CLASS} max-w-[180px] truncate`} title={user.department}>{user.department}</td>
+                      <td className={`${TABLE_CELL_CLASS} max-w-[200px] truncate`} title={user.scope}>
                         {user.scope}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className={TABLE_CELL_CLASS}>
                         <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-1 text-xs text-gray-600" title="城市大脑账号">
-                             <div className="w-4 h-4 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-[10px] font-bold">城</div>
+                          <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
+                             <div className="flex h-4 w-4 items-center justify-center rounded border border-[#4E86DF]/35 bg-[#4E86DF]/15 text-[10px] font-bold text-[#9EC3FF]">城</div>
                              <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-600" title="山东通ID">
-                             <div className="w-4 h-4 rounded bg-orange-100 text-orange-600 flex items-center justify-center text-[10px] font-bold">鲁</div>
+                          <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
+                             <div className="flex h-4 w-4 items-center justify-center rounded border border-[#D6730D]/35 bg-[#D6730D]/15 text-[10px] font-bold text-[#F6C27A]">鲁</div>
                              <span className="truncate max-w-[100px]">{user.shandongPassId || '-'}</span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className={`${TABLE_CELL_CLASS} text-center`}>
                         {getStatusBadge(user.status)}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className={TABLE_CELL_CLASS}>
                         <div className="flex items-center justify-center gap-2">
-                          <Button size="sm" variant="ghost">
+                          <Button size="sm" variant="ghost" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button size="sm" variant="ghost" className="text-red-600">
+                          <Button size="sm" variant="ghost" className="text-[#FF8A8A] hover:bg-[#D52132]/15 hover:text-[#FFB4B4]">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

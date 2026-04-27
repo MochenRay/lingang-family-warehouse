@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
-import { 
-  Send, 
-  Paperclip, 
-  Bot, 
-  FileText, 
+import {
+  Send,
+  Paperclip,
+  Bot,
+  FileText,
   BookOpen,
   PenTool,
   PieChart,
@@ -46,13 +46,19 @@ interface SmartChatProps {
   apiKind?: SecondaryAiKind;
 }
 
+const SURFACE_CLASS =
+  'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
+const SIDEBAR_BADGE_CLASS =
+  'justify-center rounded py-1.5 text-[11px] font-normal text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] transition-colors';
+
 // --- Base Component ---
 
-function BaseSmartChat({ 
-  title, 
-  description, 
-  sidebarContent, 
-  suggestedQuestions, 
+function BaseSmartChat({
+  title,
+  description,
+  sidebarContent,
+  suggestedQuestions,
   initialMessages,
   placeholder,
   demoKind,
@@ -99,32 +105,33 @@ function BaseSmartChat({
   };
 
   return (
-    <div className="h-[calc(100vh-100px)] flex flex-col gap-6">
+    <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       {/* 页面标题 */}
-      <div className="flex items-center justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-semibold text-[var(--color-neutral-11)]">{title}</h1>
-          <p className="text-sm text-[var(--color-neutral-08)] mt-1">
+      <div className="flex shrink-0 items-start justify-between">
+        <div className="min-w-0">
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">AI WORKBENCH</div>
+          <h1 className="mt-1 text-2xl font-semibold text-white">{title}</h1>
+          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>
             {description}
           </p>
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex gap-6">
+      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
         {/* 左侧侧边栏 */}
-        <div className="w-64 flex flex-col gap-4 shrink-0">
+        <div className="flex w-[260px] shrink-0 flex-col gap-4">
           {sidebarContent}
-          
-          <Card className="flex-1 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-            <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
-              <CardTitle className="text-sm font-medium text-[var(--color-neutral-11)]">推荐问题</CardTitle>
+
+          <Card className={`${SURFACE_CLASS} min-h-0 flex-1`}>
+            <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+              <CardTitle className="text-sm font-medium text-white">推荐问题</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="p-3">
               <div className="space-y-2">
                 {suggestedQuestions.map((q, i) => (
-                  <div 
-                    key={i} 
-                    className="text-xs p-2 bg-[var(--color-neutral-03)] rounded hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] cursor-pointer text-[var(--color-neutral-10)] transition-colors"
+                  <div
+                    key={i}
+                    className="cursor-pointer rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-xs leading-5 text-[var(--color-neutral-10)] transition-colors hover:border-[#4E86DF]/40 hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]"
                     onClick={() => {
                       void handleSendMessage(q);
                     }}
@@ -138,23 +145,23 @@ function BaseSmartChat({
         </div>
 
         {/* 右侧聊天区域 */}
-        <Card className="flex-1 flex flex-col overflow-hidden border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-md rounded-md">
-          <ScrollArea className="flex-1 p-4 bg-[var(--color-neutral-01)]">
+        <Card className={`${SURFACE_CLASS} flex min-w-0 flex-1 flex-col overflow-hidden`}>
+          <ScrollArea className="flex-1 bg-[var(--color-neutral-01)] p-4">
             <div className="space-y-6">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[rgba(78,134,223,0.15)]' : 'bg-[var(--color-neutral-03)]'}`}>
+                  <Avatar className={`h-8 w-8 shrink-0 border border-[var(--color-neutral-03)] ${msg.role === 'ai' ? 'bg-[#2761CB]/18' : 'bg-[var(--color-neutral-03)]'}`}>
                     {msg.role === 'ai' ? (
-                      <AvatarFallback className="bg-transparent"><Bot className="w-5 h-5 text-[#4E86DF]" /></AvatarFallback>
+                      <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-[#4E86DF]" /></AvatarFallback>
                     ) : (
                       <AvatarFallback className="bg-transparent text-[var(--color-neutral-10)]"><span className="text-xs">我</span></AvatarFallback>
                     )}
                   </Avatar>
                   <div className={`flex flex-col max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <div className={`px-4 py-3 rounded-lg text-sm leading-relaxed shadow-sm ${
-                      msg.role === 'user' 
-                        ? 'bg-[#2761CB] text-white rounded-tr-sm' 
-                        : 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-03)] rounded-tl-sm'
+                      msg.role === 'user'
+                        ? 'rounded-tr-sm bg-[#2761CB] text-white'
+                        : 'rounded-tl-sm border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]'
                     }`}>
                       <div className="whitespace-pre-wrap">{msg.content}</div>
                       {msg.role === 'ai' && msg.aiStatus ? (
@@ -168,7 +175,7 @@ function BaseSmartChat({
                         </div>
                       ) : null}
                     </div>
-                    <span className="text-xs text-[var(--color-neutral-08)] mt-1 px-1">
+                    <span className={`mt-1 px-1 text-xs ${MUTED_TEXT_CLASS}`}>
                       {new Date(msg.id).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
                     </span>
                   </div>
@@ -178,11 +185,11 @@ function BaseSmartChat({
             </div>
           </ScrollArea>
 
-          <div className="p-4 bg-[var(--color-neutral-02)] border-t border-[var(--color-neutral-03)]">
+          <div className="border-t border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
             <div className="relative">
-              <Textarea 
+              <Textarea
                 placeholder={placeholder}
-                className="min-h-[60px] max-h-[120px] pr-24 resize-none bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]"
+                className="max-h-[120px] min-h-[60px] resize-none border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] pr-24 text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyDown={(e) => {
@@ -192,19 +199,19 @@ function BaseSmartChat({
                   }
                 }}
               />
-              <div className="absolute right-2 bottom-2 flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]">
-                  <Paperclip className="w-4 h-4" />
+              <div className="absolute bottom-2 right-2 flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white">
+                  <Paperclip className="h-4 w-4" />
                 </Button>
-                <Button 
-                  size="icon" 
-                  className="h-8 w-8 bg-[#2761CB] hover:bg-[#4E86DF] text-white border-0"
+                <Button
+                  size="icon"
+                  className="h-8 w-8 border-0 bg-[#2761CB] text-white hover:bg-[#4E86DF]"
                   onClick={() => {
                     void handleSendMessage();
                   }}
                   disabled={!inputMessage.trim() || sending}
                 >
-                  {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                 </Button>
               </div>
             </div>
@@ -219,19 +226,19 @@ function BaseSmartChat({
 
 export function PolicyInterpretation() {
   const sidebar = (
-    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
-        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
-          <BookOpen className="w-4 h-4 text-[#4E86DF]" /> 
+    <Card className={SURFACE_CLASS}>
+      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
+          <BookOpen className="h-4 w-4 text-[#4E86DF]" />
           热门政策领域
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-2 pt-4">
+      <CardContent className="grid gap-2 p-3">
         {['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'].map(tag => (
-          <Badge 
-            key={tag} 
-            variant="outline" 
-            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] hover:border-[#4E86DF] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          <Badge
+            key={tag}
+            variant="outline"
+            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#4E86DF] hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]`}
           >
             {tag}
           </Badge>
@@ -265,19 +272,19 @@ export function PolicyInterpretation() {
 
 export function OfficialDocumentWriting() {
   const sidebar = (
-    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
-        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
-          <PenTool className="w-4 h-4 text-[#19B172]" /> 
+    <Card className={SURFACE_CLASS}>
+      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
+          <PenTool className="h-4 w-4 text-[#19B172]" />
           常用文体模板
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-2 pt-4">
+      <CardContent className="grid gap-2 p-3">
          {['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'].map(tag => (
-          <Badge 
-            key={tag} 
-            variant="outline" 
-            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(25,177,114,0.08)] hover:text-[#19B172] hover:border-[#19B172] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          <Badge
+            key={tag}
+            variant="outline"
+            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#19B172] hover:bg-[#19B172]/12 hover:text-[#6EE7B7]`}
           >
             {tag}
           </Badge>
@@ -311,19 +318,19 @@ export function OfficialDocumentWriting() {
 
 export function SmartQuery() {
   const sidebar = (
-    <Card className="bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]">
-      <CardHeader className="pb-3 border-b border-[var(--color-neutral-03)]">
-        <CardTitle className="text-sm font-medium flex items-center gap-2 text-[var(--color-neutral-11)]">
-          <PieChart className="w-4 h-4 text-[#8B3BCC]" /> 
+    <Card className={SURFACE_CLASS}>
+      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
+        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
+          <PieChart className="h-4 w-4 text-[#8B3BCC]" />
           核心数据领域
         </CardTitle>
       </CardHeader>
-      <CardContent className="grid gap-2 pt-4">
+      <CardContent className="grid gap-2 p-3">
          {['人口数据', '房屋网格', '特殊人群', '矛盾纠纷', '活动参与'].map(tag => (
-          <Badge 
-            key={tag} 
-            variant="outline" 
-            className="justify-center py-1.5 cursor-pointer hover:bg-[rgba(139,59,204,0.08)] hover:text-[#8B3BCC] hover:border-[#8B3BCC] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal"
+          <Badge
+            key={tag}
+            variant="outline"
+            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#8B3BCC] hover:bg-[#8B3BCC]/12 hover:text-[#D8B4FE]`}
           >
             {tag}
           </Badge>
