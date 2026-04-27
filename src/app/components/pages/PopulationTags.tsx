@@ -14,9 +14,14 @@ import {
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 
-const COLORS = ['#2563eb', '#7c3aed', '#0f766e', '#f97316', '#dc2626', '#16a34a'];
+const COLORS = ['#4E86DF', '#8B5CF6', '#2AA3CF', '#D6730D', '#D52132', '#19B172'];
+const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
+const GRID_STROKE = '#3d4663';
+const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
 
 export function PopulationTags() {
   const [snapshot, setSnapshot] = useState<TagSnapshot | null>(null);
@@ -127,40 +132,43 @@ export function PopulationTags() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">标签分析画像</h2>
-        <p className="text-muted-foreground">
+      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+        <div>
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">TAGS ANALYTICS</div>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">标签分析画像</h2>
+        </div>
+        <p className={`max-w-2xl text-sm ${MUTED_TEXT}`}>
           只分析当前第一批固定标签规则的真实命中结果，不再混用本地标签缓存和页面级快照。
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-4">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">标签数量</p>
-            <p className="mt-2 text-2xl font-bold">{snapshot?.tags.length ?? '--'}</p>
+      <div className="grid gap-3 md:grid-cols-4">
+        <Card className={PANEL_CLASS}>
+          <CardContent className="p-4">
+            <p className={`text-xs ${MUTED_TEXT}`}>标签数量</p>
+            <p className="mt-2 text-2xl font-semibold text-white">{snapshot?.tags.length ?? '--'}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">覆盖率</p>
-            <p className="mt-2 text-2xl font-bold">{coverageRate}%</p>
+        <Card className={PANEL_CLASS}>
+          <CardContent className="p-4">
+            <p className={`text-xs ${MUTED_TEXT}`}>覆盖率</p>
+            <p className="mt-2 text-2xl font-semibold text-[#19B172]">{coverageRate}%</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">规则标签命中</p>
-            <p className="mt-2 text-2xl font-bold">
+        <Card className={PANEL_CLASS}>
+          <CardContent className="p-4">
+            <p className={`text-xs ${MUTED_TEXT}`}>规则标签命中</p>
+            <p className="mt-2 text-2xl font-semibold text-[#4E86DF]">
               {snapshot?.tags
                 .filter((tag) => tag.type === '规则标签')
                 .reduce((sum, tag) => sum + tag.coverageCount, 0) ?? '--'}
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-sm text-muted-foreground">智能标签命中</p>
-            <p className="mt-2 text-2xl font-bold">
+        <Card className={PANEL_CLASS}>
+          <CardContent className="p-4">
+            <p className={`text-xs ${MUTED_TEXT}`}>智能标签命中</p>
+            <p className="mt-2 text-2xl font-semibold text-[#8B5CF6]">
               {snapshot?.tags
                 .filter((tag) => tag.type === '智能标签')
                 .reduce((sum, tag) => sum + tag.coverageCount, 0) ?? '--'}
@@ -170,28 +178,28 @@ export function PopulationTags() {
       </div>
 
       {error ? (
-        <Card className="border-destructive/40">
+        <Card className="border-destructive/40 bg-destructive/10 text-[var(--color-neutral-10)] shadow-none">
           <CardContent className="p-6 text-sm text-destructive">{error}</CardContent>
         </Card>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>标签热度</CardTitle>
-            <CardDescription>按真实命中人数排序。</CardDescription>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Card className={PANEL_CLASS}>
+          <CardHeader className="px-5 pb-2 pt-5">
+            <CardTitle className="text-base font-semibold text-white">标签热度</CardTitle>
+            <CardDescription className={MUTED_TEXT}>按真实命中人数排序。</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[300px] px-5 pb-5">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在计算标签热度...</div>
+              <div className={`flex h-full items-center justify-center text-sm ${MUTED_TEXT}`}>正在计算标签热度...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={topTags}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                <BarChart data={topTags} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Bar dataKey="value" name="命中人数" radius={[8, 8, 0, 0]}>
                     {topTags.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
@@ -202,23 +210,23 @@ export function PopulationTags() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>标签类型命中</CardTitle>
-            <CardDescription>规则标签和智能标签共用同一套真对象来源。</CardDescription>
+        <Card className={PANEL_CLASS}>
+          <CardHeader className="px-5 pb-2 pt-5">
+            <CardTitle className="text-base font-semibold text-white">标签类型命中</CardTitle>
+            <CardDescription className={MUTED_TEXT}>规则标签和智能标签共用同一套真对象来源。</CardDescription>
           </CardHeader>
-          <CardContent className="h-[320px]">
+          <CardContent className="h-[300px] px-5 pb-5">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总类型分布...</div>
+              <div className={`flex h-full items-center justify-center text-sm ${MUTED_TEXT}`}>正在汇总类型分布...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={typeDistribution} dataKey="value" nameKey="name" outerRadius={110} label>
+                  <Pie data={typeDistribution} dataKey="value" nameKey="name" outerRadius={104} label>
                     {typeDistribution.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                 </PieChart>
               </ResponsiveContainer>
             )}
@@ -226,23 +234,23 @@ export function PopulationTags() {
         </Card>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>风险层级分布</CardTitle>
-            <CardDescription>只统计当前至少命中一类标签的人群。</CardDescription>
+      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <Card className={PANEL_CLASS}>
+          <CardHeader className="px-5 pb-2 pt-5">
+            <CardTitle className="text-base font-semibold text-white">风险层级分布</CardTitle>
+            <CardDescription className={MUTED_TEXT}>只统计当前至少命中一类标签的人群。</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[280px] px-5 pb-5">
             {loading ? (
-              <div className="py-10 text-sm text-muted-foreground">正在汇总风险分布...</div>
+              <div className={`flex h-full items-center justify-center text-sm ${MUTED_TEXT}`}>正在汇总风险分布...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={riskDistribution}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                <BarChart data={riskDistribution} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={GRID_STROKE} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {riskDistribution.map((entry) => (
                       <Cell key={entry.name} fill={entry.fill} />
                     ))}
@@ -253,12 +261,12 @@ export function PopulationTags() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>交叉分析</CardTitle>
-            <CardDescription>选择多个标签，查看共同命中的对象。</CardDescription>
+        <Card className={PANEL_CLASS}>
+          <CardHeader className="px-5 pb-2 pt-5">
+            <CardTitle className="text-base font-semibold text-white">交叉分析</CardTitle>
+            <CardDescription className={MUTED_TEXT}>选择多个标签，查看共同命中的对象。</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-5 pb-5">
             <div className="flex flex-wrap gap-2">
               {(snapshot?.tags ?? []).map((tag) => {
                 const active = selectedTagIds.includes(tag.id);
@@ -269,6 +277,7 @@ export function PopulationTags() {
                     variant={active ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => toggleTag(tag.id)}
+                    className={active ? '' : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]'}
                   >
                     {tag.name}
                   </Button>
@@ -277,12 +286,12 @@ export function PopulationTags() {
             </div>
 
             {selectedTagIds.length === 0 ? (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+              <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
                 先选择 2 个以内的标签进行交叉分析。
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className={`flex items-center gap-2 text-sm ${MUTED_TEXT}`}>
                   <span>当前组合：</span>
                   {selectedTagIds.map((tagId) => {
                     const tag = snapshot?.tags.find((item) => item.id === tagId);
@@ -296,16 +305,16 @@ export function PopulationTags() {
 
                 <div className="space-y-3">
                   {selectedResults.length === 0 ? (
-                    <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                    <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
                       当前组合暂无共同命中对象。
                     </div>
                   ) : (
                     selectedResults.slice(0, 12).map((record) => (
-                      <div key={record.person.id} className="rounded-lg border p-4">
+                      <div key={record.person.id} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="font-medium">{record.person.name}</p>
-                            <p className="text-sm text-muted-foreground">{record.person.address}</p>
+                            <p className="font-medium text-white">{record.person.name}</p>
+                            <p className={`text-sm ${MUTED_TEXT}`}>{record.person.address}</p>
                           </div>
                           <Badge variant="outline">{record.person.risk}</Badge>
                         </div>

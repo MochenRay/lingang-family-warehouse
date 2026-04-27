@@ -23,6 +23,10 @@ interface ExportRecord {
   summary: string;
 }
 
+const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
+const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
+
 function estimateSize(payload: unknown): string {
   const bytes = new Blob([JSON.stringify(payload)]).size;
   if (bytes > 1024 * 1024) {
@@ -71,8 +75,7 @@ export function DataReports() {
         title: '治理总览快照',
         desc: `${snapshot.totals.people} 人 / ${snapshot.totals.houses} 房`,
         icon: FileText,
-        color: 'text-blue-600',
-        bg: 'bg-blue-50',
+        accent: '#4E86DF',
         action: () => {
           const payload = {
             generatedAt: snapshot.generatedAt,
@@ -88,8 +91,7 @@ export function DataReports() {
         title: '重点对象清单',
         desc: `${snapshot.grids.reduce((sum, grid) => sum + grid.highRiskCount, 0)} 名高风险对象`,
         icon: Layers,
-        color: 'text-orange-600',
-        bg: 'bg-orange-50',
+        accent: '#D6730D',
         action: () => {
           const payload = {
             generatedAt: snapshot.generatedAt,
@@ -108,8 +110,7 @@ export function DataReports() {
         title: '公告与知识索引',
         desc: `${noticeCount} 条公告 / ${knowledgeCount} 条知识`,
         icon: FileBarChart,
-        color: 'text-green-600',
-        bg: 'bg-green-50',
+        accent: '#19B172',
         action: async () => {
           const [notices, knowledge] = await Promise.all([
             noticeRepository.getNotices({ limit: 50 }),
@@ -127,8 +128,7 @@ export function DataReports() {
         title: '规则与待办快照',
         desc: `${ruleCount} 条规则 / ${snapshot.totals.pendingTasks} 条待办`,
         icon: CalendarDays,
-        color: 'text-purple-600',
-        bg: 'bg-purple-50',
+        accent: '#8B5CF6',
         action: async () => {
           const rules = await taskRuleRepository.getRules();
           downloadJson(`report-task-rules-${new Date().toISOString().slice(0, 10)}.json`, {
@@ -180,31 +180,32 @@ export function DataReports() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-5 animate-in fade-in duration-500">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">报表中心</h2>
-          <p className="text-muted-foreground">直接基于当前治理快照生成导出包，不再依赖手工样例或延时生成。</p>
+          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">REPORT EXPORTS</div>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">报表中心</h2>
+          <p className={`mt-1 text-sm ${MUTED_TEXT}`}>直接基于当前治理快照生成导出包，不再依赖手工样例或延时生成。</p>
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="lg:col-span-1 border-blue-100 shadow-sm">
-          <CardHeader className="bg-slate-50/50 border-b pb-4">
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5 text-blue-600" />
+      <div className="grid gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
+        <Card className={`lg:col-span-1 ${PANEL_CLASS}`}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-4 pt-5">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
+              <FileText className="h-5 w-5 text-[#4E86DF]" />
               生成导出包
             </CardTitle>
-            <CardDescription>根据真实治理快照生成一个新的导出文件。</CardDescription>
+            <CardDescription className={MUTED_TEXT}>根据真实治理快照生成一个新的导出文件。</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="space-y-3">
-              <Label className="text-base font-semibold flex items-center gap-2">
-                <FileText className="w-4 h-4 text-gray-500" />
-                1. 选择报表类型
+          <CardContent className="space-y-4 px-5 pt-5">
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
+                <FileText className="h-4 w-4 text-[#4E86DF]" />
+                报表类型
               </Label>
               <Select value={config.type} onValueChange={(value: ReportType) => setConfig((current) => ({ ...current, type: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,13 +217,13 @@ export function DataReports() {
               </Select>
             </div>
 
-            <div className="space-y-3">
-              <Label className="text-base font-semibold flex items-center gap-2">
-                <CalendarDays className="w-4 h-4 text-gray-500" />
-                2. 统计范围
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
+                <CalendarDays className="h-4 w-4 text-[#4E86DF]" />
+                统计范围
               </Label>
               <Select value={config.time} onValueChange={(value) => setConfig((current) => ({ ...current, time: value }))}>
-                <SelectTrigger>
+                <SelectTrigger className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -234,13 +235,21 @@ export function DataReports() {
               </Select>
             </div>
 
-            <div className="rounded-md border bg-white p-4 text-sm text-muted-foreground space-y-2">
-              <div>当前口径：{snapshot ? `${snapshot.totals.people} 人 / ${snapshot.totals.houses} 房 / ${snapshot.anomalies.length} 条异常` : '加载中'}</div>
-              <div>内容索引：{noticeCount} 条公告 / {knowledgeCount} 条知识 / {ruleCount} 条规则</div>
+            <div className={`${INNER_PANEL_CLASS} grid gap-3 p-4 text-sm`}>
+              <div>
+                <div className={`text-xs ${MUTED_TEXT}`}>当前口径</div>
+                <div className="mt-1 font-semibold text-white">
+                  {snapshot ? `${snapshot.totals.people} 人 / ${snapshot.totals.houses} 房 / ${snapshot.anomalies.length} 条异常` : '加载中'}
+                </div>
+              </div>
+              <div>
+                <div className={`text-xs ${MUTED_TEXT}`}>内容索引</div>
+                <div className="mt-1 font-semibold text-white">{noticeCount} 条公告 / {knowledgeCount} 条知识 / {ruleCount} 条规则</div>
+              </div>
             </div>
           </CardContent>
-          <CardFooter className="pt-2">
-            <Button className="w-full bg-blue-600 hover:bg-blue-700" onClick={() => void handleGenerate()} disabled={isGenerating || !snapshot}>
+          <CardFooter className="px-5 pb-5 pt-2">
+            <Button className="w-full bg-[#2761CB] hover:bg-[#4E86DF]" onClick={() => void handleGenerate()} disabled={isGenerating || !snapshot}>
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -256,52 +265,57 @@ export function DataReports() {
           </CardFooter>
         </Card>
 
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {quickExports.map((item) => (
               <button
                 key={item.title}
                 type="button"
                 onClick={() => void item.action()}
-                className={`flex flex-col items-center justify-center p-4 rounded-xl border transition-all hover:scale-105 hover:shadow-md ${item.bg} border-transparent hover:border-gray-200`}
+                className={`${PANEL_CLASS} group flex min-h-[126px] flex-col items-start justify-between p-4 text-left transition-colors hover:border-[#4E86DF]/55 hover:bg-[var(--color-neutral-03)]`}
               >
-                <item.icon className={`w-8 h-8 mb-2 ${item.color}`} />
-                <span className="text-sm font-bold text-gray-800">{item.title}</span>
-                <span className="text-xs text-gray-500 mt-1">{item.desc}</span>
+                <div className="flex w-full items-center justify-between gap-3">
+                  <item.icon className="h-5 w-5" style={{ color: item.accent }} />
+                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.accent }} />
+                </div>
+                <div>
+                  <span className="block text-sm font-semibold text-white">{item.title}</span>
+                  <span className={`mt-1 block text-xs ${MUTED_TEXT}`}>{item.desc}</span>
+                </div>
               </button>
             ))}
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>本次导出记录</CardTitle>
-              <CardDescription>只记录当前会话里真实生成过的导出包，不伪装成历史归档。</CardDescription>
+          <Card className={PANEL_CLASS}>
+            <CardHeader className="px-5 pb-3 pt-5">
+              <CardTitle className="text-base font-semibold text-white">本次导出记录</CardTitle>
+              <CardDescription className={MUTED_TEXT}>只记录当前会话里真实生成过的导出包，不伪装成历史归档。</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-1">
+            <CardContent className="px-5 pb-5">
+              <div className="space-y-2">
                 {generatedReports.length === 0 ? (
-                  <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                  <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
                     还没有生成新的导出包。点击左侧“立即导出”或上方快捷入口，会在这里留下本次会话的真实记录。
                   </div>
                 ) : (
                   generatedReports.map((file) => (
-                    <div key={file.id} className="group flex items-center justify-between p-4 rounded-lg border border-transparent hover:border-gray-100 hover:bg-slate-50 transition-all">
+                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex items-center justify-between gap-4 p-4 transition-colors hover:border-[#4E86DF]/55 hover:bg-[var(--color-neutral-03)]`}>
                       <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-lg flex items-center justify-center text-sm font-bold shadow-sm bg-blue-50 text-blue-600">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#4E86DF]/35 bg-[#2761CB]/15 text-sm font-bold text-[#DCE6FF]">
                           {file.type}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-900 mb-1">{file.name}</div>
-                          <div className="flex items-center gap-3 text-xs text-gray-500">
-                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {file.date}</span>
+                          <div className="mb-1 font-semibold text-white">{file.name}</div>
+                          <div className={`flex flex-wrap items-center gap-3 text-xs ${MUTED_TEXT}`}>
+                            <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {file.date}</span>
                             <span>•</span>
                             <span>{file.size}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-green-600">
-                              <CheckCircle className="w-3 h-3" /> 已下载
+                            <span className="flex items-center gap-1 text-[#19B172]">
+                              <CheckCircle className="h-3 w-3" /> 已下载
                             </span>
                           </div>
-                          <div className="mt-1 text-xs text-muted-foreground">{file.summary}</div>
+                          <div className={`mt-1 text-xs ${MUTED_TEXT}`}>{file.summary}</div>
                         </div>
                       </div>
                       <Badge variant="outline">本次生成</Badge>
