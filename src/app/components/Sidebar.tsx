@@ -195,22 +195,22 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
   return (
     <aside
       className={cn(
-        "bg-white dark:bg-[var(--color-neutral-01)] border-r border-gray-200 dark:border-[var(--color-neutral-03)] transition-all duration-300 flex flex-col h-screen",
+        "bg-[var(--color-neutral-00)] border-r border-[var(--color-neutral-03)] transition-all duration-300 flex flex-col h-screen",
         collapsed ? "w-16" : "w-64"
       )}
     >
       {/* Logo区域 */}
-      <div className="h-16 flex items-center justify-center border-b border-gray-200 dark:border-[var(--color-neutral-03)] px-4 shrink-0">
+      <div className="h-16 flex items-center justify-center border-b border-[var(--color-neutral-03)] px-4 shrink-0">
         {!collapsed ? (
           <div className="flex items-center gap-2">
-            <Database className="w-6 h-6 text-blue-600 dark:text-[var(--color-brand-primary-hover)]" />
+            <Database className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
             <div className="flex flex-col">
-              <span className="font-semibold text-gray-900 dark:text-[var(--color-neutral-11)]">家庭数仓</span>
-              <span className="text-xs text-gray-500 dark:text-[var(--color-neutral-08)]">烟台蓬莱</span>
+              <span className="font-semibold text-[var(--color-neutral-11)]">家庭数仓</span>
+              <span className="text-xs text-[var(--color-neutral-08)]">烟台蓬莱</span>
             </div>
           </div>
         ) : (
-          <Database className="w-6 h-6 text-blue-600 dark:text-[var(--color-brand-primary-hover)]" />
+          <Database className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
         )}
       </div>
 
@@ -222,7 +222,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
       </ScrollArea>
 
       {/* 底部折叠按钮 */}
-      <div className="p-3 border-t border-gray-200 dark:border-[var(--color-neutral-03)] shrink-0 space-y-2">
+      <div className="p-3 border-t border-[var(--color-neutral-03)] shrink-0 space-y-2">
         {!collapsed && (
           <div className="rounded-xl border border-[rgba(78,134,223,0.18)] bg-[rgba(78,134,223,0.06)] px-3 py-3">
             <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4E86DF]">
@@ -237,7 +237,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
           variant="outline"
           size="sm"
           onClick={() => onRouteChange('mobile')}
-          className="w-full justify-center bg-blue-50 dark:bg-[var(--color-neutral-02)] text-blue-600 dark:text-[var(--color-brand-primary-hover)] border-blue-200 dark:border-[var(--color-brand-primary)] hover:bg-blue-100 dark:hover:bg-[var(--color-neutral-03)]"
+          className="w-full justify-center bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)] hover:bg-[var(--color-neutral-03)]"
         >
           <Smartphone className={cn("shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
           {!collapsed && <span className="ml-2 text-xs">体验移动端工作台</span>}
