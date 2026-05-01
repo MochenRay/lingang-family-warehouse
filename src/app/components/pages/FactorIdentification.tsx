@@ -235,8 +235,15 @@ export function FactorIdentification() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
+      <div className="space-y-5 text-[var(--color-neutral-10)]">
+        <PageHeader
+          eyebrow="FACTOR EXPLAINABILITY"
+          title="影响因子识别"
+          description="对异常结果拆解关键因素，辅助判断下一步干预抓手。"
+        />
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin" />
+        </div>
       </div>
     );
   }

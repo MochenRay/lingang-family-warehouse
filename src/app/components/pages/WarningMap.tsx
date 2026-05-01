@@ -114,8 +114,15 @@ export function WarningMap() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
+      <div className="space-y-6">
+        <PageHeader
+          eyebrow="WARNING MAP"
+          title="预警地图"
+          description="按区域和风险等级定位异常热点，支撑网格巡查与处置优先级。"
+        />
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin" />
+        </div>
       </div>
     );
   }

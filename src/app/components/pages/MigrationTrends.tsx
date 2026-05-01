@@ -91,8 +91,29 @@ export function MigrationTrends() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
+      <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+        <PageHeader
+          eyebrow="MIGRATION ANALYTICS"
+          title="人口流动趋势"
+          description="识别流动人口变化和重点迁入迁出片区，辅助安排走访与出租房复核。"
+          actions={
+            <div className="flex gap-3">
+              <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
+                <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部区县</SelectItem>
+                  <SelectItem value="hot">高活跃区县</SelectItem>
+                  <SelectItem value="stable">低波动区县</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          }
+        />
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin" />
+        </div>
       </div>
     );
   }

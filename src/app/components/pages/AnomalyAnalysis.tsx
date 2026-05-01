@@ -116,8 +116,15 @@ export function AnomalyAnalysis() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
+      <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+        <PageHeader
+          eyebrow="ATTRIBUTION LEDGER"
+          title="异常结果分析"
+          description="围绕真实的人、房、走访、矛盾与待办投影，识别当前最容易穿帮的治理异常。"
+        />
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin" />
+        </div>
       </div>
     );
   }

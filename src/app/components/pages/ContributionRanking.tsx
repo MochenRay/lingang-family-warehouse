@@ -144,8 +144,15 @@ export function ContributionRanking() {
 
   if (loading) {
     return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
+      <div className="space-y-5 text-[var(--color-neutral-10)]">
+        <PageHeader
+          eyebrow="CONTRIBUTION LEDGER"
+          title="贡献程度排名"
+          description="对区域与指标贡献排序，找出拉动整体变化的关键片区。"
+        />
+        <div className="flex justify-center p-8">
+          <Loader2 className="animate-spin" />
+        </div>
       </div>
     );
   }
