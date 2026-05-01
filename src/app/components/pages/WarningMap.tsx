@@ -14,6 +14,7 @@ import {
 import { analysisRepository, type AnalysisAnomalyItem, type AnalysisSeverity, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
+import { PageHeader } from './PageHeader';
 
 function getLevelColor(level: AnalysisSeverity): string {
   switch (level) {
@@ -121,42 +122,43 @@ export function WarningMap() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="mb-2">预警地图</h1>
-          <p className="text-gray-500">改为按网格热区视图展示真实预警分布，避免空地图视图。</p>
-        </div>
-        <div className="flex gap-3">
-          <Select value={warningType} onValueChange={setWarningType}>
-            <SelectTrigger className="w-[160px]">
-              <Filter className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部类型</SelectItem>
-              <SelectItem value="跟进">跟进超期</SelectItem>
-              <SelectItem value="矛盾">矛盾压力</SelectItem>
-              <SelectItem value="走访">走访覆盖</SelectItem>
-              <SelectItem value="出租">出租密度</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={severity} onValueChange={(value: 'all' | AnalysisSeverity) => setSeverity(value)}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部等级</SelectItem>
-              <SelectItem value="high">严重</SelectItem>
-              <SelectItem value="medium">中等</SelectItem>
-              <SelectItem value="low">轻微</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            导出
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="WARNING MAP"
+        title="预警地图"
+        description="按区域和风险等级定位异常热点，支撑网格巡查与处置优先级。"
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <Select value={warningType} onValueChange={setWarningType}>
+              <SelectTrigger className="w-[160px]">
+                <Filter className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部类型</SelectItem>
+                <SelectItem value="跟进">跟进超期</SelectItem>
+                <SelectItem value="矛盾">矛盾压力</SelectItem>
+                <SelectItem value="走访">走访覆盖</SelectItem>
+                <SelectItem value="出租">出租密度</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={severity} onValueChange={(value: 'all' | AnalysisSeverity) => setSeverity(value)}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部等级</SelectItem>
+                <SelectItem value="high">严重</SelectItem>
+                <SelectItem value="medium">中等</SelectItem>
+                <SelectItem value="low">轻微</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              导出
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
         <Card>

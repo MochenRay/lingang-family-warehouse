@@ -27,6 +27,7 @@ import {
   type StatsQualityAlertItem,
   statsRepository,
 } from '../../services/repositories/statsRepository';
+import { PageHeader } from './PageHeader';
 
 type ViewLevel = 'district' | 'street' | 'community' | 'grid';
 
@@ -281,14 +282,11 @@ export function BehaviorSupervision() {
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">行为督导中心</h1>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
-            监控网格员工作绩效，提升数据采集质量与效率。
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        eyebrow="BEHAVIOR SUPERVISION"
+        title="行为督导中心"
+        description="汇总网格员走访、待办和闭环质量，识别需要督办的执行短板。"
+        actions={
           <Dialog open={isBriefingOpen} onOpenChange={setIsBriefingOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
@@ -350,8 +348,8 @@ export function BehaviorSupervision() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+        }
+      />
 
       {loading && (
         <Card className={`${DARK_CARD_CLASS} border-dashed`}>

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
@@ -140,13 +141,11 @@ export function PermissionManagement() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">权限管理</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>功能权限与数据权限的精细化配置</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="PERMISSION MATRIX"
+        title="权限管理"
+        description="梳理功能权限和数据范围，明确不同岗位可见可操作边界。"
+      />
 
       {/* 角色选择 */}
       <Card className={DARK_CARD_CLASS}>

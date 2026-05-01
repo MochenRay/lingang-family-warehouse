@@ -31,6 +31,7 @@ import {
 } from '../ui/dialog';
 import { taskRepository } from '../../services/repositories/taskRepository';
 import { taskRuleRepository, type TaskRuleRecord } from '../../services/repositories/taskRuleRepository';
+import { PageHeader } from './PageHeader';
 
 type RulePriority = TaskRuleRecord['priority'];
 
@@ -193,23 +194,22 @@ export function RuleConfig() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)]">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">待办规则配置</h1>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
-            规则现在会直接影响移动端待办投影，不再是本地演示页。当前只保留轻量阈值配置，不引入完整规则引擎。
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          className={`gap-2 ${DARK_BUTTON_CLASS}`}
-          onClick={() => void load()}
-          disabled={loading}
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          刷新投影
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="TASK RULES"
+        title="待办规则配置"
+        description="配置重点对象和时效触发规则，让待办生成逻辑可解释可调整。"
+        actions={
+          <Button
+            variant="outline"
+            className={`gap-2 ${DARK_BUTTON_CLASS}`}
+            onClick={() => void load()}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            刷新投影
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-4">
         <Card className={DARK_CARD_CLASS}>

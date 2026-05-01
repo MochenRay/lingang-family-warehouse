@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { tagRepository, type ManagedTagSummary, type TagSnapshot } from '../../services/repositories/tagRepository';
+import { PageHeader } from './PageHeader';
 
 const SURFACE_CLASS =
   'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
@@ -135,36 +136,34 @@ export function TagOverview() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">TAG LEDGER</div>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">标签管理</h2>
-          <p className={`mt-1 max-w-3xl text-sm leading-6 ${MUTED_TEXT_CLASS}`}>
-            当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立标签目录。
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          onClick={() => {
-            setSnapshot(null);
-            setSelectedTagId('');
-            setLoading(true);
-            setError('');
-            void tagRepository.getSnapshot().then((nextSnapshot) => {
-              setSnapshot(nextSnapshot);
-              setSelectedTagId(nextSnapshot.tags[0]?.id ?? '');
-              setLoading(false);
-            }).catch((loadError) => {
-              setError(loadError instanceof Error ? loadError.message : '标签数据加载失败');
-              setLoading(false);
-            });
-          }}
-          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
-        >
-          <RefreshCw className="h-4 w-4" />
-          同步标签统计
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="TAG LEDGER"
+        title="标签管理"
+        description="当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立标签目录。"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => {
+              setSnapshot(null);
+              setSelectedTagId('');
+              setLoading(true);
+              setError('');
+              void tagRepository.getSnapshot().then((nextSnapshot) => {
+                setSnapshot(nextSnapshot);
+                setSelectedTagId(nextSnapshot.tags[0]?.id ?? '');
+                setLoading(false);
+              }).catch((loadError) => {
+                setError(loadError instanceof Error ? loadError.message : '标签数据加载失败');
+                setLoading(false);
+              });
+            }}
+            className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
+          >
+            <RefreshCw className="h-4 w-4" />
+            同步标签统计
+          </Button>
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-4">
         <MetricCard title="标签总数" value={snapshot?.tags.length ?? '--'} detail="当前阶段固定首批规则，不扩写引擎" icon={Tag} />

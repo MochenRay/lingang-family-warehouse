@@ -78,6 +78,7 @@ import { tagStore } from "../../utils/tagStore";
 import { houseRepository } from "../../services/repositories/houseRepository";
 import { personRepository } from "../../services/repositories/personRepository";
 import { visitRepository } from "../../services/repositories/visitRepository";
+import { PageHeader } from "./PageHeader";
 import { Grid, House, Person, PersonType, VisitRecord } from "../../types/core";
 import { getCommunities, getDistricts, getStreets, inferRegionByGridName } from "../../config/regions";
 
@@ -886,10 +887,11 @@ export function PopulationManagement() {
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
-      <div>
-        <h1 className="mb-1 text-xl font-semibold text-[var(--color-neutral-11)]">人口管理</h1>
-        <p className="text-[var(--color-neutral-08)]">支持按区县/街道/社区筛选的人口信息全生命周期管理</p>
-      </div>
+      <PageHeader
+        eyebrow="POPULATION LEDGER"
+        title="人口管理"
+        description="维护人口台账、走访状态和重点标签，保证一线工作台数据可查可追踪。"
+      />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -2082,7 +2084,7 @@ export function PopulationManagement() {
                <Select value={formData.education || ""} onValueChange={(val) => setFormData({ ...formData, education: val })}>
                  <SelectTrigger><SelectValue placeholder="选择学历" /></SelectTrigger>
                  <SelectContent>
-                   {['小学', '初中', '高中', '大专', '本科', '研究生', '其他'].map(e => (
+                   {['小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他'].map(e => (
                      <SelectItem key={e} value={e}>{e}</SelectItem>
                    ))}
                  </SelectContent>

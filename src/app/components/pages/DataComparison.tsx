@@ -13,6 +13,7 @@ import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { SortableHeader } from '../statistics/SortableHeader';
+import { PageHeader } from './PageHeader';
 
 type CompareMode = 'average' | 'target';
 type CompareLevel = 'district' | 'street' | 'community' | 'grid';
@@ -269,14 +270,15 @@ export function DataComparison() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">多维数据对比</h2>
-        <p className="mt-1 text-sm text-[var(--color-neutral-08)]">默认先看区县级差异，再逐级切到街镇、社区和网格。</p>
-      </div>
+      <PageHeader
+        eyebrow="COMPARISON ANALYTICS"
+        title="数据对比分析"
+        description="快速定位辖区异常指标和偏离幅度，支撑治理资源优先投向高压片区。"
+      />
 
       <Card className="rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none">
         <CardContent className="p-5">
-          <div className="grid grid-cols-1 items-end gap-4 md:grid-cols-5">
+          <div className="grid grid-cols-1 items-end gap-3 md:grid-cols-2 xl:grid-cols-[repeat(4,minmax(0,1fr))_auto]">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-xs font-semibold text-[var(--color-neutral-08)]">
                 <ArrowLeftRight className="w-4 h-4" />
@@ -338,12 +340,12 @@ export function DataComparison() {
               </Select>
             </div>
 
-            <div className="flex gap-2">
-              <Button className="w-full" onClick={() => void loadSnapshot()} disabled={loading}>
+            <div className="flex flex-wrap gap-2 md:col-span-2 xl:col-span-1 xl:justify-end">
+              <Button className="min-w-[96px] flex-1 xl:flex-none" onClick={() => void loadSnapshot()} disabled={loading}>
                 {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Filter className="w-4 h-4 mr-2" />}
-                {loading ? '分析中...' : '刷新对比'}
+                {loading ? '分析中' : '刷新'}
               </Button>
-              <Button variant="outline" onClick={handleExport}>
+              <Button variant="outline" className="min-w-[92px] flex-1 shrink-0 xl:flex-none" onClick={handleExport}>
                 <Download className="w-4 h-4 mr-2" />
                 导出
               </Button>

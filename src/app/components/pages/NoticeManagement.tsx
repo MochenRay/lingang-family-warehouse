@@ -32,6 +32,7 @@ import {
   TableHeader,
   TableRow,
 } from "../ui/table";
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
 const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
@@ -105,20 +106,20 @@ export function NoticeManagement() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题和操作区 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">公告管理</h2>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">管理和发布系统公告通知</p>
-        </div>
-        <Button 
-          onClick={() => setShowPublishDialog(true)}
-          className="bg-[#4E86DF] text-white hover:bg-[#2761CB]"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          发布公告
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="NOTICE MANAGEMENT"
+        title="公告管理"
+        description="维护公告发布、状态和触达记录，确保居民通知可追踪。"
+        actions={
+          <Button
+            onClick={() => setShowPublishDialog(true)}
+            className="bg-[#4E86DF] text-white hover:bg-[#2761CB]"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            发布公告
+          </Button>
+        }
+      />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">

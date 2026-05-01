@@ -25,6 +25,7 @@ import {
   secondaryAiRepository,
   type SecondaryAiChatResult,
 } from '../../services/repositories/secondaryAiRepository';
+import { PageHeader } from './PageHeader';
 
 // --- Shared Types & Mock Data ---
 
@@ -106,15 +107,8 @@ function BaseSmartChat({
 
   return (
     <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div className="flex shrink-0 items-start justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">AI WORKBENCH</div>
-          <h1 className="mt-1 text-2xl font-semibold text-white">{title}</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>
-            {description}
-          </p>
-        </div>
+      <div className="shrink-0">
+        <PageHeader eyebrow="AI WORKBENCH" title={title} description={description} />
       </div>
 
       <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">

@@ -34,6 +34,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { MOCK_ACTIVITIES, Activity } from '../../data/activities';
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS =
   'rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
@@ -95,12 +96,11 @@ export function ActivityManagement() {
 
   return (
     <div className="space-y-5 p-6 pb-16 text-[var(--color-neutral-10)]">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-[var(--color-neutral-11)]">活动综合管理</h1>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">审批活动申请，查看历史活动档案及执行情况。</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="ACTIVITY MANAGEMENT"
+        title="活动综合管理"
+        description="统筹社区活动报名、签到和反馈，辅助评估居民参与情况。"
+      />
 
       {/* Section 1: Pending Approvals */}
       <section>

@@ -431,13 +431,15 @@ export const SEED_PEOPLE: Person[] = [
       const eduRand = Math.random();
       if (age <= 35) {
          // 年轻一代：本科/大专比例高
-         if (eduRand > 0.92) education = '研究生';
+         if (eduRand > 0.97) education = '博士';
+         else if (eduRand > 0.92) education = '硕士';
          else if (eduRand > 0.50) education = '本科';
          else if (eduRand > 0.25) education = '大专';
          else education = '高中';
       } else if (age <= 55) {
          // 中年：高中/大专/本科均衡
-         if (eduRand > 0.95) education = '研究生';
+         if (eduRand > 0.98) education = '博士';
+         else if (eduRand > 0.95) education = '硕士';
          else if (eduRand > 0.70) education = '本科';
          else if (eduRand > 0.40) education = '大专';
          else if (eduRand > 0.15) education = '高中';

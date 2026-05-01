@@ -16,6 +16,7 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
+import { PageHeader } from './PageHeader';
 
 const COLORS = ['#4E86DF', '#8B5CF6', '#2AA3CF', '#D6730D', '#D52132', '#19B172'];
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
@@ -132,15 +133,11 @@ export function PopulationTags() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-        <div>
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">TAGS ANALYTICS</div>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">标签分析画像</h2>
-        </div>
-        <p className={`max-w-2xl text-sm ${MUTED_TEXT}`}>
-          只分析当前第一批固定标签规则的真实命中结果，不再混用本地标签缓存和页面级快照。
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="TAGS ANALYTICS"
+        title="标签分析画像"
+        description="只分析当前第一批固定标签规则的真实命中结果，不再混用本地标签缓存和页面级快照。"
+      />
 
       <div className="grid gap-3 md:grid-cols-4">
         <Card className={PANEL_CLASS}>

@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 from calendar import monthrange
+from collections.abc import Callable
 from collections import Counter, defaultdict
 from datetime import date, datetime
+from time import monotonic
+from typing import TypeVar
 from zoneinfo import ZoneInfo
 
 from fastapi import APIRouter, Depends, Query
@@ -41,6 +44,7 @@ router = APIRouter(prefix="/stats", tags=["stats"])
 
 SHANGHAI_TZ = ZoneInfo("Asia/Shanghai")
 DEFAULT_DISTRICT_NAME = "蓬莱区"
+STATS_CACHE_TTL_SECONDS = 60.0
 AGE_BUCKETS = (
     ("0-18岁", 0, 18, "#8b5cf6"),
     ("19-35岁", 19, 35, "#3b82f6"),
@@ -61,6 +65,32 @@ PERFORMANCE_SCORE_WEIGHTS = StatsPerformanceScoreRead(
     taskCount=0.15,
     taskSpeed=0.15,
 )
+CacheValueT = TypeVar("CacheValueT", StatsDashboardRead, StatsGridListRead, StatsPerformanceRead)
+_stats_cache: dict[str, tuple[float, object]] = {}
+
+
+def _get_cached_stats(key: str) -> object | None:
+    cached = _stats_cache.get(key)
+    if cached is None:
+        return None
+    created_at, value = cached
+    if monotonic() - created_at > STATS_CACHE_TTL_SECONDS:
+        _stats_cache.pop(key, None)
+        return None
+    return value
+
+
+def _set_cached_stats(key: str, value: object) -> None:
+    _stats_cache[key] = (monotonic(), value)
+
+
+def _read_cached_stats(key: str, builder: Callable[[], CacheValueT]) -> CacheValueT:
+    cached = _get_cached_stats(key)
+    if cached is not None:
+        return cached  # type: ignore[return-value]
+    value = builder()
+    _set_cached_stats(key, value)
+    return value
 
 
 def _parse_datetime(raw: str | None) -> datetime | None:
@@ -156,6 +186,14 @@ def _house_completeness(house: House) -> float:
         bool(house.residenceType),
     ]
     return sum(1 for value in fields if value) / len(fields)
+
+
+def _is_housing_warning(house: House) -> bool:
+    tags = house.tags or []
+    return (
+        any("群租" in tag or "换租" in tag or "租约到期" in tag for tag in tags)
+        or house.occupancyStatus == "户在人不在"
+    )
 
 
 def _visit_quality_score(visit: VisitRecord) -> float:
@@ -405,12 +443,16 @@ def _build_grid_items(
 def _build_region_summaries(
     grid_items: list[StatsGridItemRead],
     people: list[Person],
+    houses: list[House],
     conflicts: list[ConflictRecord],
 ) -> list[StatsRegionSummaryRead]:
     people_by_grid = defaultdict(list)
+    houses_by_grid = defaultdict(list)
     conflicts_by_grid = defaultdict(list)
     for person in people:
         people_by_grid[person.gridId].append(person)
+    for house in houses:
+        houses_by_grid[house.gridId].append(house)
     for conflict in conflicts:
         conflicts_by_grid[conflict.gridId].append(conflict)
 
@@ -432,9 +474,13 @@ def _build_region_summaries(
                 "floatingCount": 0,
                 "activeConflictCount": 0,
                 "riskCount": 0,
+                "rentalCount": 0,
+                "vacantCount": 0,
+                "warningCount": 0,
             },
         )
         grid_people = people_by_grid.get(grid.id, [])
+        grid_houses = houses_by_grid.get(grid.id, [])
         grid_conflicts = conflicts_by_grid.get(grid.id, [])
         item["peopleCount"] = int(item["peopleCount"]) + grid.peopleCount
         item["houseCount"] = int(item["houseCount"]) + grid.houseCount
@@ -443,6 +489,9 @@ def _build_region_summaries(
         item["floatingCount"] = int(item["floatingCount"]) + sum(1 for person in grid_people if person.type == "流动")
         item["activeConflictCount"] = int(item["activeConflictCount"]) + sum(1 for conflict in grid_conflicts if conflict.status != "已化解")
         item["riskCount"] = int(item["riskCount"]) + sum(1 for person in grid_people if person.risk in {"High", "Medium"})
+        item["rentalCount"] = int(item["rentalCount"]) + sum(1 for house in grid_houses if house.type == "出租")
+        item["vacantCount"] = int(item["vacantCount"]) + sum(1 for house in grid_houses if house.type == "空置")
+        item["warningCount"] = int(item["warningCount"]) + sum(1 for house in grid_houses if _is_housing_warning(house))
 
     for grid in grid_items:
         add_item("city", "烟台市", None, grid)
@@ -706,7 +755,7 @@ def _build_dashboard(session: Session) -> StatsDashboardRead:
     conflict_stats = _build_conflict_stats(conflicts, now)
     mobile_people_stats = _build_mobile_people_stats(people)
     grid_items = _build_grid_items(grids, people, houses, visits, conflicts)
-    region_summaries = _build_region_summaries(grid_items, people, conflicts)
+    region_summaries = _build_region_summaries(grid_items, people, houses, conflicts)
     action_items = _build_action_items(region_summaries)
 
     risk_items: list[StatsRiskTagItemRead] = []
@@ -776,14 +825,14 @@ def read_dashboard(
     range_name: str = Query(default="month", alias="range"),
 ) -> StatsDashboardRead:
     _ = range_name
-    return _build_dashboard(session)
+    return _read_cached_stats(f"dashboard:{range_name}", lambda: _build_dashboard(session))
 
 
 @router.get("/grids", response_model=StatsGridListRead)
 def read_grids(session: Session = Depends(get_session)) -> StatsGridListRead:
-    return _build_grid_list(session)
+    return _read_cached_stats("grids", lambda: _build_grid_list(session))
 
 
 @router.get("/performance", response_model=StatsPerformanceRead)
 def read_performance(session: Session = Depends(get_session)) -> StatsPerformanceRead:
-    return _build_performance(session)
+    return _read_cached_stats("performance", lambda: _build_performance(session))

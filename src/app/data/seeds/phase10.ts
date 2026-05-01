@@ -13,7 +13,7 @@ interface SeedBundleInput {
 
 const SURNAMES = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯', '陈', '刘', '张'];
 const GIVEN = ['晨', '宁', '琳', '涛', '洁', '明', '悦', '峰', '然', '琪', '楠', '远'];
-const EDUCATION = ['小学', '初中', '高中', '中专', '大专', '本科', '研究生'];
+const EDUCATION = ['小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士'];
 const NATIONS = ['汉族', '满族', '回族'];
 
 function personName(seed: number) {

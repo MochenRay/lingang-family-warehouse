@@ -11,6 +11,7 @@ import { houseRepository } from '../../services/repositories/houseRepository';
 import { personRepository } from '../../services/repositories/personRepository';
 import { House, HousingHistory, Person } from '../../types/core';
 import { toast } from 'sonner';
+import { PageHeader } from './PageHeader';
 
 type RelationType = '现居' | '历史';
 type OccupancyRelationship = '业主' | '家属' | '租客' | '其他';
@@ -221,20 +222,21 @@ export function RelationshipManagement() {
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white">人房关系管理</h1>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">基于真实人、房、居住历史对象生成现居/历史双视角关系。</p>
-        </div>
-        <Button
-          variant="outline"
-          disabled
-          title="后续将在迁居流程中开放真实写操作"
-          className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]"
-        >
-          迁居流程待接入
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="RELATIONSHIP LEDGER"
+        title="人房关系管理"
+        description="对齐人员、房屋和迁入迁出记录，识别人房分离与关系异常。"
+        actions={
+          <Button
+            variant="outline"
+            disabled
+            title="后续将在迁居流程中开放真实写操作"
+            className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]"
+          >
+            迁居流程待接入
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">

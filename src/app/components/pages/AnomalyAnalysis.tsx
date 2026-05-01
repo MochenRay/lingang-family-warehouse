@@ -10,6 +10,7 @@ import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { PageHeader } from './PageHeader';
 
 const SEVERITY_COLORS: Record<AnalysisSeverity, string> = {
   high: '#D52132',
@@ -134,37 +135,35 @@ export function AnomalyAnalysis() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">ATTRIBUTION LEDGER</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">异常结果分析</h1>
-          <p className={`mt-2 max-w-3xl text-sm leading-6 ${MUTED_TEXT}`}>
-            围绕真实的人、房、走访、矛盾与待办投影，识别当前最容易穿帮的治理异常。
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={severity} onValueChange={(value: 'all' | AnalysisSeverity) => setSeverity(value)}>
-            <SelectTrigger className="w-[140px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-              <AlertTriangle className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部等级</SelectItem>
-              <SelectItem value="high">严重</SelectItem>
-              <SelectItem value="medium">中等</SelectItem>
-              <SelectItem value="low">轻微</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={() => void loadSnapshot()}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            刷新
-          </Button>
-          <Button onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            导出
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="ATTRIBUTION LEDGER"
+        title="异常结果分析"
+        description="围绕真实的人、房、走访、矛盾与待办投影，识别当前最容易穿帮的治理异常。"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Select value={severity} onValueChange={(value: 'all' | AnalysisSeverity) => setSeverity(value)}>
+              <SelectTrigger className="w-[140px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全部等级</SelectItem>
+                <SelectItem value="high">严重</SelectItem>
+                <SelectItem value="medium">中等</SelectItem>
+                <SelectItem value="low">轻微</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={() => void loadSnapshot()}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
+            <Button onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              导出
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Card className={PANEL_CLASS}>

@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
@@ -223,19 +224,17 @@ export function LogManagement() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">日志管理</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>系统操作日志的查询、检索与导出</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        eyebrow="AUDIT LOGS"
+        title="日志管理"
+        description="追踪关键操作、登录和数据变更，为演示审计链路留痕。"
+        actions={
           <Button variant="outline" className={ACTION_BUTTON_CLASS}>
             <Download className="w-4 h-4 mr-2" />
             导出日志
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

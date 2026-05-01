@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const DARK_DIALOG_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
@@ -165,13 +166,11 @@ export function RoleManagement() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">角色管理</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>角色的创建、权限配置及辖区范围设置</p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        eyebrow="ROLE MANAGEMENT"
+        title="角色管理"
+        description="维护岗位角色和菜单权限集合，保证权限配置可复用。"
+        actions={
           <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -256,8 +255,8 @@ export function RoleManagement() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      </div>
+        }
+      />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

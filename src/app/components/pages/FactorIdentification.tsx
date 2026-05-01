@@ -23,6 +23,7 @@ import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { PageHeader } from './PageHeader';
 
 type TargetVariable = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
 
@@ -242,31 +243,31 @@ export function FactorIdentification() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">FACTOR EXPLAINABILITY</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">影响因子识别</h1>
-          <p className={`mt-2 max-w-3xl text-sm leading-6 ${MUTED_TEXT}`}>基于真实治理快照识别当前最影响网格压力与闭环质量的关键因子。</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={targetVariable} onValueChange={(value: TargetVariable) => setTargetVariable(value)}>
-            <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-              <Target className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pressure">网格治理压力</SelectItem>
-              <SelectItem value="visitCoverage">走访覆盖质量</SelectItem>
-              <SelectItem value="conflictFollowup">纠纷跟进压力</SelectItem>
-              <SelectItem value="rentalRisk">出租房风险</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline" onClick={handleExport}>
-            <Download className="w-4 h-4 mr-2" />
-            导出
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="FACTOR EXPLAINABILITY"
+        title="影响因子识别"
+        description="对异常结果拆解关键因素，辅助判断下一步干预抓手。"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Select value={targetVariable} onValueChange={(value: TargetVariable) => setTargetVariable(value)}>
+              <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+                <Target className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pressure">网格治理压力</SelectItem>
+                <SelectItem value="visitCoverage">走访覆盖质量</SelectItem>
+                <SelectItem value="conflictFollowup">纠纷跟进压力</SelectItem>
+                <SelectItem value="rentalRisk">出租房风险</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" onClick={handleExport}>
+              <Download className="w-4 h-4 mr-2" />
+              导出
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Card className={PANEL_CLASS}>

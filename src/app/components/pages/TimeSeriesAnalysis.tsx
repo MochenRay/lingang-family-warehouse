@@ -26,6 +26,7 @@ import {
 } from 'recharts';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { PageHeader } from './PageHeader';
 
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
@@ -114,43 +115,43 @@ export function TimeSeriesAnalysis() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)]">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">TIME SERIES WORKBENCH</div>
-          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-white">时序分析</h1>
-          <p className={`mt-2 max-w-3xl text-sm leading-6 ${MUTED_TEXT}`}>识别人口数据的周期性规律与变化趋势</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={indicator} onValueChange={setIndicator}>
-            <SelectTrigger className="w-[160px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-              <Activity className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="population">总人口</SelectItem>
-              <SelectItem value="floating">流动人口</SelectItem>
-              <SelectItem value="elderly">老年人口</SelectItem>
-              <SelectItem value="birth">出生人口</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={granularity} onValueChange={setGranularity}>
-            <SelectTrigger className="w-[120px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-              <Calendar className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="day">日度</SelectItem>
-              <SelectItem value="week">周度</SelectItem>
-              <SelectItem value="month">月度</SelectItem>
-              <SelectItem value="quarter">季度</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button>
-            <Download className="w-4 h-4 mr-2" />
-            导出
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="TIME SERIES WORKBENCH"
+        title="时序分析"
+        description="观察人口、走访和风险指标的时间变化，识别持续恶化或改善趋势。"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Select value={indicator} onValueChange={setIndicator}>
+              <SelectTrigger className="w-[160px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+                <Activity className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="population">总人口</SelectItem>
+                <SelectItem value="floating">流动人口</SelectItem>
+                <SelectItem value="elderly">老年人口</SelectItem>
+                <SelectItem value="birth">出生人口</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={granularity} onValueChange={setGranularity}>
+              <SelectTrigger className="w-[120px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+                <Calendar className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="day">日度</SelectItem>
+                <SelectItem value="week">周度</SelectItem>
+                <SelectItem value="month">月度</SelectItem>
+                <SelectItem value="quarter">季度</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button>
+              <Download className="w-4 h-4 mr-2" />
+              导出
+            </Button>
+          </div>
+        }
+      />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         <Card className={PANEL_CLASS}>

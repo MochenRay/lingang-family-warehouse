@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { SortableHeader } from '../statistics/SortableHeader';
+import { PageHeader } from './PageHeader';
 
 interface StatisticsOverviewProps {
   onRouteChange?: (route: string) => void;
@@ -268,19 +269,15 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
         </div>
       )}
 
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 text-sm text-[var(--color-neutral-08)]">
-            <span className="text-white">综合统计驾驶舱</span>
-            <span>烟台市</span>
-            <span>·</span>
-            <span>区县概览</span>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
-            <SelectTrigger className="w-[120px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-              <SelectValue placeholder="时间范围" />
+      <PageHeader
+        eyebrow="OVERVIEW ANALYTICS"
+        title="综合统计驾驶舱"
+        description="汇总人口、房屋、走访与风险线索，帮助先看全局态势再下钻异常片区。"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Select value={selectedRange} onValueChange={(value) => setSelectedRange(value as 'week' | 'month' | 'quarter')}>
+              <SelectTrigger className="w-[120px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+                <SelectValue placeholder="时间范围" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="week">本周</SelectItem>
@@ -289,8 +286,9 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={handleExportReport}>导出驾驶舱快照</Button>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <section className="rounded-lg border border-[#2761CB]/35 bg-[#2761CB]/10 px-6 py-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">

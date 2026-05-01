@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { getCommunities, getDistricts, getStreets } from '../../config/regions';
+import { PageHeader } from './PageHeader';
 
 const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const DARK_DIALOG_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
@@ -140,131 +141,131 @@ export function UserManagement() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">用户管理</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>用户权限管理，支持设置用户的管辖范围（区县/街道/社区）</p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            刷新
-          </Button>
-          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
-            <Download className="w-4 h-4 mr-2" />
-            导出
-          </Button>
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="w-4 h-4 mr-2" />
-                新建用户
-              </Button>
-            </DialogTrigger>
-            <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="new-user-desc">
-              <DialogHeader>
-                <DialogTitle className="text-[var(--color-neutral-11)]">新建用户</DialogTitle>
-                <DialogDescription id="new-user-desc" className={MUTED_TEXT_CLASS}>填写用户信息并配置管辖范围</DialogDescription>
-              </DialogHeader>
-              <div className="grid grid-cols-2 gap-4 py-4">
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>用户名 *</Label>
-                  <Input className={DARK_INPUT_CLASS} placeholder="请输入用户名" value={newUserForm.username} onChange={e => setNewUserForm({...newUserForm, username: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>真实姓名 *</Label>
-                  <Input className={DARK_INPUT_CLASS} placeholder="请输入真实姓名" value={newUserForm.realName} onChange={e => setNewUserForm({...newUserForm, realName: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>邮箱 *</Label>
-                  <Input className={DARK_INPUT_CLASS} type="email" placeholder="请输入邮箱" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
-                </div>
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>手机号 *</Label>
-                  <Input className={DARK_INPUT_CLASS} placeholder="请输入手机号" value={newUserForm.phone} onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})} />
-                </div>
-                
-                <div className="col-span-2 my-2 border-t border-[var(--color-neutral-03)]"></div>
-                
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>角色 *</Label>
-                  <Select onValueChange={v => setNewUserForm({...newUserForm, role: v})}>
-                    <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
-                      <SelectValue placeholder="选择角色" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">系统管理员</SelectItem>
-                      <SelectItem value="district">区域管理员</SelectItem>
-                      <SelectItem value="street">街道干部</SelectItem>
-                      <SelectItem value="grid">网格员</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>所属部门</Label>
-                  <Input className={DARK_INPUT_CLASS} placeholder="请输入所属部门" value={newUserForm.department} onChange={e => setNewUserForm({...newUserForm, department: e.target.value})} />
-                </div>
+      <PageHeader
+        eyebrow="USER MANAGEMENT"
+        title="用户管理"
+        description="管理用户状态、组织归属和角色入口，支撑后续权限隔离。"
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" className={ACTION_BUTTON_CLASS}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
+            <Button variant="outline" className={ACTION_BUTTON_CLASS}>
+              <Download className="w-4 h-4 mr-2" />
+              导出
+            </Button>
+            <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="w-4 h-4 mr-2" />
+                  新建用户
+                </Button>
+              </DialogTrigger>
+              <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="new-user-desc">
+                <DialogHeader>
+                  <DialogTitle className="text-[var(--color-neutral-11)]">新建用户</DialogTitle>
+                  <DialogDescription id="new-user-desc" className={MUTED_TEXT_CLASS}>填写用户信息并配置管辖范围</DialogDescription>
+                </DialogHeader>
+                <div className="grid grid-cols-2 gap-4 py-4">
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>用户名 *</Label>
+                    <Input className={DARK_INPUT_CLASS} placeholder="请输入用户名" value={newUserForm.username} onChange={e => setNewUserForm({...newUserForm, username: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>真实姓名 *</Label>
+                    <Input className={DARK_INPUT_CLASS} placeholder="请输入真实姓名" value={newUserForm.realName} onChange={e => setNewUserForm({...newUserForm, realName: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>邮箱 *</Label>
+                    <Input className={DARK_INPUT_CLASS} type="email" placeholder="请输入邮箱" value={newUserForm.email} onChange={e => setNewUserForm({...newUserForm, email: e.target.value})} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>手机号 *</Label>
+                    <Input className={DARK_INPUT_CLASS} placeholder="请输入手机号" value={newUserForm.phone} onChange={e => setNewUserForm({...newUserForm, phone: e.target.value})} />
+                  </div>
 
-                <div className="col-span-2 space-y-2">
-                  <Label className={MUTED_TEXT_CLASS}>管辖范围配置</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Select onValueChange={v => setNewUserForm({...newUserForm, district: v, street: '', community: ''})}>
-                      <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
-                        <SelectValue placeholder="区县" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getDistricts().map(d => (
-                          <SelectItem key={d} value={d}>{d}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    
-                    <Select 
-                      disabled={!newUserForm.district}
-                      onValueChange={v => setNewUserForm({...newUserForm, street: v, community: ''})}
-                    >
-                      <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
-                        <SelectValue placeholder="街道/乡镇" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {getStreets(newUserForm.district).map(s => (
-                          <SelectItem key={s} value={s}>{s}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="col-span-2 my-2 border-t border-[var(--color-neutral-03)]"></div>
 
-                    <Select 
-                      disabled={!newUserForm.street}
-                      onValueChange={v => setNewUserForm({...newUserForm, community: v})}
-                    >
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>角色 *</Label>
+                    <Select onValueChange={v => setNewUserForm({...newUserForm, role: v})}>
                       <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
-                        <SelectValue placeholder="社区/村" />
+                        <SelectValue placeholder="选择角色" />
                       </SelectTrigger>
                       <SelectContent>
-                        {getCommunities(newUserForm.district, newUserForm.street).map(c => (
-                          <SelectItem key={c} value={c}>{c}</SelectItem>
-                        ))}
+                        <SelectItem value="admin">系统管理员</SelectItem>
+                        <SelectItem value="district">区域管理员</SelectItem>
+                        <SelectItem value="street">街道干部</SelectItem>
+                        <SelectItem value="grid">网格员</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <p className={`mt-1 text-xs ${MUTED_TEXT_CLASS}`}>
-                    注：如果不选择下级区域，则默认为管辖上级区域下的所有范围。例如只选"蓬莱区"，则拥有全区权限。
-                  </p>
+                  <div className="space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>所属部门</Label>
+                    <Input className={DARK_INPUT_CLASS} placeholder="请输入所属部门" value={newUserForm.department} onChange={e => setNewUserForm({...newUserForm, department: e.target.value})} />
+                  </div>
+
+                  <div className="col-span-2 space-y-2">
+                    <Label className={MUTED_TEXT_CLASS}>管辖范围配置</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Select onValueChange={v => setNewUserForm({...newUserForm, district: v, street: '', community: ''})}>
+                        <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
+                          <SelectValue placeholder="区县" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getDistricts().map(d => (
+                            <SelectItem key={d} value={d}>{d}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        disabled={!newUserForm.district}
+                        onValueChange={v => setNewUserForm({...newUserForm, street: v, community: ''})}
+                      >
+                        <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
+                          <SelectValue placeholder="街道/乡镇" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getStreets(newUserForm.district).map(s => (
+                            <SelectItem key={s} value={s}>{s}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+
+                      <Select
+                        disabled={!newUserForm.street}
+                        onValueChange={v => setNewUserForm({...newUserForm, community: v})}
+                      >
+                        <SelectTrigger className={DARK_SELECT_TRIGGER_CLASS}>
+                          <SelectValue placeholder="社区/村" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {getCommunities(newUserForm.district, newUserForm.street).map(c => (
+                            <SelectItem key={c} value={c}>{c}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <p className={`mt-1 text-xs ${MUTED_TEXT_CLASS}`}>
+                      注：如果不选择下级区域，则默认为管辖上级区域下的所有范围。例如只选"蓬莱区"，则拥有全区权限。
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={() => setIsCreateDialogOpen(false)}>
-                  取消
-                </Button>
-                <Button onClick={() => setIsCreateDialogOpen(false)}>
-                  创建
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
+                <div className="flex justify-end gap-3">
+                  <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={() => setIsCreateDialogOpen(false)}>
+                    取消
+                  </Button>
+                  <Button onClick={() => setIsCreateDialogOpen(false)}>
+                    创建
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        }
+      />
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

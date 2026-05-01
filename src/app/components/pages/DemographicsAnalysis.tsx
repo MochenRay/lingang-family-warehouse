@@ -10,16 +10,16 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Badge } from '../ui/badge';
 import { personRepository } from '../../services/repositories/personRepository';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 import type { Person } from '../../types/core';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { PageHeader } from './PageHeader';
 
 const COLORS = ['#2563eb', '#7c3aed', '#0f766e', '#f97316', '#dc2626', '#16a34a'];
 const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
-const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '研究生', '硕士', '博士', '其他', '未记录'];
+const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
 const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const CHART_GRID_STROKE = '#3d4663';
 const AXIS_TICK = { fontSize: 12, fill: '#6b7599' };
@@ -29,6 +29,13 @@ const AGE_BUCKETS = [
   { name: '19-35岁', min: 19, max: 35 },
   { name: '0-18岁', min: 0, max: 18 },
 ];
+
+interface PyramidTooltipPayloadItem {
+  name?: string;
+  value?: number;
+  color?: string;
+  fill?: string;
+}
 
 function aggregateCounts(items: Array<string | undefined>, limit = 6) {
   const counts = new Map<string, number>();
@@ -63,7 +70,8 @@ function buildTypeDistribution(people: Person[]) {
 function buildEducationDistribution(people: Person[]) {
   const counts = new Map<string, number>();
   people.forEach((person) => {
-    const key = person.education?.trim() || '未记录';
+    const raw = person.education?.trim() || '未记录';
+    const key = raw === '研究生' ? '硕士' : raw === '博士后' ? '博士' : raw;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
 
@@ -82,7 +90,28 @@ function buildEducationDistribution(people: Person[]) {
     name,
     value,
     fill: COLORS[index % COLORS.length],
-  }));
+    }));
+}
+
+function PyramidTooltip({ active, payload, label }: { active?: boolean; payload?: PyramidTooltipPayloadItem[]; label?: string | number }) {
+  if (!active || !payload?.length) {
+    return null;
+  }
+
+  return (
+    <div className="rounded-lg border border-[#5B6FA5] bg-[#10182F] px-3 py-2 text-xs text-white shadow-2xl">
+      {label ? <div className="mb-1 font-semibold text-[#DCE6FF]">{label}</div> : null}
+      <div className="space-y-1">
+        {payload.map((item) => (
+          <div key={`${item.name}-${item.value}`} className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color || item.fill || '#4E86DF' }} />
+            <span className="text-[#AFC0E8]">{item.name}</span>
+            <span className="font-semibold text-white">{Math.abs(Number(item.value ?? 0))}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function DemographicsAnalysis() {
@@ -132,14 +161,21 @@ export function DemographicsAnalysis() {
   const pyramid = useMemo(() => {
     const rows = AGE_BUCKETS.map((bucket) => {
       const bucketPeople = people.filter((person) => person.age >= bucket.min && person.age <= bucket.max);
+      const male = bucketPeople.filter((person) => person.gender === '男').length;
+      const female = bucketPeople.filter((person) => person.gender === '女').length;
       return {
         name: bucket.name,
-        male: bucketPeople.filter((person) => person.gender === '男').length,
-        female: bucketPeople.filter((person) => person.gender === '女').length,
+        男: -male,
+        女: female,
       };
     });
-    const max = Math.max(1, ...rows.flatMap((row) => [row.male, row.female]));
-    return { rows, max };
+    const max = Math.max(1, ...rows.flatMap((row) => [Math.abs(row.男), row.女]));
+    const axisMax = Math.ceil(max / 10) * 10;
+    return {
+      rows,
+      max: axisMax,
+      ticks: [-axisMax, -axisMax / 2, 0, axisMax / 2, axisMax],
+    };
   }, [people]);
   const topTags = useMemo(
     () =>
@@ -172,10 +208,11 @@ export function DemographicsAnalysis() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight text-white">人口特征分析</h2>
-        <p className="mt-1 text-sm text-[var(--color-neutral-08)]">按年龄、类型、教育、民族与标签覆盖扫描人口结构。</p>
-      </div>
+      <PageHeader
+        eyebrow="DEMOGRAPHICS ANALYTICS"
+        title="人口特征分析"
+        description="快速识别年龄、学历与标签覆盖结构，辅助网格员判断重点人群服务优先级。"
+      />
 
       <div className="grid gap-4 md:grid-cols-4">
         <Card className={PANEL_CLASS}>
@@ -220,29 +257,26 @@ export function DemographicsAnalysis() {
           {loading ? (
             <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总年龄性别结构...</div>
           ) : (
-            <div className="space-y-3">
-              <div className="grid grid-cols-[1fr,92px,1fr] items-center text-xs font-medium text-[var(--color-neutral-08)]">
-                <div className="text-right">男</div>
-                <div />
-                <div>女</div>
-              </div>
-              {pyramid.rows.map((row) => (
-                <div key={row.name} className="grid grid-cols-[1fr,92px,1fr] items-center gap-3">
-                  <div className="flex items-center justify-end gap-2">
-                    <span className="w-8 text-right text-xs font-semibold text-[var(--color-neutral-10)]">{row.male}</span>
-                    <div className="flex h-7 flex-1 justify-end overflow-hidden rounded-l bg-[var(--color-neutral-03)]">
-                      <div className="h-full rounded-l bg-[#4E86DF]" style={{ width: `${(row.male / pyramid.max) * 100}%` }} />
-                    </div>
-                  </div>
-                  <div className="text-center text-sm font-semibold text-[var(--color-neutral-10)]">{row.name}</div>
-                  <div className="flex items-center gap-2">
-                    <div className="h-7 flex-1 overflow-hidden rounded-r bg-[var(--color-neutral-03)]">
-                      <div className="h-full rounded-r bg-[#F97316]" style={{ width: `${(row.female / pyramid.max) * 100}%` }} />
-                    </div>
-                    <span className="w-8 text-xs font-semibold text-[var(--color-neutral-10)]">{row.female}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={pyramid.rows} layout="vertical" margin={{ top: 8, right: 24, left: 12, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis
+                    type="number"
+                    domain={[-pyramid.max, pyramid.max]}
+                    ticks={pyramid.ticks}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={AXIS_TICK}
+                    tickFormatter={(value) => String(Math.abs(Number(value)))}
+                    allowDecimals={false}
+                  />
+                  <YAxis dataKey="name" type="category" width={72} axisLine={false} tickLine={false} tick={{ ...AXIS_TICK, fontWeight: 'bold' }} />
+                  <Tooltip content={<PyramidTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Bar dataKey="男" fill="#4E86DF" name="男" radius={[4, 0, 0, 4]} barSize={24} />
+                  <Bar dataKey="女" fill="#F97316" name="女" radius={[0, 4, 4, 0]} barSize={24} />
+                </BarChart>
+              </ResponsiveContainer>
             </div>
           )}
         </CardContent>
@@ -329,8 +363,8 @@ export function DemographicsAnalysis() {
         <CardHeader>
           <CardTitle className="text-base font-semibold text-white">重点标签热度</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="h-[280px]">
+          <CardContent>
+            <div className="h-[280px]">
             {loading ? (
               <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总标签热度...</div>
             ) : (
@@ -348,14 +382,6 @@ export function DemographicsAnalysis() {
                 </BarChart>
               </ResponsiveContainer>
             )}
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            {(tagSnapshot?.tags ?? []).map((tag) => (
-              <Badge key={tag.id} variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
-                {tag.name} · {tag.coverageCount} 人
-              </Badge>
-            ))}
           </div>
         </CardContent>
       </Card>

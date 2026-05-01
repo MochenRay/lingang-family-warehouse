@@ -11,6 +11,7 @@ import { noticeRepository } from '../../services/repositories/noticeRepository';
 import { knowledgeRepository } from '../../services/repositories/knowledgeRepository';
 import { taskRuleRepository } from '../../services/repositories/taskRuleRepository';
 import { downloadJson } from '../../services/export';
+import { PageHeader } from './PageHeader';
 
 type ReportType = 'monthly' | 'special' | 'task' | 'knowledge';
 
@@ -181,13 +182,11 @@ export function DataReports() {
 
   return (
     <div className="space-y-5 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">REPORT EXPORTS</div>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight text-white">报表中心</h2>
-          <p className={`mt-1 text-sm ${MUTED_TEXT}`}>直接基于当前治理快照生成导出包，不再依赖手工样例或延时生成。</p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="REPORT EXPORTS"
+        title="报表中心"
+        description="基于当前治理快照快速生成可留痕导出包，减少手工整理和重复汇总。"
+      />
 
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
         <Card className={`lg:col-span-1 ${PANEL_CLASS}`}>

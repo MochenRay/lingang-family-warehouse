@@ -92,6 +92,9 @@ class StatsRegionSummaryRead(ReadSchema):
     floatingCount: int
     activeConflictCount: int
     riskCount: int
+    rentalCount: int = 0
+    vacantCount: int = 0
+    warningCount: int = 0
     score: float
 
 

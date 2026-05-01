@@ -34,6 +34,7 @@ import { Progress } from '../ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import type { Grid, House, HousingHistory, Person } from '../../types/core';
+import { PageHeader } from './PageHeader';
 
 const panelClassName =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
@@ -478,7 +479,13 @@ export function HousingManagement() {
   ].filter(Boolean);
 
   return (
-    <div className="space-y-3 text-[var(--color-neutral-10)]">
+    <div className="space-y-4 text-[var(--color-neutral-10)]">
+      <PageHeader
+        eyebrow="HOUSING LEDGER"
+        title="房屋管理"
+        description="以 Finder 台账浏览房屋、楼栋和住户线索，快速定位可编辑对象。"
+      />
+
       <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3">
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
@@ -490,7 +497,6 @@ export function HousingManagement() {
               <span>·</span>
               <span>当前 {finderModel.filteredHouses.length} / {houses.length} 套</span>
             </div>
-            <h1 className="mt-2 text-xl font-semibold text-[var(--color-neutral-11)]">房屋管理</h1>
             <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-[var(--color-neutral-08)]">
               {crumbItems.length > 0 ? (
                 crumbItems.map((item, index) => (
@@ -532,69 +538,71 @@ export function HousingManagement() {
 
       <FinderStatsStrip stats={finderModel.stats} />
 
-      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
-        <div className="grid min-h-[440px] gap-3 xl:grid-cols-5">
-          <FinderColumn
-            title="社区"
-            description="按现有房屋 communityName 派生"
-            items={toFinderItems(finderModel.communities, Warehouse)}
-            loading={isLoading}
-            error={loadError}
-            onRetry={loadData}
-            onItemClick={selectCommunity}
-            emptyTitle="没有社区数据"
-            emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
-            className={finderColumnClassName}
-          />
-          <FinderColumn
-            title="楼栋"
-            description={selection.community ?? '先选社区'}
-            items={toFinderItems(finderModel.buildings, Building2)}
-            loading={isLoading}
-            error={loadError}
-            onRetry={loadData}
-            onItemClick={selectBuilding}
-            emptyTitle="没有楼栋"
-            emptyDescription="当前社区下没有可浏览楼栋，请切换社区或清空搜索条件。"
-            className={finderColumnClassName}
-          />
-          <FinderColumn
-            title="单元"
-            description={selection.building ?? '先选楼栋'}
-            items={toFinderItems(finderModel.units, Layers)}
-            loading={isLoading}
-            error={loadError}
-            onRetry={loadData}
-            onItemClick={selectUnit}
-            emptyTitle="没有单元"
-            emptyDescription="当前楼栋下没有可浏览单元，请切换楼栋或清空搜索条件。"
-            className={finderColumnClassName}
-          />
-          <FinderColumn
-            title="楼层"
-            description={selection.unit ?? '先选单元'}
-            items={toFinderItems(finderModel.floors, Grid3x3)}
-            loading={isLoading}
-            error={loadError}
-            onRetry={loadData}
-            onItemClick={selectFloor}
-            emptyTitle="没有楼层"
-            emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
-            className={finderColumnClassName}
-          />
-          <FinderColumn
-            title="房屋"
-            description={selection.floor ?? '先选楼层'}
-            items={houseItems}
-            selectedId={selection.houseId}
-            loading={isLoading}
-            error={loadError}
-            onRetry={loadData}
-            onItemClick={selectHouse}
-            emptyTitle="没有房屋"
-            emptyDescription="当前楼层下没有可浏览房屋，请切换楼层或清空搜索条件。"
-            className={finderColumnClassName}
-          />
+      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
+        <div className="-mx-1 overflow-x-auto px-1 pb-2">
+          <div className="grid min-h-[440px] min-w-[920px] gap-3 xl:grid-cols-5">
+            <FinderColumn
+              title="社区"
+              description="按现有房屋 communityName 派生"
+              items={toFinderItems(finderModel.communities, Warehouse)}
+              loading={isLoading}
+              error={loadError}
+              onRetry={loadData}
+              onItemClick={selectCommunity}
+              emptyTitle="没有社区数据"
+              emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
+              className={finderColumnClassName}
+            />
+            <FinderColumn
+              title="楼栋"
+              description={selection.community ?? '先选社区'}
+              items={toFinderItems(finderModel.buildings, Building2)}
+              loading={isLoading}
+              error={loadError}
+              onRetry={loadData}
+              onItemClick={selectBuilding}
+              emptyTitle="没有楼栋"
+              emptyDescription="当前社区下没有可浏览楼栋，请切换社区或清空搜索条件。"
+              className={finderColumnClassName}
+            />
+            <FinderColumn
+              title="单元"
+              description={selection.building ?? '先选楼栋'}
+              items={toFinderItems(finderModel.units, Layers)}
+              loading={isLoading}
+              error={loadError}
+              onRetry={loadData}
+              onItemClick={selectUnit}
+              emptyTitle="没有单元"
+              emptyDescription="当前楼栋下没有可浏览单元，请切换楼栋或清空搜索条件。"
+              className={finderColumnClassName}
+            />
+            <FinderColumn
+              title="楼层"
+              description={selection.unit ?? '先选单元'}
+              items={toFinderItems(finderModel.floors, Grid3x3)}
+              loading={isLoading}
+              error={loadError}
+              onRetry={loadData}
+              onItemClick={selectFloor}
+              emptyTitle="没有楼层"
+              emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
+              className={finderColumnClassName}
+            />
+            <FinderColumn
+              title="房屋"
+              description={selection.floor ?? '先选楼层'}
+              items={houseItems}
+              selectedId={selection.houseId}
+              loading={isLoading}
+              error={loadError}
+              onRetry={loadData}
+              onItemClick={selectHouse}
+              emptyTitle="没有房屋"
+              emptyDescription="当前楼层下没有可浏览房屋，请切换楼层或清空搜索条件。"
+              className={finderColumnClassName}
+            />
+          </div>
         </div>
 
         <div className={detailPanelShellClassName}>

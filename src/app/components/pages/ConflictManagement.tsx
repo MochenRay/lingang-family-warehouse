@@ -51,6 +51,7 @@ import { conflictRepository, type ConflictContext } from "../../services/reposit
 import { personRepository } from "../../services/repositories/personRepository";
 import { ConflictRecord, Grid, Person } from "../../types/core";
 import { toast } from "sonner";
+import { PageHeader } from "./PageHeader";
 
 interface ConflictManagementProps {
   onRouteChange?: (route: string) => void;
@@ -339,16 +340,17 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)]">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-white mb-1">矛盾调解</h1>
-          <p className="text-sm text-[var(--color-neutral-08)]">全域矛盾纠纷排查化解、任务下派与督导</p>
-        </div>
-        <Button onClick={() => setIsDispatchDialogOpen(true)} className="bg-[#4E86DF] text-white hover:bg-[#2761CB]">
-          <Plus className="w-4 h-4 mr-2" />
-          下派纠纷任务
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="CONFLICT MEDIATION"
+        title="矛盾调解"
+        description="串联矛盾登记、处置过程和关联对象，保障纠纷跟进闭环。"
+        actions={
+          <Button onClick={() => setIsDispatchDialogOpen(true)} className="bg-[#4E86DF] text-white hover:bg-[#2761CB]">
+            <Plus className="w-4 h-4 mr-2" />
+            下派纠纷任务
+          </Button>
+        }
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className={DARK_CARD_CLASS}>

@@ -17,6 +17,7 @@ import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
+import { PageHeader } from './PageHeader';
 
 type ScopeKey = 'all' | 'hot' | 'stable';
 
@@ -98,12 +99,12 @@ export function MigrationTrends() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-white">人口流动趋势</h2>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">默认先看区县级迁入迁出，再下钻街镇、社区和网格。</p>
-        </div>
-        <div className="flex gap-3">
+      <PageHeader
+        eyebrow="MIGRATION ANALYTICS"
+        title="人口流动趋势"
+        description="识别流动人口变化和重点迁入迁出片区，辅助安排走访与出租房复核。"
+        actions={
+          <div className="flex gap-3">
           <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
             <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
               <SelectValue />
@@ -114,8 +115,9 @@ export function MigrationTrends() {
               <SelectItem value="stable">低波动区县</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       <div className="grid gap-3 md:grid-cols-3">
         <ChartCard title="近六月总迁入" className="md:col-span-1">

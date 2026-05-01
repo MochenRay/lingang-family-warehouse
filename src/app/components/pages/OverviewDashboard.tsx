@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { PageHeader } from './PageHeader';
 
 export function OverviewDashboard() {
   const [area, setArea] = useState('all');
@@ -127,47 +128,47 @@ export function OverviewDashboard() {
 
   return (
     <div className="space-y-6">
-      {/* 页面标题 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="mb-2">辖区总览（仪表盘）</h1>
-          <p className="text-gray-500">核心人口态势指标的仪表盘展示</p>
-        </div>
-        <div className="flex gap-3">
-          <Select value={area} onValueChange={setArea}>
-            <SelectTrigger className="w-[140px]">
-              <Home className="w-4 h-4 mr-2" />
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全辖区</SelectItem>
-              <SelectItem value="A">A区</SelectItem>
-              <SelectItem value="B">B区</SelectItem>
-              <SelectItem value="C">C区</SelectItem>
-              <SelectItem value="D">D区</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={timeRange} onValueChange={setTimeRange}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="realtime">实时数据</SelectItem>
-              <SelectItem value="today">今日</SelectItem>
-              <SelectItem value="week">本周</SelectItem>
-              <SelectItem value="month">本月</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button variant="outline">
-            <RefreshCw className="w-4 h-4 mr-2" />
-            刷新
-          </Button>
-          <Button variant="outline">
-            <Maximize2 className="w-4 h-4 mr-2" />
-            全屏
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="OVERVIEW ANALYTICS"
+        title="辖区总览"
+        description="汇总辖区人口态势、风险预警和趋势变化，帮助先看全局再下钻异常片区。"
+        actions={
+          <div className="flex flex-wrap gap-3">
+            <Select value={area} onValueChange={setArea}>
+              <SelectTrigger className="w-[140px]">
+                <Home className="w-4 h-4 mr-2" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">全辖区</SelectItem>
+                <SelectItem value="A">A区</SelectItem>
+                <SelectItem value="B">B区</SelectItem>
+                <SelectItem value="C">C区</SelectItem>
+                <SelectItem value="D">D区</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={timeRange} onValueChange={setTimeRange}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="realtime">实时数据</SelectItem>
+                <SelectItem value="today">今日</SelectItem>
+                <SelectItem value="week">本周</SelectItem>
+                <SelectItem value="month">本月</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline">
+              <RefreshCw className="w-4 h-4 mr-2" />
+              刷新
+            </Button>
+            <Button variant="outline">
+              <Maximize2 className="w-4 h-4 mr-2" />
+              全屏
+            </Button>
+          </div>
+        }
+      />
 
       {/* 核心指标卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

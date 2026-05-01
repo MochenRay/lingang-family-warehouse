@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { noticeRepository } from '../../services/repositories/noticeRepository';
+import { PageHeader } from './PageHeader';
 
 interface NoticeFormData {
   title: string;
@@ -155,11 +156,11 @@ export function PublishNotice() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
-      {/* 页面标题 */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">发布公告</h2>
-        <p className="text-muted-foreground">创建并发布公告通知，实时触达移动端网格员</p>
-      </div>
+      <PageHeader
+        eyebrow="NOTICE PUBLISH"
+        title="发布公告"
+        description="选择发布范围并校验内容，减少公告漏发和重复发布。"
+      />
 
       {/* 成功提示 */}
       {publishSuccess && (

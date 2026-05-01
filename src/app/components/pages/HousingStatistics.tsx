@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, Building, Home, Hotel, MapPinned, Store } from 'lucide-react';
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
+import { AlertTriangle, Building, HelpCircle, Home, Hotel, MapPinned, Store } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { houseRepository } from '../../services/repositories/houseRepository';
-import { personRepository } from '../../services/repositories/personRepository';
-import { statsRepository, type DashboardStatsResponse, type StatsGridItem } from '../../services/repositories/statsRepository';
-import type { House, Person } from '../../types/core';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { statsRepository, type DashboardStatsResponse, type StatsRegionSummary } from '../../services/repositories/statsRepository';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { PageHeader } from './PageHeader';
 
 const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const CHART_GRID_STROKE = '#3d4663';
@@ -25,9 +25,7 @@ interface DistrictHousingItem {
   score: number;
 }
 
-function countByTag(houses: House[], keyword: string) {
-  return houses.filter((house) => (house.tags ?? []).some((tag) => tag.includes(keyword))).length;
-}
+type DistrictSortKey = 'pressure' | 'rental' | 'warning' | 'floating';
 
 function formatNumber(value: number) {
   return value.toLocaleString('zh-CN');
@@ -48,11 +46,26 @@ function createDistrictRow(name: string): DistrictHousingItem {
   };
 }
 
+function getPressureScore(row: Pick<DistrictHousingItem, 'warningCount' | 'rentalCount' | 'vacantCount' | 'floatingCount'>) {
+  return Math.min(100, Number((row.warningCount * 9 + row.rentalCount * 1.8 + row.vacantCount * 1.2 + row.floatingCount * 0.4).toFixed(1)));
+}
+
+function createDistrictRowFromSummary(summary: StatsRegionSummary): DistrictHousingItem {
+  const row = createDistrictRow(summary.name);
+  row.houseCount = summary.houseCount;
+  row.peopleCount = summary.peopleCount;
+  row.rentalCount = summary.rentalCount ?? 0;
+  row.vacantCount = summary.vacantCount ?? 0;
+  row.warningCount = summary.warningCount ?? 0;
+  row.floatingCount = summary.floatingCount;
+  row.selfOccupiedCount = Math.max(0, summary.houseCount - row.rentalCount - row.vacantCount);
+  row.score = getPressureScore(row);
+  return row;
+}
+
 export function HousingStatistics() {
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
-  const [houses, setHouses] = useState<House[]>([]);
-  const [people, setPeople] = useState<Person[]>([]);
-  const [grids, setGrids] = useState<StatsGridItem[]>([]);
+  const [districtSort, setDistrictSort] = useState<DistrictSortKey>('pressure');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -63,19 +76,11 @@ export function HousingStatistics() {
       try {
         setLoading(true);
         setError('');
-        const [nextDashboard, nextHouses, nextPeople, nextGridStats] = await Promise.all([
-          statsRepository.getDashboard('month'),
-          houseRepository.getHouses({ limit: 500 }),
-          personRepository.getPeople({ limit: 500 }),
-          statsRepository.getGridStats(),
-        ]);
+        const nextDashboard = await statsRepository.getDashboard('month');
         if (cancelled) {
           return;
         }
         setDashboard(nextDashboard);
-        setHouses(nextHouses);
-        setPeople(nextPeople);
-        setGrids(nextGridStats.grids);
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : '房屋网格画像加载失败');
@@ -93,62 +98,24 @@ export function HousingStatistics() {
     };
   }, []);
 
-  const gridById = useMemo(() => new Map(grids.map((grid) => [grid.id, grid])), [grids]);
-
   const districtHousingRows = useMemo(() => {
-    const rows = new Map<string, DistrictHousingItem>();
-    const ensure = (name: string) => {
-      const nextName = name || '未识别区县';
-      const existing = rows.get(nextName);
-      if (existing) {
-        return existing;
-      }
-      const created = createDistrictRow(nextName);
-      rows.set(nextName, created);
-      return created;
-    };
-
-    (dashboard?.regionSummaries ?? [])
+    const rows = (dashboard?.regionSummaries ?? [])
       .filter((item) => item.level === 'district')
-      .forEach((item) => ensure(item.name));
+      .map(createDistrictRowFromSummary);
 
-    houses.forEach((house) => {
-      const districtName = gridById.get(house.gridId)?.districtName ?? house.communityName ?? '未识别区县';
-      const row = ensure(districtName);
-      row.houseCount += 1;
-      if (house.type === '自住') {
-        row.selfOccupiedCount += 1;
-      } else if (house.type === '出租') {
-        row.rentalCount += 1;
-      } else if (house.type === '空置') {
-        row.vacantCount += 1;
-      } else if (house.type === '经营') {
-        row.commercialCount += 1;
+    return rows.sort((left, right) => {
+      if (districtSort === 'rental') {
+        return right.rentalCount - left.rentalCount || right.score - left.score || left.name.localeCompare(right.name, 'zh-CN');
       }
-      if (
-        (house.tags ?? []).some((tag) => tag.includes('群租') || tag.includes('换租') || tag.includes('租约到期')) ||
-        house.occupancyStatus === '户在人不在'
-      ) {
-        row.warningCount += 1;
+      if (districtSort === 'warning') {
+        return right.warningCount - left.warningCount || right.score - left.score || left.name.localeCompare(right.name, 'zh-CN');
       }
+      if (districtSort === 'floating') {
+        return right.floatingCount - left.floatingCount || right.score - left.score || left.name.localeCompare(right.name, 'zh-CN');
+      }
+      return right.score - left.score || right.warningCount - left.warningCount || right.houseCount - left.houseCount || left.name.localeCompare(right.name, 'zh-CN');
     });
-
-    people.forEach((person) => {
-      const districtName = gridById.get(person.gridId)?.districtName ?? '未识别区县';
-      const row = ensure(districtName);
-      row.peopleCount += 1;
-      if (person.type === '流动') {
-        row.floatingCount += 1;
-      }
-    });
-
-    return Array.from(rows.values())
-      .map((row) => ({
-        ...row,
-        score: Math.min(100, Number((row.warningCount * 9 + row.rentalCount * 1.8 + row.vacantCount * 1.2 + row.floatingCount * 0.4).toFixed(1))),
-      }))
-      .sort((left, right) => right.score - left.score || right.houseCount - left.houseCount || left.name.localeCompare(right.name, 'zh-CN'));
-  }, [dashboard, gridById, houses, people]);
+  }, [dashboard, districtSort]);
 
   const houseUsageData = useMemo(() => {
     if (!dashboard) {
@@ -164,19 +131,11 @@ export function HousingStatistics() {
 
   const rentalWarnings = useMemo(
     () => [
-      { name: '群租预警', value: countByTag(houses, '群租'), fill: '#ef4444' },
-      {
-        name: '频繁换租',
-        value: countByTag(houses, '换租') + countByTag(houses, '租约到期'),
-        fill: '#f97316',
-      },
-      {
-        name: '人房分离',
-        value: houses.filter((house) => house.occupancyStatus === '户在人不在').length,
-        fill: '#8b5cf6',
-      },
+      { name: '出租房屋', value: dashboard?.housingStats.rental ?? 0, fill: '#f97316' },
+      { name: '预警线索', value: districtHousingRows.reduce((sum, row) => sum + row.warningCount, 0), fill: '#ef4444' },
+      { name: '空置房屋', value: dashboard?.housingStats.vacant ?? 0, fill: '#8b5cf6' },
     ],
-    [houses],
+    [dashboard, districtHousingRows],
   );
 
   const summaryCards = useMemo(() => {
@@ -200,10 +159,11 @@ export function HousingStatistics() {
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-white">房屋网格画像</h1>
-        <p className="mt-1 text-sm text-[var(--color-neutral-08)]">先看区县级房屋治理压力，再下钻街镇、社区和网格。</p>
-      </div>
+      <PageHeader
+        eyebrow="HOUSING ANALYTICS"
+        title="房屋网格画像"
+        description="按区县识别出租、空置与预警压力，帮助先定位需要投入治理资源的片区。"
+      />
 
       {error ? (
         <Card className="border-destructive/40 bg-destructive/10 text-destructive">
@@ -246,7 +206,7 @@ export function HousingStatistics() {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
                     <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
-                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                    <RechartsTooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                     <Bar dataKey="房屋" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="出租" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="预警" fill="#ef4444" radius={[4, 4, 0, 0]} />
@@ -258,18 +218,43 @@ export function HousingStatistics() {
         </Card>
 
         <Card className={PANEL_CLASS}>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
-              <AlertTriangle className="h-5 w-5 text-orange-500" />
-              重点区县清单
-            </CardTitle>
+          <CardHeader className="gap-3">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
+                重点区县清单
+                <TooltipProvider delayDuration={100}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white">
+                        <HelpCircle className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      压力 = min(100, 预警x9 + 出租x1.8 + 空置x1.2 + 流动x0.4)
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </CardTitle>
+              <Select value={districtSort} onValueChange={(value) => setDistrictSort(value as DistrictSortKey)}>
+                <SelectTrigger className="h-9 w-full border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] sm:w-[148px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pressure">按压力</SelectItem>
+                  <SelectItem value="rental">按出租</SelectItem>
+                  <SelectItem value="warning">按预警</SelectItem>
+                  <SelectItem value="floating">按流动</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardHeader>
           <CardContent className="space-y-3">
             {districtHousingRows.slice(0, 6).map((row, index) => (
-              <div key={row.name} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+              <div key={row.name} className="rounded-lg border border-[var(--color-neutral-03)] bg-[linear-gradient(135deg,rgba(78,134,223,0.10),rgba(16,24,47,0.92))] p-4">
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-3">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-sm font-semibold text-blue-500">{index + 1}</span>
+                    <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[linear-gradient(135deg,#4E86DF,#8B5CF6)] text-sm font-semibold text-white shadow-[0_8px_18px_rgba(78,134,223,0.24)]">{index + 1}</span>
                     <div>
                       <div className="font-semibold text-[var(--color-neutral-11)]">{row.name}</div>
                       <div className="text-xs text-[var(--color-neutral-08)]">
@@ -278,22 +263,22 @@ export function HousingStatistics() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold text-[var(--color-neutral-11)]">{row.score}</div>
-                    <div className="text-xs text-[var(--color-neutral-07)]">压力</div>
+                    <div className={`text-xl font-semibold ${row.score >= 80 ? 'text-[#FCA5A5]' : row.score >= 55 ? 'text-[#FDBA74]' : 'text-[var(--color-neutral-11)]'}`}>{row.score}</div>
+                    <div className="text-xs text-[var(--color-neutral-07)]">压力系数</div>
                   </div>
                 </div>
                 <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <div>
+                  <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-2 py-2">
                     <div className="text-[var(--color-neutral-07)]">出租</div>
-                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.rentalCount}</div>
+                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.rentalCount}</div>
                   </div>
-                  <div>
+                  <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-2 py-2">
                     <div className="text-[var(--color-neutral-07)]">预警</div>
-                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.warningCount}</div>
+                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.warningCount}</div>
                   </div>
-                  <div>
+                  <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-2 py-2">
                     <div className="text-[var(--color-neutral-07)]">流动</div>
-                    <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{row.floatingCount}</div>
+                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.floatingCount}</div>
                   </div>
                 </div>
               </div>
@@ -328,7 +313,7 @@ export function HousingStatistics() {
                         <Cell key={entry.name} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip content={<DarkChartTooltip />} />
+                    <RechartsTooltip content={<DarkChartTooltip />} />
                   </PieChart>
                 </ResponsiveContainer>
               )}
@@ -353,7 +338,7 @@ export function HousingStatistics() {
                     <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke={CHART_GRID_STROKE} />
                     <XAxis type="number" axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
                     <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ ...AXIS_TICK, fontWeight: 'bold' }} />
-                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                    <RechartsTooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                     <Bar dataKey="value" name="数量" radius={[0, 4, 4, 0]} barSize={40}>
                       {rentalWarnings.map((entry) => (
                         <Cell key={entry.name} fill={entry.fill} />

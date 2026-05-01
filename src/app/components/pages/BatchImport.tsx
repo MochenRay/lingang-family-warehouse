@@ -9,6 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner';
+import { PageHeader } from './PageHeader';
 
 type ImportStatus = '待校验' | '成功' | '部分失败' | '失败';
 
@@ -279,23 +280,21 @@ export function BatchImport() {
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      {/* 页面标题和历史入口 */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight text-white">批量导入</h2>
-          <p className="mt-1 text-sm text-[var(--color-neutral-08)]">
-            通过 Excel 模板批量导入人口、房屋、人房关系等数据
-          </p>
-        </div>
-        <Button 
-          variant="outline" 
-          onClick={() => setShowHistoryDialog(true)}
-          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
-        >
-          <History className="w-4 h-4" />
-          导入历史
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="BATCH IMPORT"
+        title="批量导入"
+        description="将批量人口或房屋数据先校验再入库，减少手工录入错误。"
+        actions={
+          <Button
+            variant="outline"
+            onClick={() => setShowHistoryDialog(true)}
+            className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
+          >
+            <History className="w-4 h-4" />
+            导入历史
+          </Button>
+        }
+      />
 
       {/* 导入操作区 */}
       <Tabs 

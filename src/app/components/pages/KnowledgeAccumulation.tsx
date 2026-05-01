@@ -30,6 +30,7 @@ import {
 import type { KnowledgeEntry } from '../../types/core';
 import { knowledgeRepository } from '../../services/repositories/knowledgeRepository';
 import { searchRepository, type SearchResultItem } from '../../services/repositories/searchRepository';
+import { PageHeader } from './PageHeader';
 
 interface KnowledgeAccumulationProps {
   onRouteChange?: (route: string) => void;
@@ -188,23 +189,23 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
 
   return (
     <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
-      <div className="flex shrink-0 flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-        <div className="min-w-0">
-          <div className="text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">KNOWLEDGE LEDGER</div>
-          <h1 className="mt-1 text-2xl font-semibold text-white">知识沉淀</h1>
-          <p className={`mt-1 text-sm ${MUTED_TEXT_CLASS}`}>
-            资料沉淀、知识检索与真实对象回跳入口
-          </p>
-        </div>
-        <Button
-          size="sm"
-          variant="outline"
-          className="h-8 gap-2 rounded-sm border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white disabled:bg-[var(--color-neutral-02)] disabled:text-[var(--color-neutral-08)]"
-          disabled
-        >
-          <Plus className="h-4 w-4" />
-          上传资料（Phase 4）
-        </Button>
+      <div className="shrink-0">
+        <PageHeader
+          eyebrow="KNOWLEDGE LEDGER"
+          title="知识沉淀"
+          description="沉淀政策、公告和治理经验，给智能体问答与报表生成提供可信材料。"
+          actions={
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-8 gap-2 rounded-sm border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white disabled:bg-[var(--color-neutral-02)] disabled:text-[var(--color-neutral-08)]"
+              disabled
+            >
+              <Plus className="h-4 w-4" />
+              上传资料（Phase 4）
+            </Button>
+          }
+        />
       </div>
 
       <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">

@@ -1,4 +1,4 @@
-import type { Grid } from '../../types/core';
+import type { Grid, House } from '../../types/core';
 import { callWithFallback, fetchJson } from '../api';
 import { db } from '../db';
 import { taskRepository } from './taskRepository';
@@ -86,6 +86,9 @@ export interface StatsRegionSummary {
   floatingCount: number;
   activeConflictCount: number;
   riskCount: number;
+  rentalCount: number;
+  vacantCount: number;
+  warningCount: number;
   score: number;
 }
 
@@ -200,6 +203,14 @@ function average(values: number[]): number {
     return 0;
   }
   return Number((values.reduce((sum, value) => sum + value, 0) / values.length).toFixed(1));
+}
+
+function isHousingWarning(house: House): boolean {
+  const tags = house.tags ?? [];
+  return (
+    tags.some((tag) => tag.includes('群租') || tag.includes('换租') || tag.includes('租约到期')) ||
+    house.occupancyStatus === '户在人不在'
+  );
 }
 
 function parseGridHierarchy(name: string, gridId?: string): { districtName: string; streetName: string; communityName: string; gridLabel: string } {
@@ -458,14 +469,21 @@ async function buildFallbackPerformance(): Promise<PerformanceStatsResponse> {
 function buildFallbackRegionSummaries(
   grids: StatsGridItem[],
   people: ReturnType<typeof db.getPeople>,
+  houses: ReturnType<typeof db.getHouses>,
   conflicts: ReturnType<typeof db.getConflicts>,
 ): StatsRegionSummary[] {
   const peopleByGrid = new Map<string, typeof people>();
+  const housesByGrid = new Map<string, typeof houses>();
   const conflictsByGrid = new Map<string, typeof conflicts>();
   for (const person of people) {
     const bucket = peopleByGrid.get(person.gridId) ?? [];
     bucket.push(person);
     peopleByGrid.set(person.gridId, bucket);
+  }
+  for (const house of houses) {
+    const bucket = housesByGrid.get(house.gridId) ?? [];
+    bucket.push(house);
+    housesByGrid.set(house.gridId, bucket);
   }
   for (const conflict of conflicts) {
     const bucket = conflictsByGrid.get(conflict.gridId) ?? [];
@@ -488,9 +506,13 @@ function buildFallbackRegionSummaries(
       floatingCount: 0,
       activeConflictCount: 0,
       riskCount: 0,
+      rentalCount: 0,
+      vacantCount: 0,
+      warningCount: 0,
       score: 0,
     };
     const gridPeople = peopleByGrid.get(grid.id) ?? [];
+    const gridHouses = housesByGrid.get(grid.id) ?? [];
     const gridConflicts = conflictsByGrid.get(grid.id) ?? [];
     item.peopleCount += grid.peopleCount;
     item.houseCount += grid.houseCount;
@@ -499,6 +521,9 @@ function buildFallbackRegionSummaries(
     item.floatingCount += gridPeople.filter((person) => person.type === '流动').length;
     item.activeConflictCount += gridConflicts.filter((conflict) => conflict.status !== '已化解').length;
     item.riskCount += gridPeople.filter((person) => person.risk === 'High' || person.risk === 'Medium').length;
+    item.rentalCount += gridHouses.filter((house) => house.type === '出租').length;
+    item.vacantCount += gridHouses.filter((house) => house.type === '空置').length;
+    item.warningCount += gridHouses.filter(isHousingWarning).length;
     buckets.set(key, item);
   };
 
@@ -576,7 +601,7 @@ function buildFallbackDashboard(): DashboardStatsResponse {
       conflictCount: conflicts.filter((conflict) => conflict.gridId === grid.id).length,
     };
   });
-  const regionSummaries = buildFallbackRegionSummaries(gridItems, people, conflicts);
+  const regionSummaries = buildFallbackRegionSummaries(gridItems, people, houses, conflicts);
   const housingStats: StatsHousingStats = {
     total: houses.length,
     selfOccupied: houses.filter((house) => house.type === '自住').length,
