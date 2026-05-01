@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Building2,
   ChevronRight,
@@ -55,24 +55,6 @@ const finderColumnClassName = [
   '[&_*]:!border-[var(--color-neutral-03)] [&_*]:!bg-transparent',
   '[&_svg]:!text-[var(--color-neutral-08)]',
 ].join(' ');
-const detailPanelClassName = [
-  panelClassName,
-  'min-h-[440px]',
-  '[&_header]:!border-[var(--color-neutral-03)]',
-  '[&_section]:!border-[var(--color-neutral-03)]',
-  '[&_h2]:!text-[var(--color-neutral-11)] [&_h3]:!text-[var(--color-neutral-11)]',
-  '[&_p]:!text-[var(--color-neutral-08)] [&_span]:!text-[var(--color-neutral-10)]',
-  '[&_button]:!border-[var(--color-neutral-03)] [&_button]:!bg-[var(--color-neutral-01)] [&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[var(--color-neutral-03)]',
-  '[&_div]:!border-[var(--color-neutral-03)] [&_div]:!bg-transparent',
-  '[&_svg]:!text-[#4E86DF]',
-].join(' ');
-const detailPanelShellClassName = [
-  '[&_section]:!border-[var(--color-neutral-03)] [&_section]:!bg-[var(--color-neutral-02)]',
-  '[&_h3]:!text-[var(--color-neutral-11)] [&_p]:!text-[var(--color-neutral-08)]',
-  '[&_div]:!border-[var(--color-neutral-03)] [&_div]:!bg-transparent',
-  '[&_button]:!border-[var(--color-neutral-03)] [&_button]:!bg-[var(--color-neutral-01)] [&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[var(--color-neutral-03)]',
-  '[&_svg]:!text-[#4E86DF]',
-].join(' ');
 
 function sameSelection(left: HousingFinderSelection, right: HousingFinderSelection) {
   return (
@@ -100,9 +82,6 @@ function normalizeSelection(
     next.floor = undefined;
     next.houseId = undefined;
   }
-  if (!next.community && model.communities[0]) {
-    next.community = model.communities[0].value;
-  }
 
   model = deriveHousingFinderModel(houses, grids, next, searchKeyword);
   if (next.building && !model.buildings.some((item) => item.value === next.building)) {
@@ -111,9 +90,6 @@ function normalizeSelection(
     next.floor = undefined;
     next.houseId = undefined;
   }
-  if (!next.building && model.buildings[0]) {
-    next.building = model.buildings[0].value;
-  }
 
   model = deriveHousingFinderModel(houses, grids, next, searchKeyword);
   if (next.unit && !model.units.some((item) => item.value === next.unit)) {
@@ -121,25 +97,16 @@ function normalizeSelection(
     next.floor = undefined;
     next.houseId = undefined;
   }
-  if (!next.unit && model.units[0]) {
-    next.unit = model.units[0].value;
-  }
 
   model = deriveHousingFinderModel(houses, grids, next, searchKeyword);
   if (next.floor && !model.floors.some((item) => item.value === next.floor)) {
     next.floor = undefined;
     next.houseId = undefined;
   }
-  if (!next.floor && model.floors[0]) {
-    next.floor = model.floors[0].value;
-  }
 
   model = deriveHousingFinderModel(houses, grids, next, searchKeyword);
   if (next.houseId && !model.houses.some((item) => item.house.id === next.houseId)) {
     next.houseId = undefined;
-  }
-  if (!next.houseId && model.houses[0]) {
-    next.houseId = model.houses[0].house.id;
   }
 
   return next;
@@ -255,6 +222,8 @@ export function HousingManagement() {
   const [isSaving, setIsSaving] = useState(false);
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editForm, setEditForm] = useState<HouseEditForm | null>(null);
+  const columnsContainerRef = useRef<HTMLDivElement>(null);
+  const prevSelectionRef = useRef<HousingFinderSelection>({});
 
   const loadData = useCallback(async () => {
     setIsLoading(true);
@@ -337,6 +306,24 @@ export function HousingManagement() {
       cancelled = true;
     };
   }, [selection.houseId]);
+
+  useEffect(() => {
+    const prev = prevSelectionRef.current;
+    const shouldScroll =
+      (selection.community && !prev.community) ||
+      (selection.building && !prev.building) ||
+      (selection.unit && !prev.unit) ||
+      (selection.floor && !prev.floor) ||
+      (selection.houseId && !prev.houseId);
+
+    if (shouldScroll && columnsContainerRef.current) {
+      columnsContainerRef.current.scrollTo({
+        left: columnsContainerRef.current.scrollWidth,
+        behavior: 'smooth',
+      });
+    }
+    prevSelectionRef.current = selection;
+  }, [selection]);
 
   const applySelection = (next: HousingFinderSelection) => {
     setSelection(normalizeSelection(next, houses, grids, searchKeyword));
@@ -470,13 +457,13 @@ export function HousingManagement() {
     icon: Home,
   }));
 
-  const crumbItems = [
-    selection.community,
-    selection.building,
-    selection.unit,
-    selection.floor,
-    selectedHouse?.room,
-  ].filter(Boolean);
+  const breadcrumbItems = [
+    { label: selection.community, reset: () => applySelection({ community: selection.community }) },
+    { label: selection.building, reset: () => applySelection({ community: selection.community, building: selection.building }) },
+    { label: selection.unit, reset: () => applySelection({ community: selection.community, building: selection.building, unit: selection.unit }) },
+    { label: selection.floor, reset: () => applySelection({ community: selection.community, building: selection.building, unit: selection.unit, floor: selection.floor }) },
+    { label: selectedHouse?.room, reset: () => {} },
+  ].filter((item): item is { label: string; reset: () => void } => Boolean(item.label));
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
@@ -498,17 +485,21 @@ export function HousingManagement() {
               <span>当前 {finderModel.filteredHouses.length} / {houses.length} 套</span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-[var(--color-neutral-08)]">
-              {crumbItems.length > 0 ? (
-                crumbItems.map((item, index) => (
-                  <span key={`${item}-${index}`} className="flex items-center gap-1">
+              {breadcrumbItems.length > 0 ? (
+                breadcrumbItems.map((item, index) => (
+                  <span key={`${item.label}-${index}`} className="flex items-center gap-1">
                     {index > 0 ? <ChevronRight className="h-3.5 w-3.5" /> : null}
-                    <span className={index === crumbItems.length - 1 ? 'text-[var(--color-neutral-11)]' : undefined}>
-                      {item}
-                    </span>
+                    <button
+                      type="button"
+                      onClick={item.reset}
+                      className={index === breadcrumbItems.length - 1 ? 'text-[var(--color-neutral-11)]' : 'hover:text-[var(--color-neutral-11)] underline-offset-2 hover:underline'}
+                    >
+                      {item.label}
+                    </button>
                   </span>
                 ))
               ) : (
-                <span>选择左侧区域后开始浏览楼栋、单元、楼层与房屋详情。</span>
+                <span>选择社区后开始浏览楼栋、单元、楼层与房屋。</span>
               )}
             </div>
           </div>
@@ -538,24 +529,26 @@ export function HousingManagement() {
 
       <FinderStatsStrip stats={finderModel.stats} />
 
-      <div className="grid gap-3 2xl:grid-cols-[minmax(0,1.18fr)_minmax(360px,0.82fr)]">
-        <div className="-mx-1 overflow-x-auto px-1 pb-2">
-          <div className="grid min-h-[440px] min-w-[920px] gap-3 xl:grid-cols-5">
-            <FinderColumn
-              title="社区"
-              description="按现有房屋 communityName 派生"
-              items={toFinderItems(finderModel.communities, Warehouse)}
-              loading={isLoading}
-              error={loadError}
-              onRetry={loadData}
-              onItemClick={selectCommunity}
-              emptyTitle="没有社区数据"
-              emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
-              className={finderColumnClassName}
-            />
+      <div ref={columnsContainerRef} className="flex gap-3 overflow-x-auto pb-2">
+        <div className={`flex-shrink-0 ${!selection.community ? 'flex-1 min-w-0' : 'min-w-[280px] w-[320px]'}`}>
+          <FinderColumn
+            title="社区"
+            description="按现有房屋 communityName 派生"
+            items={toFinderItems(finderModel.communities, Warehouse)}
+            loading={isLoading}
+            error={loadError}
+            onRetry={loadData}
+            onItemClick={selectCommunity}
+            emptyTitle="没有社区数据"
+            emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
+            className={finderColumnClassName}
+          />
+        </div>
+        {selection.community && (
+          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             <FinderColumn
               title="楼栋"
-              description={selection.community ?? '先选社区'}
+              description={selection.community}
               items={toFinderItems(finderModel.buildings, Building2)}
               loading={isLoading}
               error={loadError}
@@ -565,9 +558,13 @@ export function HousingManagement() {
               emptyDescription="当前社区下没有可浏览楼栋，请切换社区或清空搜索条件。"
               className={finderColumnClassName}
             />
+          </div>
+        )}
+        {selection.building && (
+          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             <FinderColumn
               title="单元"
-              description={selection.building ?? '先选楼栋'}
+              description={selection.building}
               items={toFinderItems(finderModel.units, Layers)}
               loading={isLoading}
               error={loadError}
@@ -577,9 +574,13 @@ export function HousingManagement() {
               emptyDescription="当前楼栋下没有可浏览单元，请切换楼栋或清空搜索条件。"
               className={finderColumnClassName}
             />
+          </div>
+        )}
+        {selection.unit && (
+          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             <FinderColumn
               title="楼层"
-              description={selection.unit ?? '先选单元'}
+              description={selection.unit}
               items={toFinderItems(finderModel.floors, Grid3x3)}
               loading={isLoading}
               error={loadError}
@@ -589,9 +590,13 @@ export function HousingManagement() {
               emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
               className={finderColumnClassName}
             />
+          </div>
+        )}
+        {selection.floor && (
+          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             <FinderColumn
               title="房屋"
-              description={selection.floor ?? '先选楼层'}
+              description={selection.floor}
               items={houseItems}
               selectedId={selection.houseId}
               loading={isLoading}
@@ -603,9 +608,23 @@ export function HousingManagement() {
               className={finderColumnClassName}
             />
           </div>
-        </div>
+        )}
+      </div>
 
-        <div className={detailPanelShellClassName}>
+      <Dialog open={Boolean(selection.houseId)} onOpenChange={(open) => {
+        if (!open) {
+          setSelection((current) => ({ ...current, houseId: undefined }));
+        }
+      }}>
+        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-2xl">
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {selectedHouse
+                ? `${selectedHouse.communityName} ${selectedHouse.building} ${selectedHouse.unit} ${selectedHouse.room}`
+                : '房屋详情'}
+            </DialogTitle>
+            <DialogDescription>查看房屋基础信息、现居住户和居住历史。</DialogDescription>
+          </DialogHeader>
           <HouseDetailPanel
             house={selectedHouse}
             residents={residents}
@@ -616,10 +635,10 @@ export function HousingManagement() {
             onDelete={(house) => void handleDelete(house)}
             onRefresh={refreshSelectedHouse}
             isDeleting={isSaving}
-            className={detailPanelClassName}
+            className="border-0 min-h-0"
           />
-        </div>
-      </div>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={Boolean(editingHouse)} onOpenChange={(open) => {
         if (!open) {
