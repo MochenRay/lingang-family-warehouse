@@ -10,7 +10,11 @@ import {
   ShieldAlert,
   Building2,
   ClipboardList,
-  Sparkles
+  BookOpen,
+  PenTool,
+  PieChart,
+  Sparkles,
+  X
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { MobileLayout } from './MobileLayout';
@@ -24,9 +28,11 @@ interface MobileHomeProps {
 }
 
 export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
+  const onboardingStorageKey = 'homedata.mobile.onboarding.dismissed';
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
   const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const username = mobileContextRepository.getCurrentWorkerName();
   const currentGridSelection = mobileContextRepository.getCurrentGridSelection();
   const fallbackGridId = currentGridSelection.id;
@@ -66,6 +72,18 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       window.removeEventListener('db-change', handleDbChange);
     };
   }, []);
+
+  useEffect(() => {
+    setShowOnboarding(window.localStorage.getItem(onboardingStorageKey) !== 'true');
+  }, []);
+
+  const dismissOnboarding = () => {
+    window.localStorage.setItem(onboardingStorageKey, 'true');
+    setShowOnboarding(false);
+  };
+
+  const formatMetricValue = (value: number) => (value >= 100 ? '99+' : String(value));
+  const metricValueClass = 'text-[1.35rem] leading-none tracking-normal';
 
   const currentGridName =
     (fallbackGridId ? dashboard?.grids.find((item) => item.id === fallbackGridId)?.name : undefined) ??
@@ -130,6 +148,27 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       color: 'bg-[#2EC4B6]',
       path: 'scan',
       desc: '快捷进入现场核验'
+    },
+    {
+      icon: BookOpen,
+      label: '政策解读',
+      color: 'bg-[#4E86DF]',
+      path: 'policy-interpretation',
+      desc: '政策智能检索'
+    },
+    {
+      icon: PenTool,
+      label: '公文写作',
+      color: 'bg-[#19B172]',
+      path: 'official-writing',
+      desc: '辅助文档生成'
+    },
+    {
+      icon: PieChart,
+      label: '智能问数',
+      color: 'bg-[#8B3BCC]',
+      path: 'smart-query',
+      desc: '自然语言查询'
     }
   ];
 
@@ -249,20 +288,28 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             </div>
             
             <div className="grid grid-cols-4 gap-2">
-              <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-0.5">{workSummary.pending}</div>
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-warning)]`}>
+                  {formatMetricValue(workSummary.pending)}
+                </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">待跟进</div>
               </div>
-              <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[var(--color-status-success)] mb-0.5">{workSummary.completed}</div>
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-success)]`}>
+                  {formatMetricValue(workSummary.completed)}
+                </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">已完成</div>
               </div>
-              <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[#2761CB] mb-0.5">{workSummary.visited}</div>
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[#2761CB]`}>
+                  {formatMetricValue(workSummary.visited)}
+                </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">走访</div>
               </div>
-              <div className="text-center p-2 rounded-xl bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
-                <div className="text-2xl font-bold text-[#8B3BCC] mb-0.5">{workSummary.highRisk}</div>
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[#8B3BCC]`}>
+                  {formatMetricValue(workSummary.highRisk)}
+                </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">高风险</div>
               </div>
             </div>
@@ -271,38 +318,6 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
       </div>
 
       <div className="px-4 pt-4 pb-2">
-        <div className="mb-6">
-          <Card className="border-[rgba(78,134,223,0.2)] bg-[linear-gradient(135deg,rgba(39,97,203,0.08),rgba(78,134,223,0.02))] shadow-sm overflow-hidden">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#4E86DF]">
-                <Sparkles className="w-4 h-4" />
-                首次体验建议
-              </div>
-              <div className="mt-2 text-sm leading-6 text-[var(--color-neutral-10)]">
-                如果你是第一次打开移动端，建议先从待办清单进入，再看人口台账，最后体验扫码核验或房屋台账，这样最容易理解一线执行链路。
-              </div>
-              <div className="mt-4 space-y-2">
-                {guidedJourney.map((item, index) => (
-                  <button
-                    key={item.title}
-                    type="button"
-                    onClick={() => onRouteChange(item.route)}
-                    className="flex w-full items-start gap-3 rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
-                  >
-                    <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.12)] text-xs font-semibold text-[#2761CB]">
-                      {index + 1}
-                    </div>
-                    <div>
-                      <div className="text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
-                      <div className="mt-0.5 text-xs text-[var(--color-neutral-08)]">{item.detail}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* 快捷功能 */}
         <div className="mb-6">
           <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3">快捷功能</h3>
@@ -389,6 +404,55 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             </CardContent>
           </Card>
         </div>
+
+        {showOnboarding && (
+          <div className="absolute inset-0 z-[70] flex items-center justify-center bg-black/55 px-4 backdrop-blur-sm">
+            <Card className="w-full max-w-[335px] overflow-hidden border-[rgba(78,134,223,0.35)] bg-[linear-gradient(135deg,rgba(26,39,74,0.98),rgba(34,61,108,0.98))] shadow-2xl">
+              <CardContent className="p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#6FA3FF]">
+                      <Sparkles className="w-4 h-4" />
+                      首次体验建议
+                    </div>
+                    <div className="mt-2 text-sm leading-6 text-[var(--color-neutral-10)]">
+                      如果你是第一次打开移动端，建议先从待办清单进入，再看人口台账，最后体验扫码核验或房屋台账，这样最容易理解一线执行链路。
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="关闭首次体验建议"
+                    onClick={dismissOnboarding}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-[var(--color-neutral-10)] active:scale-95"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {guidedJourney.map((item, index) => (
+                    <button
+                      key={item.title}
+                      type="button"
+                      onClick={() => {
+                        dismissOnboarding();
+                        onRouteChange(item.route);
+                      }}
+                      className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
+                    >
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.16)] text-xs font-semibold text-[#4E86DF]">
+                        {index + 1}
+                      </div>
+                      <div>
+                        <div className="text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
+                        <div className="mt-0.5 text-xs text-[var(--color-neutral-08)]">{item.detail}</div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </MobileLayout>
   );

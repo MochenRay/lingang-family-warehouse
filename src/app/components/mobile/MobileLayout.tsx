@@ -13,8 +13,8 @@ interface MobileLayoutProps {
 export function MobileLayout({ children, currentRoute = 'home', onRouteChange, onExitMobile, title = '家庭数仓' }: MobileLayoutProps) {
   const navItems = [
     { path: 'home', icon: LayoutDashboard, label: '工作台' },
-    { path: 'housing', icon: Building2, label: '房屋' },
     { path: 'people', icon: Users, label: '人口' },
+    { path: 'housing', icon: Building2, label: '房屋' },
     { path: 'profile', icon: UserCircle, label: '我的' }
   ];
 

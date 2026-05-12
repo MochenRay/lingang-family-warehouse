@@ -27,6 +27,8 @@ export interface FinderColumnProps {
   emptyTitle?: string;
   emptyDescription?: string;
   onItemClick?: (item: FinderColumnItem) => void;
+  collapsed?: boolean;
+  onHeaderClick?: () => void;
   onRetry?: () => void;
   className?: string;
 }
@@ -74,28 +76,52 @@ export function FinderColumn({
   emptyTitle = '暂无可选项',
   emptyDescription = '当前筛选条件下没有可浏览的数据，请切换上一级或刷新后重试。',
   onItemClick,
+  collapsed = false,
+  onHeaderClick,
   onRetry,
   className,
 }: FinderColumnProps) {
   const hasItems = items.length > 0;
+  const headerContent = (
+    <div className="flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{title}</h3>
+        {description ? (
+          <p className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{description}</p>
+        ) : null}
+      </div>
+      <Badge variant="outline" className={cn('shrink-0', neutralBadgeClass)}>
+        {items.length}
+      </Badge>
+    </div>
+  );
 
   return (
-    <section className={cn('flex min-h-[360px] flex-col rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]', className)}>
+    <section className={cn('flex min-h-[360px] flex-col overflow-hidden rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]', className)}>
       <header className="border-b border-[var(--color-neutral-03)] px-3 py-2">
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{title}</h3>
-            {description ? (
-              <p className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{description}</p>
-            ) : null}
-          </div>
-          <Badge variant="outline" className={cn('shrink-0', neutralBadgeClass)}>
-            {items.length}
-          </Badge>
-        </div>
+        {onHeaderClick ? (
+          <button
+            type="button"
+            onClick={onHeaderClick}
+            className="block w-full rounded text-left outline-none transition-colors hover:bg-[rgba(78,134,223,0.08)] focus-visible:ring-2 focus-visible:ring-[#4E86DF]/40"
+          >
+            {headerContent}
+          </button>
+        ) : (
+          headerContent
+        )}
       </header>
 
-      {loading ? (
+      {collapsed ? (
+        <button
+          type="button"
+          onClick={onHeaderClick}
+          className="flex flex-1 items-start justify-center px-2 py-4 text-xs text-[var(--color-neutral-08)] hover:bg-[rgba(78,134,223,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4E86DF]/40"
+          aria-label={`返回${title}`}
+        >
+          <span className="[writing-mode:vertical-rl]">{title}</span>
+        </button>
+      ) : loading ? (
         <ColumnState
           icon={Loader2}
           title={loadingLabel}
