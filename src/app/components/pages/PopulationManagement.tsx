@@ -487,6 +487,20 @@ export function PopulationManagement() {
     void loadData();
   }, []);
 
+  // 消费从其他页面（如冲突管理）跳转带来的上下文焦点
+  useEffect(() => {
+    const focusPersonId = typeof window !== 'undefined' ? window.sessionStorage.getItem('app_focus_person_id') : null;
+    if (focusPersonId && populations.length > 0) {
+      const targetPerson = populations.find(p => p.id === focusPersonId);
+      if (targetPerson) {
+        setSelectedPopulation(targetPerson);
+        setIsViewDialogOpen(true);
+        // 消费完毕后立即清除，避免刷新页面再次触发弹窗
+        window.sessionStorage.removeItem('app_focus_person_id');
+      }
+    }
+  }, [populations]);
+
   useEffect(() => {
     if (!isViewDialogOpen || !selectedPopulation) {
       setSelectedPopulationVisits([]);
