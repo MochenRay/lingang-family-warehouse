@@ -160,20 +160,20 @@ export function FinderColumn({
                   className={cn(
                     'group grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded px-2.5 py-2 text-left transition-colors',
                     'hover:bg-[rgba(78,134,223,0.10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4E86DF]/40',
-                    isActive && 'bg-[rgba(78,134,223,0.18)] text-blue-100 ring-1 ring-[#4E86DF]/35 hover:bg-[rgba(78,134,223,0.18)]',
+                    isActive && 'bg-[rgba(78,134,223,0.18)] text-[var(--color-brand-primary)] ring-1 ring-[#4E86DF]/35 hover:bg-[rgba(78,134,223,0.18)]',
                     item.disabled && 'cursor-not-allowed opacity-50 hover:bg-transparent',
                   )}
                 >
                   <span
                     className={cn(
                       'flex h-7 w-7 items-center justify-center rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]',
-                      isActive && 'border-[#4E86DF]/45 bg-[#4E86DF]/10 text-blue-200',
+                      isActive && 'border-[#4E86DF]/45 bg-[#4E86DF]/10 text-[var(--color-brand-primary)]',
                     )}
                   >
                     {ItemIcon ? <ItemIcon className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
                   </span>
                   <span className="min-w-0">
-                    <span className={cn('block truncate text-sm font-medium text-[var(--color-neutral-11)]', isActive && 'text-blue-100')}>
+                    <span className={cn('block truncate text-sm font-medium text-[var(--color-neutral-11)]', isActive && 'text-[var(--color-brand-primary)]')}>
                       {item.label}
                     </span>
                     {item.subtitle ? (
@@ -187,7 +187,7 @@ export function FinderColumn({
                         {item.count}
                       </Badge>
                     ) : null}
-                    <ChevronRight className={cn('h-3.5 w-3.5 text-[var(--color-neutral-08)] group-hover:text-blue-200', isActive && 'text-blue-200')} />
+                    <ChevronRight className={cn('h-3.5 w-3.5 text-[var(--color-neutral-08)] group-hover:text-[var(--color-brand-primary)]', isActive && 'text-[var(--color-brand-primary)]')} />
                   </span>
                 </button>
               );
