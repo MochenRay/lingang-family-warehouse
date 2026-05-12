@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { API_DATA_SOURCE_EVENT, getApiDataSourceSnapshot, type ApiDataSourceSnapshot } from '../services/api';
 
 interface HeaderProps {
@@ -34,6 +35,18 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
   const isApiError = dataSource.source === 'api-error';
   const isUnknown = dataSource.source === 'unknown';
   const dataSourceLabel = isFallback ? '本地降级' : isApiError ? 'API 异常' : dataSource.source === 'api' ? 'API 数据' : '数据源待探测';
+  const modeLabel = dataSource.mode === 'auto' ? '自动' : dataSource.mode === 'api' ? '仅 API' : '本地 fallback';
+  const sourceDetail = isFallback
+    ? 'API 调用失败后已使用本地数据。'
+    : isApiError
+      ? 'API 调用失败，且当前模式不允许降级。'
+      : dataSource.source === 'api'
+        ? '当前正在使用 API 返回数据。'
+        : '尚未完成 API 探测。';
+  const errorDetail = dataSource.lastError || (isFallback || isApiError ? '未记录具体异常。' : '暂无异常。');
+  const updatedAtLabel = dataSource.updatedAt
+    ? new Date(dataSource.updatedAt).toLocaleString('zh-CN', { hour12: false })
+    : '尚未记录';
 
   return (
     <header className="h-16 bg-white dark:bg-[var(--color-neutral-01)] border-b border-gray-200 dark:border-[var(--color-neutral-03)] flex items-center justify-between px-6 transition-colors duration-200">
@@ -53,19 +66,38 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:text-[var(--color-brand-primary-hover)] dark:border-[var(--color-brand-primary)] dark:bg-[var(--color-neutral-02)]">
             烟台市
           </Badge>
-          <Badge
-            variant="outline"
-            title={`${dataSource.mode} · ${dataSource.baseUrl}${dataSource.lastError ? ` · ${dataSource.lastError}` : ''}`}
-            className={isFallback || isApiError
-              ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/70 dark:bg-amber-500/10 dark:text-amber-200"
-              : isUnknown
-                ? "border-gray-200 bg-gray-50 text-gray-600 dark:border-[var(--color-neutral-04)] dark:bg-[var(--color-neutral-02)] dark:text-[var(--color-neutral-08)]"
-              : "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200"
-            }
-          >
-            {isFallback || isApiError ? <ServerOff className="mr-1 h-3 w-3" /> : <Database className="mr-1 h-3 w-3" />}
-            {dataSourceLabel}
-          </Badge>
+          <TooltipProvider delayDuration={100}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  tabIndex={0}
+                  aria-label={`数据源状态：${dataSourceLabel}，${errorDetail}`}
+                  className={isFallback || isApiError
+                    ? "cursor-help border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/70 dark:bg-amber-500/10 dark:text-amber-200"
+                    : isUnknown
+                      ? "cursor-help border-gray-200 bg-gray-50 text-gray-600 dark:border-[var(--color-neutral-04)] dark:bg-[var(--color-neutral-02)] dark:text-[var(--color-neutral-08)]"
+                    : "cursor-help border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200"
+                  }
+                >
+                  {isFallback || isApiError ? <ServerOff className="mr-1 h-3 w-3" /> : <Database className="mr-1 h-3 w-3" />}
+                  {dataSourceLabel}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent className="max-w-sm space-y-2 text-left text-xs leading-5">
+                <p className="font-semibold">{dataSourceLabel}</p>
+                <p>{sourceDetail}</p>
+                <div className="space-y-1 text-[rgba(255,255,255,0.78)]">
+                  <p>模式：{modeLabel}</p>
+                  <p>地址：{dataSource.baseUrl}</p>
+                  <p>最近探测：{updatedAtLabel}</p>
+                </div>
+                <p className="break-words border-t border-white/15 pt-2 font-mono text-[rgba(255,255,255,0.82)]">
+                  {errorDetail}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 
