@@ -15,6 +15,7 @@ import { FinderColumn, type FinderColumnItem } from '../housing/FinderColumn';
 import { HouseDetailPanel } from '../housing/HouseDetailPanel';
 import {
   deriveHousingFinderModel,
+  extractHouseFloor,
   type HousingFinderSelection,
   type HousingFinderStats,
 } from '../housing/finderModel';
@@ -250,6 +251,36 @@ export function HousingManagement() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  // 消费从其他页面跳转带来的房屋焦点上下文
+  useEffect(() => {
+    const focusHouseId = typeof window !== 'undefined' ? window.sessionStorage.getItem('app_focus_house_id') : null;
+    if (!focusHouseId || houses.length === 0) {
+      return;
+    }
+
+    const targetHouse = houses.find((house) => house.id === focusHouseId);
+    window.sessionStorage.removeItem('app_focus_house_id');
+
+    if (!targetHouse) {
+      return;
+    }
+
+    const nextSearchKeyword = '';
+    setSearchKeyword(nextSearchKeyword);
+    setSelection(normalizeSelection(
+      {
+        community: targetHouse.communityName,
+        building: targetHouse.building,
+        unit: targetHouse.unit,
+        floor: extractHouseFloor(targetHouse.room),
+        houseId: targetHouse.id,
+      },
+      houses,
+      grids,
+      nextSearchKeyword,
+    ));
+  }, [houses, grids]);
 
   useEffect(() => {
     setSelection((current) => {
