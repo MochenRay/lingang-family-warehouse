@@ -49,11 +49,7 @@ const finderColumnClassName = [
   panelClassName,
   'min-h-[440px]',
   '[&_header]:!border-[var(--color-neutral-03)]',
-  '[&_button]:!text-[var(--color-neutral-10)] [&_button:hover]:!bg-[rgba(78,134,223,0.10)]',
-  '[&_button[aria-pressed=true]]:!bg-[rgba(78,134,223,0.18)] [&_button[aria-pressed=true]]:!ring-[#4E86DF]/35',
-  '[&_span]:!text-[var(--color-neutral-10)] [&_p]:!text-[var(--color-neutral-08)] [&_h3]:!text-[var(--color-neutral-11)]',
-  '[&_*]:!border-[var(--color-neutral-03)] [&_*]:!bg-transparent',
-  '[&_svg]:!text-[var(--color-neutral-08)]',
+  '[&_p]:!text-[var(--color-neutral-08)] [&_h3]:!text-[var(--color-neutral-11)]',
 ].join(' ');
 
 function finderColumnShellClass(collapsed: boolean, expandedClassName = 'min-w-[280px] w-[320px]') {
@@ -463,10 +459,10 @@ export function HousingManagement() {
     active: item.active,
     icon: Home,
   }));
-  const communityColumnCollapsed = Boolean(selection.community);
-  const buildingColumnCollapsed = Boolean(selection.building);
-  const unitColumnCollapsed = Boolean(selection.unit);
-  const floorColumnCollapsed = Boolean(selection.floor);
+  const communityColumnCollapsed = false;
+  const buildingColumnCollapsed = false;
+  const unitColumnCollapsed = false;
+  const floorColumnCollapsed = false;
 
   const breadcrumbItems = [
     { label: selection.community, reset: () => applySelection({ community: selection.community }) },
