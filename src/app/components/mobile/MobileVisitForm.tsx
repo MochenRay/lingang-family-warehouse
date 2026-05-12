@@ -618,29 +618,43 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               {/* 状态：录音中 */}
               {recordingStatus === 'recording' && (
                 <div className="flex flex-col items-center py-4">
-                  <div className="text-4xl font-mono font-medium text-[var(--color-text-title)] mb-8 tracking-wider">
-                    {formatTime(recordingTime)}
-                  </div>
-                  
-                  {/* 录音态波纹动画 */}
-                  <div className="relative w-24 h-24 mb-8 flex items-center justify-center">
-                    <span className="absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-20 animate-ping"></span>
-                    <span className="absolute inline-flex h-20 w-20 rounded-full bg-purple-500 opacity-20 animate-pulse"></span>
-                    <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-900/20 z-10">
-                      <Mic className="w-8 h-8 text-white animate-pulse" />
+                  <div className="mb-5 w-full rounded-2xl border border-purple-500/20 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(79,70,229,0.06))] p-4">
+                    <div className="mb-5 flex items-center justify-between gap-3">
+                      <div className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-200">
+                        <span className="visit-recording-dot h-2 w-2 rounded-full bg-red-400" />
+                        正在录音
+                      </div>
+                      <div className="rounded-full bg-[var(--color-bg-primary)] px-3 py-1 font-mono text-xl font-semibold tracking-wider text-[var(--color-text-title)]">
+                        {formatTime(recordingTime)}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-center gap-6">
+                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-purple-600 shadow-sm ring-8 ring-purple-500/10">
+                        <Mic className="h-7 w-7 text-white" />
+                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[var(--color-bg-secondary)] bg-red-400" />
+                      </div>
+                      <div className="flex h-12 items-end gap-1.5" aria-hidden="true">
+                        {[16, 28, 40, 24, 34].map((height, index) => (
+                          <span
+                            key={`${height}-${index}`}
+                            className="visit-recording-bar w-1.5 rounded-full bg-purple-300/80"
+                            style={{ height: `${height}px`, animationDelay: `${index * 0.16}s` }}
+                          />
+                        ))}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="w-full bg-[var(--color-bg-primary)] rounded-lg p-4 mb-6 h-32 overflow-y-auto border border-[var(--color-border-primary)]">
+                  <div className="w-full bg-[var(--color-bg-primary)] rounded-xl p-4 mb-5 h-32 overflow-y-auto border border-[var(--color-border-primary)]">
                     <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-wrap">
-                      {transcript || "正在聆听..."}
-                      <span className="inline-block w-1.5 h-4 bg-purple-500 ml-1 animate-pulse align-middle"></span>
+                      {transcript || "正在聆听现场对话..."}
                     </p>
                   </div>
 
                   <Button 
                     size="lg" 
-                    className="w-full h-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/20"
+                    className="w-full h-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-900/10"
                     onClick={stopRecording}
                   >
                     <Square className="w-4 h-4 mr-2 fill-current" />

@@ -30,11 +30,10 @@ const AGE_BUCKETS = [
   { name: '0-18岁', min: 0, max: 18 },
 ];
 
-interface PyramidTooltipPayloadItem {
-  name?: string;
-  value?: number;
-  color?: string;
-  fill?: string;
+interface PyramidRow {
+  name: string;
+  male: number;
+  female: number;
 }
 
 function aggregateCounts(items: Array<string | undefined>, limit = 6) {
@@ -75,13 +74,8 @@ function buildEducationDistribution(people: Person[]) {
     counts.set(key, (counts.get(key) ?? 0) + 1);
   });
 
-  const used = new Set<string>();
-  const ordered = EDUCATION_ORDER
-    .filter((name) => counts.has(name))
-    .map((name) => {
-      used.add(name);
-      return [name, counts.get(name) ?? 0] as const;
-    });
+  const used = new Set<string>(EDUCATION_ORDER);
+  const ordered = EDUCATION_ORDER.map((name) => [name, counts.get(name) ?? 0] as const);
   const rest = Array.from(counts.entries())
     .filter(([name]) => !used.has(name))
     .sort((left, right) => left[0].localeCompare(right[0], 'zh-CN'));
@@ -90,25 +84,70 @@ function buildEducationDistribution(people: Person[]) {
     name,
     value,
     fill: COLORS[index % COLORS.length],
-    }));
+  }));
 }
 
-function PyramidTooltip({ active, payload, label }: { active?: boolean; payload?: PyramidTooltipPayloadItem[]; label?: string | number }) {
-  if (!active || !payload?.length) {
-    return null;
-  }
-
+function PopulationPyramid({ rows, max }: { rows: PyramidRow[]; max: number }) {
+  const gridLinePositions = [0, 25, 50, 75, 100];
   return (
-    <div className="rounded-lg border border-[#5B6FA5] bg-[#10182F] px-3 py-2 text-xs text-white shadow-2xl">
-      {label ? <div className="mb-1 font-semibold text-[#DCE6FF]">{label}</div> : null}
-      <div className="space-y-1">
-        {payload.map((item) => (
-          <div key={`${item.name}-${item.value}`} className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.color || item.fill || '#4E86DF' }} />
-            <span className="text-[#AFC0E8]">{item.name}</span>
-            <span className="font-semibold text-white">{Math.abs(Number(item.value ?? 0))}</span>
+    <div className="h-[260px]">
+      <div className="grid h-full grid-rows-[1fr_auto] gap-2">
+        <div className="grid min-h-0 grid-cols-[72px_minmax(0,1fr)]">
+          <div className="grid grid-rows-4">
+            {rows.map((row) => (
+              <div key={row.name} className="flex items-center justify-end pr-3 text-xs font-semibold text-[var(--color-neutral-08)]">
+                {row.name}
+              </div>
+            ))}
           </div>
-        ))}
+          <div className="relative min-w-0">
+            {gridLinePositions.map((position) => (
+              <span
+                key={position}
+                className="absolute inset-y-0 border-l border-dashed border-[#465170]"
+                style={{ left: `${position}%` }}
+                aria-hidden="true"
+              />
+            ))}
+            <span className="absolute inset-y-0 left-1/2 border-l border-[#8EA2D7]" aria-hidden="true" />
+            <div className="relative grid h-full grid-rows-4">
+              {rows.map((row) => {
+                const maleWidth = max > 0 ? `${Math.min(100, (row.male / max) * 100)}%` : '0%';
+                const femaleWidth = max > 0 ? `${Math.min(100, (row.female / max) * 100)}%` : '0%';
+                return (
+                  <div key={row.name} className="grid grid-cols-2 items-center">
+                    <div className="flex justify-end">
+                      <div
+                        className="h-6 rounded-l-[4px] bg-[#4E86DF]"
+                        style={{ width: maleWidth }}
+                        title={`${row.name} 男 ${row.male} 人`}
+                        aria-label={`${row.name} 男 ${row.male} 人`}
+                      />
+                    </div>
+                    <div className="flex justify-start">
+                      <div
+                        className="h-6 rounded-r-[4px] bg-[#F97316]"
+                        style={{ width: femaleWidth }}
+                        title={`${row.name} 女 ${row.female} 人`}
+                        aria-label={`${row.name} 女 ${row.female} 人`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-[72px_minmax(0,1fr)] text-xs text-[var(--color-neutral-08)]">
+          <div />
+          <div className="grid grid-cols-5 text-center">
+            <span>{max}</span>
+            <span>{Math.round(max / 2)}</span>
+            <span>0</span>
+            <span>{Math.round(max / 2)}</span>
+            <span>{max}</span>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -165,16 +204,15 @@ export function DemographicsAnalysis() {
       const female = bucketPeople.filter((person) => person.gender === '女').length;
       return {
         name: bucket.name,
-        男: -male,
-        女: female,
+        male,
+        female,
       };
     });
-    const max = Math.max(1, ...rows.flatMap((row) => [Math.abs(row.男), row.女]));
+    const max = Math.max(1, ...rows.flatMap((row) => [row.male, row.female]));
     const axisMax = Math.ceil(max / 10) * 10;
     return {
       rows,
       max: axisMax,
-      ticks: [-axisMax, -axisMax / 2, 0, axisMax / 2, axisMax],
     };
   }, [people]);
   const topTags = useMemo(
@@ -250,34 +288,24 @@ export function DemographicsAnalysis() {
       ) : null}
 
       <Card className={PANEL_CLASS}>
-        <CardHeader>
+        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <CardTitle className="text-base font-semibold text-white">年龄性别人口金字塔</CardTitle>
+          <div className="flex items-center gap-4 text-xs text-[var(--color-neutral-08)]">
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#4E86DF]" />
+              男
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-sm bg-[#F97316]" />
+              女
+            </span>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
             <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总年龄性别结构...</div>
           ) : (
-            <div className="h-[260px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={pyramid.rows} layout="vertical" margin={{ top: 8, right: 24, left: 12, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis
-                    type="number"
-                    domain={[-pyramid.max, pyramid.max]}
-                    ticks={pyramid.ticks}
-                    axisLine={false}
-                    tickLine={false}
-                    tick={AXIS_TICK}
-                    tickFormatter={(value) => String(Math.abs(Number(value)))}
-                    allowDecimals={false}
-                  />
-                  <YAxis dataKey="name" type="category" width={72} axisLine={false} tickLine={false} tick={{ ...AXIS_TICK, fontWeight: 'bold' }} />
-                  <Tooltip content={<PyramidTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Bar dataKey="男" fill="#4E86DF" name="男" radius={[4, 0, 0, 4]} barSize={24} />
-                  <Bar dataKey="女" fill="#F97316" name="女" radius={[0, 4, 4, 0]} barSize={24} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            <PopulationPyramid rows={pyramid.rows} max={pyramid.max} />
           )}
         </CardContent>
       </Card>
@@ -312,17 +340,17 @@ export function DemographicsAnalysis() {
           <CardHeader>
             <CardTitle className="text-base font-semibold text-white">教育程度</CardTitle>
           </CardHeader>
-          <CardContent className="h-[280px]">
+          <CardContent className="h-[340px]">
             {loading ? (
               <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总教育结构...</div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={educationData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} interval={0} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                <BarChart data={educationData} layout="vertical" margin={{ top: 4, right: 16, left: 18, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID_STROKE} />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={AXIS_TICK} interval={0} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
+                  <Bar dataKey="value" name="人数" radius={[0, 6, 6, 0]} barSize={14}>
                     {educationData.map((item) => (
                       <Cell key={item.name} fill={item.fill} />
                     ))}

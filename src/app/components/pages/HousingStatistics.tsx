@@ -230,8 +230,13 @@ export function HousingStatistics() {
                         <HelpCircle className="h-4 w-4" />
                       </button>
                     </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      压力 = min(100, 预警x9 + 出租x1.8 + 空置x1.2 + 流动x0.4)
+                    <TooltipContent className="max-w-sm space-y-2 text-xs leading-5">
+                      <p className="font-medium text-white">压力系数反映该片区的综合治理关注程度，分数越高，越需要优先投入网格精力。</p>
+                      <p>系统按四类线索加权：预警事件权重最高，其次是出租房屋、空置房屋和流动人口，总分封顶 100 分。</p>
+                      <p className="text-[var(--color-neutral-08)]">参考：80 分以上为高压片区，55 分以上为中压片区，其余为常规关注。</p>
+                      <p className="border-t border-[var(--color-neutral-03)] pt-2 font-mono text-[var(--color-neutral-08)]">
+                        公式：min(100, 预警x9 + 出租x1.8 + 空置x1.2 + 流动x0.4)
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

@@ -56,6 +56,13 @@ const finderColumnClassName = [
   '[&_svg]:!text-[var(--color-neutral-08)]',
 ].join(' ');
 
+function finderColumnShellClass(collapsed: boolean, expandedClassName = 'min-w-[280px] w-[320px]') {
+  return [
+    'flex-shrink-0 transition-[width,min-width] duration-300',
+    collapsed ? 'w-[112px] min-w-[112px]' : expandedClassName,
+  ].join(' ');
+}
+
 function sameSelection(left: HousingFinderSelection, right: HousingFinderSelection) {
   return (
     left.community === right.community &&
@@ -456,6 +463,10 @@ export function HousingManagement() {
     active: item.active,
     icon: Home,
   }));
+  const communityColumnCollapsed = Boolean(selection.community);
+  const buildingColumnCollapsed = Boolean(selection.building);
+  const unitColumnCollapsed = Boolean(selection.unit);
+  const floorColumnCollapsed = Boolean(selection.floor);
 
   const breadcrumbItems = [
     { label: selection.community, reset: () => applySelection({ community: selection.community }) },
@@ -470,7 +481,7 @@ export function HousingManagement() {
       <PageHeader
         eyebrow="HOUSING LEDGER"
         title="房屋管理"
-        description="以 Finder 台账浏览房屋、楼栋和住户线索，快速定位可编辑对象。"
+        description="按社区、楼栋、单元、楼层逐级浏览房屋台账，快速定位可查看和编辑的对象。"
       />
 
       <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3">
@@ -478,9 +489,9 @@ export function HousingManagement() {
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-neutral-08)]">
               <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
-                Finder 台账
+                房屋台账
               </Badge>
-              <span>真实接口 /houses 口径</span>
+              <span>分层浏览</span>
               <span>·</span>
               <span>当前 {finderModel.filteredHouses.length} / {houses.length} 套</span>
             </div>
@@ -530,30 +541,34 @@ export function HousingManagement() {
       <FinderStatsStrip stats={finderModel.stats} />
 
       <div ref={columnsContainerRef} className="flex gap-3 overflow-x-auto pb-2">
-        <div className={`flex-shrink-0 ${!selection.community ? 'flex-1 min-w-0' : 'min-w-[280px] w-[320px]'}`}>
+        <div className={finderColumnShellClass(communityColumnCollapsed, !selection.community ? 'flex-1 min-w-0' : 'min-w-[280px] w-[320px]')}>
           <FinderColumn
             title="社区"
-            description="按现有房屋 communityName 派生"
+            description="社区列表"
             items={toFinderItems(finderModel.communities, Warehouse)}
             loading={isLoading}
             error={loadError}
             onRetry={loadData}
             onItemClick={selectCommunity}
+            collapsed={communityColumnCollapsed}
+            onHeaderClick={communityColumnCollapsed ? () => applySelection({}) : undefined}
             emptyTitle="没有社区数据"
             emptyDescription="当前接口没有返回可浏览房屋，或搜索条件没有命中社区。"
             className={finderColumnClassName}
           />
         </div>
         {selection.community && (
-          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
+          <div className={`${finderColumnShellClass(buildingColumnCollapsed)} animate-in slide-in-from-right-4 fade-in duration-300`}>
             <FinderColumn
-              title="楼栋"
-              description={selection.community}
+              title={selection.community}
+              description="楼栋列表"
               items={toFinderItems(finderModel.buildings, Building2)}
               loading={isLoading}
               error={loadError}
               onRetry={loadData}
               onItemClick={selectBuilding}
+              collapsed={buildingColumnCollapsed}
+              onHeaderClick={buildingColumnCollapsed ? () => applySelection({ community: selection.community }) : undefined}
               emptyTitle="没有楼栋"
               emptyDescription="当前社区下没有可浏览楼栋，请切换社区或清空搜索条件。"
               className={finderColumnClassName}
@@ -561,15 +576,17 @@ export function HousingManagement() {
           </div>
         )}
         {selection.building && (
-          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
+          <div className={`${finderColumnShellClass(unitColumnCollapsed)} animate-in slide-in-from-right-4 fade-in duration-300`}>
             <FinderColumn
-              title="单元"
-              description={selection.building}
+              title={selection.building}
+              description="单元列表"
               items={toFinderItems(finderModel.units, Layers)}
               loading={isLoading}
               error={loadError}
               onRetry={loadData}
               onItemClick={selectUnit}
+              collapsed={unitColumnCollapsed}
+              onHeaderClick={unitColumnCollapsed ? () => applySelection({ community: selection.community, building: selection.building }) : undefined}
               emptyTitle="没有单元"
               emptyDescription="当前楼栋下没有可浏览单元，请切换楼栋或清空搜索条件。"
               className={finderColumnClassName}
@@ -577,15 +594,17 @@ export function HousingManagement() {
           </div>
         )}
         {selection.unit && (
-          <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
+          <div className={`${finderColumnShellClass(floorColumnCollapsed)} animate-in slide-in-from-right-4 fade-in duration-300`}>
             <FinderColumn
-              title="楼层"
-              description={selection.unit}
+              title={selection.unit}
+              description="楼层列表"
               items={toFinderItems(finderModel.floors, Grid3x3)}
               loading={isLoading}
               error={loadError}
               onRetry={loadData}
               onItemClick={selectFloor}
+              collapsed={floorColumnCollapsed}
+              onHeaderClick={floorColumnCollapsed ? () => applySelection({ community: selection.community, building: selection.building, unit: selection.unit }) : undefined}
               emptyTitle="没有楼层"
               emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
               className={finderColumnClassName}
@@ -595,8 +614,8 @@ export function HousingManagement() {
         {selection.floor && (
           <div className="min-w-[280px] w-[320px] flex-shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             <FinderColumn
-              title="房屋"
-              description={selection.floor}
+              title={selection.floor}
+              description="房屋列表"
               items={houseItems}
               selectedId={selection.houseId}
               loading={isLoading}

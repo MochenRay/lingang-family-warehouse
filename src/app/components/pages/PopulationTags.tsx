@@ -17,6 +17,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 import { PageHeader } from './PageHeader';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../ui/dialog';
 
 const COLORS = ['#4E86DF', '#8B5CF6', '#2AA3CF', '#D6730D', '#D52132', '#19B172'];
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
@@ -24,9 +31,93 @@ const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 const GRID_STROKE = '#3d4663';
 const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
 
+type TaggedPersonRecord = TagSnapshot['people'][number];
+
+function getRiskClass(risk: string) {
+  if (risk === 'High') {
+    return 'border-[#FCA5A5]/70 bg-[#7F1D1D]/35 text-[#FCA5A5]';
+  }
+  if (risk === 'Medium') {
+    return 'border-[#FDBA74]/70 bg-[#7C2D12]/35 text-[#FDBA74]';
+  }
+  return 'border-[#86EFAC]/70 bg-[#064E3B]/35 text-[#86EFAC]';
+}
+
+function getHouseLabel(record: TaggedPersonRecord) {
+  if (record.house) {
+    return `${record.house.communityName} ${record.house.building}${record.house.unit}${record.house.room}`;
+  }
+  return record.person.address || '未关联房屋';
+}
+
+function PersonMatchCard({ record, selectedTagIds }: { record: TaggedPersonRecord; selectedTagIds: string[] }) {
+  const selectedMatches = record.matchedTags.filter((match) => selectedTagIds.includes(match.tagId));
+  const initial = record.person.name.slice(0, 1) || '?';
+
+  return (
+    <div className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="flex min-w-0 gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[linear-gradient(135deg,#4E86DF,#8B5CF6)] text-base font-semibold text-white">
+            {initial}
+          </div>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-semibold text-white">{record.person.name}</p>
+              <span className={`text-sm ${MUTED_TEXT}`}>
+                {record.person.gender || '性别未录'} / {record.person.age ?? '--'}岁 / {record.person.type}
+              </span>
+            </div>
+            <p className={`mt-1 text-sm ${MUTED_TEXT}`}>{record.person.address || '地址未登记'}</p>
+          </div>
+        </div>
+        <Badge variant="outline" className={getRiskClass(record.person.risk)}>
+          {record.person.risk}
+        </Badge>
+      </div>
+
+      <div className="mt-4 grid gap-2 text-xs text-[var(--color-neutral-08)] sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
+          <div>联系方式</div>
+          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{record.person.phone || '未登记'}</div>
+        </div>
+        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
+          <div>关联房屋</div>
+          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{getHouseLabel(record)}</div>
+        </div>
+        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
+          <div>最近走访</div>
+          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{record.lastVisitAt || '暂无记录'}</div>
+        </div>
+        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
+          <div>纠纷关联</div>
+          <div className="mt-1 font-medium text-[var(--color-neutral-11)]">
+            {record.totalConflictCount} 起 / 调解中 {record.activeConflictCount} 起
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 space-y-2">
+        {selectedMatches.map((match) => (
+          <div key={match.tagId} className="rounded border border-[var(--color-neutral-03)] bg-[rgba(78,134,223,0.08)] px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary">{match.tagName}</Badge>
+              <span className={`text-xs ${MUTED_TEXT}`}>命中原因</span>
+            </div>
+            <p className="mt-2 text-xs leading-5 text-[var(--color-neutral-10)]">
+              {match.reasons.length ? match.reasons.join('；') : '规则命中，暂无详细原因。'}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function PopulationTags() {
   const [snapshot, setSnapshot] = useState<TagSnapshot | null>(null);
   const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
+  const [residentDialogOpen, setResidentDialogOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -116,6 +207,14 @@ export function PopulationTags() {
       selectedTagIds.every((tagId) => record.matchedTags.some((match) => match.tagId === tagId)),
     );
   }, [selectedTagIds, snapshot]);
+
+  const selectedTags = useMemo(
+    () =>
+      selectedTagIds
+        .map((tagId) => snapshot?.tags.find((item) => item.id === tagId))
+        .filter((tag): tag is NonNullable<typeof tag> => Boolean(tag)),
+    [selectedTagIds, snapshot],
+  );
 
   const coverageRate = useMemo(() => {
     if (!snapshot || snapshot.totalPeople === 0) {
@@ -261,7 +360,7 @@ export function PopulationTags() {
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-white">交叉分析</CardTitle>
-            <CardDescription className={MUTED_TEXT}>选择多个标签，查看共同命中的对象。</CardDescription>
+            <CardDescription className={MUTED_TEXT}>选择一个或多个标签，查看共同命中的对象数量。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 px-5 pb-5">
             <div className="flex flex-wrap gap-2">
@@ -284,55 +383,61 @@ export function PopulationTags() {
 
             {selectedTagIds.length === 0 ? (
               <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
-                先选择 2 个以内的标签进行交叉分析。
+                先选择标签进行交叉分析。
               </div>
             ) : (
               <div className="space-y-3">
                 <div className={`flex items-center gap-2 text-sm ${MUTED_TEXT}`}>
                   <span>当前组合：</span>
-                  {selectedTagIds.map((tagId) => {
-                    const tag = snapshot?.tags.find((item) => item.id === tagId);
-                    return tag ? (
-                      <Badge key={tag.id} variant="secondary">
-                        {tag.name}
-                      </Badge>
-                    ) : null;
-                  })}
+                  {selectedTags.map((tag) => (
+                    <Badge key={tag.id} variant="secondary">
+                      {tag.name}
+                    </Badge>
+                  ))}
                 </div>
 
-                <div className="space-y-3">
-                  {selectedResults.length === 0 ? (
-                    <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
-                      当前组合暂无共同命中对象。
+                {selectedResults.length === 0 ? (
+                  <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
+                    当前组合暂无共同命中对象。
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm text-[var(--color-neutral-08)]">命中居民</p>
+                      <p className="mt-1 text-2xl font-semibold text-white">{selectedResults.length} 人</p>
                     </div>
-                  ) : (
-                    selectedResults.slice(0, 12).map((record) => (
-                      <div key={record.person.id} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <p className="font-medium text-white">{record.person.name}</p>
-                            <p className={`text-sm ${MUTED_TEXT}`}>{record.person.address}</p>
-                          </div>
-                          <Badge variant="outline">{record.person.risk}</Badge>
-                        </div>
-                        <div className="mt-3 flex flex-wrap gap-2">
-                          {record.matchedTags
-                            .filter((match) => selectedTagIds.includes(match.tagId))
-                            .map((match) => (
-                              <Badge key={match.tagId} variant="secondary">
-                                {match.tagName}
-                              </Badge>
-                            ))}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
+                    <Button type="button" onClick={() => setResidentDialogOpen(true)}>
+                      查看详情
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={residentDialogOpen} onOpenChange={setResidentDialogOpen}>
+        <DialogContent className="max-h-[86vh] max-w-5xl overflow-hidden border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-[var(--color-neutral-11)]">命中居民详情</DialogTitle>
+            <DialogDescription className="text-[var(--color-neutral-08)]">
+              当前组合共命中 {selectedResults.length} 人：{selectedTags.map((tag) => tag.name).join('、')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[62vh] space-y-3 overflow-y-auto pr-1">
+            {selectedResults.length === 0 ? (
+              <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
+                当前组合暂无共同命中对象。
+              </div>
+            ) : (
+              selectedResults.map((record) => (
+                <PersonMatchCard key={record.person.id} record={record} selectedTagIds={selectedTagIds} />
+              ))
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
