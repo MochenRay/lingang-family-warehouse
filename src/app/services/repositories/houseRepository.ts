@@ -2,6 +2,7 @@ import { type Grid, type House, type HouseType, type HousingHistory, type Person
 import {
   buildQueryString,
   callWithFallback,
+  callWriteWithFallback,
   fetchAllListPages,
   fetchJson,
   type ApiListResponse,
@@ -120,7 +121,7 @@ export const houseRepository = {
   },
 
   async addHouse(house: HouseCreateInput): Promise<House> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () => {
         const { id: _id, ...payload } = house;
         return fetchJson<House>('/houses', {
@@ -140,7 +141,7 @@ export const houseRepository = {
   },
 
   async updateHouse(id: string, updates: Partial<House>): Promise<House | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<House>(`/houses/${id}`, {
           method: 'PATCH',
@@ -187,7 +188,7 @@ export const houseRepository = {
   },
 
   async deleteHouse(id: string): Promise<void> {
-    return callWithFallback(
+    return callWriteWithFallback(
       async () => {
         await fetchJson<{ ok: true } | null>(`/houses/${id}`, {
           method: 'DELETE',

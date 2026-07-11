@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchAllListPages, getDataMode } from './api';
+import { callWriteWithFallback, fetchAllListPages, getDataMode } from './api';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -51,5 +51,32 @@ describe('fetchAllListPages', () => {
       { limit: 2, offset: 2 },
       { limit: 2, offset: 4 },
     ]);
+  });
+});
+
+describe('callWriteWithFallback', () => {
+  it('uses local persistence only when data mode is explicitly fallback', async () => {
+    const apiCall = vi.fn(async () => 'api');
+    const fallbackCall = vi.fn(() => 'local');
+    const storage = {
+      getItem: vi.fn(() => null),
+      setItem: vi.fn(),
+    };
+    vi.stubEnv('VITE_DATA_MODE', 'fallback');
+    vi.stubGlobal('window', {
+      localStorage: storage,
+      location: { hostname: 'localhost' },
+      dispatchEvent: vi.fn(),
+    });
+    vi.stubGlobal('CustomEvent', class {
+      constructor(
+        public type: string,
+        public init?: CustomEventInit,
+      ) {}
+    });
+
+    await expect(callWriteWithFallback(apiCall, fallbackCall)).resolves.toBe('local');
+    expect(apiCall).not.toHaveBeenCalled();
+    expect(fallbackCall).toHaveBeenCalledTimes(1);
   });
 });

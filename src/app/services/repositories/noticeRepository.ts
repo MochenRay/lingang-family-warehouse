@@ -1,5 +1,5 @@
 import type { Grid, Notification } from '../../types/core';
-import { buildQueryString, callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import { buildQueryString, callWithFallback, callWriteWithFallback, fetchJson, type ApiListResponse } from '../api';
 import { db } from '../db';
 import { statsRepository } from './statsRepository';
 
@@ -183,7 +183,7 @@ export const noticeRepository = {
       readCount: 0,
     };
 
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<NoticeRecord>('/notices', {
           method: 'POST',
@@ -220,7 +220,7 @@ export const noticeRepository = {
   },
 
   async deleteNotice(id: string): Promise<void> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<void>(`/notices/${id}`, {
           method: 'DELETE',

@@ -214,3 +214,22 @@ export async function callWithFallback<T>(
     return await fallbackCall();
   }
 }
+
+export async function callWriteWithFallback<T>(
+  apiCall: () => Promise<T>,
+  fallbackCall: () => Promise<T> | T,
+): Promise<T> {
+  if (getDataMode() === 'fallback') {
+    recordApiDataSource('fallback', '数据模式已固定为 fallback');
+    return await fallbackCall();
+  }
+
+  try {
+    const result = await apiCall();
+    recordApiDataSource('api');
+    return result;
+  } catch (error) {
+    recordApiDataSource('api-error', error);
+    throw error;
+  }
+}

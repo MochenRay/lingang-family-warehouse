@@ -1,4 +1,4 @@
-import { callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import { callWithFallback, callWriteWithFallback, fetchJson, type ApiListResponse } from '../api';
 
 export interface TaskRuleRecord {
   id: string;
@@ -97,11 +97,30 @@ export const taskRuleRepository = {
   },
 
   async updateRule(id: string, payload: TaskRuleUpdatePayload): Promise<TaskRuleRecord> {
-    const updated = await fetchJson<TaskRuleRecord>(`/task-rules/${id}`, {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    });
-    emitRuleChange();
-    return updated;
+    return callWriteWithFallback(
+      async () => {
+        const updated = await fetchJson<TaskRuleRecord>(`/task-rules/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(payload),
+        });
+        emitRuleChange();
+        return updated;
+      },
+      () => {
+        const index = FALLBACK_RULES.findIndex((rule) => rule.id === id);
+        if (index === -1) {
+          throw new Error(`Task rule '${id}' not found`);
+        }
+
+        const updated = {
+          ...FALLBACK_RULES[index],
+          ...payload,
+          updatedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        };
+        FALLBACK_RULES[index] = updated;
+        emitRuleChange();
+        return { ...updated };
+      },
+    );
   },
 };

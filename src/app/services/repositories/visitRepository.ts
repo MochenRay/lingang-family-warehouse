@@ -2,6 +2,7 @@ import { type VisitRecord } from '../../types/core';
 import {
   buildQueryString,
   callWithFallback,
+  callWriteWithFallback,
   fetchAllListPages,
   fetchJson,
   type ApiListResponse,
@@ -78,7 +79,7 @@ export const visitRepository = {
   },
 
   async addVisit(visit: VisitCreateInput): Promise<VisitRecord> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>('/visits', {
           method: 'POST',
@@ -96,7 +97,7 @@ export const visitRepository = {
   },
 
   async addPersonVisit(personId: string, visit: PersonVisitCreateInput): Promise<VisitRecord> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>(`/people/${personId}/visits`, {
           method: 'POST',
@@ -125,7 +126,7 @@ export const visitRepository = {
   },
 
   async updateVisit(id: string, updates: Partial<VisitRecord>): Promise<VisitRecord | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>(`/visits/${id}`, {
           method: 'PATCH',

@@ -2,6 +2,7 @@ import { type Grid, type Person, type PersonType, type RiskLevel } from '../../t
 import {
   buildQueryString,
   callWithFallback,
+  callWriteWithFallback,
   fetchAllListPages,
   fetchJson,
   type ApiListResponse,
@@ -128,7 +129,7 @@ export const personRepository = {
   },
 
   async addPerson(person: PersonCreateInput): Promise<Person> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () => {
         const { id: _id, ...payload } = person;
         return fetchJson<Person>('/people', {
@@ -148,7 +149,7 @@ export const personRepository = {
   },
 
   async updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<Person>(`/people/${id}`, {
           method: 'PATCH',
@@ -162,7 +163,7 @@ export const personRepository = {
   },
 
   async deletePerson(id: string): Promise<void> {
-    return callWithFallback(
+    return callWriteWithFallback(
       async () => {
         await fetchJson<{ ok: true } | null>(`/people/${id}`, {
           method: 'DELETE',
