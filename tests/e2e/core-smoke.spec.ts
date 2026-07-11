@@ -34,6 +34,28 @@ test('dashboard renders canonical totals from the API', async ({ page, request }
   await expect(page.getByText(dashboard.totalHouses.toLocaleString('zh-CN'), { exact: true }).first()).toBeVisible();
 });
 
+test('relationship ledger loads the full read model within ten business requests', async ({ page }) => {
+  const businessRequests: string[] = [];
+  page.on('request', (request) => {
+    const url = new URL(request.url());
+    if (request.method() === 'GET' && url.pathname.startsWith('/api/')) {
+      businessRequests.push(url.pathname);
+    }
+  });
+
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1');
+  });
+  await page.goto('/relationship');
+
+  await expect(page.getByRole('heading', { name: '人房关系管理' })).toBeVisible();
+  await expect(page.getByRole('tab', { name: /现居关系 \([1-9]\d*\)/ })).toBeVisible();
+
+  expect(businessRequests.length).toBeLessThanOrEqual(10);
+  expect(businessRequests.filter((path) => path.endsWith('/houses/history-records'))).toHaveLength(1);
+  expect(businessRequests.some((path) => /\/houses\/[^/]+\/history$/.test(path))).toBe(false);
+});
+
 test('local preview allows create, update, and delete without touching cloud data', async ({ request }) => {
   const peopleResponse = await request.get(`${apiBaseUrl}/people?limit=1`);
   expect(peopleResponse.ok()).toBe(true);
