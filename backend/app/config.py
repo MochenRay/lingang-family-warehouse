@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -16,8 +17,18 @@ class Settings(BaseSettings):
     )
     database_echo: bool = Field(default=False, alias="DATABASE_ECHO")
 
+    demo_write_mode: Literal["enabled", "readonly", "token"] | None = Field(
+        default=None,
+        alias="DEMO_WRITE_MODE",
+    )
+    demo_write_token: str = Field(default="", alias="DEMO_WRITE_TOKEN")
+    demo_write_token_header: str = Field(
+        default="X-Demo-Write-Token",
+        alias="DEMO_WRITE_TOKEN_HEADER",
+    )
+
     ai_enabled: bool = Field(default=True, alias="AI_ENABLED")
-    llm_model: str = Field(default="gemini-3.1-flash-lite", alias="LLM_MODEL")
+    llm_model: str = Field(default="gemini-3.5-flash", alias="LLM_MODEL")
     llm_fallback_model: str = Field(default="gemini-2.5-flash-lite", alias="LLM_FALLBACK_MODEL")
     llm_base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -25,6 +36,14 @@ class Settings(BaseSettings):
     )
     llm_api_key: str = Field(default="", alias="LLM_API_KEY")
     llm_timeout_seconds: float = Field(default=25.0, alias="LLM_TIMEOUT_SECONDS")
+    ai_max_prompt_chars: int = Field(default=4_000, ge=1, alias="AI_MAX_PROMPT_CHARS")
+    ai_max_output_tokens: int = Field(default=800, ge=1, le=8_192, alias="AI_MAX_OUTPUT_TOKENS")
+    ai_rate_limit_requests: int = Field(default=12, ge=1, alias="AI_RATE_LIMIT_REQUESTS")
+    ai_rate_limit_window_seconds: int = Field(
+        default=60,
+        ge=1,
+        alias="AI_RATE_LIMIT_WINDOW_SECONDS",
+    )
 
     cors_origins_raw: str = Field(
         default="http://localhost:5173,http://127.0.0.1:5173,http://localhost:4173,http://127.0.0.1:4173",
@@ -41,6 +60,15 @@ class Settings(BaseSettings):
     @property
     def cors_origins(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins_raw.split(",") if origin.strip()]
+
+    @property
+    def effective_demo_write_mode(self) -> Literal["enabled", "readonly", "token"]:
+        """Keep local development writable while failing closed elsewhere."""
+        if self.demo_write_mode is not None:
+            return self.demo_write_mode
+        if self.app_env.strip().lower() in {"development", "test", "local"}:
+            return "enabled"
+        return "readonly"
 
     @property
     def sqlalchemy_database_url(self) -> str:

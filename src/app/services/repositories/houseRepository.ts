@@ -1,5 +1,12 @@
 import { type Grid, type House, type HouseType, type HousingHistory, type Person } from '../../types/core';
-import { buildQueryString, callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import {
+  buildQueryString,
+  callWithFallback,
+  callWriteWithFallback,
+  fetchAllListPages,
+  fetchJson,
+  type ApiListResponse,
+} from '../api';
 import { db } from '../db';
 
 export interface HouseQuery {
@@ -71,18 +78,39 @@ async function getHousesViaFallback(input?: HouseFilter): Promise<House[]> {
   return db.getHouses((house) => matchesHouseQuery(house, input));
 }
 
+async function getHousesList(input?: HouseFilter): Promise<ApiListResponse<House>> {
+  return callWithFallback(
+    async () => {
+      const query = isQueryObject(input) ? input ?? {} : {};
+      const { limit, offset, ...filters } = query;
+      const response = limit !== undefined || offset !== undefined
+        ? await fetchJson<ApiListResponse<House>>(
+            `/houses${buildQueryString({ limit: limit ?? 500, offset: offset ?? 0, ...filters })}`,
+          )
+        : await fetchAllListPages<House>(({ limit: pageLimit, offset: pageOffset }) =>
+            fetchJson<ApiListResponse<House>>(
+              `/houses${buildQueryString({ limit: pageLimit, offset: pageOffset, ...filters })}`,
+            ),
+          );
+      const items = typeof input === 'function' ? response.items.filter(input) : response.items;
+      return {
+        items,
+        total: typeof input === 'function' ? items.length : response.total,
+      };
+    },
+    async () => {
+      const items = await getHousesViaFallback(input);
+      return { items, total: items.length };
+    },
+  );
+}
+
 export const houseRepository = {
+  getHousesList,
+
   async getHouses(input?: HouseFilter): Promise<House[]> {
-    return callWithFallback(
-      async () => {
-        const query = isQueryObject(input) ? input ?? {} : {};
-        const response = await fetchJson<ApiListResponse<House>>(
-          `/houses${buildQueryString({ limit: 500, ...query })}`,
-        );
-        return typeof input === 'function' ? response.items.filter(input) : response.items;
-      },
-      () => getHousesViaFallback(input),
-    );
+    const response = await getHousesList(input);
+    return response.items;
   },
 
   async getHouse(id: string): Promise<House | undefined> {
@@ -93,7 +121,7 @@ export const houseRepository = {
   },
 
   async addHouse(house: HouseCreateInput): Promise<House> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () => {
         const { id: _id, ...payload } = house;
         return fetchJson<House>('/houses', {
@@ -113,7 +141,7 @@ export const houseRepository = {
   },
 
   async updateHouse(id: string, updates: Partial<House>): Promise<House | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<House>(`/houses/${id}`, {
           method: 'PATCH',
@@ -146,7 +174,7 @@ export const houseRepository = {
         fetchJson<HousingHistory[]>(
           `/houses/history-records${buildQueryString({
             gridId,
-            limit: 1000,
+            limit: 2000,
           })}`,
         ),
       () => db.getHousingHistory((item) => {
@@ -160,7 +188,7 @@ export const houseRepository = {
   },
 
   async deleteHouse(id: string): Promise<void> {
-    return callWithFallback(
+    return callWriteWithFallback(
       async () => {
         await fetchJson<{ ok: true } | null>(`/houses/${id}`, {
           method: 'DELETE',

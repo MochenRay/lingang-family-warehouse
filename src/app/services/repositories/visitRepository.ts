@@ -1,5 +1,12 @@
 import { type VisitRecord } from '../../types/core';
-import { buildQueryString, callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import {
+  buildQueryString,
+  callWithFallback,
+  callWriteWithFallback,
+  fetchAllListPages,
+  fetchJson,
+  type ApiListResponse,
+} from '../api';
 import { db } from '../db';
 
 export interface VisitQuery {
@@ -35,17 +42,33 @@ function matchesVisitQuery(visit: VisitRecord, query: VisitQuery): boolean {
   return true;
 }
 
+async function getVisitsList(query?: VisitQuery): Promise<ApiListResponse<VisitRecord>> {
+  return callWithFallback(
+    async () => {
+      const { limit, offset, ...filters } = { order: 'desc' as const, ...query };
+      return limit !== undefined || offset !== undefined
+        ? fetchJson<ApiListResponse<VisitRecord>>(
+            `/visits${buildQueryString({ limit: limit ?? 500, offset: offset ?? 0, ...filters })}`,
+          )
+        : fetchAllListPages<VisitRecord>(({ limit: pageLimit, offset: pageOffset }) =>
+            fetchJson<ApiListResponse<VisitRecord>>(
+              `/visits${buildQueryString({ limit: pageLimit, offset: pageOffset, ...filters })}`,
+            ),
+          );
+    },
+    () => {
+      const items = db.getVisits((visit) => (query ? matchesVisitQuery(visit, query) : true));
+      return { items, total: items.length };
+    },
+  );
+}
+
 export const visitRepository = {
+  getVisitsList,
+
   async getVisits(query?: VisitQuery): Promise<VisitRecord[]> {
-    return callWithFallback(
-      async () => {
-        const response = await fetchJson<ApiListResponse<VisitRecord>>(
-          `/visits${buildQueryString({ limit: 500, order: 'desc', ...query })}`,
-        );
-        return response.items;
-      },
-      () => db.getVisits((visit) => (query ? matchesVisitQuery(visit, query) : true)),
-    );
+    const response = await getVisitsList(query);
+    return response.items;
   },
 
   async getVisit(id: string): Promise<VisitRecord | undefined> {
@@ -56,7 +79,7 @@ export const visitRepository = {
   },
 
   async addVisit(visit: VisitCreateInput): Promise<VisitRecord> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>('/visits', {
           method: 'POST',
@@ -74,7 +97,7 @@ export const visitRepository = {
   },
 
   async addPersonVisit(personId: string, visit: PersonVisitCreateInput): Promise<VisitRecord> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>(`/people/${personId}/visits`, {
           method: 'POST',
@@ -103,7 +126,7 @@ export const visitRepository = {
   },
 
   async updateVisit(id: string, updates: Partial<VisitRecord>): Promise<VisitRecord | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<VisitRecord>(`/visits/${id}`, {
           method: 'PATCH',

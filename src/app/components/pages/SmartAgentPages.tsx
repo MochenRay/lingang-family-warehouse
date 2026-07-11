@@ -3,14 +3,13 @@ import {
   Send,
   Paperclip,
   Bot,
-  FileText,
   BookOpen,
   PenTool,
   PieChart,
   Loader2,
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { Card, CardContent } from '../ui/card';
 import { ScrollArea } from '../ui/scroll-area';
 import { Avatar, AvatarFallback } from '../ui/avatar';
 import { Textarea } from '../ui/textarea';
@@ -39,7 +38,12 @@ interface Message {
 interface SmartChatProps {
   title: string;
   description: string;
-  sidebarContent: React.ReactNode;
+  topic: {
+    title: string;
+    icon: React.ReactNode;
+    items: string[];
+    badgeClassName: string;
+  };
   suggestedQuestions: string[];
   initialMessages: Message[];
   placeholder: string;
@@ -50,15 +54,15 @@ interface SmartChatProps {
 const SURFACE_CLASS =
   'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
-const SIDEBAR_BADGE_CLASS =
-  'justify-center rounded py-1.5 text-[11px] font-normal text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] transition-colors';
+const TOPIC_BADGE_CLASS =
+  'shrink-0 whitespace-nowrap rounded border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1.5 text-[11px] font-normal text-[var(--color-neutral-10)] transition-colors';
 
 // --- Base Component ---
 
 function BaseSmartChat({
   title,
   description,
-  sidebarContent,
+  topic,
   suggestedQuestions,
   initialMessages,
   placeholder,
@@ -106,41 +110,41 @@ function BaseSmartChat({
   };
 
   return (
-    <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="flex h-full min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
       <div className="shrink-0">
         <PageHeader eyebrow="AI WORKBENCH" title={title} description={description} />
       </div>
 
-      <div className="flex min-h-0 flex-1 gap-4 overflow-hidden">
-        {/* 左侧侧边栏 */}
-        <div className="flex w-[260px] shrink-0 flex-col gap-4">
-          {sidebarContent}
+      <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden">
+        {/* 领域入口横向置于对话区之上，给聊天区留出完整宽度。 */}
+        <Card className={`${SURFACE_CLASS} shrink-0 gap-0 overflow-hidden`}>
+          <CardContent className="flex items-center gap-3 p-3 [&:last-child]:pb-3">
+            <div className="flex min-w-[168px] shrink-0 items-center gap-2 border-r border-[var(--color-neutral-03)] pr-4 text-sm font-medium text-white">
+              {topic.icon}
+              <span>{topic.title}</span>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-nowrap gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
+              {topic.items.map(item => (
+                <Badge
+                  key={item}
+                  variant="outline"
+                  className={`${TOPIC_BADGE_CLASS} ${topic.badgeClassName}`}
+                >
+                  {item}
+                </Badge>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
 
-          <Card className={`${SURFACE_CLASS} min-h-0 flex-1`}>
-            <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
-              <CardTitle className="text-sm font-medium text-white">推荐问题</CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-              <div className="space-y-2">
-                {suggestedQuestions.map((q, i) => (
-                  <div
-                    key={i}
-                    className="cursor-pointer rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-xs leading-5 text-[var(--color-neutral-10)] transition-colors hover:border-[#4E86DF]/40 hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]"
-                    onClick={() => {
-                      void handleSendMessage(q);
-                    }}
-                  >
-                    {q}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* 右侧聊天区域 */}
-        <Card className={`${SURFACE_CLASS} flex min-w-0 flex-1 flex-col overflow-hidden`}>
-          <ScrollArea className="flex-1 bg-[var(--color-neutral-01)] p-4">
+        {/* 对话主区 */}
+        <Card className={`${SURFACE_CLASS} flex min-h-0 min-w-0 flex-1 flex-col gap-0 overflow-hidden`}>
+          <ScrollArea
+            className="flex-1 bg-[var(--color-neutral-01)] p-4"
+            role="log"
+            aria-live="polite"
+            aria-busy={sending}
+          >
             <div className="space-y-6">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
@@ -180,8 +184,27 @@ function BaseSmartChat({
           </ScrollArea>
 
           <div className="border-t border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
+            <div className="mb-3 flex items-start gap-3">
+              <span className="shrink-0 pt-1.5 text-xs font-medium text-[var(--color-neutral-10)]">推荐问题</span>
+              <div className="flex min-w-0 flex-1 flex-nowrap gap-2 overflow-x-auto pb-1 lg:flex-wrap lg:overflow-visible lg:pb-0">
+                {suggestedQuestions.map(q => (
+                  <button
+                    key={q}
+                    type="button"
+                    className="shrink-0 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1.5 text-left text-xs leading-5 text-[var(--color-neutral-10)] transition-colors hover:border-[#4E86DF]/50 hover:bg-[#2761CB]/12 hover:text-[#9FC4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4E86DF] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-neutral-02)] disabled:cursor-not-allowed disabled:opacity-50"
+                    onClick={() => {
+                      void handleSendMessage(q);
+                    }}
+                    disabled={sending}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div className="relative">
               <Textarea
+                aria-label="消息输入"
                 placeholder={placeholder}
                 className="max-h-[120px] min-h-[60px] resize-none border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] pr-24 text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]"
                 value={inputMessage}
@@ -194,11 +217,17 @@ function BaseSmartChat({
                 }}
               />
               <div className="absolute bottom-2 right-2 flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="添加附件"
+                  className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white"
+                >
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon"
+                  aria-label="发送消息"
                   className="h-8 w-8 border-0 bg-[#2761CB] text-white hover:bg-[#4E86DF]"
                   onClick={() => {
                     void handleSendMessage();
@@ -219,35 +248,18 @@ function BaseSmartChat({
 // --- Specific Pages ---
 
 export function PolicyInterpretation() {
-  const sidebar = (
-    <Card className={SURFACE_CLASS}>
-      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-          <BookOpen className="h-4 w-4 text-[#4E86DF]" />
-          热门政策领域
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2 p-3">
-        {['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'].map(tag => (
-          <Badge
-            key={tag}
-            variant="outline"
-            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#4E86DF] hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]`}
-          >
-            {tag}
-          </Badge>
-        ))}
-      </CardContent>
-    </Card>
-  );
-
   return (
     <BaseSmartChat
       title="政策解读"
       description="基于本地政策库的智能检索与解读助手"
       demoKind="policy"
       apiKind="policy"
-      sidebarContent={sidebar}
+      topic={{
+        title: '热门政策领域',
+        icon: <BookOpen className="h-4 w-4 text-[#4E86DF]" />,
+        items: ['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'],
+        badgeClassName: 'hover:border-[#4E86DF] hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]',
+      }}
       placeholder="请输入您想查询的政策问题，例如：最新的高龄津贴发放标准是什么？"
       initialMessages={[{
         id: 1,
@@ -265,35 +277,18 @@ export function PolicyInterpretation() {
 }
 
 export function OfficialDocumentWriting() {
-  const sidebar = (
-    <Card className={SURFACE_CLASS}>
-      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-          <PenTool className="h-4 w-4 text-[#19B172]" />
-          常用文体模板
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2 p-3">
-         {['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'].map(tag => (
-          <Badge
-            key={tag}
-            variant="outline"
-            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#19B172] hover:bg-[#19B172]/12 hover:text-[#6EE7B7]`}
-          >
-            {tag}
-          </Badge>
-        ))}
-      </CardContent>
-    </Card>
-  );
-
   return (
     <BaseSmartChat
       title="公文写作"
       description="辅助生成各类社区工作文档、报告与通知"
       demoKind="writing"
       apiKind="writing"
-      sidebarContent={sidebar}
+      topic={{
+        title: '常用文体模板',
+        icon: <PenTool className="h-4 w-4 text-[#19B172]" />,
+        items: ['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'],
+        badgeClassName: 'hover:border-[#19B172] hover:bg-[#19B172]/12 hover:text-[#6EE7B7]',
+      }}
       placeholder="请输入您的写作需求，例如：帮我写一份关于社区环境整治的总结报告。"
       initialMessages={[{
         id: 1,
@@ -311,34 +306,18 @@ export function OfficialDocumentWriting() {
 }
 
 export function SmartQuery() {
-  const sidebar = (
-    <Card className={SURFACE_CLASS}>
-      <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
-        <CardTitle className="flex items-center gap-2 text-sm font-medium text-white">
-          <PieChart className="h-4 w-4 text-[#8B3BCC]" />
-          核心数据领域
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid gap-2 p-3">
-         {['人口数据', '房屋网格', '特殊人群', '矛盾纠纷', '活动参与'].map(tag => (
-          <Badge
-            key={tag}
-            variant="outline"
-            className={`${SIDEBAR_BADGE_CLASS} cursor-pointer hover:border-[#8B3BCC] hover:bg-[#8B3BCC]/12 hover:text-[#D8B4FE]`}
-          >
-            {tag}
-          </Badge>
-        ))}
-      </CardContent>
-    </Card>
-  );
-
   return (
     <BaseSmartChat
       title="智能问数"
       description="通过自然语言查询、统计和分析辖区数据"
       demoKind="query"
-      sidebarContent={sidebar}
+      apiKind="query"
+      topic={{
+        title: '核心数据领域',
+        icon: <PieChart className="h-4 w-4 text-[#8B3BCC]" />,
+        items: ['人口数据', '房屋网格', '特殊人群', '矛盾纠纷', '活动参与'],
+        badgeClassName: 'hover:border-[#8B3BCC] hover:bg-[#8B3BCC]/12 hover:text-[#D8B4FE]',
+      }}
       placeholder="请输入您想分析的数据问题，例如：统计本月新增流动人口数量。"
       initialMessages={[{
         id: 1,

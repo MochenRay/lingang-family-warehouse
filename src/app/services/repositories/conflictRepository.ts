@@ -1,5 +1,5 @@
 import { type ConflictRecord, type House, type Person, type VisitRecord } from '../../types/core';
-import { buildQueryString, callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import { buildQueryString, callWithFallback, callWriteWithFallback, fetchJson, type ApiListResponse } from '../api';
 import { db } from '../db';
 
 export interface ConflictQuery {
@@ -229,7 +229,7 @@ export const conflictRepository = {
   },
 
   async addConflict(conflict: ConflictCreateInput): Promise<ConflictRecord> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () => {
         const { id: _id, ...payload } = conflict;
         return fetchJson<ConflictRecord>('/conflicts', {
@@ -249,7 +249,7 @@ export const conflictRepository = {
   },
 
   async updateConflict(id: string, updates: Partial<ConflictRecord>): Promise<ConflictRecord | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<ConflictRecord>(`/conflicts/${id}`, {
           method: 'PATCH',

@@ -11,6 +11,40 @@ from app.models.house import House, HousingHistory
 from app.models.person import Person
 from app.models.visit import VisitRecord
 
+MAX_AI_CONTEXT_LABELS = 8
+MAX_AI_CONTEXT_VISITS = 2
+SAFE_AI_SIGNAL_RULES: tuple[tuple[str, str], ...] = (
+    ("长期未走访", "长期未走访"),
+    ("重点关注", "重点关注"),
+    ("独居", "独居老人"),
+    ("高龄", "高龄老人"),
+    ("失独", "失独家庭"),
+    ("高血压", "高血压"),
+    ("糖尿病", "糖尿病"),
+    ("慢性病", "慢性病"),
+    ("孕", "孕产妇"),
+    ("残疾", "残疾"),
+    ("低保", "低保家庭"),
+    ("困难", "困难群体"),
+    ("服药", "用药回访"),
+    ("用药", "用药回访"),
+    ("安全", "安全检查"),
+    ("救助", "救助需求"),
+    ("隐患", "隐患核验"),
+    ("回访", "回访"),
+    ("日常走访", "日常走访"),
+)
+SAFE_AI_GENDERS = {"男": "男", "女": "女", "其他": "other", "未知": "unknown"}
+SAFE_AI_PERSON_TYPES = {"户籍": "户籍", "流动": "流动", "留守": "留守", "境外": "境外"}
+SAFE_AI_RISK_LEVELS = {
+    "High": "High",
+    "Medium": "Medium",
+    "Low": "Low",
+    "高": "High",
+    "中": "Medium",
+    "低": "Low",
+}
+
 
 def _parse_date(value: str | None) -> datetime | None:
     if not value:
@@ -25,6 +59,58 @@ def _parse_date(value: str | None) -> datetime | None:
 
 def _latest_by_date(items: list[VisitRecord], limit: int = 3) -> list[VisitRecord]:
     return sorted(items, key=lambda item: (_parse_date(item.date) or datetime.min, item.id), reverse=True)[:limit]
+
+
+def _project_safe_signals(values: list[str] | None) -> list[str]:
+    """Map editable labels to a fixed taxonomy; never forward raw label text."""
+    signals: list[str] = []
+    for value in values or []:
+        for keyword, canonical_signal in SAFE_AI_SIGNAL_RULES:
+            if keyword in value and canonical_signal not in signals:
+                signals.append(canonical_signal)
+            if len(signals) >= MAX_AI_CONTEXT_LABELS:
+                return signals
+    return signals
+
+
+def _project_safe_enum(value: str | None, allowed: dict[str, str]) -> str:
+    return allowed.get((value or "").strip(), "unknown")
+
+
+def _project_safe_age(value: int) -> int | None:
+    return value if 0 <= value <= 120 else None
+
+
+def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, object] | None:
+    """Return the minimum person context allowed to cross the LLM boundary."""
+    person = session.get(Person, person_id)
+    if person is None:
+        return None
+
+    visits = list(
+        session.exec(
+            select(VisitRecord).where(
+                (VisitRecord.targetType == "person") & (VisitRecord.targetId == person.id)
+            )
+        ).all()
+    )
+    signals = _project_safe_signals([*(person.tags or []), *((person.careLabels or []) or [])])
+    recent_visits = _latest_by_date(visits, limit=MAX_AI_CONTEXT_VISITS)
+
+    return {
+        "age": _project_safe_age(person.age),
+        "gender": _project_safe_enum(person.gender, SAFE_AI_GENDERS),
+        "person_type": _project_safe_enum(person.type, SAFE_AI_PERSON_TYPES),
+        "risk_level": _project_safe_enum(person.risk, SAFE_AI_RISK_LEVELS),
+        "signals": signals,
+        "recent_visits": [
+            {
+                "date": parsed.date().isoformat() if (parsed := _parse_date(visit.date)) else None,
+                "signals": _project_safe_signals(visit.tags),
+            }
+            for visit in recent_visits
+        ],
+    }
 
 
 def _select_default_person(session: Session) -> Person | None:

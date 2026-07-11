@@ -11,6 +11,10 @@ import { Person, VisitRecord } from '../../types/core';
 import { toast } from 'sonner';
 import { personRepository } from '../../services/repositories/personRepository';
 import { visitRepository } from '../../services/repositories/visitRepository';
+import {
+  secondaryAiRepository,
+  type SecondaryAiStatus,
+} from '../../services/repositories/secondaryAiRepository';
 
 interface MobileVisitFormProps {
   personId: string;
@@ -28,11 +32,26 @@ const MOCK_SPEECH_SEGMENTS = [
   "行，那您多注意休息，我们改天再来看您。"
 ];
 
+type VisitAiStatus = 'idle' | 'loading' | SecondaryAiStatus;
+
+const VISIT_AI_STATUS_LABELS: Record<VisitAiStatus, string> = {
+  idle: '待生成',
+  loading: '请求中',
+  live: 'Gemini live',
+  degraded: '安全降级',
+  disabled: 'AI 已关闭',
+  unconfigured: 'AI 未配置',
+  placeholder: '样例结果',
+};
+
 export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
   const [person, setPerson] = useState<Person | null>(null);
   const [recentVisits, setRecentVisits] = useState<VisitRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [visitAiStatus, setVisitAiStatus] = useState<VisitAiStatus>('idle');
+  const [visitAiContent, setVisitAiContent] = useState('');
+  const [visitAiModel, setVisitAiModel] = useState<string | null>(null);
   
   // 录音相关状态
   const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
@@ -54,7 +73,7 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     isHome: 'yes',
     notHomeReason: '',
     
-    // 走访内容 (由AI生成)
+    // 走访内容（演示转写结果，提交前由网格员核对）
     healthStatus: '',
     livingSituation: '',
     needsAssistance: '',
@@ -228,6 +247,28 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     }
 
     return guidance;
+  };
+
+  const requestGeminiVisitOutline = async () => {
+    setVisitAiStatus('loading');
+    setVisitAiContent('');
+    setVisitAiModel(null);
+
+    const result = await secondaryAiRepository.sendMessage(
+      'writing',
+      '请依据已裁剪的对象上下文，生成本次入户走访提纲。只给出需核验事项、建议提问和闭环动作，不得推断未提供的隐私事实。',
+      personId,
+    );
+
+    setVisitAiStatus(result.status);
+    setVisitAiContent(result.content);
+    setVisitAiModel(result.model ?? null);
+
+    if (result.status === 'live') {
+      toast.success('Gemini 走访提纲已生成');
+    } else {
+      toast.info('Gemini 当前不可用，已显示安全降级提纲');
+    }
   };
 
   const handleSubmit = async () => {
@@ -448,7 +489,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 走访前准备
               </h3>
               <span className="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
-                社工助手
+                规则建议
               </span>
             </div>
           </div>
@@ -461,6 +502,47 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 </li>
               ))}
             </ul>
+            <div className="mt-4 border-t border-[var(--color-border-primary)] pt-4">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
+                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    Gemini 对象化走访提纲
+                  </div>
+                  <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
+                    仅向模型发送年龄、风险及由标签映射出的固定分类信号，不发送原始标签、姓名、电话、证件号、地址或走访原文。
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-1 text-[10px] text-purple-700">
+                  {VISIT_AI_STATUS_LABELS[visitAiStatus]}
+                </span>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full border-purple-200 text-purple-700"
+                disabled={visitAiStatus === 'loading'}
+                onClick={() => void requestGeminiVisitOutline()}
+              >
+                {visitAiStatus === 'loading' ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+                )}
+                {visitAiStatus === 'loading' ? '正在请求 Gemini' : '生成走访提纲'}
+              </Button>
+              {visitAiContent && (
+                <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50/60 p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-purple-700">
+                    <span>{visitAiStatus === 'live' ? '真实模型结果' : '安全降级结果'}</span>
+                    {visitAiModel && <span>model: {visitAiModel}</span>}
+                  </div>
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-primary)]">
+                    {visitAiContent}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         </Card>
 
@@ -500,7 +582,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 待办建议
               </h3>
               <span className="text-[10px] px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
-                AI 推荐
+                规则建议
               </span>
             </div>
           </div>
@@ -603,7 +685,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   </div>
                   <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">开始语音记录</h4>
                   <p className="text-sm text-[var(--color-text-tertiary)] mb-6 max-w-[240px] mx-auto">
-                    点击下方按钮开始录音，系统将自动记录对话内容并整理成走访记录
+                    演示模式将模拟现场转写，并按固定规则整理为可编辑走访草稿
                   </p>
                   <Button 
                     size="lg" 
@@ -669,7 +751,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-6" />
                   <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">正在分析对话...</h4>
                   <p className="text-sm text-[var(--color-text-tertiary)] animate-pulse">
-                    AI 正在提取关键信息并生成走访记录
+                    演示规则正在提取关键信息并生成走访草稿
                   </p>
                 </div>
               )}
@@ -680,7 +762,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   <div className="bg-purple-900/10 rounded-lg p-3 flex items-start gap-3 border border-purple-500/20">
                     <Sparkles className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
                     <div className="text-sm text-purple-300">
-                      <span className="font-bold text-purple-200">AI 已完成智能整理：</span>
+                      <span className="font-bold text-purple-200">演示规则已完成整理：</span>
                       请核对以下内容，如有误可直接点击文本框进行修改。
                     </div>
                   </div>
@@ -690,7 +772,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          健康状况
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">AI 填充</span>
+                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.healthStatus}
@@ -703,7 +785,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          生活情况
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">AI 填充</span>
+                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.livingSituation}
@@ -716,7 +798,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          需求协助
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">AI 填充</span>
+                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.needsAssistance}
@@ -729,7 +811,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          安全检查
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">AI 填充</span>
+                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.safetyCheck}

@@ -6,6 +6,15 @@ export interface ApiListResponse<T> {
   total: number;
 }
 
+export interface ApiPageRequest {
+  limit: number;
+  offset: number;
+}
+
+export interface FetchAllListPagesOptions {
+  pageSize?: number;
+}
+
 export interface ApiDataSourceSnapshot {
   mode: DataMode;
   source: ApiDataSource;
@@ -46,6 +55,11 @@ export function getApiBaseUrl(): string {
 }
 
 export function getDataMode(): DataMode {
+  const envMode = readEnvValue('VITE_DATA_MODE');
+  if (envMode === 'api' || envMode === 'fallback') {
+    return envMode;
+  }
+
   if (typeof window !== 'undefined') {
     const persistedMode = window.localStorage.getItem(DATA_MODE_STORAGE_KEY);
     if (persistedMode && VALID_DATA_MODES.has(persistedMode as DataMode)) {
@@ -53,7 +67,6 @@ export function getDataMode(): DataMode {
     }
   }
 
-  const envMode = readEnvValue('VITE_DATA_MODE');
   if (envMode && VALID_DATA_MODES.has(envMode as DataMode)) {
     return envMode as DataMode;
   }
@@ -154,6 +167,27 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
   return response.json() as Promise<T>;
 }
 
+export async function fetchAllListPages<T>(
+  fetchPage: (page: ApiPageRequest) => Promise<ApiListResponse<T>>,
+  options: FetchAllListPagesOptions = {},
+): Promise<ApiListResponse<T>> {
+  const pageSize = options.pageSize ?? 500;
+  const items: T[] = [];
+  let total = 0;
+
+  do {
+    const page = await fetchPage({ limit: pageSize, offset: items.length });
+    total = page.total;
+    items.push(...page.items);
+
+    if (page.items.length === 0) {
+      break;
+    }
+  } while (items.length < total);
+
+  return { items, total };
+}
+
 export async function callWithFallback<T>(
   apiCall: () => Promise<T>,
   fallbackCall: () => Promise<T> | T,
@@ -178,5 +212,24 @@ export async function callWithFallback<T>(
     console.warn('API unavailable, falling back to local db.', error);
     recordApiDataSource('fallback', error);
     return await fallbackCall();
+  }
+}
+
+export async function callWriteWithFallback<T>(
+  apiCall: () => Promise<T>,
+  fallbackCall: () => Promise<T> | T,
+): Promise<T> {
+  if (getDataMode() === 'fallback') {
+    recordApiDataSource('fallback', '数据模式已固定为 fallback');
+    return await fallbackCall();
+  }
+
+  try {
+    const result = await apiCall();
+    recordApiDataSource('api');
+    return result;
+  } catch (error) {
+    recordApiDataSource('api-error', error);
+    throw error;
   }
 }

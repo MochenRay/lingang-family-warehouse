@@ -1,5 +1,12 @@
 import { type Grid, type Person, type PersonType, type RiskLevel } from '../../types/core';
-import { buildQueryString, callWithFallback, fetchJson, type ApiListResponse } from '../api';
+import {
+  buildQueryString,
+  callWithFallback,
+  callWriteWithFallback,
+  fetchAllListPages,
+  fetchJson,
+  type ApiListResponse,
+} from '../api';
 import { db } from '../db';
 
 interface GridStatsResponse {
@@ -79,18 +86,39 @@ async function getPeopleViaFallback(input?: PersonFilter): Promise<Person[]> {
   return db.getPeople((person) => matchesPersonQuery(person, input));
 }
 
+async function getPeopleList(input?: PersonFilter): Promise<ApiListResponse<Person>> {
+  return callWithFallback(
+    async () => {
+      const query = isQueryObject(input) ? input ?? {} : {};
+      const { limit, offset, ...filters } = query;
+      const response = limit !== undefined || offset !== undefined
+        ? await fetchJson<ApiListResponse<Person>>(
+            `/people${buildQueryString({ limit: limit ?? 500, offset: offset ?? 0, ...filters })}`,
+          )
+        : await fetchAllListPages<Person>(({ limit: pageLimit, offset: pageOffset }) =>
+            fetchJson<ApiListResponse<Person>>(
+              `/people${buildQueryString({ limit: pageLimit, offset: pageOffset, ...filters })}`,
+            ),
+          );
+      const items = typeof input === 'function' ? response.items.filter(input) : response.items;
+      return {
+        items,
+        total: typeof input === 'function' ? items.length : response.total,
+      };
+    },
+    async () => {
+      const items = await getPeopleViaFallback(input);
+      return { items, total: items.length };
+    },
+  );
+}
+
 export const personRepository = {
+  getPeopleList,
+
   async getPeople(input?: PersonFilter): Promise<Person[]> {
-    return callWithFallback(
-      async () => {
-        const query = isQueryObject(input) ? input ?? {} : {};
-        const response = await fetchJson<ApiListResponse<Person>>(
-          `/people${buildQueryString({ limit: 500, ...query })}`,
-        );
-        return typeof input === 'function' ? response.items.filter(input) : response.items;
-      },
-      () => getPeopleViaFallback(input),
-    );
+    const response = await getPeopleList(input);
+    return response.items;
   },
 
   async getPerson(id: string): Promise<Person | undefined> {
@@ -101,7 +129,7 @@ export const personRepository = {
   },
 
   async addPerson(person: PersonCreateInput): Promise<Person> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () => {
         const { id: _id, ...payload } = person;
         return fetchJson<Person>('/people', {
@@ -121,7 +149,7 @@ export const personRepository = {
   },
 
   async updatePerson(id: string, updates: Partial<Person>): Promise<Person | undefined> {
-    return callWithFallback(
+    return callWriteWithFallback(
       () =>
         fetchJson<Person>(`/people/${id}`, {
           method: 'PATCH',
@@ -135,7 +163,7 @@ export const personRepository = {
   },
 
   async deletePerson(id: string): Promise<void> {
-    return callWithFallback(
+    return callWriteWithFallback(
       async () => {
         await fetchJson<{ ok: true } | null>(`/people/${id}`, {
           method: 'DELETE',

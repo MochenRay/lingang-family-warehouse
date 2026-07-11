@@ -11,9 +11,38 @@ AITrialKind = Literal["query", "policy", "writing"]
 
 class LLMRequestError(RuntimeError):
     def __init__(self, message: str, status_code: int | None = None) -> None:
-        super().__init__(message)
+        error_code, public_message = _public_provider_error(status_code, message)
+        super().__init__(public_message)
         self.message = message
         self.status_code = status_code
+        self.error_code = error_code
+        self.public_message = public_message
+
+
+def _public_provider_error(status_code: int | None, message: str) -> tuple[str, str]:
+    """Map provider details to stable, non-sensitive client and log messages."""
+    lowered = message.lower()
+    if status_code == 429 or "resource_exhausted" in lowered or "quota" in lowered:
+        return (
+            "AI_PROVIDER_QUOTA_EXCEEDED",
+            "Gemini quota is currently unavailable; a safe fallback is shown.",
+        )
+    if status_code in {401, 403}:
+        return (
+            "AI_PROVIDER_AUTH_FAILED",
+            "Gemini authentication is unavailable; a safe fallback is shown.",
+        )
+    if status_code in {400, 404} and (
+        "model" in lowered or "not found" in lowered or "unsupported" in lowered
+    ):
+        return (
+            "AI_MODEL_UNAVAILABLE",
+            "The configured Gemini model is unavailable; a safe fallback is shown.",
+        )
+    return (
+        "AI_PROVIDER_UNAVAILABLE",
+        "Gemini is temporarily unavailable; a safe fallback is shown.",
+    )
 
 
 @dataclass
@@ -34,6 +63,7 @@ class LLMGateway:
         self.base_url = settings.llm_base_url.strip()
         self.api_key = settings.llm_api_key.strip()
         self.timeout_seconds = settings.llm_timeout_seconds
+        self.max_output_tokens = settings.ai_max_output_tokens
         self.configured = settings.llm_configured
 
     def describe(self) -> dict[str, object]:
@@ -51,6 +81,7 @@ class LLMGateway:
             "fallback_model": self.fallback_model or None,
             "base_url": self.base_url or None,
             "timeout_seconds": self.timeout_seconds,
+            "max_output_tokens": self.max_output_tokens,
         }
 
     def generate(self, kind: AITrialKind, prompt: str) -> LLMResult:
@@ -83,6 +114,7 @@ class LLMGateway:
             "model": model,
             "messages": self._build_messages(kind=kind, prompt=prompt),
             "temperature": 0.35 if kind == "policy" else 0.55,
+            "max_tokens": self.max_output_tokens,
         }
         encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         http_request = request.Request(
