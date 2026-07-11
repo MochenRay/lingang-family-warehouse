@@ -141,11 +141,11 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
                 gridId="grid-1",
                 name="王敏感",
                 idCard="310000195001011234",
-                gender="女",
+                gender="联系人王敏感",
                 age=76,
                 phone="13912345678",
                 address="海港路 99 号 3 栋 201",
-                type="重点人员",
+                type="联系电话 13912345678",
                 tags=[
                     "独居老人",
                     "高血压",
@@ -153,7 +153,7 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
                     "身份证 310000195001011234",
                     "住址 海港路 99 号 3 栋 201",
                 ],
-                risk="High",
+                risk="身份证 310000195001011234",
                 updatedAt="2026-07-10",
                 careLabels=["定期服药", "联系人王敏感"],
                 biography="不得发送给模型的个人经历",
@@ -233,6 +233,9 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
     payload = captured["payload"]
     provider_prompt = payload["messages"][1]["content"]
     assert '"age": 76' in provider_prompt
+    assert '"gender": "unknown"' in provider_prompt
+    assert '"person_type": "unknown"' in provider_prompt
+    assert '"risk_level": "unknown"' in provider_prompt
     assert "独居老人" in provider_prompt
     assert "用药回访" in provider_prompt
     for direct_pii in (

@@ -34,6 +34,16 @@ SAFE_AI_SIGNAL_RULES: tuple[tuple[str, str], ...] = (
     ("回访", "回访"),
     ("日常走访", "日常走访"),
 )
+SAFE_AI_GENDERS = {"男": "男", "女": "女", "其他": "other", "未知": "unknown"}
+SAFE_AI_PERSON_TYPES = {"户籍": "户籍", "流动": "流动", "留守": "留守", "境外": "境外"}
+SAFE_AI_RISK_LEVELS = {
+    "High": "High",
+    "Medium": "Medium",
+    "Low": "Low",
+    "高": "High",
+    "中": "Medium",
+    "低": "Low",
+}
 
 
 def _parse_date(value: str | None) -> datetime | None:
@@ -63,6 +73,14 @@ def _project_safe_signals(values: list[str] | None) -> list[str]:
     return signals
 
 
+def _project_safe_enum(value: str | None, allowed: dict[str, str]) -> str:
+    return allowed.get((value or "").strip(), "unknown")
+
+
+def _project_safe_age(value: int) -> int | None:
+    return value if 0 <= value <= 120 else None
+
+
 def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, object] | None:
     """Return the minimum person context allowed to cross the LLM boundary."""
     person = session.get(Person, person_id)
@@ -80,10 +98,10 @@ def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, 
     recent_visits = _latest_by_date(visits, limit=MAX_AI_CONTEXT_VISITS)
 
     return {
-        "age": person.age,
-        "gender": person.gender,
-        "person_type": person.type,
-        "risk_level": person.risk,
+        "age": _project_safe_age(person.age),
+        "gender": _project_safe_enum(person.gender, SAFE_AI_GENDERS),
+        "person_type": _project_safe_enum(person.type, SAFE_AI_PERSON_TYPES),
+        "risk_level": _project_safe_enum(person.risk, SAFE_AI_RISK_LEVELS),
         "signals": signals,
         "recent_visits": [
             {
