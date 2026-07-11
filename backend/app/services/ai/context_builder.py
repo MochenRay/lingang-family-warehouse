@@ -11,6 +11,10 @@ from app.models.house import House, HousingHistory
 from app.models.person import Person
 from app.models.visit import VisitRecord
 
+MAX_AI_CONTEXT_LABELS = 8
+MAX_AI_CONTEXT_VISITS = 2
+MAX_AI_CONTEXT_LABEL_CHARS = 40
+
 
 def _parse_date(value: str | None) -> datetime | None:
     if not value:
@@ -25,6 +29,49 @@ def _parse_date(value: str | None) -> datetime | None:
 
 def _latest_by_date(items: list[VisitRecord], limit: int = 3) -> list[VisitRecord]:
     return sorted(items, key=lambda item: (_parse_date(item.date) or datetime.min, item.id), reverse=True)[:limit]
+
+
+def _safe_context_labels(values: list[str] | None) -> list[str]:
+    labels: list[str] = []
+    for value in values or []:
+        normalized = " ".join(value.split())[:MAX_AI_CONTEXT_LABEL_CHARS]
+        if normalized and normalized not in labels:
+            labels.append(normalized)
+        if len(labels) >= MAX_AI_CONTEXT_LABELS:
+            break
+    return labels
+
+
+def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, object] | None:
+    """Return the minimum person context allowed to cross the LLM boundary."""
+    person = session.get(Person, person_id)
+    if person is None:
+        return None
+
+    visits = list(
+        session.exec(
+            select(VisitRecord).where(
+                (VisitRecord.targetType == "person") & (VisitRecord.targetId == person.id)
+            )
+        ).all()
+    )
+    signals = _safe_context_labels([*(person.tags or []), *((person.careLabels or []) or [])])
+    recent_visits = _latest_by_date(visits, limit=MAX_AI_CONTEXT_VISITS)
+
+    return {
+        "age": person.age,
+        "gender": person.gender,
+        "person_type": person.type,
+        "risk_level": person.risk,
+        "signals": signals,
+        "recent_visits": [
+            {
+                "date": visit.date[:32],
+                "tags": _safe_context_labels(visit.tags),
+            }
+            for visit in recent_visits
+        ],
+    }
 
 
 def _select_default_person(session: Session) -> Person | None:

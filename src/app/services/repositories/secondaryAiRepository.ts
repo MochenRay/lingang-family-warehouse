@@ -10,8 +10,11 @@ export interface SecondaryAiChatResult {
   content: string;
   summary?: string;
   model?: string | null;
+  provider?: string | null;
+  context_applied?: boolean;
   used_fallback_model?: boolean;
   error?: string | null;
+  error_code?: string | null;
 }
 
 function buildLocalFallback(kind: SecondaryAiKind, prompt: string, error?: string): SecondaryAiChatResult {
@@ -28,7 +31,11 @@ function buildLocalFallback(kind: SecondaryAiKind, prompt: string, error?: strin
 }
 
 export const secondaryAiRepository = {
-  async sendMessage(kind: SecondaryAiKind, prompt: string): Promise<SecondaryAiChatResult> {
+  async sendMessage(
+    kind: SecondaryAiKind,
+    prompt: string,
+    contextId?: string,
+  ): Promise<SecondaryAiChatResult> {
     try {
       return await fetchJson<SecondaryAiChatResult>('/ai/chat', {
         method: 'POST',
@@ -36,6 +43,7 @@ export const secondaryAiRepository = {
           kind,
           agent_type: 'assistant',
           message: prompt,
+          context_id: contextId,
         }),
       });
     } catch (error) {
