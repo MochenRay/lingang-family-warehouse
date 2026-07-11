@@ -19,7 +19,7 @@
 最终复验时记录：
 
 ```text
-verified implementation commit: a8d13fcb939a91647387dddbb2a2808b54a755f5
+verified implementation commit: b2825c7d12877962b436273fafbf3065c2fd0fd6
 node: v24.12.0
 python: 3.14.4
 browser runner: Playwright 1.61.1 / Chromium
@@ -44,11 +44,12 @@ PLAYWRIGHT_SKIP_WEBSERVER=1 npx playwright test \
 
 ```text
 frontend Vitest: 8 files / 13 tests passed
-backend pytest: 19 passed
+backend pytest: 20 passed
 Playwright: 10 passed
 typecheck: passed
 production build: passed with Vite 6.4.3
 npm audit: 0 vulnerabilities
+pip-audit: 0 known vulnerabilities
 setup:local: passed against the committed lockfile (pip install + clean npm ci)
 ```
 
@@ -74,6 +75,7 @@ npm run typecheck
 npm test
 npm run build
 backend/.venv/bin/python -m pytest backend/tests
+backend/.venv/bin/python -m pip_audit -r backend/requirements.txt
 npm run test:e2e
 git diff --check
 ```
@@ -82,6 +84,7 @@ git diff --check
 - [x] Vitest 通过
 - [x] Vite production build 通过
 - [x] pytest 通过
+- [x] pip-audit 通过，Python 生产依赖为 0 known vulnerabilities
 - [x] Playwright API + UI + CRUD smoke 通过
 - [ ] GitHub Actions 尚未远端执行；因本轮按要求不 push，本地等价命令均通过
 - [x] 无已提交 `.env`、API key、token 或真实居民信息
@@ -169,4 +172,4 @@ Phase 13 完成后仍不能把本项目描述为：
 
 可信表述应保持为：可本地复验的全栈治理场景 Demo；主数据链真实持久化；一条人物上下文到 Gemini 的路径真实接通；其余 AI 动作为确定性规则型辅助；管理与外部集成页面仍含原型边界。
 
-其余已知非阻断项：AI rate limiter 为单进程内存实现，不是多实例全局配额；人房历史聚合接口当前固定上限 2000（本地 seed 为 382）；pytest 在本机 Python 3.14 下有 FastAPI asyncio deprecation warnings，另有 3 个既有 SQLModel `metadata` 字段 shadow warnings。
+其余已知非阻断项：AI rate limiter 为单进程内存实现，不是多实例全局配额；人房历史聚合接口当前固定上限 2000（本地 seed 为 382）；pytest 在本机 Python 3.14 下有 Starlette `httpx` 兼容层 deprecation warning，另有 3 个既有 SQLModel `metadata` 字段 shadow warnings。
