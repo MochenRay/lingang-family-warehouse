@@ -2,7 +2,7 @@
 
 > 日期：2026-07-11
 >
-> 状态：集成复验通过；等待用户本地体验反馈，不代表已发布
+> 状态：集成复验与用户本地体验通过；已获发布授权，发布结果以 PR 与部署记录为准
 >
 > 范围：简历主项目可信度加固（数据口径、N+1、演示写保护、Gemini 主链、自动化证据）
 
@@ -19,7 +19,7 @@
 最终复验时记录：
 
 ```text
-verified implementation commit: 9c89af1ddfc7ec690bbcc972ebb892bde9236116
+verified implementation commit: a8d13fcb939a91647387dddbb2a2808b54a755f5
 node: v24.12.0
 python: 3.14.4
 browser runner: Playwright 1.61.1 / Chromium
@@ -45,7 +45,7 @@ PLAYWRIGHT_SKIP_WEBSERVER=1 npx playwright test \
 ```text
 frontend Vitest: 8 files / 13 tests passed
 backend pytest: 19 passed
-Playwright: 4 passed
+Playwright: 10 passed
 typecheck: passed
 production build: passed with Vite 6.4.3
 npm audit: 0 vulnerabilities
