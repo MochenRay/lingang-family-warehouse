@@ -5,6 +5,9 @@ node_modules/
 dist/
 .next/
 coverage/
+.runtime/
+playwright-report/
+test-results/
 
 # Environment files
 .env

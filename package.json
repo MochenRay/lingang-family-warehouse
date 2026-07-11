@@ -9,7 +9,12 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:backend": "backend/.venv/bin/python -m pytest backend/tests",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "setup:local": "./scripts/setup-local.sh",
+    "preview:local": "./scripts/preview-local.sh",
+    "preview:gemini": "./scripts/preview-with-gemini.sh"
   },
   "dependencies": {
     "@emotion/react": "11.14.0",
