@@ -57,7 +57,7 @@ class WriteProtectionMiddleware(BaseHTTPMiddleware):
     def _is_business_mutation(self, request: Request) -> bool:
         if request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
             return False
-        path = request.url.path
+        path = request.scope["path"]
         if not (path == self.api_prefix or path.startswith(f"{self.api_prefix}/")):
             return False
         return not path.startswith(f"{self.api_prefix}/ai/")

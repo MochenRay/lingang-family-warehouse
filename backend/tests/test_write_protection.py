@@ -57,6 +57,18 @@ def test_readonly_blocks_business_mutations_but_keeps_reads_and_ai_available() -
     assert client.post("/api/ai/chat").status_code == 200
 
 
+def test_readonly_uses_the_routed_asgi_path_when_host_header_is_malicious() -> None:
+    client = TestClient(_build_app(mode="readonly"))
+
+    response = client.post(
+        "/api/people",
+        headers={"Host": "example.com/abc?bar="},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Business writes are disabled for this deployment."
+
+
 def test_enabled_allows_local_business_mutations() -> None:
     client = TestClient(_build_app(mode="enabled"))
 
