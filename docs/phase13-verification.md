@@ -86,7 +86,7 @@ git diff --check
 - [x] pytest 通过
 - [x] pip-audit 通过，Python 生产依赖为 0 known vulnerabilities
 - [x] Playwright API + UI + CRUD smoke 通过
-- [ ] GitHub Actions 尚未远端执行；因本轮按要求不 push，本地等价命令均通过
+- [x] GitHub Actions 已远端执行；项目仓 PR 合并以最新一轮 Frontend / Backend / Local SQLite smoke 全绿为门禁
 - [x] 无已提交 `.env`、API key、token 或真实居民信息
 - [x] `npm audit --audit-level=low` 为 0 vulnerabilities
 
