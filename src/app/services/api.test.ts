@@ -1,6 +1,33 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { fetchAllListPages } from './api';
+import { fetchAllListPages, getDataMode } from './api';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+describe('getDataMode', () => {
+  it('locks explicit env modes and only accepts a persisted choice in auto mode', () => {
+    let persistedMode = 'fallback';
+    vi.stubGlobal('window', {
+      localStorage: {
+        getItem: vi.fn(() => persistedMode),
+      },
+    });
+
+    vi.stubEnv('VITE_DATA_MODE', 'api');
+    expect(getDataMode()).toBe('api');
+
+    persistedMode = 'api';
+    vi.stubEnv('VITE_DATA_MODE', 'fallback');
+    expect(getDataMode()).toBe('fallback');
+
+    persistedMode = 'fallback';
+    vi.stubEnv('VITE_DATA_MODE', 'auto');
+    expect(getDataMode()).toBe('fallback');
+  });
+});
 
 describe('fetchAllListPages', () => {
   it('returns every item across pages while preserving the server total', async () => {

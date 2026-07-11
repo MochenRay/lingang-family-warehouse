@@ -55,6 +55,11 @@ export function getApiBaseUrl(): string {
 }
 
 export function getDataMode(): DataMode {
+  const envMode = readEnvValue('VITE_DATA_MODE');
+  if (envMode === 'api' || envMode === 'fallback') {
+    return envMode;
+  }
+
   if (typeof window !== 'undefined') {
     const persistedMode = window.localStorage.getItem(DATA_MODE_STORAGE_KEY);
     if (persistedMode && VALID_DATA_MODES.has(persistedMode as DataMode)) {
@@ -62,7 +67,6 @@ export function getDataMode(): DataMode {
     }
   }
 
-  const envMode = readEnvValue('VITE_DATA_MODE');
   if (envMode && VALID_DATA_MODES.has(envMode as DataMode)) {
     return envMode as DataMode;
   }
