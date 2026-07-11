@@ -13,7 +13,27 @@ from app.models.visit import VisitRecord
 
 MAX_AI_CONTEXT_LABELS = 8
 MAX_AI_CONTEXT_VISITS = 2
-MAX_AI_CONTEXT_LABEL_CHARS = 40
+SAFE_AI_SIGNAL_RULES: tuple[tuple[str, str], ...] = (
+    ("长期未走访", "长期未走访"),
+    ("重点关注", "重点关注"),
+    ("独居", "独居老人"),
+    ("高龄", "高龄老人"),
+    ("失独", "失独家庭"),
+    ("高血压", "高血压"),
+    ("糖尿病", "糖尿病"),
+    ("慢性病", "慢性病"),
+    ("孕", "孕产妇"),
+    ("残疾", "残疾"),
+    ("低保", "低保家庭"),
+    ("困难", "困难群体"),
+    ("服药", "用药回访"),
+    ("用药", "用药回访"),
+    ("安全", "安全检查"),
+    ("救助", "救助需求"),
+    ("隐患", "隐患核验"),
+    ("回访", "回访"),
+    ("日常走访", "日常走访"),
+)
 
 
 def _parse_date(value: str | None) -> datetime | None:
@@ -31,15 +51,16 @@ def _latest_by_date(items: list[VisitRecord], limit: int = 3) -> list[VisitRecor
     return sorted(items, key=lambda item: (_parse_date(item.date) or datetime.min, item.id), reverse=True)[:limit]
 
 
-def _safe_context_labels(values: list[str] | None) -> list[str]:
-    labels: list[str] = []
+def _project_safe_signals(values: list[str] | None) -> list[str]:
+    """Map editable labels to a fixed taxonomy; never forward raw label text."""
+    signals: list[str] = []
     for value in values or []:
-        normalized = " ".join(value.split())[:MAX_AI_CONTEXT_LABEL_CHARS]
-        if normalized and normalized not in labels:
-            labels.append(normalized)
-        if len(labels) >= MAX_AI_CONTEXT_LABELS:
-            break
-    return labels
+        for keyword, canonical_signal in SAFE_AI_SIGNAL_RULES:
+            if keyword in value and canonical_signal not in signals:
+                signals.append(canonical_signal)
+            if len(signals) >= MAX_AI_CONTEXT_LABELS:
+                return signals
+    return signals
 
 
 def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, object] | None:
@@ -55,7 +76,7 @@ def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, 
             )
         ).all()
     )
-    signals = _safe_context_labels([*(person.tags or []), *((person.careLabels or []) or [])])
+    signals = _project_safe_signals([*(person.tags or []), *((person.careLabels or []) or [])])
     recent_visits = _latest_by_date(visits, limit=MAX_AI_CONTEXT_VISITS)
 
     return {
@@ -66,8 +87,8 @@ def build_safe_person_ai_context(session: Session, person_id: str) -> dict[str, 
         "signals": signals,
         "recent_visits": [
             {
-                "date": visit.date[:32],
-                "tags": _safe_context_labels(visit.tags),
+                "date": parsed.date().isoformat() if (parsed := _parse_date(visit.date)) else None,
+                "signals": _project_safe_signals(visit.tags),
             }
             for visit in recent_visits
         ],

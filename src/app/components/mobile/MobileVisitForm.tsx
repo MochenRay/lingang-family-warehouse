@@ -510,7 +510,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     Gemini 对象化走访提纲
                   </div>
                   <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                    仅向模型发送年龄、风险、标签及近期走访标签等裁剪上下文，不发送姓名、电话、证件号、地址或走访原文。
+                    仅向模型发送年龄、风险及由标签映射出的固定分类信号，不发送原始标签、姓名、电话、证件号、地址或走访原文。
                   </p>
                 </div>
                 <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-1 text-[10px] text-purple-700">

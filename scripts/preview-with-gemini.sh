@@ -37,6 +37,7 @@ railway "${railway_args[@]}" -- env \
   "LOCAL_DATABASE_URL=$LOCAL_DATABASE_URL" \
   "APP_ENV=development" \
   "DEMO_WRITE_MODE=enabled" \
+  "AI_ENABLED=true" \
   "LLM_MODEL=$PREVIEW_LLM_MODEL" \
   "CORS_ORIGINS=http://localhost:$FRONTEND_PORT,http://127.0.0.1:$FRONTEND_PORT" \
   "$ROOT_DIR/scripts/preview-local.sh"

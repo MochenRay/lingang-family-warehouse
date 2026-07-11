@@ -76,9 +76,9 @@ fi
 echo "本地预览将使用独立 SQLite：$DB_PATH"
 echo "写入模式：enabled（新增/修改/删除均可用）"
 if [[ -n "${LLM_API_KEY:-}" ]]; then
-  echo "LLM 凭据：已注入（值不输出）"
+  echo "LLM 凭据：已由当前进程注入（值不输出）"
 else
-  echo "LLM 凭据：未注入；规则能力与其他 CRUD 仍可使用"
+  echo "LLM 凭据：当前进程未注入；后端仍可能从未提交的 .env 读取，请以 /api/ai/capabilities 为准"
 fi
 
 "$PYTHON_BIN" -m uvicorn app.main:app --app-dir "$ROOT_DIR/backend" --host 127.0.0.1 --port "$BACKEND_PORT" &

@@ -24,7 +24,7 @@ def get_ai_capabilities() -> dict[str, object]:
         "phase": "phase13-resume-hardening",
         "notes": [
             "The chat endpoint calls Gemini when configured and reports live versus degraded status explicitly.",
-            "Person-context chat forwards only a bounded, direct-identifier-free context projection.",
+            "Person-context chat excludes direct-identifier fields and maps editable labels to a fixed signal taxonomy.",
             "Agent action endpoints remain deterministic over demo data.",
             "Provider failures degrade to sample-safe content and stable sanitized error codes.",
         ],

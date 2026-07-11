@@ -49,7 +49,7 @@ export default defineConfig({
             PLAYWRIGHT_DB_PATH: playwrightDbPath,
             PYTHON_BIN: pythonBin,
           },
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: false,
           timeout: 120_000,
         },
         {
@@ -60,7 +60,7 @@ export default defineConfig({
             VITE_API_URL: backendUrl,
             VITE_DATA_MODE: 'api',
           },
-          reuseExistingServer: !process.env.CI,
+          reuseExistingServer: false,
           timeout: 120_000,
         },
       ],

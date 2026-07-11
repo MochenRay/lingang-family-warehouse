@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | 业务数据主链 | FastAPI + SQLModel，支持 SQLite / PostgreSQL；人口、房屋、走访、矛盾、公告、知识与规则等实体真实持久化 | “实现可持久化的全栈演示主链” | “已接入真实居民数据” |
 | Gemini 文本调用 | 配置 `LLM_API_KEY` 后，`POST /api/ai/chat` 真实请求 Gemini-compatible provider；返回 `live / degraded`、provider 与 model 信息 | “接入真实 Gemini 文本生成，并有显式降级” | “所有智能体均由大模型自主编排” |
-| 上下文走访辅助 | 走访辅助可把指定合成人物的裁剪上下文带入 `/api/ai/chat` | “打通人物上下文到 LLM 的一条可复验链路” | “具备完整 RAG / 多智能体平台” |
+| 上下文走访辅助 | 走访辅助仅把指定合成人物的非直接标识字段与固定分类信号带入 `/api/ai/chat` | “打通人物上下文到 LLM 的一条可复验链路” | “具备完整 RAG / 多智能体平台” |
 | 数据、派单、助手动作 | 标签建议、画像摘要、数据校验、风险扫描、走访提纲是基于当前演示库的确定性规则输出 | “规则型辅助能力” | “五个独立大模型 Agent” |
 | 管理与分析页面 | 一部分页面消费真实后端统计；用户、角色、权限、日志、外部 GIS / 批量接入等仍主要用于交互与信息架构展示 | “高保真业务原型与部分真实统计” | “完整权限、审计、数据集成平台” |
 
@@ -30,7 +30,7 @@ FastAPI ── SQLModel ── SQLite（本地默认）/ PostgreSQL（部署可�
 
 ## 本地完整预览
 
-建议环境：Node.js 22、Python 3.12 或 3.13。
+建议环境：Node.js 22、Python 3.12。本轮亦在 Node.js 24 / Python 3.14 复验通过；CI 与 Docker 仍以 22 / 3.12 为基准。
 
 ```bash
 npm run setup:local
@@ -54,7 +54,7 @@ RESET_PREVIEW_DB=1 npm run preview:local
 
 ## 本地真实 Gemini 调用
 
-当前主模型固定为 Google 官方 stable ID `gemini-3.5-flash`；可用 `PREVIEW_LLM_MODEL` 临时覆盖本地预览，不改 Railway 云端变量。
+当前主模型固定为 Google 官方 stable ID [`gemini-3.5-flash`](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash)；可用 `PREVIEW_LLM_MODEL` 临时覆盖本地预览，不改 Railway 云端变量。
 
 ### 已有 Railway 凭据
 
@@ -64,7 +64,7 @@ RESET_PREVIEW_DB=1 npm run preview:local
 npm run preview:gemini
 ```
 
-该入口仅借 `railway run` 注入 LLM 变量，并在同一命令中重新覆盖：
+`railway run` 会注入所选 service 的整套变量；本脚本只使用其中的 LLM 配置，并在同一命令中强制覆盖：
 
 - `DATABASE_URL=sqlite:///...`
 - `APP_ENV=development`

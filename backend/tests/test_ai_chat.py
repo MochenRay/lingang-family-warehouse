@@ -75,6 +75,11 @@ def test_ai_chat_rate_limit_rejects_requests_over_the_process_window(tmp_path) -
         "DATABASE_URL": f"sqlite:///{tmp_path / 'rate-limit.db'}",
         "AI_RATE_LIMIT_REQUESTS": "2",
         "AI_RATE_LIMIT_WINDOW_SECONDS": "60",
+        "AI_ENABLED": "false",
+        "LLM_API_KEY": "",
+        "LLM_BASE_URL": "",
+        "LLM_MODEL": "",
+        "LLM_FALLBACK_MODEL": "",
         "PYTHONPATH": "backend",
     }
     script = "\n".join(
@@ -141,10 +146,16 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
                 phone="13912345678",
                 address="海港路 99 号 3 栋 201",
                 type="重点人员",
-                tags=["独居老人", "高血压"],
+                tags=[
+                    "独居老人",
+                    "高血压",
+                    "联系电话 13912345678",
+                    "身份证 310000195001011234",
+                    "住址 海港路 99 号 3 栋 201",
+                ],
                 risk="High",
                 updatedAt="2026-07-10",
-                careLabels=["定期服药"],
+                careLabels=["定期服药", "联系人王敏感"],
                 biography="不得发送给模型的个人经历",
             )
         )
@@ -158,7 +169,7 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
                 date="2026-07-09",
                 content="敏感走访原文，联系电话 13912345678",
                 images=[],
-                tags=["用药回访"],
+                tags=["用药回访", "联系人王敏感 13912345678"],
             )
         )
         session.commit()
