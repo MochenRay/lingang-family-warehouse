@@ -32,6 +32,7 @@ echo "Gemini model：$PREVIEW_LLM_MODEL"
 
 cd "$ROOT_DIR"
 railway "${railway_args[@]}" -- env \
+  "PREVIEW_DB_PATH=$DB_PATH" \
   "DATABASE_URL=$LOCAL_DATABASE_URL" \
   "LOCAL_DATABASE_URL=$LOCAL_DATABASE_URL" \
   "APP_ENV=development" \
