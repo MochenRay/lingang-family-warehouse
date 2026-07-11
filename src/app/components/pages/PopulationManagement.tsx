@@ -231,6 +231,7 @@ const getRiskSummary = (person: Population, visits: VisitRecord[]) => {
 
 export function PopulationManagement() {
   const [populations, setPopulations] = useState<Population[]>([]);
+  const [populationTotal, setPopulationTotal] = useState(0);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [residenceFilter, setResidenceFilter] = useState<string>("all");
@@ -456,15 +457,17 @@ export function PopulationManagement() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [people, nextGrids, nextHouses, nextVisits] = await Promise.all([
-        personRepository.getPeople(),
+      const [peopleResult, nextGrids, nextHouses, nextVisits] = await Promise.all([
+        personRepository.getPeopleList(),
         personRepository.getGrids(),
         houseRepository.getHouses(),
-        visitRepository.getVisits({ targetType: "person", order: "desc", limit: 500 }),
+        visitRepository.getVisits({ targetType: "person", order: "desc" }),
       ]);
+      const people = peopleResult.items;
       const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
       const mappedPopulations = people.map((person) => mapPersonToPopulation(person, gridMap.get(person.gridId)));
 
+      setPopulationTotal(peopleResult.total);
       setGrids(nextGrids);
       setHouses(nextHouses);
       setVisits(nextVisits);
@@ -893,7 +896,7 @@ export function PopulationManagement() {
     : [];
 
   const stats = {
-    total: populations.length,
+    total: populationTotal,
     normal: populations.filter((p) => p.status === "正常").length,
     resident: populations.filter((p) => p.type === "户籍").length, // Mapping '常住' -> '户籍' approx
     floating: populations.filter((p) => p.type === "流动").length,

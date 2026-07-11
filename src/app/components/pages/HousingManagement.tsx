@@ -214,6 +214,7 @@ function toFinderItems(
 
 export function HousingManagement() {
   const [houses, setHouses] = useState<House[]>([]);
+  const [houseTotal, setHouseTotal] = useState(0);
   const [grids, setGrids] = useState<Grid[]>([]);
   const [selection, setSelection] = useState<HousingFinderSelection>({});
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -233,10 +234,12 @@ export function HousingManagement() {
     setIsLoading(true);
     setLoadError(null);
     try {
-      const [nextHouses, nextGrids] = await Promise.all([
-        houseRepository.getHouses(),
+      const [housesResult, nextGrids] = await Promise.all([
+        houseRepository.getHousesList(),
         houseRepository.getGrids(),
       ]);
+      const nextHouses = housesResult.items;
+      setHouseTotal(housesResult.total);
       setHouses(nextHouses);
       setGrids(nextGrids);
     } catch (error) {
@@ -292,6 +295,10 @@ export function HousingManagement() {
   const finderModel = useMemo(
     () => deriveHousingFinderModel(houses, grids, selection, searchKeyword),
     [houses, grids, selection, searchKeyword],
+  );
+  const finderStats = useMemo(
+    () => ({ ...finderModel.stats, total: houseTotal }),
+    [finderModel.stats, houseTotal],
   );
 
   const selectedHouse = finderModel.selectedHouse;
@@ -520,7 +527,7 @@ export function HousingManagement() {
               </Badge>
               <span>分层浏览</span>
               <span>·</span>
-              <span>当前 {finderModel.filteredHouses.length} / {houses.length} 套</span>
+              <span>当前 {finderModel.filteredHouses.length} / {houseTotal} 套</span>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-1 text-sm text-[var(--color-neutral-08)]">
               {breadcrumbItems.length > 0 ? (
@@ -565,7 +572,7 @@ export function HousingManagement() {
         </div>
       </div>
 
-      <FinderStatsStrip stats={finderModel.stats} />
+      <FinderStatsStrip stats={finderStats} />
 
       <div ref={columnsContainerRef} className="flex gap-3 overflow-x-auto pb-2">
         <div className={finderColumnShellClass(communityColumnCollapsed, !selection.community ? 'flex-1 min-w-0' : 'min-w-[280px] w-[320px]')}>

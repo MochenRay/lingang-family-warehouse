@@ -7,9 +7,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '../ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
-import { houseRepository } from '../../services/repositories/houseRepository';
-import { personRepository } from '../../services/repositories/personRepository';
-import { House, HousingHistory, Person } from '../../types/core';
+import { relationshipLedgerRepository } from '../../services/repositories/relationshipLedgerRepository';
+import type { House, HousingHistory, Person } from '../../types/core';
 import { toast } from 'sonner';
 import { PageHeader } from './PageHeader';
 
@@ -88,10 +87,7 @@ export function RelationshipManagement() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [people, houses] = await Promise.all([
-        personRepository.getPeople(),
-        houseRepository.getHouses(),
-      ]);
+      const { people, houses, history } = await relationshipLedgerRepository.getSnapshot();
 
       const houseMap = new Map(houses.map((house) => [house.id, house]));
       const residentsByHouseId = people.reduce<Map<string, Person[]>>((acc, person) => {
@@ -131,31 +127,27 @@ export function RelationshipManagement() {
           return items;
         }, []);
 
-      const historyGroups = await Promise.all(
-        houses.map(async (house) => ({
+      const nextHistoryRelationships = history.reduce<RelationshipRow[]>((items, item) => {
+        const house = houseMap.get(item.houseId);
+        if (!house) {
+          return items;
+        }
+        const period = parseHistoryPeriod(item.period);
+        items.push({
+          id: `history-${item.id}`,
+          relationType: '历史' as const,
+          relationship: item.type as OccupancyRelationship,
+          personName: item.personName,
+          houseId: house.id,
+          houseAddress: house.address,
+          moveInDate: period.moveInDate,
+          moveOutDate: period.moveOutDate,
+          moveOutReason: item.moveOutReason ?? undefined,
           house,
-          items: await houseRepository.getHousingHistory(house.id),
-        })),
-      );
-
-      const nextHistoryRelationships = historyGroups.flatMap(({ house, items }) =>
-        items.map((item) => {
-          const period = parseHistoryPeriod(item.period);
-          return {
-            id: `history-${item.id}`,
-            relationType: '历史' as const,
-            relationship: item.type as OccupancyRelationship,
-            personName: item.personName,
-            houseId: house.id,
-            houseAddress: house.address,
-            moveInDate: period.moveInDate,
-            moveOutDate: period.moveOutDate,
-            moveOutReason: item.moveOutReason ?? undefined,
-            house,
-            history: item,
-          };
-        }),
-      );
+          history: item,
+        });
+        return items;
+      }, []);
 
       setCurrentRelationships(nextCurrentRelationships);
       setHistoryRelationships(nextHistoryRelationships);

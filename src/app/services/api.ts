@@ -6,6 +6,15 @@ export interface ApiListResponse<T> {
   total: number;
 }
 
+export interface ApiPageRequest {
+  limit: number;
+  offset: number;
+}
+
+export interface FetchAllListPagesOptions {
+  pageSize?: number;
+}
+
 export interface ApiDataSourceSnapshot {
   mode: DataMode;
   source: ApiDataSource;
@@ -152,6 +161,27 @@ export async function fetchJson<T>(path: string, init?: RequestInit): Promise<T>
   }
 
   return response.json() as Promise<T>;
+}
+
+export async function fetchAllListPages<T>(
+  fetchPage: (page: ApiPageRequest) => Promise<ApiListResponse<T>>,
+  options: FetchAllListPagesOptions = {},
+): Promise<ApiListResponse<T>> {
+  const pageSize = options.pageSize ?? 500;
+  const items: T[] = [];
+  let total = 0;
+
+  do {
+    const page = await fetchPage({ limit: pageSize, offset: items.length });
+    total = page.total;
+    items.push(...page.items);
+
+    if (page.items.length === 0) {
+      break;
+    }
+  } while (items.length < total);
+
+  return { items, total };
 }
 
 export async function callWithFallback<T>(
