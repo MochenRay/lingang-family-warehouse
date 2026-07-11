@@ -19,7 +19,7 @@
 最终复验时记录：
 
 ```text
-verified implementation commit: 05bd98154f8cf58b46732ceb38956547f267df13
+verified implementation commit: 9c89af1ddfc7ec690bbcc972ebb892bde9236116
 node: v24.12.0
 python: 3.14.4
 browser runner: Playwright 1.61.1 / Chromium
