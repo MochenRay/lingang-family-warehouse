@@ -54,6 +54,8 @@ RESET_PREVIEW_DB=1 npm run preview:local
 
 ## 本地真实 Gemini 调用
 
+当前主模型固定为 Google 官方 stable ID `gemini-3.5-flash`；可用 `PREVIEW_LLM_MODEL` 临时覆盖本地预览，不改 Railway 云端变量。
+
 ### 已有 Railway 凭据
 
 先安装并登录 Railway CLI，并确保当前仓库已链接到有 LLM 变量的服务；也可以设置 `RAILWAY_PROJECT_ID`、`RAILWAY_ENVIRONMENT`、`RAILWAY_SERVICE`。

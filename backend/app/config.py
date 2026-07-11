@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     ai_enabled: bool = Field(default=True, alias="AI_ENABLED")
-    llm_model: str = Field(default="gemini-3.1-flash-lite", alias="LLM_MODEL")
+    llm_model: str = Field(default="gemini-3.5-flash", alias="LLM_MODEL")
     llm_fallback_model: str = Field(default="gemini-2.5-flash-lite", alias="LLM_FALLBACK_MODEL")
     llm_base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai/",
