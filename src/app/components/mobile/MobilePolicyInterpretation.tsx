@@ -77,7 +77,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
   const policyAreas = ['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[var(--color-neutral-01)]">
+    <div className="h-full flex flex-col bg-[var(--color-neutral-01)]">
       <MobileStatusBar />
 
       {/* 顶部标题栏 */}

@@ -69,6 +69,34 @@
   --color-neutral-08: #9ba8cc;  /* 次要文字、占位符（更清晰） */
   --color-neutral-10: #d0daf0;  /* 主要文字（高对比度） */
   --color-neutral-11: #ffffff;  /* 标题文字（纯白，最清晰） */
+
+  /* ========================================== */
+  /* 语义别名映射（src/app 引用补齐） */
+  /* 05/07/09 为规范预留编号（无官方 hex）， */
+  /* 统一取语义最近的现有 token，详见 */
+  /* docs/phase14-demo-polish-cleanup-plan.md */
+  /* ========================================== */
+
+  /* 背景层级 */
+  --color-bg-primary: var(--color-neutral-01);    /* 页面主背景（同 .dark --background） */
+  --color-bg-secondary: var(--color-neutral-02);  /* 卡片背景（同 .dark --card） */
+  --color-bg-tertiary: var(--color-neutral-03);   /* Hover/激活级背景（规范 03=Hover 状态背景） */
+
+  /* 边框/分隔线层级 */
+  --color-border-primary: var(--color-neutral-03);    /* 标准分隔（同 .dark --border，规范「标准分隔」） */
+  --color-border-secondary: var(--color-neutral-02);  /* 弱分隔：divide/时间轴轨道（规范「常规分隔」） */
+
+  /* 品牌色 */
+  --color-brand-hover: var(--color-brand-primary-hover);  /* Blue-07 Hover */
+
+  /* 中性色预留档 */
+  --color-neutral-05: var(--color-neutral-06);  /* 风险点默认色等小色块，语义最近「次要图标」 */
+  --color-neutral-07: var(--color-neutral-08);  /* 占位符/表单子标签，对齐项目既定 placeholder 用色 */
+  --color-neutral-09: var(--color-neutral-10);  /* 表单 Label/区块小标题，取更亮档保证可读 */
+
+  /* 文字层级别名 */
+  --color-text-tertiary: var(--color-neutral-08);    /* 卡片说明/空态文字（规范 08=描述/辅助标签） */
+  --color-text-quaternary: var(--color-neutral-06);  /* 图标与最弱提示（规范 06=辅助/次要图标） */
   
   /* ========================================== */
   /* SENSORO 设计规范 - 圆角系统 */
