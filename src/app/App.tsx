@@ -52,14 +52,14 @@ function App() {
   // 如果是移动端路由，渲染特殊布局
   if (isMobileRoute) {
     return (
-      <div className="h-screen w-screen overflow-hidden bg-gray-50 dark:bg-[var(--color-neutral-00)]">
+      <div className="h-screen w-screen overflow-hidden bg-[var(--color-neutral-00)]">
         <Routes currentRoute={currentRoute} onRouteChange={handleRouteChange} />
       </div>
     );
   }
 
   return (
-    <div className={`flex h-screen w-screen overflow-hidden bg-gray-50 dark:bg-[var(--color-neutral-00)] ${TRANSITION_CLASSES.default}`}>
+    <div className={`flex h-screen w-screen overflow-hidden bg-[var(--color-neutral-00)] ${TRANSITION_CLASSES.default}`}>
       {/* 侧边导航 */}
       <Sidebar 
         collapsed={sidebarCollapsed}
@@ -76,7 +76,7 @@ function App() {
         />
         
         {/* 页面内容 - 使用标准的 24px 页面边距 */}
-        <main className={`flex-1 overflow-auto bg-white dark:bg-[var(--color-neutral-00)] ${SPACING_CLASSES.page}`}>
+        <main className={`flex-1 overflow-auto bg-[var(--color-neutral-00)] ${SPACING_CLASSES.page}`}>
           <Routes currentRoute={currentRoute} onRouteChange={handleRouteChange} />
         </main>
       </div>

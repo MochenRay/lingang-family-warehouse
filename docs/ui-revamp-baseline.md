@@ -24,7 +24,7 @@
 
 | 指标 | 命令 | 基线 |
 | --- | --- | --- |
-| raw hex（allowlist 之外） | `grep -rEo '#[0-9A-Fa-f]{6}\b' src --include='*.tsx' --include='*.ts' --include='*.css' \| grep -v 'src/styles/theme.css' \| grep -v 'src/app/config/chartConfig.ts' \| wc -l` | 993（64 文件） |
+| raw hex（allowlist 之外） | 计数：`grep -rEo '#[0-9A-Fa-f]{6}\b' src --include='*.tsx' --include='*.ts' --include='*.css' \| grep -v 'src/styles/theme.css' \| grep -v 'src/app/config/chartConfig.ts' \| wc -l`；文件数：`grep -rEl '#[0-9A-Fa-f]{6}\b' src --include='*.tsx' --include='*.ts' --include='*.css' \| grep -v 'src/styles/theme.css' \| grep -v 'src/app/config/chartConfig.ts' \| wc -l` | 993（64 文件） |
 | 灰阶 utility | `grep -rEo '\b(bg\|text\|border\|divide\|ring\|from\|to\|via)-(gray\|slate\|zinc\|neutral\|stone)-[0-9]{2,3}\b' src/app --include='*.tsx' \| wc -l` | 721 |
 | 浅色阶色 utility | `grep -rEo '\b(bg\|text\|border)-(red\|blue\|green\|amber\|emerald\|orange\|yellow\|purple\|pink\|indigo\|sky\|cyan\|teal\|fuchsia\|rose\|violet\|lime)-[1-6]00\b' src/app --include='*.tsx' \| wc -l` | 594 |
 | bg-white / text-white | `grep -rEo '\b(bg\|text)-white\b' src/app --include='*.tsx' \| wc -l` | 348 |
@@ -51,3 +51,48 @@
 - 截图工具：`tests/e2e/ui-screenshots.spec.ts`（P0 新增，输出 `test-results/ui-screenshots/`，gitignored）。
 - 矩阵：桌面 1440×900 / 1024×768，移动 390×844。
 - 改造前基准存档：`tmp/ui-baseline/`（gitignored，按 SHA 标记）。
+
+## 6. 旧 hex → token 映射表（P1a 冻结，P1b/P3/P4 迁移依据）
+
+> 迁移纪律：**先迁移消费者、后删旧值**；同构替换，不改布局与行为。
+
+### 旧规范色板（phase14 前值）→ 现行 token
+
+| 旧 hex | 语义 | 迁移目标 |
+| --- | --- | --- |
+| `#0D121B` | Neutral-00 侧边栏 | `var(--color-neutral-00)` |
+| `#161D2A` | Neutral-01 内容区背景 | `var(--color-neutral-01)` |
+| `#1F293A` | Neutral-02 卡片背景 | `var(--color-neutral-02)` |
+| `#293449` | Neutral-03 三阶/边框 | `var(--color-neutral-03)` |
+| `#314059` | Neutral-04 四阶 | `var(--color-neutral-04)` |
+| `#546789` | Neutral-06 辅助文字 | `var(--color-neutral-06)` |
+| `#8194B5` | Neutral-08 次要文字 | `var(--color-neutral-08)` |
+| `#AEC0DE` | Neutral-10 主要文字 | `var(--color-neutral-10)` |
+| `#F6F9FE` | Neutral-11 标题文字 | `var(--color-neutral-11)` |
+
+### 品牌/功能色（值未变，直接引用 token）
+
+`#2761CB`→`--color-brand-primary`、`#4E86DF`→`--color-brand-primary-hover`、`#2251A8`→`--color-brand-primary-active`、`#19B172/#D6730D/#D52132/#2AA3CF`→`--color-status-*`。
+
+### Ad-hoc 色 → P1a 新增状态扩展 token
+
+| 散落的 ad-hoc 色 | 迁移目标 |
+| --- | --- |
+| `#6EE7B7`/`#A5F3C6` 等浅绿 | `text-success` 系（`--color-status-success-text` + `--color-status-success-soft`） |
+| `#FDBA74`/`#FFD2A3` 等浅橙 | `text-warning` 系 |
+| `#FCA5A5`/`#FF7A85`/`#FFB4B4` 等浅红 | `text-error` 系 |
+| `#93C5FD`/`#B8D0FF` 等浅蓝 | `text-info` 系或品牌色 |
+| `#8B5CF6`/`#EC4899` 等紫粉 | 图表统一走 chart adapter（P1c），语义色走 status 系 |
+
+### 阴影
+
+`rgba(10, 27, 57, 0.15/0.2/0.3)` 写死阴影 → `shadow-01/02/03` 工具类（.dark 下解析为黑色系阴影）。
+
+## 7. P1a 变更留痕
+
+- theme.css：`:root` 死定义清理（--font-size/--radius/--input-background/--switch-background/--font-weight-*/--line-*/--spacing-*/--text-md，全仓 0 引用已核实）；新增状态扩展 token（*-text 深底可读 + *-soft 软衬底）。
+- @theme：接入规范圆角档（sm 2 / md 4 / lg 8 / xl 12 过渡）、字号档位（12/14/16/18/20/24/32/46，行高=字号+8）、中文字体栈、chart-6、状态扩展色、阴影工具类（shadow-01/02/03）。
+- 新增 `@layer base` border 缺省色 → `var(--border)`（修复裸 border = currentColor 陷阱）。
+- index.html FOUC 预设底色 `#0D121B` → `#131623`（与 neutral-00 一致）。
+- 冗余 `dark:` 前缀清理 36 → 0（App.tsx 3、Header.tsx 25、button.tsx 7、dropdown-menu.tsx 1，均保留原 .dark 渲染值，行为不变）。
+- 预期内的视觉变化：按钮/输入圆角 8→2px 档、卡片圆角 →4px 档、text-lg 18→20px、小字行高按规范变宽。

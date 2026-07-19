@@ -49,21 +49,21 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
     : '尚未记录';
 
   return (
-    <header className="h-16 bg-white dark:bg-[var(--color-neutral-01)] border-b border-gray-200 dark:border-[var(--color-neutral-03)] flex items-center justify-between px-6 transition-colors duration-200">
+    <header className="h-16 bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] flex items-center justify-between px-6 transition-colors duration-200">
       {/* 左侧：菜单切换按钮 */}
       <div className="flex items-center gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
-          className="text-gray-600 hover:text-gray-900 dark:text-[var(--color-neutral-10)] dark:hover:text-[var(--color-neutral-11)]"
+          className="text-[var(--color-neutral-10)] hover:text-[var(--color-neutral-11)]"
         >
           <Menu className="w-5 h-5" />
         </Button>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-500 dark:text-[var(--color-neutral-08)]">当前辖区:</span>
-          <Badge variant="outline" className="text-blue-600 border-blue-200 bg-blue-50 dark:text-[var(--color-brand-primary-hover)] dark:border-[var(--color-brand-primary)] dark:bg-[var(--color-neutral-02)]">
+          <span className="text-sm text-[var(--color-neutral-08)]">当前辖区:</span>
+          <Badge variant="outline" className="text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)] bg-[var(--color-neutral-02)]">
             烟台市
           </Badge>
           <TooltipProvider delayDuration={100}>
@@ -74,10 +74,10 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
                   tabIndex={0}
                   aria-label={`数据源状态：${dataSourceLabel}，${errorDetail}`}
                   className={isFallback || isApiError
-                    ? "cursor-help border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-500/70 dark:bg-amber-500/10 dark:text-amber-200"
+                    ? "cursor-help border-amber-500/70 bg-amber-500/10 text-amber-200"
                     : isUnknown
-                      ? "cursor-help border-gray-200 bg-gray-50 text-gray-600 dark:border-[var(--color-neutral-04)] dark:bg-[var(--color-neutral-02)] dark:text-[var(--color-neutral-08)]"
-                    : "cursor-help border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/60 dark:bg-emerald-500/10 dark:text-emerald-200"
+                      ? "cursor-help border-[var(--color-neutral-04)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]"
+                    : "cursor-help border-emerald-500/60 bg-emerald-500/10 text-emerald-200"
                   }
                 >
                   {isFallback || isApiError ? <ServerOff className="mr-1 h-3 w-3" /> : <Database className="mr-1 h-3 w-3" />}
@@ -110,12 +110,12 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           aria-label="重新打开浏览建议"
           onClick={() => window.dispatchEvent(new Event('homedata:open-journey-overlay'))}
         >
-          <HelpCircle className="w-5 h-5 text-gray-600 dark:text-[var(--color-neutral-10)]" />
+          <HelpCircle className="w-5 h-5 text-[var(--color-neutral-10)]" />
         </Button>
 
         {/* 通知图标 */}
         <Button variant="ghost" size="icon" className="relative">
-          <Bell className="w-5 h-5 text-gray-600 dark:text-[var(--color-neutral-10)]" />
+          <Bell className="w-5 h-5 text-[var(--color-neutral-10)]" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
         </Button>
 
@@ -123,14 +123,14 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="gap-2 pl-2 pr-3">
-              <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-[var(--color-neutral-03)] flex items-center justify-center">
-                <User className="w-4 h-4 text-blue-600 dark:text-[var(--color-brand-primary-hover)]" />
+              <div className="w-8 h-8 rounded-full bg-[var(--color-neutral-03)] flex items-center justify-center">
+                <User className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
               </div>
               <div className="flex flex-col items-start">
-                <span className="text-sm font-medium text-gray-900 dark:text-[var(--color-neutral-11)]">管理员</span>
-                <span className="text-xs text-gray-500 dark:text-[var(--color-neutral-08)]">系统管理员</span>
+                <span className="text-sm font-medium text-[var(--color-neutral-11)]">管理员</span>
+                <span className="text-xs text-[var(--color-neutral-08)]">系统管理员</span>
               </div>
-              <ChevronDown className="w-4 h-4 text-gray-500 dark:text-[var(--color-neutral-08)]" />
+              <ChevronDown className="w-4 h-4 text-[var(--color-neutral-08)]" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -145,7 +145,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
               账户设置
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-600 dark:text-[var(--color-status-error)]">
+            <DropdownMenuItem className="text-[var(--color-status-error)]">
               <LogOut className="w-4 h-4 mr-2" />
               退出登录
             </DropdownMenuItem>
