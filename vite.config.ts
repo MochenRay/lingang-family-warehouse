@@ -22,10 +22,6 @@ export default defineConfig({
             return 'vendor-react';
           }
 
-          if (id.includes('/@mui/') || id.includes('/@emotion/')) {
-            return 'vendor-mui';
-          }
-
           if (id.includes('/recharts/') || id.includes('/d3-')) {
             return 'vendor-charts';
           }

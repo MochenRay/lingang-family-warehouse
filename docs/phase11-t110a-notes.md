@@ -21,7 +21,9 @@
 - `src/app/components/pages/OverviewDashboard.tsx`
 - `src/app/components/DataOverview.tsx`
 
-这两个文件当前未出现在 `Sidebar.tsx` 菜单入口中。本切片只记录 owner 状态，不删除、不改造，避免把 dead code 清理混进样式基线 PR。
+这两个文件当时未出现在 `Sidebar.tsx` 菜单入口中。本切片只记录 owner 状态，不删除、不改造，避免把 dead code 清理混进样式基线 PR。
+
+> 订正（Phase 14 / T3，2026-07-19）：上述两个文件已复核为零引用死代码，并在 Phase 14 死代码清理中删除。另：`PublishNotice.tsx`、`WarningMap.tsx` 现为活跃路由页面（`Routes.tsx:19,31,69,145` 有 lazy 引用），维持现状不删。
 
 ## 本地验证
 
