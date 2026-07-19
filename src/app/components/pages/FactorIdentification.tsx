@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Loader2, Target, Zap } from 'lucide-react';
+import { Download, Target, Zap } from 'lucide-react';
 import {
   PieChart,
   Pie,
@@ -16,7 +16,6 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
@@ -24,6 +23,10 @@ import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { LoadingState } from '../patterns/states';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import { CHART_COLORS, CHART_GRID, CHART_LABEL, CHART_LEGEND, CHART_PRIMARY, CHART_TICK } from '../../config/chartConfig';
 
 type TargetVariable = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
@@ -49,8 +52,7 @@ interface RawFactorItem {
   impact: string;
 }
 
-const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const INNER_PANEL_CLASS = 'rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 
 function buildFactors(snapshot: GovernanceAnalysisSnapshot, targetVariable: TargetVariable): FactorItem[] {
@@ -239,9 +241,7 @@ export function FactorIdentification() {
           title="影响因子识别"
           description="对异常结果拆解关键因素，辅助判断下一步干预抓手。"
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
@@ -275,53 +275,34 @@ export function FactorIdentification() {
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT}`}>
-              <Zap className="w-4 h-4" />
-              识别因子总数
-            </CardDescription>
-            <CardTitle className="text-3xl text-white">{factors.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>本轮保留可解释的固定因子</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>最高贡献因子</CardDescription>
-            <CardTitle className="truncate text-xl text-white">{factors[0]?.name ?? '暂无'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>{factors[0]?.contribution ?? 0}%</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>平均因子权重</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">
-              {factors.length ? (factors.reduce((sum, item) => sum + item.contribution, 0) / factors.length).toFixed(1) : '0'}%
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>各因子贡献均值</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>热区样本</CardDescription>
-            <CardTitle className="truncate text-2xl text-white">{snapshot?.grids[0]?.communityName ?? '暂无'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>热度 {snapshot?.grids[0]?.heatScore ?? 0}</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="识别因子总数"
+          value={factors.length}
+          icon={Zap}
+          hint="本轮保留可解释的固定因子"
+        />
+        <StatCard
+          label="最高贡献因子"
+          value={factors[0]?.name ?? '暂无'}
+          hint={`${factors[0]?.contribution ?? 0}%`}
+        />
+        <StatCard
+          label="平均因子权重"
+          value={`${factors.length ? (factors.reduce((sum, item) => sum + item.contribution, 0) / factors.length).toFixed(1) : '0'}%`}
+          hint="各因子贡献均值"
+          tone="success"
+        />
+        <StatCard
+          label="热区样本"
+          value={snapshot?.grids[0]?.communityName ?? '暂无'}
+          hint={`热度 ${snapshot?.grids[0]?.heatScore ?? 0}`}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-5">
         <Card className={`xl:col-span-3 ${PANEL_CLASS}`}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">关键因子排名</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">关键因子排名</CardTitle>
             <CardDescription className={MUTED_TEXT}>只展示当前目标下真正参与解释的固定因子。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -330,13 +311,13 @@ export function FactorIdentification() {
                 <div className="flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white">{index + 1}. {factor.name}</span>
-                      <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#DCE6FF]">{factor.category}</Badge>
+                      <span className="font-semibold text-[var(--color-neutral-11)]">{index + 1}. {factor.name}</span>
+                      <StatusBadge tone="info">{factor.category}</StatusBadge>
                     </div>
                     <p className={`text-sm ${MUTED_TEXT}`}>{factor.description}</p>
                   </div>
                   <div className="text-right min-w-[92px]">
-                    <div className="text-2xl font-semibold text-[#19B172]">{factor.contribution}%</div>
+                    <div className="text-2xl font-semibold text-[var(--color-status-success)]">{factor.contribution}%</div>
                     <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                   </div>
                 </div>

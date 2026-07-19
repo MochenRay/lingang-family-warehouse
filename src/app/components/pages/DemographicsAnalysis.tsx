@@ -10,6 +10,9 @@ import {
   YAxis,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
+import { StatCard } from '../patterns/StatCard';
+import { ErrorState, LoadingState } from '../patterns/states';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import { personRepository } from '../../services/repositories/personRepository';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
@@ -20,7 +23,6 @@ import { PageHeader } from './PageHeader';
 
 const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
 const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
-const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const AGE_BUCKETS = [
   { name: '60岁以上', min: 60, max: 200 },
   { name: '36-59岁', min: 36, max: 59 },
@@ -102,12 +104,12 @@ function PopulationPyramid({ rows, max }: { rows: PyramidRow[]; max: number }) {
             {gridLinePositions.map((position) => (
               <span
                 key={position}
-                className="absolute inset-y-0 border-l border-dashed border-[#465170]"
+                className="absolute inset-y-0 border-l border-dashed border-[var(--color-neutral-03)]"
                 style={{ left: `${position}%` }}
                 aria-hidden="true"
               />
             ))}
-            <span className="absolute inset-y-0 left-1/2 border-l border-[#8EA2D7]" aria-hidden="true" />
+            <span className="absolute inset-y-0 left-1/2 border-l border-[var(--color-neutral-06)]" aria-hidden="true" />
             <div className="relative grid h-full grid-rows-4">
               {rows.map((row) => {
                 const maleWidth = max > 0 ? `${Math.min(100, (row.male / max) * 100)}%` : '0%';
@@ -116,7 +118,7 @@ function PopulationPyramid({ rows, max }: { rows: PyramidRow[]; max: number }) {
                   <div key={row.name} className="grid grid-cols-2 items-center">
                     <div className="flex justify-end">
                       <div
-                        className="h-6 rounded-l-[4px] bg-[#4E86DF]"
+                        className="h-6 rounded-l-[4px] bg-[var(--color-brand-primary-hover)]"
                         style={{ width: maleWidth }}
                         title={`${row.name} 男 ${row.male} 人`}
                         aria-label={`${row.name} 男 ${row.male} 人`}
@@ -124,7 +126,7 @@ function PopulationPyramid({ rows, max }: { rows: PyramidRow[]; max: number }) {
                     </div>
                     <div className="flex justify-start">
                       <div
-                        className="h-6 rounded-r-[4px] bg-[#F97316]"
+                        className="h-6 rounded-r-[4px] bg-[var(--color-status-warning)]"
                         style={{ width: femaleWidth }}
                         title={`${row.name} 女 ${row.female} 人`}
                         aria-label={`${row.name} 女 ${row.female} 人`}
@@ -251,57 +253,35 @@ export function DemographicsAnalysis() {
       />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <Card className={PANEL_CLASS}>
-          <CardContent className="p-6">
-            <p className="text-xs font-medium text-[var(--color-neutral-08)]">总人口</p>
-            <p className="mt-2 text-2xl font-bold leading-none text-white">{dashboard?.totalPopulation ?? '--'}</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardContent className="p-6">
-            <p className="text-xs font-medium text-[var(--color-neutral-08)]">老龄化比例</p>
-            <p className="mt-2 text-2xl font-bold leading-none text-white">{elderlyRate}%</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardContent className="p-6">
-            <p className="text-xs font-medium text-[var(--color-neutral-08)]">户籍 / 流动</p>
-            <p className="mt-2 text-2xl font-bold leading-none text-white">
-              {dashboard ? `${dashboard.mobilePeopleStats.registered} / ${dashboard.mobilePeopleStats.floating}` : '--'}
-            </p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardContent className="p-6">
-            <p className="text-xs font-medium text-[var(--color-neutral-08)]">标签覆盖率</p>
-            <p className="mt-2 text-2xl font-bold leading-none text-white">{taggedCoverage}%</p>
-          </CardContent>
-        </Card>
+        <StatCard label="总人口" value={dashboard?.totalPopulation ?? '--'} tone="brand" />
+        <StatCard label="老龄化比例" value={`${elderlyRate}%`} tone="info" />
+        <StatCard
+          label="户籍 / 流动"
+          value={dashboard ? `${dashboard.mobilePeopleStats.registered} / ${dashboard.mobilePeopleStats.floating}` : '--'}
+          tone="info"
+        />
+        <StatCard label="标签覆盖率" value={`${taggedCoverage}%`} tone="success" />
       </div>
 
-      {error ? (
-        <Card className="border-destructive/40 bg-destructive/10 text-destructive">
-          <CardContent className="p-6 text-sm text-destructive">{error}</CardContent>
-        </Card>
-      ) : null}
+      {error ? <ErrorState description={error} /> : null}
 
       <Card className={PANEL_CLASS}>
         <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <CardTitle className="text-base font-semibold text-white">年龄性别人口金字塔</CardTitle>
+          <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">年龄性别人口金字塔</CardTitle>
           <div className="flex items-center gap-4 text-xs text-[var(--color-neutral-08)]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-[#4E86DF]" />
+              <span className="h-2 w-2 rounded-sm bg-[var(--color-brand-primary-hover)]" />
               男
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-[#F97316]" />
+              <span className="h-2 w-2 rounded-sm bg-[var(--color-status-warning)]" />
               女
             </span>
           </div>
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总年龄性别结构...</div>
+            <LoadingState title="正在汇总年龄性别结构..." />
           ) : (
             <PopulationPyramid rows={pyramid.rows} max={pyramid.max} />
           )}
@@ -311,11 +291,11 @@ export function DemographicsAnalysis() {
       <div className="grid gap-6 xl:grid-cols-3">
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">人口类型</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">人口类型</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总人口类型...</div>
+              <LoadingState title="正在汇总人口类型..." />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={typeData}>
@@ -336,11 +316,11 @@ export function DemographicsAnalysis() {
 
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">教育程度</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">教育程度</CardTitle>
           </CardHeader>
           <CardContent className="h-[340px]">
             {loading ? (
-              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总教育结构...</div>
+              <LoadingState title="正在汇总教育结构..." />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={educationData} layout="vertical" margin={{ top: 4, right: 16, left: 18, bottom: 0 }}>
@@ -361,11 +341,11 @@ export function DemographicsAnalysis() {
 
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">民族分布</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">民族分布</CardTitle>
           </CardHeader>
           <CardContent className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总民族分布...</div>
+              <LoadingState title="正在汇总民族分布..." />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={nationData}>
@@ -387,12 +367,12 @@ export function DemographicsAnalysis() {
 
       <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle className="text-base font-semibold text-white">重点标签热度</CardTitle>
+          <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">重点标签热度</CardTitle>
         </CardHeader>
           <CardContent>
             <div className="h-[280px]">
             {loading ? (
-              <div className="py-10 text-sm text-[var(--color-neutral-08)]">正在汇总标签热度...</div>
+              <LoadingState title="正在汇总标签热度..." />
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topTags}>

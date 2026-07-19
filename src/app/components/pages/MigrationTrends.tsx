@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { ArrowLeftRight, Download, TrendingDown, TrendingUp } from 'lucide-react';
 import { ChartCard } from '../statistics/ChartCard';
+import { StatCard } from '../patterns/StatCard';
+import { LoadingState } from '../patterns/states';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   AreaChart,
@@ -120,9 +122,7 @@ export function MigrationTrends() {
             </div>
           }
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
@@ -150,33 +150,34 @@ export function MigrationTrends() {
       />
 
       <div className="grid gap-3 md:grid-cols-3">
-        <ChartCard title="近六月总迁入" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className="text-4xl font-bold tabular-nums text-[#4E86DF]">{snapshot?.migration.totalIn ?? 0}</span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
-          </div>
-        </ChartCard>
-        <ChartCard title="近六月总迁出" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className="text-4xl font-bold tabular-nums text-[#D6730D]">{snapshot?.migration.totalOut ?? 0}</span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
-          </div>
-        </ChartCard>
-        <ChartCard title="净流入" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className={`text-4xl font-bold tabular-nums ${(snapshot?.migration.net ?? 0) >= 0 ? 'text-[#19B172]' : 'text-[#D52132]'}`}>
-              {(snapshot?.migration.net ?? 0) > 0 ? '+' : ''}{snapshot?.migration.net ?? 0}
-            </span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">近六月累计</span>
-          </div>
-        </ChartCard>
+        <StatCard
+          label="近六月总迁入"
+          value={snapshot?.migration.totalIn ?? 0}
+          hint="人次"
+          icon={TrendingUp}
+          tone="brand"
+        />
+        <StatCard
+          label="近六月总迁出"
+          value={snapshot?.migration.totalOut ?? 0}
+          hint="人次"
+          icon={TrendingDown}
+          tone="warning"
+        />
+        <StatCard
+          label="净流入"
+          value={`${(snapshot?.migration.net ?? 0) > 0 ? '+' : ''}${snapshot?.migration.net ?? 0}`}
+          hint="近六月累计"
+          icon={ArrowLeftRight}
+          tone={(snapshot?.migration.net ?? 0) >= 0 ? 'success' : 'error'}
+        />
       </div>
 
       <ChartCard
         title="近六个月迁入迁出对比"
         description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
         action={(
-          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white" onClick={handleExport}>
+          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]" onClick={handleExport}>
             <Download className="h-4 w-4" />
           </button>
         )}

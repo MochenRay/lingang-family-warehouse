@@ -1,9 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Download, Loader2, RefreshCw } from 'lucide-react';
+import { AlertTriangle, Download, RefreshCw } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, CartesianGrid, XAxis, YAxis, Legend, LineChart, Line } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { analysisRepository, type AnalysisSeverity, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
@@ -11,6 +10,10 @@ import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { EmptyState, ErrorState, LoadingState } from '../patterns/states';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import {
   CHART_COLORS,
   CHART_ERROR,
@@ -23,14 +26,13 @@ import {
   CHART_WARNING,
 } from '../../config/chartConfig';
 
-const SEVERITY_COLORS: Record<AnalysisSeverity, string> = {
-  high: '#D52132',
-  medium: '#D6730D',
-  low: '#4E86DF',
+const SEVERITY_TONE: Record<AnalysisSeverity, StatusTone> = {
+  high: 'error',
+  medium: 'warning',
+  low: 'info',
 };
 
-const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const INNER_PANEL_CLASS = 'rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 
 function getSeverityLabel(severity: AnalysisSeverity): string {
@@ -130,9 +132,7 @@ export function AnomalyAnalysis() {
           title="异常结果分析"
           description="围绕真实的人、房、走访、矛盾与待办投影，识别当前最容易穿帮的治理异常。"
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
@@ -140,10 +140,7 @@ export function AnomalyAnalysis() {
   if (!snapshot) {
     return (
       <Card className={PANEL_CLASS}>
-        <CardHeader>
-          <CardTitle className="text-white">异常分析暂不可用</CardTitle>
-          <CardDescription className={MUTED_TEXT}>当前未能读取治理快照，请稍后刷新。</CardDescription>
-        </CardHeader>
+        <ErrorState title="异常分析暂不可用" description="当前未能读取治理快照，请稍后刷新。" />
       </Card>
     );
   }
@@ -181,48 +178,28 @@ export function AnomalyAnalysis() {
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>当前异常总数</CardDescription>
-            <CardTitle className="text-3xl text-white">{snapshot.anomalies.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>来自真实对象源的规则化异常</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>严重异常</CardDescription>
-            <CardTitle className="text-3xl text-[#D52132]">
-              {snapshot.anomalies.filter((item) => item.severity === 'high').length}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>需要优先处理</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>中等异常</CardDescription>
-            <CardTitle className="text-3xl text-[#D6730D]">
-              {snapshot.anomalies.filter((item) => item.severity === 'medium').length}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>建议纳入本周动作</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>重点热区</CardDescription>
-            <CardTitle className="truncate text-2xl text-white">{snapshot.grids[0]?.communityName ?? '暂无'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>
-              热度 {snapshot.grids[0]?.heatScore ?? 0} / 100
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="当前异常总数"
+          value={snapshot.anomalies.length}
+          hint="来自真实对象源的规则化异常"
+        />
+        <StatCard
+          label="严重异常"
+          value={snapshot.anomalies.filter((item) => item.severity === 'high').length}
+          hint="需要优先处理"
+          tone="error"
+        />
+        <StatCard
+          label="中等异常"
+          value={snapshot.anomalies.filter((item) => item.severity === 'medium').length}
+          hint="建议纳入本周动作"
+          tone="warning"
+        />
+        <StatCard
+          label="重点热区"
+          value={snapshot.grids[0]?.communityName ?? '暂无'}
+          hint={`热度 ${snapshot.grids[0]?.heatScore ?? 0} / 100`}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -285,43 +262,40 @@ export function AnomalyAnalysis() {
 
       <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle className="text-base font-semibold text-white">异常清单</CardTitle>
+          <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">异常清单</CardTitle>
           <CardDescription className={MUTED_TEXT}>当前共 {filteredAnomalies.length} 条，优先关注严重异常与超期问题。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {filteredAnomalies.length === 0 ? (
-            <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
-              当前筛选条件下没有命中异常，说明对应等级的问题已被压平。
-            </div>
+            <EmptyState
+              title="当前筛选条件下没有命中异常"
+              description="说明对应等级的问题已被压平。"
+            />
           ) : (
             filteredAnomalies.map((item) => (
               <div key={item.id} className={`${INNER_PANEL_CLASS} space-y-3 p-4`}>
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="font-semibold text-white">{item.type}</span>
-                      <Badge
-                        variant="outline"
-                        className="bg-transparent"
-                        style={{ borderColor: SEVERITY_COLORS[item.severity], color: SEVERITY_COLORS[item.severity] }}
-                      >
+                      <span className="font-semibold text-[var(--color-neutral-11)]">{item.type}</span>
+                      <StatusBadge tone={SEVERITY_TONE[item.severity]}>
                         {getSeverityLabel(item.severity)}
-                      </Badge>
+                      </StatusBadge>
                     </div>
                     <p className={`text-sm ${MUTED_TEXT}`}>{item.gridName}</p>
                   </div>
                   <div className="text-right text-sm">
-                    <div className="font-medium text-white">{item.value}</div>
+                    <div className="font-medium text-[var(--color-neutral-11)]">{item.value}</div>
                     <div className={MUTED_TEXT}>基线 {item.baseline}</div>
                   </div>
                 </div>
                 <div className="grid gap-3 md:grid-cols-2 text-sm">
                   <div>
-                    <span className="font-medium text-white">原因：</span>
+                    <span className="font-medium text-[var(--color-neutral-11)]">原因：</span>
                     {item.reason}
                   </div>
                   <div>
-                    <span className="font-medium text-white">影响：</span>
+                    <span className="font-medium text-[var(--color-neutral-11)]">影响：</span>
                     {item.impact}
                   </div>
                 </div>
