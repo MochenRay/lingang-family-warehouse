@@ -30,7 +30,7 @@ export default defineConfig({
             return 'vendor-radix';
           }
 
-          if (id.includes('/lucide-react/') || id.includes('/motion/')) {
+          if (id.includes('/lucide-react/')) {
             return 'vendor-ui';
           }
 
