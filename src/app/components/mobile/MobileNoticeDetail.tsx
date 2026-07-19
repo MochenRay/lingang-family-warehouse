@@ -32,7 +32,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
     <div className="h-full bg-[#1e293b] flex flex-col overflow-hidden text-white">
       {/* 顶部导航 */}
       <div className="bg-[#1e293b] sticky top-0 z-10">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
           <button 
             onClick={onBack}

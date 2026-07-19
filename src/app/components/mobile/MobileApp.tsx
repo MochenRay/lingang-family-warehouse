@@ -369,10 +369,10 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 md:py-8 font-sans">
-      <div id="mobile-viewport" className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-gray-900 bg-white overflow-hidden relative shadow-black/20 ring-1 ring-gray-900/5 transform-gpu">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-neutral-00)] md:py-8 font-sans">
+      <div id="mobile-viewport" className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)] overflow-hidden relative shadow-black/20 ring-1 ring-white/5 transform-gpu">
         {/* 顶部刘海模拟 (仅在桌面模式显示) */}
-        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-gray-900 rounded-b-[1rem] z-[60]"></div>
+        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-[var(--color-neutral-03)] rounded-b-[1rem] z-[60]"></div>
         
         {renderPage()}
       </div>

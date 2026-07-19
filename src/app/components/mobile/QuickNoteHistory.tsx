@@ -68,7 +68,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
     <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center justify-between">
           <button 
             onClick={onBack}

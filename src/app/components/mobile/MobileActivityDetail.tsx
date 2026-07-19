@@ -144,7 +144,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
     <div className="h-full flex flex-col bg-gray-50 overflow-hidden">
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3">
           <button
             onClick={onBack}

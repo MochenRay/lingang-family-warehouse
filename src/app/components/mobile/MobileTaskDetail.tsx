@@ -136,7 +136,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-gray-50">
       <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={onBack} className="p-1 -ml-1">
             <ArrowLeft className="w-6 h-6 text-gray-700" />

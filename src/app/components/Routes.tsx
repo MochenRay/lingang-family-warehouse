@@ -1,4 +1,5 @@
 import { lazy, Suspense } from 'react';
+import { Skeleton } from './ui/skeleton';
 
 const PopulationManagement = lazy(() => import('./pages/PopulationManagement').then((module) => ({ default: module.PopulationManagement })));
 const HousingManagement = lazy(() => import('./pages/HousingManagement').then((module) => ({ default: module.HousingManagement })));
@@ -163,7 +164,13 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
   }
 
   return (
-    <Suspense fallback={<div className="p-6 text-sm text-[var(--color-neutral-08)]">加载中...</div>}>
+    <Suspense fallback={
+      <div className="space-y-4 p-6" aria-label="页面加载中">
+        <Skeleton className="h-8 w-64" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-64 w-full" />
+      </div>
+    }>
       {content}
     </Suspense>
   );

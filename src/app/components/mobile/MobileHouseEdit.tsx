@@ -72,7 +72,7 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
     <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
           <button 
             onClick={onBack}

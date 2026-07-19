@@ -27,7 +27,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
 
       {/* 顶部栏 - 透明 */}
       <div className="relative z-20 pt-2">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4 mt-2">
           <button 
             onClick={onBack}

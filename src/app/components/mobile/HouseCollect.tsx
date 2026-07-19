@@ -141,7 +141,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
   return (
     <div className="h-full bg-background pb-20 overflow-y-auto">
       <div className="sticky top-0 z-10 bg-card border-b border-border">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3">
           <Button
             variant="ghost"

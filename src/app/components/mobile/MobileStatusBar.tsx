@@ -1,17 +1,13 @@
 import { Signal, Wifi, Battery } from 'lucide-react';
 
 interface MobileStatusBarProps {
-  variant?: 'light' | 'dark';
   className?: string;
 }
 
-export function MobileStatusBar({ variant = 'dark', className = '' }: MobileStatusBarProps) {
-  // dark variant = white text (for dark backgrounds)
-  // light variant = black text (for light backgrounds)
-  const textColor = variant === 'dark' ? 'text-[var(--color-neutral-10)]' : 'text-gray-900';
-
+/** 模拟系统状态栏。P4a：variant 死参数已废止（永久深色下两态渲染趋同），统一浅色文字。 */
+export function MobileStatusBar({ className = '' }: MobileStatusBarProps) {
   return (
-    <div className={`h-8 flex items-center justify-between px-6 text-xs font-medium pt-1 shrink-0 select-none ${textColor} ${className}`}>
+    <div className={`h-8 flex items-center justify-between px-6 text-xs font-medium pt-1 shrink-0 select-none text-[var(--color-neutral-10)] ${className}`}>
       <span className="w-8">9:41</span>
       <div className="flex items-center gap-1.5">
         <Signal className="w-3.5 h-3.5" />

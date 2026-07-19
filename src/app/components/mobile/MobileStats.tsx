@@ -223,7 +223,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
     <div className="h-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-20">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="px-4 h-[44px] flex items-center justify-between">
           <button
             onClick={onBack}

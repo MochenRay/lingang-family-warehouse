@@ -73,10 +73,10 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
                   tabIndex={0}
                   aria-label={`数据源状态：${dataSourceLabel}，${errorDetail}`}
                   className={isFallback || isApiError
-                    ? "cursor-help border-amber-500/70 bg-amber-500/10 text-amber-200"
+                    ? "cursor-help border-[var(--color-status-warning)]/50 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]"
                     : isUnknown
                       ? "cursor-help border-[var(--color-neutral-04)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]"
-                    : "cursor-help border-emerald-500/60 bg-emerald-500/10 text-emerald-200"
+                    : "cursor-help border-[var(--color-status-success)]/50 bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]"
                   }
                 >
                   {isFallback || isApiError ? <ServerOff className="mr-1 h-3 w-3" /> : <Database className="mr-1 h-3 w-3" />}
@@ -114,7 +114,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         {/* 通知图标 */}
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="w-5 h-5 text-[var(--color-neutral-10)]" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--color-status-error)] rounded-full" />
         </Button>
 
         {/* 用户下拉菜单 */}

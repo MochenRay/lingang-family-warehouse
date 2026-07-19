@@ -310,7 +310,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   return (
     <div className="flex flex-col h-full bg-gray-50">
       <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] sticky top-0 z-10 shrink-0">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3 relative h-11">
           <button
             onClick={onBack}

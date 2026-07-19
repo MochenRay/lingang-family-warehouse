@@ -355,7 +355,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
     <div className="h-full bg-[var(--color-bg-primary)] flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-[var(--color-bg-secondary)] sticky top-0 z-10 border-b border-[var(--color-border-primary)]">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
           <button 
             onClick={onBack}

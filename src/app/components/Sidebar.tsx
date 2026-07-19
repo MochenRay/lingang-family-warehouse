@@ -16,7 +16,7 @@ import {
   UserCog,
   Shield,
   FileText,
-  ChevronLeft,
+  ChevronDown,
   ChevronRight,
   BarChart3,
   GitCompare,
@@ -165,10 +165,10 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
             }
           }}
           className={cn(
-            "w-full flex items-center gap-3 h-10 rounded-[2px] transition-all duration-200",
+            "w-full flex items-center gap-3 h-10 rounded-[2px] transition-colors duration-200",
             paddingClass,
-            isActive && "bg-[rgba(39,97,203,0.08)] text-[#2761CB]",
-            !isActive && "text-[#8194B5] hover:text-[#2761CB] hover:bg-[rgba(39,97,203,0.06)]",
+            isActive && "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary-hover)]",
+            !isActive && "text-[var(--color-neutral-08)] hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/8",
             collapsed && "justify-center px-2"
           )}
         >
@@ -177,7 +177,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
             <>
               <span className="flex-1 text-left text-sm">{item.label}</span>
               {hasChildren && (
-                isExpanded ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
+                isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />
               )}
             </>
           )}
@@ -224,8 +224,8 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
       {/* 底部折叠按钮 */}
       <div className="p-3 border-t border-[var(--color-neutral-03)] shrink-0 space-y-2">
         {!collapsed && (
-          <div className="rounded-xl border border-[rgba(78,134,223,0.18)] bg-[rgba(78,134,223,0.06)] px-3 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4E86DF]">
+          <div className="rounded-[4px] border border-[rgba(78,134,223,0.18)] bg-[rgba(78,134,223,0.06)] px-3 py-3">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-hover)]">
               建议这样看
             </div>
             <div className="mt-2 text-xs leading-5 text-[var(--color-neutral-09)]">

@@ -222,7 +222,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <div className="sticky top-0 z-20 border-b border-border bg-card">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="flex items-center justify-between px-4 py-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0 text-foreground">
             <ChevronLeft className="h-5 w-5" />

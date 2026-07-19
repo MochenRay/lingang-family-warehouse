@@ -207,7 +207,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
   return (
     <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100 pb-2">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="px-4 flex items-center gap-3 py-2">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />

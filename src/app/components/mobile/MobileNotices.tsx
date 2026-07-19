@@ -53,7 +53,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
     <div className="h-full bg-gray-50 flex flex-col">
       {/* 顶部导航 */}
       <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
           <button 
             onClick={onBack}

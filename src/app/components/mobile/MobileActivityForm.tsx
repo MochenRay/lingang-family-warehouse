@@ -109,7 +109,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
     <div className="h-full flex flex-col bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center justify-between">
           <button
             onClick={onBack}
