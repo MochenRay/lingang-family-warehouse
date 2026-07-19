@@ -2,44 +2,16 @@
 
 :root {
   --font-size: 16px;
-  --background: #ffffff;
-  --foreground: oklch(0.145 0 0);
-  --card: #ffffff;
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #030213;
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.95 0.0058 264.53);
-  --secondary-foreground: #030213;
-  --muted: #ececf0;
-  --muted-foreground: #717182;
-  --accent: #e9ebef;
-  --accent-foreground: #030213;
-  --destructive: #d4183d;
-  --destructive-foreground: #ffffff;
-  --border: rgba(0, 0, 0, 0.1);
-  --input: transparent;
+  /* Phase 14 (T4)：亮色 shadcn 语义 token 已删除（--background/--foreground/--card/
+     --popover/--primary/--secondary/--muted/--accent/--destructive/--border/--input/
+     --ring/--chart-1~6/--sidebar*）——.dark 恒激活，亮色值永不渲染，.dark 块保有全部
+     同名定义。保留 --radius（@theme inline 引用且无 .dark 覆盖）、--input-background、
+     --switch-background（同被 @theme inline 引用且无 .dark 覆盖）。 */
   --input-background: #f3f3f5;
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: oklch(0.708 0 0);
-  --chart-1: #2761CB;  /* Blue-06 主色 */
-  --chart-2: #413DD4;  /* Violet-06 紫罗兰 */
-  --chart-3: #8B3BCC;  /* Purple-06 紫色 */
-  --chart-4: #2AA3CF;  /* Light-blue-06 浅蓝 */
-  --chart-5: #D6730D;  /* Orange-06 橙色 */
-  --chart-6: #19B172;  /* Green-06 绿色 */
   --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: #030213;
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 
   /* ========================================== */
   /* SENSORO 设计规范 - 色彩系统 */
@@ -400,7 +372,7 @@
   fill: var(--color-neutral-08);
 }
 
-/* Skeleton 加载状态深色适配 */
+/* 脉冲加载态深色适配（animate-pulse，如 MobileVisitForm 骨架占位） */
 .dark .animate-pulse {
   background-color: var(--color-neutral-03);
 }
