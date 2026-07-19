@@ -492,6 +492,23 @@
   --color-bg-2: var(--color-neutral-02);
   --color-bg-3: var(--color-neutral-03);
   --color-bg-4: var(--color-neutral-04);
+
+  /* 中性色标尺（P1b）：页面/组件可直接用 bg-neutral-02、text-neutral-08 等工具类 */
+  --color-neutral-00: var(--color-neutral-00);
+  --color-neutral-01: var(--color-neutral-01);
+  --color-neutral-02: var(--color-neutral-02);
+  --color-neutral-03: var(--color-neutral-03);
+  --color-neutral-04: var(--color-neutral-04);
+  --color-neutral-05: var(--color-neutral-05);
+  --color-neutral-06: var(--color-neutral-06);
+  --color-neutral-07: var(--color-neutral-07);
+  --color-neutral-08: var(--color-neutral-08);
+  --color-neutral-09: var(--color-neutral-09);
+  --color-neutral-10: var(--color-neutral-10);
+  --color-neutral-11: var(--color-neutral-11);
+
+  /* 遮罩层（P1b）：Dialog/Drawer 统一 */
+  --color-overlay: rgba(0, 0, 0, 0.6);
   
   /* 中性色映射 - 文字层级 */
   --color-text-disabled: var(--color-neutral-06);

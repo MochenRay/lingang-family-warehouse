@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
 import { API_DATA_SOURCE_EVENT, getApiDataSourceSnapshot, type ApiDataSourceSnapshot } from '../services/api';
 
 interface HeaderProps {
@@ -66,8 +66,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           <Badge variant="outline" className="text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)] bg-[var(--color-neutral-02)]">
             烟台市
           </Badge>
-          <TooltipProvider delayDuration={100}>
-            <Tooltip>
+          <Tooltip>
               <TooltipTrigger asChild>
                 <Badge
                   variant="outline"
@@ -97,7 +96,6 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
                 </p>
               </TooltipContent>
             </Tooltip>
-          </TooltipProvider>
         </div>
       </div>
 

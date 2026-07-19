@@ -12,23 +12,23 @@ const badgeVariants = cva(
       variant: {
         default:
           // Blue-06 背景，白色文字
-          "border-transparent bg-[#2761CB] text-white hover:bg-[#4E86DF]",
+          "border-transparent bg-[var(--color-brand-primary)] text-white hover:bg-[var(--color-brand-primary-hover)]",
         secondary:
           "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/90",
         destructive:
           // Red-06 背景
-          "border-transparent bg-[#D52132] text-white hover:bg-[#E74C3C]",
+          "border-transparent bg-[var(--color-status-error)] text-white hover:bg-[var(--color-status-error-text)]",
         outline:
-          "text-foreground border-[#546789] hover:bg-accent hover:text-accent-foreground",
+          "text-foreground border-[var(--color-neutral-06)] hover:bg-accent hover:text-accent-foreground",
         success:
           // Green-06 背景
-          "border-transparent bg-[#19B172] text-white hover:bg-[#22C55E]",
+          "border-transparent bg-[var(--color-status-success)] text-white hover:bg-[var(--color-status-success-text)]",
         warning:
           // Orange-06 背景
-          "border-transparent bg-[#D6730D] text-white hover:bg-[#F97316]",
+          "border-transparent bg-[var(--color-status-warning)] text-white hover:bg-[var(--color-status-warning-text)]",
         info:
           // Light-blue-06 背景
-          "border-transparent bg-[#2AA3CF] text-white hover:bg-[#0EA5E9]",
+          "border-transparent bg-[var(--color-status-info)] text-white hover:bg-[var(--color-status-info-text)]",
       },
     },
     defaultVariants: {

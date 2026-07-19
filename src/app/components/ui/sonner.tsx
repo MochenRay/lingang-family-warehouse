@@ -10,23 +10,16 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           // 圆角 4px，背景 Neutral-03，文字 Neutral-10
-          toast: "rounded-[4px] bg-[#293449] text-[#AEC0DE] border-[#546789]/20 shadow-[0px_2px_8px_rgba(10,27,57,0.15)]",
-          title: "text-[#F6F9FE] font-medium",
-          description: "text-[#AEC0DE]",
+          toast: "rounded-[4px] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border-[var(--color-neutral-06)]/20 shadow-01",
+          title: "text-[var(--color-neutral-11)] font-medium",
+          description: "text-[var(--color-neutral-10)]",
           // 成功、错误、警告、信息样式
-          success: "bg-[#19B172]/8 text-[#19B172] border-[#19B172]/30",
-          error: "bg-[#D52132]/8 text-[#D52132] border-[#D52132]/30",
-          warning: "bg-[#D6730D]/8 text-[#D6730D] border-[#D6730D]/30",
-          info: "bg-[#2AA3CF]/8 text-[#2AA3CF] border-[#2AA3CF]/30",
+          success: "bg-[var(--color-status-success)]/8 text-[var(--color-status-success)] border-[var(--color-status-success)]/30",
+          error: "bg-[var(--color-status-error)]/8 text-[var(--color-status-error)] border-[var(--color-status-error)]/30",
+          warning: "bg-[var(--color-status-warning)]/8 text-[var(--color-status-warning)] border-[var(--color-status-warning)]/30",
+          info: "bg-[var(--color-status-info)]/8 text-[var(--color-status-info)] border-[var(--color-status-info)]/30",
         },
       }}
-      style={
-        {
-          "--normal-bg": "#293449",
-          "--normal-text": "#AEC0DE",
-          "--normal-border": "rgba(84, 103, 137, 0.2)",
-        } as React.CSSProperties
-      }
       {...props}
     />
   );
