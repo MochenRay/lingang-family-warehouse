@@ -12,6 +12,16 @@ if [[ ! -x "$PYTHON_BIN" ]] && ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   exit 1
 fi
 
+# 端口预检：e2e 需要独占端口，被占时快速失败并给出专用端口约定提示
+port_in_use() {
+  lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1
+}
+if port_in_use "$BACKEND_PORT" || port_in_use "$FRONTEND_PORT"; then
+  echo "e2e 端口被占用（BACKEND_PORT=${BACKEND_PORT} / FRONTEND_PORT=${FRONTEND_PORT}）。" >&2
+  echo "请先释放端口，或使用专用端口约定：BACKEND_PORT=18000 FRONTEND_PORT=15173 npm run test:e2e" >&2
+  exit 1
+fi
+
 cleanup() {
   rm -f "$DB_PATH" "$DB_PATH-shm" "$DB_PATH-wal"
 }
