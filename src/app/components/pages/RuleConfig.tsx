@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CheckCircle2, Clock, Loader2, RefreshCw, Settings2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Clock, RefreshCw, Settings2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
@@ -15,7 +14,6 @@ import {
 } from '../ui/select';
 import {
   Table,
-  TableBody,
   TableCell,
   TableHead,
   TableHeader,
@@ -32,6 +30,11 @@ import {
 import { taskRepository } from '../../services/repositories/taskRepository';
 import { taskRuleRepository, type TaskRuleRecord } from '../../services/repositories/taskRuleRepository';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { DataTableBody } from '../patterns/DataTableShell';
+import { SearchInput } from '../patterns/FilterBar';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 
 type RulePriority = TaskRuleRecord['priority'];
 
@@ -46,14 +49,13 @@ interface RuleDraft {
   overdueAfterDays?: number;
 }
 
-const priorityConfig: Record<RulePriority, { label: string; badgeClass: string }> = {
-  critical: { label: '极高', badgeClass: 'text-[#FFB4B4] bg-[#D52132]/10 border-[#D52132]/35' },
-  high: { label: '高', badgeClass: 'text-[#F6C27A] bg-[#D6730D]/10 border-[#D6730D]/35' },
-  medium: { label: '中', badgeClass: 'text-[#9EC3FF] bg-[#4E86DF]/10 border-[#4E86DF]/35' },
-  low: { label: '低', badgeClass: 'text-[var(--color-neutral-08)] bg-[var(--color-neutral-03)] border-[var(--color-neutral-03)]' },
+const priorityConfig: Record<RulePriority, { label: string; tone: StatusTone }> = {
+  critical: { label: '极高', tone: 'error' },
+  high: { label: '高', tone: 'warning' },
+  medium: { label: '中', tone: 'info' },
+  low: { label: '低', tone: 'neutral' },
 };
 
-const DARK_CARD_CLASS = 'bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]';
 const DARK_FIELD_CLASS = 'bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
 const DARK_BUTTON_CLASS = 'border-[var(--color-neutral-03)] text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 
@@ -212,59 +214,45 @@ export function RuleConfig() {
       />
 
       <div className="grid gap-3 md:grid-cols-4">
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">运行中规则</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-[#19B172]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{activeCount}</div>
-            <p className="text-xs text-[var(--color-neutral-08)]">当前共 {rules.length} 条规则配置</p>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">覆盖对象</CardTitle>
-            <Settings2 className="h-4 w-4 text-[#4E86DF]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{totalCovered}</div>
-            <p className="text-xs text-[var(--color-neutral-08)]">按当前规则命中的待跟进对象</p>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">待办清单</CardTitle>
-            <Clock className="h-4 w-4 text-[#D6730D]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.pending ?? 0}</div>
-            <p className="text-xs text-[var(--color-neutral-08)]">当前规则下生成的移动端待办数量</p>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-[var(--color-neutral-08)]">超期跟进</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-[#D52132]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{taskSummary?.overdue ?? 0}</div>
-            <p className="text-xs text-[var(--color-neutral-08)]">规则变更后立即反映到待办摘要</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="运行中规则"
+          value={activeCount}
+          hint={`当前共 ${rules.length} 条规则配置`}
+          icon={CheckCircle2}
+          tone="success"
+        />
+        <StatCard
+          label="覆盖对象"
+          value={totalCovered}
+          hint="按当前规则命中的待跟进对象"
+          icon={Settings2}
+          tone="brand"
+        />
+        <StatCard
+          label="待办清单"
+          value={taskSummary?.pending ?? 0}
+          hint="当前规则下生成的移动端待办数量"
+          icon={Clock}
+          tone="warning"
+        />
+        <StatCard
+          label="超期跟进"
+          value={taskSummary?.overdue ?? 0}
+          hint="规则变更后立即反映到待办摘要"
+          icon={AlertTriangle}
+          tone="error"
+        />
       </div>
 
-      <Card className={DARK_CARD_CLASS}>
+      <Card className={PANEL_CLASS}>
         <CardContent className="p-4">
           <div className="flex flex-col gap-3 md:flex-row">
-            <div className="flex-1">
-              <Input
-                placeholder="搜索规则名称或说明"
-                value={searchTerm}
-                onChange={(event) => setSearchTerm(event.target.value)}
-                className={DARK_FIELD_CLASS}
-              />
-            </div>
+            <SearchInput
+              className="flex-1"
+              placeholder="搜索规则名称或说明"
+              value={searchTerm}
+              onChange={setSearchTerm}
+            />
             <Select value={priorityFilter} onValueChange={(value) => setPriorityFilter(value as 'all' | RulePriority)}>
               <SelectTrigger className={`w-full md:w-44 ${DARK_FIELD_CLASS}`}>
                 <SelectValue placeholder="优先级筛选" />
@@ -281,90 +269,82 @@ export function RuleConfig() {
         </CardContent>
       </Card>
 
-      <Card className={`${DARK_CARD_CLASS} overflow-hidden`}>
+      <Card className={`${PANEL_CLASS} overflow-hidden`}>
         <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-4">
           <CardTitle className="text-base text-[var(--color-neutral-11)]">规则总览</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          {loading ? (
-            <div className="flex items-center justify-center py-16 text-[var(--color-neutral-08)]">
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              正在读取规则与任务投影...
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                  <TableHead>规则</TableHead>
-                  <TableHead>覆盖对象</TableHead>
-                  <TableHead>优先级</TableHead>
-                  <TableHead>当前阈值</TableHead>
-                  <TableHead>状态</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
+          <Table>
+            <TableHeader>
+              <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                <TableHead>规则</TableHead>
+                <TableHead>覆盖对象</TableHead>
+                <TableHead>优先级</TableHead>
+                <TableHead>当前阈值</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead className="text-right">操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <DataTableBody
+              loading={loading}
+              loadingText="正在读取规则与任务投影..."
+              empty={filteredRules.length === 0}
+              emptyText="当前筛选条件下没有可显示的规则。"
+              columnCount={6}
+            >
+              {filteredRules.map((rule) => (
+                <TableRow key={rule.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-brand-primary)]/8">
+                  <TableCell className="align-top">
+                    <div className="space-y-1">
+                      <div className="font-medium text-[var(--color-neutral-11)]">{rule.name}</div>
+                      <div className="text-sm text-[var(--color-neutral-08)]">{rule.description}</div>
+                      <div className="text-xs text-[var(--color-neutral-08)]">{getRuleSummary(rule)}</div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <div className="text-sm font-medium text-[var(--color-neutral-11)]">{rule.coveredCount}</div>
+                    <div className="text-xs text-[var(--color-neutral-08)]">当前命中对象</div>
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <StatusBadge tone={priorityConfig[rule.priority].tone}>
+                      {priorityConfig[rule.priority].label}
+                    </StatusBadge>
+                  </TableCell>
+                  <TableCell className="align-top text-sm text-[var(--color-neutral-08)]">
+                    {readNumber(rule.conditions.maxIdleDays, 7)} 天触发
+                    {rule.id === 'rule_conflict_followup'
+                      ? ` / ${readNumber(rule.conditions.overdueAfterDays, 7)} 天超期`
+                      : ` / ${readNumber(rule.conditions.urgentAfterDays, 14)} 天升级紧急`}
+                  </TableCell>
+                  <TableCell className="align-top">
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={rule.enabled}
+                        onCheckedChange={(checked) => void handleToggleRule(rule, checked)}
+                        disabled={savingId === rule.id}
+                      />
+                      <span className="text-sm text-[var(--color-neutral-08)]">{rule.enabled ? '已启用' : '已停用'}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="align-top text-right">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className={DARK_BUTTON_CLASS}
+                      onClick={() => openEditor(rule)}
+                    >
+                      调整阈值
+                    </Button>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRules.map((rule) => (
-                  <TableRow key={rule.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]/70">
-                    <TableCell className="align-top">
-                      <div className="space-y-1">
-                        <div className="font-medium text-[var(--color-neutral-11)]">{rule.name}</div>
-                        <div className="text-sm text-[var(--color-neutral-08)]">{rule.description}</div>
-                        <div className="text-xs text-[var(--color-neutral-08)]">{getRuleSummary(rule)}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="text-sm font-medium text-[var(--color-neutral-11)]">{rule.coveredCount}</div>
-                      <div className="text-xs text-[var(--color-neutral-08)]">当前命中对象</div>
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <Badge variant="outline" className={priorityConfig[rule.priority].badgeClass}>
-                        {priorityConfig[rule.priority].label}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="align-top text-sm text-[var(--color-neutral-08)]">
-                      {readNumber(rule.conditions.maxIdleDays, 7)} 天触发
-                      {rule.id === 'rule_conflict_followup'
-                        ? ` / ${readNumber(rule.conditions.overdueAfterDays, 7)} 天超期`
-                        : ` / ${readNumber(rule.conditions.urgentAfterDays, 14)} 天升级紧急`}
-                    </TableCell>
-                    <TableCell className="align-top">
-                      <div className="flex items-center gap-3">
-                        <Switch
-                          checked={rule.enabled}
-                          onCheckedChange={(checked) => void handleToggleRule(rule, checked)}
-                          disabled={savingId === rule.id}
-                        />
-                        <span className="text-sm text-[var(--color-neutral-08)]">{rule.enabled ? '已启用' : '已停用'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="align-top text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className={DARK_BUTTON_CLASS}
-                        onClick={() => openEditor(rule)}
-                      >
-                        调整阈值
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredRules.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-16 text-center text-sm text-[var(--color-neutral-08)]">
-                      当前筛选条件下没有可显示的规则。
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+              ))}
+            </DataTableBody>
+          </Table>
         </CardContent>
       </Card>
 
       <Dialog open={Boolean(editingRule && draft)} onOpenChange={(open) => !open && closeEditor()}>
-        <DialogContent className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] shadow-2xl">
+        <DialogContent className={DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>调整规则阈值</DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
@@ -448,7 +428,7 @@ export function RuleConfig() {
 
           <DialogFooter>
             <Button variant="outline" className={DARK_BUTTON_CLASS} onClick={closeEditor}>取消</Button>
-            <Button className="bg-[#4E86DF] text-white hover:bg-[#2761CB]" onClick={() => void handleSave()} disabled={!draft || (editingRule ? savingId === editingRule.id : false)}>
+            <Button onClick={() => void handleSave()} disabled={!draft || (editingRule ? savingId === editingRule.id : false)}>
               保存并更新投影
             </Button>
           </DialogFooter>

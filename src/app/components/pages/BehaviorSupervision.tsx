@@ -14,7 +14,6 @@ import {
 import { Card, CardContent, CardHeader } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
-import { Input } from '../ui/input';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
@@ -28,6 +27,9 @@ import {
   statsRepository,
 } from '../../services/repositories/statsRepository';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { SearchInput } from '../patterns/FilterBar';
+import { DIALOG_CLASS } from '../patterns/surfaces';
 
 type ViewLevel = 'district' | 'street' | 'community' | 'grid';
 
@@ -63,8 +65,6 @@ const SCORE_LABELS: Record<PerformanceScoreKey, { label: string; short: string; 
 
 const DARK_CARD_CLASS =
   'rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const DARK_DIALOG_CLASS =
-  'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
 const DARK_INPUT_CLASS =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
 const DARK_BADGE_CLASS =
@@ -274,10 +274,10 @@ export function BehaviorSupervision() {
 
   // 得分颜色
   const scoreColor = (score: number) => {
-    if (score >= 85) return 'text-[#19B172]';
-    if (score >= 70) return 'text-[#4E86DF]';
-    if (score >= 55) return 'text-[#D6730D]';
-    return 'text-[#D52132]';
+    if (score >= 85) return 'text-[var(--color-status-success)]';
+    if (score >= 70) return 'text-[var(--color-brand-primary-hover)]';
+    if (score >= 55) return 'text-[var(--color-status-warning)]';
+    return 'text-[var(--color-status-error)]';
   };
 
   return (
@@ -294,7 +294,7 @@ export function BehaviorSupervision() {
                 生成简报
               </Button>
             </DialogTrigger>
-            <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="briefing-desc">
+            <DialogContent className={`max-w-2xl ${DIALOG_CLASS}`} aria-describedby="briefing-desc">
               <DialogHeader>
                 <DialogTitle>自动生成绩效简报</DialogTitle>
                 <DialogDescription id="briefing-desc" className="text-[var(--color-neutral-08)]">基于当前数据自动生成工作汇报，支持导出PDF或发送邮件。</DialogDescription>
@@ -342,7 +342,7 @@ export function BehaviorSupervision() {
               </div>
               <DialogFooter>
                 <Button variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]" onClick={() => setIsBriefingOpen(false)}>取消</Button>
-                <Button className="gap-2 bg-[#4E86DF] text-white hover:bg-[#3f75c8]">
+                <Button className="gap-2">
                   <Download className="w-4 h-4" /> 导出 PDF
                 </Button>
               </DialogFooter>
@@ -362,14 +362,14 @@ export function BehaviorSupervision() {
         <CardContent className="p-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
-              <div className="rounded-lg border border-[#4E86DF]/30 bg-[#4E86DF]/15 p-3">
-                <RefreshCw className="w-6 h-6 text-[#4E86DF]" />
+              <div className="rounded-lg border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/15 p-3">
+                <RefreshCw className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-[var(--color-neutral-11)]">治理数据主链已联通</h3>
                 <div className="flex items-center gap-2 text-sm text-[var(--color-neutral-08)] mt-1">
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-[#19B172]"></span>
+                    <span className="w-2 h-2 rounded-full bg-[var(--color-status-success)]"></span>
                     连接状态: 正常
                   </span>
                   <span className="w-px h-3 bg-[var(--color-neutral-03)]"></span>
@@ -399,50 +399,10 @@ export function BehaviorSupervision() {
 
       {/* 概览卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className={DARK_CARD_CLASS}>
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-[#4E86DF]/15 p-3 text-[#4E86DF]">
-              <Users className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm text-[var(--color-neutral-08)]">活跃网格员</div>
-              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.workerCount}</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-[#19B172]/15 p-3 text-[#19B172]">
-              <Trophy className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm text-[var(--color-neutral-08)]">平均综合得分</div>
-              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.avgScore}</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-[#4E86DF]/15 p-3 text-[#4E86DF]">
-              <CheckCircle2 className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm text-[var(--color-neutral-08)]">最优社区</div>
-              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.bestCommunity}</div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardContent className="flex items-center gap-4 p-4">
-            <div className="rounded-full bg-[#D6730D]/15 p-3 text-[#D6730D]">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="text-sm text-[var(--color-neutral-08)]">待改进网格员</div>
-              <div className="text-2xl font-bold text-[var(--color-neutral-11)]">{overviewStats.needImproveCount}</div>
-            </div>
-          </CardContent>
-        </Card>
+        <StatCard label="活跃网格员" value={overviewStats.workerCount} icon={Users} tone="brand" />
+        <StatCard label="平均综合得分" value={overviewStats.avgScore} icon={Trophy} tone="success" />
+        <StatCard label="最优社区" value={overviewStats.bestCommunity} icon={CheckCircle2} tone="brand" />
+        <StatCard label="待改进网格员" value={overviewStats.needImproveCount} icon={AlertCircle} tone="warning" />
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -465,7 +425,7 @@ export function BehaviorSupervision() {
               onClick={() => setShowFormula(!showFormula)}
             >
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#4E86DF]" />
+                <Info className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                 <span className="font-semibold text-[var(--color-neutral-11)]">评分规则说明</span>
                 <Badge variant="secondary" className={DARK_BADGE_CLASS}>
                   综合得分 = 走访频次×25% + 走访质量×25% + 信息完善度×20% + 任务完成量×15% + 响应速度×15%
@@ -487,7 +447,7 @@ export function BehaviorSupervision() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 rounded-lg border border-[#4E86DF]/25 bg-[#4E86DF]/10 p-3 text-xs text-[#4E86DF]">
+                  <div className="mt-3 rounded-lg border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-3 text-xs text-[var(--color-brand-primary-hover)]">
                     <strong>聚合规则：</strong>上级单位得分 = 下辖单位得分的算术平均。区县视角排名街道/镇，街道视角排名社区，社区视角排名网格员。不越级考核。
                   </div>
                 </div>
@@ -505,7 +465,7 @@ export function BehaviorSupervision() {
                       <TabsTrigger
                         key={level}
                         value={level}
-                        className="rounded border border-transparent px-4 py-1.5 font-bold text-[var(--color-neutral-08)] transition-all hover:text-[var(--color-neutral-11)] data-[state=active]:border-2 data-[state=active]:border-[#4E86DF] data-[state=active]:bg-transparent data-[state=active]:text-[#4E86DF] data-[state=active]:shadow-none"
+                        className="rounded border border-transparent px-4 py-1.5 font-bold text-[var(--color-neutral-08)] transition-all hover:text-[var(--color-neutral-11)] data-[state=active]:bg-[var(--color-brand-primary)]/20 data-[state=active]:text-[var(--color-brand-primary-hover)] data-[state=active]:shadow-none"
                       >
                         {VIEW_LABELS[level]}排名
                       </TabsTrigger>
@@ -514,11 +474,11 @@ export function BehaviorSupervision() {
                 </Tabs>
 
                 <div className="flex gap-2 w-full md:w-auto">
-                  <Input
+                  <SearchInput
+                    className="w-full md:w-64"
                     placeholder={`搜索${VIEW_LABELS[viewLevel]}...`}
-                    className={`w-full md:w-64 ${DARK_INPUT_CLASS}`}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={setSearchQuery}
                   />
                 </div>
               </div>
@@ -529,7 +489,7 @@ export function BehaviorSupervision() {
                   {selectedDistrict && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedDistrict}</Badge>}
                   {selectedStreet && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedStreet}</Badge>}
                   {selectedCommunity && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedCommunity}</Badge>}
-                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-[#4E86DF] hover:bg-[var(--color-neutral-03)] hover:text-[#4E86DF]" onClick={() => {
+                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-brand-primary-hover)]" onClick={() => {
                     setSelectedDistrict(null); setSelectedStreet(null); setSelectedCommunity(null);
                   }}>
                     清除筛选
@@ -561,9 +521,9 @@ export function BehaviorSupervision() {
                     {/* 排名 */}
                     <div className="flex justify-center">
                       <div className={`w-9 h-9 flex items-center justify-center rounded-full font-bold text-sm ${
-                        item.rank === 1 ? 'bg-[#D6730D]/20 text-[#D6730D] border border-[#D6730D]/35' :
+                        item.rank === 1 ? 'bg-[var(--color-status-warning)]/20 text-[var(--color-status-warning)] border border-[var(--color-status-warning)]/35' :
                         item.rank === 2 ? 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-08)]/30' :
-                        item.rank === 3 ? 'bg-[#4E86DF]/15 text-[#4E86DF] border border-[#4E86DF]/30' :
+                        item.rank === 3 ? 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-primary-hover)] border border-[var(--color-brand-primary-hover)]/30' :
                         'bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)] border border-[var(--color-neutral-04)]'
                       }`}>
                         {item.rank}
@@ -572,7 +532,7 @@ export function BehaviorSupervision() {
 
                     {/* 名称 */}
                     <div>
-                      <div className="font-bold text-[var(--color-neutral-11)] transition-colors group-hover:text-[#4E86DF]">
+                      <div className="font-bold text-[var(--color-neutral-11)] transition-colors group-hover:text-[var(--color-brand-primary-hover)]">
                         {item.name}
                       </div>
                       <div className="text-xs text-[var(--color-neutral-08)]">
@@ -611,11 +571,11 @@ export function BehaviorSupervision() {
         <TabsContent value="quality" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {qualityAlerts.map((alert) => (
-              <Card key={alert.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[#D52132]`}>
+              <Card key={alert.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[var(--color-status-error)]`}>
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-[#D52132]" />
+                      <AlertCircle className="w-5 h-5 text-[var(--color-status-error)]" />
                       <span className="font-bold text-[var(--color-neutral-11)]">{alert.type}</span>
                     </div>
                     <Badge variant="destructive">{alert.count} 条待修正</Badge>
@@ -623,7 +583,7 @@ export function BehaviorSupervision() {
                   <p className="mb-4 text-[var(--color-neutral-08)]">{alert.desc}</p>
                   <div className="flex items-center justify-between mt-4 text-sm">
                     <span className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] px-2 py-1 text-[var(--color-neutral-08)]">高发区域: {alert.area}</span>
-                    <Button variant="link" className="h-auto p-0 text-[#4E86DF]">查看详情 &gt;</Button>
+                    <Button variant="link" className="h-auto p-0 text-[var(--color-brand-primary-hover)]">查看详情 &gt;</Button>
                   </div>
                 </CardContent>
               </Card>

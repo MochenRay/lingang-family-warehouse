@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { 
-  Search, 
+  History, 
   Filter, 
   CheckCircle2, 
   XCircle, 
@@ -12,13 +12,11 @@ import {
   MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { 
   Table, 
-  TableBody, 
   TableCell, 
   TableHead, 
   TableHeader, 
@@ -35,11 +33,12 @@ import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
 import { MOCK_ACTIVITIES, Activity } from '../../data/activities';
 import { PageHeader } from './PageHeader';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { DataTableBody } from '../patterns/DataTableShell';
+import { SearchInput } from '../patterns/FilterBar';
+import { ConfirmDialog } from '../patterns/ConfirmDialog';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 
-const DARK_CARD_CLASS =
-  'rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const DARK_DIALOG_CLASS =
-  'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
 const DARK_INPUT_CLASS =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
@@ -54,6 +53,7 @@ export function ActivityManagement() {
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; activityId: string | null }>({ open: false, activityId: null });
   const [rejectReason, setRejectReason] = useState('');
   const [detailDialog, setDetailDialog] = useState<{ open: boolean; activity: Activity | null }>({ open: false, activity: null });
+  const [approveTargetId, setApproveTargetId] = useState<string | null>(null);
 
   // Filtered Lists
   const pendingActivities = activities.filter(a => a.approvalStatus === 'pending');
@@ -69,10 +69,16 @@ export function ActivityManagement() {
 
   // Actions
   const handleApprove = (id: string) => {
-    if (confirm('确定要通过该活动申请吗？')) {
-      setActivities(prev => prev.map(a => a.id === id ? { ...a, approvalStatus: 'approved', executionStatus: 'to_start' } : a));
-      toast.success('活动已批准');
+    setApproveTargetId(id);
+  };
+
+  const handleApproveConfirm = () => {
+    if (!approveTargetId) {
+      return;
     }
+    setActivities(prev => prev.map(a => a.id === approveTargetId ? { ...a, approvalStatus: 'approved', executionStatus: 'to_start' } : a));
+    toast.success('活动已批准');
+    setApproveTargetId(null);
   };
 
   const handleReject = () => {
@@ -90,12 +96,12 @@ export function ActivityManagement() {
 
   const getTypeBadge = (category: string) => {
      return category === 'volunteer' 
-       ? <Badge className="border border-[#D6730D]/30 bg-[#D6730D]/15 text-[#D6730D] hover:bg-[#D6730D]/20">志愿服务</Badge>
-       : <Badge className="border border-[#4E86DF]/30 bg-[#4E86DF]/15 text-[#4E86DF] hover:bg-[#4E86DF]/20">文娱活动</Badge>;
+       ? <StatusBadge tone="warning">志愿服务</StatusBadge>
+       : <StatusBadge tone="info">文娱活动</StatusBadge>;
   };
 
   return (
-    <div className="space-y-5 p-6 pb-16 text-[var(--color-neutral-10)]">
+    <div className="space-y-5 pb-16 text-[var(--color-neutral-10)]">
       <PageHeader
         eyebrow="ACTIVITY MANAGEMENT"
         title="活动综合管理"
@@ -105,7 +111,7 @@ export function ActivityManagement() {
       {/* Section 1: Pending Approvals */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
-          <Clock className="w-5 h-5 text-[#4E86DF]" />
+          <Clock className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
           待办审批 ({pendingActivities.length})
         </h2>
         
@@ -116,7 +122,7 @@ export function ActivityManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {pendingActivities.map(activity => (
-              <Card key={activity.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[#D6730D] transition-colors hover:bg-[var(--color-neutral-03)]`}>
+              <Card key={activity.id} className={`${PANEL_CLASS} border-l-4 border-l-[var(--color-status-warning)] transition-colors hover:bg-[var(--color-neutral-03)]`}>
                 <CardHeader className="pb-2">
                   <div className="flex justify-between items-start">
                     <Badge variant="outline" className="mb-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">{activity.subcategory}</Badge>
@@ -139,7 +145,7 @@ export function ActivityManagement() {
                         <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
                         <span>{activity.date} {activity.startTime}</span>
                       </div>
-                      <div className="mt-2 rounded border border-[#4E86DF]/25 bg-[#4E86DF]/10 p-2 text-xs text-[#4E86DF]">
+                      <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-primary-hover)]">
                         <span className="font-bold">系统预测:</span> {activity.predictionText || '暂无预测'}
                       </div>
                    </div>
@@ -149,7 +155,7 @@ export function ActivityManagement() {
                      查看详情
                    </Button>
                    <Button 
-                     className="h-8 flex-1 bg-[#19B172] text-xs text-white hover:bg-[#128b5a]"
+                     className="h-8 flex-1 bg-[var(--color-status-success)] text-xs text-[var(--color-neutral-11)] hover:bg-[var(--color-status-success)]/90"
                      onClick={() => handleApprove(activity.id)}
                    >
                      通过
@@ -172,19 +178,16 @@ export function ActivityManagement() {
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
-            <HistoryIcon className="w-5 h-5 text-[var(--color-neutral-08)]" />
+            <History className="w-5 h-5 text-[var(--color-neutral-08)]" />
             历史活动档案
           </h2>
           <div className="flex items-center gap-2">
-             <div className="relative w-64">
-               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-neutral-08)]" />
-               <Input 
-                 placeholder="搜索活动名称或申请人..." 
-                 className={`h-9 pl-8 text-sm ${DARK_INPUT_CLASS}`}
-                 value={searchQuery}
-                 onChange={(e) => setSearchQuery(e.target.value)}
-               />
-             </div>
+             <SearchInput
+               className="w-64"
+               placeholder="搜索活动名称或申请人..."
+               value={searchQuery}
+               onChange={setSearchQuery}
+             />
              <Button variant="outline" size="sm" className={`h-9 ${ACTION_BUTTON_CLASS}`}>
                <Filter className="w-4 h-4 mr-2" /> 筛选
              </Button>
@@ -204,9 +207,13 @@ export function ActivityManagement() {
                 <TableHead className="text-right">操作</TableHead>
               </TableRow>
             </TableHeader>
-            <TableBody>
+            <DataTableBody
+              empty={historyActivities.length === 0}
+              emptyText="暂无相关活动记录"
+              columnCount={7}
+            >
               {historyActivities.map(activity => (
-                <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]">
+                <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-brand-primary)]/8">
                   <TableCell className="font-medium text-[var(--color-neutral-11)]">{activity.title}</TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
@@ -221,17 +228,17 @@ export function ActivityManagement() {
                   <TableCell>{activity.creatorName}</TableCell>
                   <TableCell>
                     {activity.approvalStatus === 'rejected' ? (
-                       <Badge variant="destructive">已驳回</Badge>
+                       <StatusBadge tone="error">已驳回</StatusBadge>
                     ) : (
-                       <Badge variant="outline" className="border-[#19B172]/30 bg-[#19B172]/15 text-[#19B172]">已批准</Badge>
+                       <StatusBadge tone="success">已批准</StatusBadge>
                     )}
                   </TableCell>
                   <TableCell>
                      {activity.approvalStatus === 'approved' && (
                        <div className="flex flex-col gap-1">
                          <span className={
-                           activity.executionStatus === 'in_progress' ? 'text-[#19B172] font-bold text-xs' :
-                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[#4E86DF] text-xs'
+                           activity.executionStatus === 'in_progress' ? 'text-[var(--color-status-success)] font-bold text-xs' :
+                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[var(--color-brand-primary-hover)] text-xs'
                          }>
                            {activity.executionStatus === 'in_progress' ? '进行中' : 
                             activity.executionStatus === 'ended' ? '已结束' : '待开始'}
@@ -266,21 +273,14 @@ export function ActivityManagement() {
                   </TableCell>
                 </TableRow>
               ))}
-              {historyActivities.length === 0 && (
-                 <TableRow>
-                   <TableCell colSpan={7} className="py-8 text-center text-[var(--color-neutral-08)]">
-                     暂无相关活动记录
-                   </TableCell>
-                 </TableRow>
-              )}
-            </TableBody>
+            </DataTableBody>
           </Table>
         </div>
       </section>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog.open} onOpenChange={(open) => setRejectDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className={DARK_DIALOG_CLASS}>
+        <DialogContent className={DIALOG_CLASS}>
           <DialogHeader>
             <DialogTitle>驳回申请</DialogTitle>
             <DialogDescription className={MUTED_TEXT_CLASS}>
@@ -302,7 +302,7 @@ export function ActivityManagement() {
 
       {/* Detail Dialog */}
       <Dialog open={detailDialog.open} onOpenChange={(open) => setDetailDialog(prev => ({ ...prev, open }))}>
-        <DialogContent className={`max-h-[80vh] max-w-2xl overflow-y-auto ${DARK_DIALOG_CLASS}`}>
+        <DialogContent className={`max-h-[80vh] max-w-2xl overflow-y-auto ${DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>活动详情</DialogTitle>
             <DialogDescription className={MUTED_TEXT_CLASS}>
@@ -358,31 +358,21 @@ export function ActivityManagement() {
              </div>
           )}
           <DialogFooter>
-             <Button className="bg-[#4E86DF] text-white hover:bg-[#3f75c8]" onClick={() => setDetailDialog({ open: false, activity: null })}>关闭</Button>
+             <Button onClick={() => setDetailDialog({ open: false, activity: null })}>关闭</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
 
-function HistoryIcon(props: any) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" />
-      <path d="M3 3v9h9" />
-      <path d="M12 7v5l4 2" />
-    </svg>
+      {/* Approve Confirm Dialog */}
+      <ConfirmDialog
+        open={approveTargetId !== null}
+        onOpenChange={(open) => !open && setApproveTargetId(null)}
+        title="通过活动申请"
+        description="确定要通过该活动申请吗？"
+        confirmText="通过"
+        destructive
+        onConfirm={handleApproveConfirm}
+      />
+    </div>
   );
 }

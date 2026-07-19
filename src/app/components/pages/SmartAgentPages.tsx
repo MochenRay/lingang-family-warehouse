@@ -119,7 +119,7 @@ function BaseSmartChat({
         {/* 领域入口横向置于对话区之上，给聊天区留出完整宽度。 */}
         <Card className={`${SURFACE_CLASS} shrink-0 gap-0 overflow-hidden`}>
           <CardContent className="flex items-center gap-3 p-3 [&:last-child]:pb-3">
-            <div className="flex min-w-[168px] shrink-0 items-center gap-2 border-r border-[var(--color-neutral-03)] pr-4 text-sm font-medium text-white">
+            <div className="flex min-w-[168px] shrink-0 items-center gap-2 border-r border-[var(--color-neutral-03)] pr-4 text-sm font-medium text-[var(--color-neutral-11)]">
               {topic.icon}
               <span>{topic.title}</span>
             </div>
@@ -148,9 +148,9 @@ function BaseSmartChat({
             <div className="space-y-6">
               {messages.map((msg) => (
                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                  <Avatar className={`h-8 w-8 shrink-0 border border-[var(--color-neutral-03)] ${msg.role === 'ai' ? 'bg-[#2761CB]/18' : 'bg-[var(--color-neutral-03)]'}`}>
+                  <Avatar className={`h-8 w-8 shrink-0 border border-[var(--color-neutral-03)] ${msg.role === 'ai' ? 'bg-[var(--color-brand-primary)]/18' : 'bg-[var(--color-neutral-03)]'}`}>
                     {msg.role === 'ai' ? (
-                      <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-[#4E86DF]" /></AvatarFallback>
+                      <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-[var(--color-brand-primary-hover)]" /></AvatarFallback>
                     ) : (
                       <AvatarFallback className="bg-transparent text-[var(--color-neutral-10)]"><span className="text-xs">我</span></AvatarFallback>
                     )}
@@ -158,7 +158,7 @@ function BaseSmartChat({
                   <div className={`flex flex-col max-w-[80%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                     <div className={`px-4 py-3 rounded-lg text-sm leading-relaxed shadow-sm ${
                       msg.role === 'user'
-                        ? 'rounded-tr-sm bg-[#2761CB] text-white'
+                        ? 'rounded-tr-sm bg-[var(--color-brand-primary)] text-[var(--color-neutral-11)]'
                         : 'rounded-tl-sm border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]'
                     }`}>
                       <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -191,7 +191,7 @@ function BaseSmartChat({
                   <button
                     key={q}
                     type="button"
-                    className="shrink-0 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1.5 text-left text-xs leading-5 text-[var(--color-neutral-10)] transition-colors hover:border-[#4E86DF]/50 hover:bg-[#2761CB]/12 hover:text-[#9FC4FF] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4E86DF] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-neutral-02)] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="shrink-0 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1.5 text-left text-xs leading-5 text-[var(--color-neutral-10)] transition-colors hover:border-[var(--color-brand-primary-hover)]/50 hover:bg-[var(--color-brand-primary)]/12 hover:text-[var(--color-brand-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary-hover)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-neutral-02)] disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => {
                       void handleSendMessage(q);
                     }}
@@ -221,14 +221,14 @@ function BaseSmartChat({
                   variant="ghost"
                   size="icon"
                   aria-label="添加附件"
-                  className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white"
+                  className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
                 >
                   <Paperclip className="h-4 w-4" />
                 </Button>
                 <Button
                   size="icon"
                   aria-label="发送消息"
-                  className="h-8 w-8 border-0 bg-[#2761CB] text-white hover:bg-[#4E86DF]"
+                  className="h-8 w-8 border-0 bg-[var(--color-brand-primary)] text-[var(--color-neutral-11)] hover:bg-[var(--color-brand-primary-hover)]"
                   onClick={() => {
                     void handleSendMessage();
                   }}
@@ -256,9 +256,9 @@ export function PolicyInterpretation() {
       apiKind="policy"
       topic={{
         title: '热门政策领域',
-        icon: <BookOpen className="h-4 w-4 text-[#4E86DF]" />,
+        icon: <BookOpen className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />,
         items: ['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'],
-        badgeClassName: 'hover:border-[#4E86DF] hover:bg-[#2761CB]/12 hover:text-[#9FC4FF]',
+        badgeClassName: 'hover:border-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/12 hover:text-[var(--color-brand-primary-hover)]',
       }}
       placeholder="请输入您想查询的政策问题，例如：最新的高龄津贴发放标准是什么？"
       initialMessages={[{
@@ -285,9 +285,9 @@ export function OfficialDocumentWriting() {
       apiKind="writing"
       topic={{
         title: '常用文体模板',
-        icon: <PenTool className="h-4 w-4 text-[#19B172]" />,
+        icon: <PenTool className="h-4 w-4 text-[var(--color-status-success)]" />,
         items: ['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'],
-        badgeClassName: 'hover:border-[#19B172] hover:bg-[#19B172]/12 hover:text-[#6EE7B7]',
+        badgeClassName: 'hover:border-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/12 hover:text-[var(--color-status-success-text)]',
       }}
       placeholder="请输入您的写作需求，例如：帮我写一份关于社区环境整治的总结报告。"
       initialMessages={[{

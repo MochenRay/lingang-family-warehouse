@@ -9,6 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { ScrollArea } from '../ui/scroll-area';
 import { toast } from 'sonner';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
 type ImportStatus = '待校验' | '成功' | '部分失败' | '失败';
@@ -145,6 +147,14 @@ function downloadTextFile(filename: string, content: string, mimeType = 'text/cs
   URL.revokeObjectURL(url);
 }
 
+const STATUS_BADGE_TONE: Record<string, StatusTone> = {
+  待校验: 'warning',
+  成功: 'success',
+  部分失败: 'warning',
+  失败: 'error',
+  进行中: 'info',
+};
+
 export function BatchImport() {
   const [importHistory, setImportHistory] = useState<ImportRecord[]>(initialImportHistory);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -233,44 +243,27 @@ export function BatchImport() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case '待校验':
-        return (
-          <Badge className="gap-1 bg-amber-500/20 text-amber-300 border-amber-400/30">
-            <CircleAlert className="w-3 h-3" />
-            待校验
-          </Badge>
-        );
-      case '成功':
-        return (
-          <Badge className="gap-1 border-[#19B172]/35 bg-[#19B172]/16 text-[#6FE0B3]">
-            <CheckCircle2 className="w-3 h-3" />
-            成功
-          </Badge>
-        );
-      case '部分失败':
-        return (
-          <Badge className="gap-1 border-[#D6730D]/35 bg-[#D6730D]/18 text-[#F0A64F]">
-            <AlertCircle className="w-3 h-3" />
-            部分失败
-          </Badge>
-        );
-      case '失败':
-        return (
-          <Badge className="gap-1 border-[#D52132]/35 bg-[#D52132]/16 text-[#FF7A85]">
-            <CircleX className="w-3 h-3" />
-            失败
-          </Badge>
-        );
-      case '进行中':
-        return (
-          <Badge className="gap-1 border-[#4E86DF]/35 bg-[#4E86DF]/18 text-[#8FB6FF]">
-            进行中
-          </Badge>
-        );
-      default:
-        return <Badge>{status}</Badge>;
-    }
+    const tone = STATUS_BADGE_TONE[status] ?? 'neutral';
+    const icon = (() => {
+      switch (status) {
+        case '待校验':
+          return <CircleAlert className="w-3 h-3" />;
+        case '成功':
+          return <CheckCircle2 className="w-3 h-3" />;
+        case '部分失败':
+          return <AlertCircle className="w-3 h-3" />;
+        case '失败':
+          return <CircleX className="w-3 h-3" />;
+        default:
+          return null;
+      }
+    })();
+    return (
+      <StatusBadge tone={tone}>
+        {icon}
+        {status}
+      </StatusBadge>
+    );
   };
 
   const currentConfig = importConfigs[importType];
@@ -288,7 +281,7 @@ export function BatchImport() {
           <Button
             variant="outline"
             onClick={() => setShowHistoryDialog(true)}
-            className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
+            className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]"
           >
             <History className="w-4 h-4" />
             导入历史
@@ -306,9 +299,9 @@ export function BatchImport() {
         }}
       >
         <TabsList className="grid w-full max-w-2xl grid-cols-3 bg-[var(--color-neutral-01)]">
-          <TabsTrigger value="人口数据" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">人口数据</TabsTrigger>
-          <TabsTrigger value="房屋数据" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">房屋数据</TabsTrigger>
-          <TabsTrigger value="人房关系" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">人房关系</TabsTrigger>
+          <TabsTrigger value="人口数据" className="data-[state=active]:bg-[var(--color-brand-primary-hover)]/20 data-[state=active]:text-[var(--color-neutral-11)]">人口数据</TabsTrigger>
+          <TabsTrigger value="房屋数据" className="data-[state=active]:bg-[var(--color-brand-primary-hover)]/20 data-[state=active]:text-[var(--color-neutral-11)]">房屋数据</TabsTrigger>
+          <TabsTrigger value="人房关系" className="data-[state=active]:bg-[var(--color-brand-primary-hover)]/20 data-[state=active]:text-[var(--color-neutral-11)]">人房关系</TabsTrigger>
         </TabsList>
 
         {/* 通用导入内容 */}
@@ -317,7 +310,7 @@ export function BatchImport() {
             <div className="grid gap-4 lg:grid-cols-3">
               {/* 左侧：导入操作 */}
               <div className="space-y-4 lg:col-span-2">
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3 pt-4">
                     <CardTitle className="text-[var(--color-neutral-11)]">{currentConfig.title}</CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">
@@ -328,7 +321,7 @@ export function BatchImport() {
                     {/* 步骤1：下载模板 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/18 text-sm font-medium text-[var(--color-status-info-text)]">
                           1
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">下载导入模板</h3>
@@ -341,7 +334,7 @@ export function BatchImport() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => handleDownloadTemplate(type)}
-                          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white"
+                          className="gap-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]"
                         >
                           <Download className="w-4 h-4" />
                           下载 {type} 模板
@@ -354,16 +347,16 @@ export function BatchImport() {
                     {/* 步骤2：上传文件 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/18 text-sm font-medium text-[var(--color-status-info-text)]">
                           2
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">上传数据文件</h3>
                       </div>
                       <div className="pl-10 space-y-4">
-                        <div className="relative rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-5 transition-colors hover:border-[#4E86DF]/55">
+                        <div className="relative rounded-[4px] border-2 border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-5 transition-colors hover:border-[var(--color-brand-primary-hover)]/55">
                           <div className="flex flex-col items-center gap-3">
-                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#4E86DF]/12">
-                              <Upload className="h-6 w-6 text-[#8FB6FF]" />
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[var(--color-brand-primary-hover)]/12">
+                              <Upload className="h-6 w-6 text-[var(--color-status-info-text)]" />
                             </div>
                             <div className="text-center">
                               <p className="text-sm font-medium text-[var(--color-neutral-10)]">
@@ -383,8 +376,8 @@ export function BatchImport() {
                         </div>
 
                         {selectedFile && (
-                          <div className="flex items-center gap-3 rounded-lg border border-[#4E86DF]/35 bg-[#4E86DF]/12 p-3">
-                            <FileText className="w-5 h-5 text-[#8FB6FF] flex-shrink-0" />
+                          <div className="flex items-center gap-3 rounded-[4px] border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/12 p-3">
+                            <FileText className="w-5 h-5 text-[var(--color-status-info-text)] flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-[var(--color-neutral-11)] truncate">
                                 {selectedFile.name}
@@ -397,7 +390,7 @@ export function BatchImport() {
                               variant="ghost"
                               size="sm"
                               onClick={() => setSelectedFile(null)}
-                              className="flex-shrink-0 hover:bg-[#D52132]/12 hover:text-[#FF7A85]"
+                              className="flex-shrink-0 hover:bg-[var(--color-status-error)]/12 hover:text-[var(--color-status-error-text)]"
                             >
                               移除
                             </Button>
@@ -411,7 +404,7 @@ export function BatchImport() {
                     {/* 步骤3：开始导入 */}
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
-                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-sm font-medium text-[#8FB6FF]">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/18 text-sm font-medium text-[var(--color-status-info-text)]">
                           3
                         </div>
                         <h3 className="font-medium text-[var(--color-neutral-11)]">提交校验</h3>
@@ -423,17 +416,17 @@ export function BatchImport() {
                         <Button 
                           onClick={handleImport} 
                           disabled={!selectedFile}
-                          className="h-10 w-full bg-[#4E86DF] text-white hover:bg-[#3E72C3] disabled:bg-[var(--color-neutral-03)] disabled:text-[var(--color-neutral-08)]"
+                          className="h-10 w-full"
                           size="lg"
                         >
                           提交校验
                         </Button>
 
                         {latestSubmission && (
-                          <Alert className="border-amber-400/30 bg-amber-500/10">
-                            <CircleAlert className="h-4 w-4 text-amber-300" />
-                            <AlertTitle className="text-amber-200">最新受理记录</AlertTitle>
-                            <AlertDescription className="text-amber-100/80">
+                          <Alert className="border-[var(--color-status-warning)]/30 bg-[var(--color-status-warning)]/10">
+                            <CircleAlert className="h-4 w-4 text-[var(--color-status-warning-text)]" />
+                            <AlertTitle className="text-[var(--color-status-warning-text)]">最新受理记录</AlertTitle>
+                            <AlertDescription className="text-[var(--color-status-warning-text)]/80">
                               {latestSubmission.fileName} 已登记为导入申请，当前状态为“待校验”。
                             </AlertDescription>
                           </Alert>
@@ -447,10 +440,10 @@ export function BatchImport() {
               {/* 右侧：说明信息 */}
               <div className="space-y-4">
                 {/* 必填字段 */}
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base text-[var(--color-neutral-11)] flex items-center gap-2">
-                      <FileSpreadsheet className="w-4 h-4 text-[#8FB6FF]" />
+                      <FileSpreadsheet className="w-4 h-4 text-[var(--color-status-info-text)]" />
                       必填字段
                     </CardTitle>
                   </CardHeader>
@@ -470,10 +463,10 @@ export function BatchImport() {
                 </Card>
 
                 {/* 导入说明 */}
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base text-[var(--color-neutral-11)] flex items-center gap-2">
-                      <Info className="w-4 h-4 text-[#8FB6FF]" />
+                      <Info className="w-4 h-4 text-[var(--color-status-info-text)]" />
                       导入说明
                     </CardTitle>
                   </CardHeader>
@@ -481,7 +474,7 @@ export function BatchImport() {
                     <ul className="space-y-2 text-sm text-[var(--color-neutral-08)]">
                       {currentConfig.notes.map((note, index) => (
                         <li key={index} className="flex items-start gap-2">
-                          <span className="mt-0.5 flex-shrink-0 text-[#8FB6FF]">•</span>
+                          <span className="mt-0.5 flex-shrink-0 text-[var(--color-status-info-text)]">•</span>
                           <span>{note}</span>
                         </li>
                       ))}
@@ -496,10 +489,10 @@ export function BatchImport() {
 
       {/* 导入历史对话框 */}
       <Dialog open={showHistoryDialog} onOpenChange={setShowHistoryDialog}>
-        <DialogContent className="max-w-5xl border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+        <DialogContent className={`max-w-5xl ${DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle className="text-[var(--color-neutral-11)] flex items-center gap-2">
-              <History className="w-5 h-5 text-[#8FB6FF]" />
+              <History className="w-5 h-5 text-[var(--color-status-info-text)]" />
               导入历史记录
             </DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
@@ -524,7 +517,7 @@ export function BatchImport() {
               </TableHeader>
               <TableBody>
                 {importHistory.map((record) => (
-                  <TableRow key={record.id} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
+                  <TableRow key={record.id} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
                     <TableCell className="font-medium text-[var(--color-neutral-11)]">
                       {record.fileName}
                     </TableCell>
@@ -534,8 +527,8 @@ export function BatchImport() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-[var(--color-neutral-10)]">{record.totalRows ?? '--'}</TableCell>
-                    <TableCell className="text-[#6FE0B3]">{record.successRows ?? '--'}</TableCell>
-                    <TableCell className="text-[#FF7A85]">{record.failedRows ?? '--'}</TableCell>
+                    <TableCell className="text-[var(--color-status-success-text)]">{record.successRows ?? '--'}</TableCell>
+                    <TableCell className="text-[var(--color-status-error-text)]">{record.failedRows ?? '--'}</TableCell>
                     <TableCell>{getStatusBadge(record.status)}</TableCell>
                     <TableCell className="text-sm text-[var(--color-neutral-08)]">
                       {record.importTime}
@@ -547,7 +540,7 @@ export function BatchImport() {
                           variant="ghost" 
                           size="sm"
                           onClick={() => setSelectedErrorRecord(record.id)}
-                          className="text-[#FF7A85] hover:bg-[#D52132]/12 hover:text-[#FFA1A8]"
+                          className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/12 hover:text-[var(--color-status-error-text)]"
                         >
                           查看错误
                         </Button>
@@ -563,10 +556,10 @@ export function BatchImport() {
 
       {/* 错误详情对话框 */}
       <Dialog open={!!selectedErrorRecord} onOpenChange={() => setSelectedErrorRecord(null)}>
-        <DialogContent className="max-w-4xl border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
+        <DialogContent className={`max-w-4xl ${DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle className="text-[var(--color-neutral-11)] flex items-center gap-2">
-              <CircleX className="w-5 h-5 text-[#FF7A85]" />
+              <CircleX className="w-5 h-5 text-[var(--color-status-error-text)]" />
               导入错误详情
             </DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">
@@ -586,13 +579,13 @@ export function BatchImport() {
               </TableHeader>
               <TableBody>
                 {selectedErrorRecord && errorDetails[selectedErrorRecord]?.map((error, index) => (
-                  <TableRow key={index} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
+                  <TableRow key={index} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
                     <TableCell className="text-[var(--color-neutral-10)]">第 {error.row} 行</TableCell>
                     <TableCell className="text-[var(--color-neutral-10)]">{error.field}</TableCell>
                     <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">
                       {error.value || '(空值)'}
                     </TableCell>
-                    <TableCell className="text-[#FF7A85]">{error.error}</TableCell>
+                    <TableCell className="text-[var(--color-status-error-text)]">{error.error}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -600,7 +593,7 @@ export function BatchImport() {
           </ScrollArea>
 
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setSelectedErrorRecord(null)} className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[#4E86DF]/12 hover:text-white">
+            <Button variant="outline" onClick={() => setSelectedErrorRecord(null)} className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
               关闭
             </Button>
             <Button 

@@ -1,15 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Eye, History, Home, Link2, Search, Shield, UserCheck } from 'lucide-react';
+import { Eye, History, Home, Link2, Shield, UserCheck } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Input } from '../ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Badge } from '../ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { relationshipLedgerRepository } from '../../services/repositories/relationshipLedgerRepository';
 import type { House, HousingHistory, Person } from '../../types/core';
 import { toast } from 'sonner';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { DataTableBody } from '../patterns/DataTableShell';
+import { SearchInput } from '../patterns/FilterBar';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
 type RelationType = '现居' | '历史';
@@ -34,25 +38,25 @@ interface RelationshipRow {
   history?: HousingHistory;
 }
 
+const RELATIONSHIP_BADGE_TONE: Record<OccupancyRelationship, StatusTone> = {
+  业主: 'info',
+  家属: 'success',
+  租客: 'warning',
+  其他: 'neutral',
+};
+
+const RISK_BADGE_TONE: Record<string, StatusTone> = {
+  High: 'error',
+  Medium: 'warning',
+  Low: 'success',
+};
+
 function parseHistoryPeriod(period: string): { moveInDate: string; moveOutDate?: string } {
   const [rawMoveIn, rawMoveOut] = period.split('~').map((item) => item.trim());
   return {
     moveInDate: rawMoveIn || '-',
     moveOutDate: rawMoveOut && rawMoveOut !== '至今' ? rawMoveOut : undefined,
   };
-}
-
-function getRelationshipBadge(relationship: OccupancyRelationship) {
-  switch (relationship) {
-    case '业主':
-      return 'border border-[#4E86DF]/35 bg-[#4E86DF]/18 text-[#8FB6FF]';
-    case '家属':
-      return 'border border-[#19B172]/35 bg-[#19B172]/16 text-[#6FE0B3]';
-    case '租客':
-      return 'border border-[#D6730D]/35 bg-[#D6730D]/18 text-[#F0A64F]';
-    default:
-      return 'border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
-  }
 }
 
 function inferRelationship(person: Person, house: House, residents: Person[]): OccupancyRelationship {
@@ -231,57 +235,34 @@ export function RelationshipManagement() {
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
-          <CardHeader className="pb-3 pt-4">
-            <CardDescription className="text-xs text-[var(--color-neutral-08)]">总关系数</CardDescription>
-            <CardTitle className="text-3xl font-bold text-white">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
-          <CardHeader className="pb-3 pt-4">
-            <CardDescription className="text-xs text-[var(--color-neutral-08)]">现居关系</CardDescription>
-            <CardTitle className="text-3xl font-bold text-[#19B172]">{stats.current}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
-          <CardHeader className="pb-3 pt-4">
-            <CardDescription className="text-xs text-[var(--color-neutral-08)]">历史关系</CardDescription>
-            <CardTitle className="text-3xl font-bold text-[#4E86DF]">{stats.history}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
-          <CardHeader className="pb-3 pt-4">
-            <CardDescription className="text-xs text-[var(--color-neutral-08)]">现居业主</CardDescription>
-            <CardTitle className="text-3xl font-bold text-[#D6730D]">{stats.owner}</CardTitle>
-          </CardHeader>
-        </Card>
+        <StatCard label="总关系数" value={stats.total} />
+        <StatCard label="现居关系" value={stats.current} tone="success" />
+        <StatCard label="历史关系" value={stats.history} />
+        <StatCard label="现居业主" value={stats.owner} tone="warning" />
       </div>
 
-      <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+      <Card className={PANEL_CLASS}>
         <CardContent className="py-4">
           <div className="flex items-center gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-neutral-08)]" />
-              <Input
-                placeholder="搜索人员姓名、身份证号、房屋地址..."
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-                className="h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] pl-10 text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]"
-              />
-            </div>
-            <Badge variant="outline" className="h-9 border-[#4E86DF]/35 bg-[#4E86DF]/12 px-4 text-sm text-[#8FB6FF]">
+            <SearchInput
+              value={searchKeyword}
+              onChange={setSearchKeyword}
+              placeholder="搜索人员姓名、身份证号、房屋地址..."
+              className="flex-1"
+            />
+            <Badge variant="outline" className="h-9 border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/12 px-4 text-sm text-[var(--color-status-info-text)]">
               真实读侧视图
             </Badge>
           </div>
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+      <Card className={`overflow-hidden ${PANEL_CLASS}`}>
         <Tabs defaultValue="current" className="w-full">
           <CardHeader className="pb-3 pt-4">
             <TabsList className="grid w-full max-w-md grid-cols-2 bg-[var(--color-neutral-01)]">
-              <TabsTrigger value="current" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">现居关系 ({filteredCurrentRelationships.length})</TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-[#4E86DF]/20 data-[state=active]:text-white">历史关系 ({filteredHistoryRelationships.length})</TabsTrigger>
+              <TabsTrigger value="current" className="data-[state=active]:bg-[var(--color-brand-primary-hover)]/20 data-[state=active]:text-[var(--color-neutral-11)]">现居关系 ({filteredCurrentRelationships.length})</TabsTrigger>
+              <TabsTrigger value="history" className="data-[state=active]:bg-[var(--color-brand-primary-hover)]/20 data-[state=active]:text-[var(--color-neutral-11)]">历史关系 ({filteredHistoryRelationships.length})</TabsTrigger>
             </TabsList>
           </CardHeader>
 
@@ -299,58 +280,47 @@ export function RelationshipManagement() {
                     <TableHead className="text-right text-xs text-[var(--color-neutral-08)]">操作</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredCurrentRelationships.length > 0 ? (
-                    filteredCurrentRelationships.map((relationship) => (
-                      <TableRow key={relationship.id} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
-                        <TableCell className="text-[var(--color-neutral-10)]">
-                          <div className="flex items-center gap-2">
-                            <UserCheck className="h-4 w-4 text-[#4E86DF]" />
-                            {relationship.personName}
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">{relationship.personIdCard}</TableCell>
-                        <TableCell className="text-[var(--color-neutral-10)]">
-                          <div className="flex items-center gap-2">
-                            <Home className="h-4 w-4 text-[#19B172]" />
-                            {relationship.houseAddress}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getRelationshipBadge(relationship.relationship)}>
-                            {relationship.relationship}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              relationship.risk === 'High'
-                                ? 'border-[#D52132]/40 bg-[#D52132]/15 text-[#FF7A85]'
-                                : relationship.risk === 'Medium'
-                                  ? 'border-[#D6730D]/40 bg-[#D6730D]/15 text-[#F0A64F]'
-                                  : 'border-[#19B172]/40 bg-[#19B172]/12 text-[#6FE0B3]'
-                            }
-                          >
-                            {relationship.risk ?? 'Low'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[#4E86DF]/12 hover:text-white">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow className="border-[rgba(61,70,99,0.45)]">
-                      <TableCell colSpan={7} className="py-8 text-center text-[var(--color-neutral-08)]">
-                        {isLoading ? '正在加载现居关系...' : '暂无现居关系数据'}
+                <DataTableBody
+                  loading={isLoading}
+                  loadingText="正在加载现居关系..."
+                  empty={filteredCurrentRelationships.length === 0}
+                  emptyText="暂无现居关系数据"
+                  columnCount={7}
+                >
+                  {filteredCurrentRelationships.map((relationship) => (
+                    <TableRow key={relationship.id} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
+                      <TableCell className="text-[var(--color-neutral-10)]">
+                        <div className="flex items-center gap-2">
+                          <UserCheck className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                          {relationship.personName}
+                        </div>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">{relationship.personIdCard}</TableCell>
+                      <TableCell className="text-[var(--color-neutral-10)]">
+                        <div className="flex items-center gap-2">
+                          <Home className="h-4 w-4 text-[var(--color-status-success)]" />
+                          {relationship.houseAddress}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={RELATIONSHIP_BADGE_TONE[relationship.relationship] ?? 'neutral'}>
+                          {relationship.relationship}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={RISK_BADGE_TONE[relationship.risk ?? 'Low'] ?? 'neutral'}>
+                          {relationship.risk ?? 'Low'}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
+                  ))}
+                </DataTableBody>
               </Table>
             </CardContent>
           </TabsContent>
@@ -368,44 +338,42 @@ export function RelationshipManagement() {
                     <TableHead className="text-right text-xs text-[var(--color-neutral-08)]">操作</TableHead>
                   </TableRow>
                 </TableHeader>
-                <TableBody>
-                  {filteredHistoryRelationships.length > 0 ? (
-                    filteredHistoryRelationships.map((relationship) => (
-                      <TableRow key={relationship.id} className="border-[rgba(61,70,99,0.45)] hover:bg-[rgba(39,97,203,0.08)]">
-                        <TableCell className="text-[var(--color-neutral-10)]">
-                          <div className="flex items-center gap-2">
-                            <History className="h-4 w-4 text-[#4E86DF]" />
-                            {relationship.personName}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-[var(--color-neutral-10)]">
-                          <div className="flex items-center gap-2">
-                            <Home className="h-4 w-4 text-[#19B172]" />
-                            {relationship.houseAddress}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={getRelationshipBadge(relationship.relationship)}>
-                            {relationship.relationship}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
-                        <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveOutDate ?? '至今'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[#4E86DF]/12 hover:text-white">
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow className="border-[rgba(61,70,99,0.45)]">
-                      <TableCell colSpan={6} className="py-8 text-center text-[var(--color-neutral-08)]">
-                        {isLoading ? '正在加载历史关系...' : '暂无历史关系数据'}
+                <DataTableBody
+                  loading={isLoading}
+                  loadingText="正在加载历史关系..."
+                  empty={filteredHistoryRelationships.length === 0}
+                  emptyText="暂无历史关系数据"
+                  columnCount={6}
+                >
+                  {filteredHistoryRelationships.map((relationship) => (
+                    <TableRow key={relationship.id} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
+                      <TableCell className="text-[var(--color-neutral-10)]">
+                        <div className="flex items-center gap-2">
+                          <History className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                          {relationship.personName}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-[var(--color-neutral-10)]">
+                        <div className="flex items-center gap-2">
+                          <Home className="h-4 w-4 text-[var(--color-status-success)]" />
+                          {relationship.houseAddress}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <StatusBadge tone={RELATIONSHIP_BADGE_TONE[relationship.relationship] ?? 'neutral'}>
+                          {relationship.relationship}
+                        </StatusBadge>
+                      </TableCell>
+                      <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
+                      <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveOutDate ?? '至今'}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
+                          <Eye className="h-4 w-4" />
+                        </Button>
                       </TableCell>
                     </TableRow>
-                  )}
-                </TableBody>
+                  ))}
+                </DataTableBody>
               </Table>
             </CardContent>
           </TabsContent>
@@ -413,18 +381,18 @@ export function RelationshipManagement() {
       </Card>
 
       <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="max-w-3xl border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
+        <DialogContent className={`max-w-3xl ${DIALOG_CLASS}`}>
           <DialogHeader>
-            <DialogTitle className="text-white">人房关系详情</DialogTitle>
+            <DialogTitle className="text-[var(--color-neutral-11)]">人房关系详情</DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">查看当前对象的人房绑定与历史信息。</DialogDescription>
           </DialogHeader>
           {selectedRelationship && (
             <div className="space-y-4 py-2">
               <div className="grid gap-3 md:grid-cols-2">
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-white">
-                      <UserCheck className="h-4 w-4 text-[#4E86DF]" />
+                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
+                      <UserCheck className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
                       人员信息
                     </CardTitle>
                   </CardHeader>
@@ -441,9 +409,9 @@ export function RelationshipManagement() {
                       <p className="text-[var(--color-neutral-08)]">关系类型</p>
                       <div className="mt-1 flex gap-2">
                         <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{selectedRelationship.relationType}</Badge>
-                        <Badge className={getRelationshipBadge(selectedRelationship.relationship)}>
+                        <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
                           {selectedRelationship.relationship}
-                        </Badge>
+                        </StatusBadge>
                       </div>
                     </div>
                     {selectedRelationship.person && (
@@ -466,10 +434,10 @@ export function RelationshipManagement() {
                   </CardContent>
                 </Card>
 
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-white">
-                      <Home className="h-4 w-4 text-[#19B172]" />
+                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
+                      <Home className="h-4 w-4 text-[var(--color-status-success)]" />
                       房屋信息
                     </CardTitle>
                   </CardHeader>
@@ -487,10 +455,10 @@ export function RelationshipManagement() {
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{selectedRelationship.house.type}</Badge>
                         {selectedRelationship.house.occupancyStatus && (
-                          <Badge variant="secondary" className="bg-[#4E86DF]/15 text-[#8FB6FF]">{selectedRelationship.house.occupancyStatus}</Badge>
+                          <Badge variant="secondary" className="bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-status-info-text)]">{selectedRelationship.house.occupancyStatus}</Badge>
                         )}
                         {selectedRelationship.house.residenceType && (
-                          <Badge variant="secondary" className="bg-[#19B172]/15 text-[#6FE0B3]">{selectedRelationship.house.residenceType}</Badge>
+                          <Badge variant="secondary" className="bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]">{selectedRelationship.house.residenceType}</Badge>
                         )}
                       </div>
                     </div>
@@ -509,10 +477,10 @@ export function RelationshipManagement() {
               </div>
 
               {selectedRelationship.relationType === '现居' && (
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-white">
-                      <Link2 className="h-4 w-4 text-[#19B172]" />
+                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
+                      <Link2 className="h-4 w-4 text-[var(--color-status-success)]" />
                       现居关系摘要
                     </CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">当前房屋内可交叉印证的住户关系。</CardDescription>
@@ -535,10 +503,10 @@ export function RelationshipManagement() {
               )}
 
               {selectedRelationship.relationType === '历史' && (
-                <Card className="rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-none">
+                <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-white">
-                      <Shield className="h-4 w-4 text-[#D6730D]" />
+                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
+                      <Shield className="h-4 w-4 text-[var(--color-status-warning)]" />
                       历史迁居备注
                     </CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">来自房屋历史档案的原始说明。</CardDescription>

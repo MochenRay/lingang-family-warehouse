@@ -7,7 +7,6 @@ import {
   Layers,
   Loader2,
   RefreshCw,
-  Search,
   Warehouse,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -35,19 +34,21 @@ import { Progress } from '../ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import type { Grid, House, HousingHistory, Person } from '../../types/core';
+import { StatCard } from '../patterns/StatCard';
+import { SearchInput } from '../patterns/FilterBar';
+import { ConfirmDialog } from '../patterns/ConfirmDialog';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
-const panelClassName =
-  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
 const fieldClassName =
-  'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)] focus-visible:ring-[#4E86DF]/40';
+  'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)] focus-visible:ring-[var(--color-brand-primary-hover)]/40';
 const labelClassName = 'text-xs font-semibold text-[var(--color-neutral-08)]';
 const selectTriggerClassName =
   'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const outlineButtonClassName =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 const finderColumnClassName = [
-  panelClassName,
+  PANEL_CLASS,
   'min-h-[440px]',
   '[&_header]:!border-[var(--color-neutral-03)]',
   '[&_p]:!text-[var(--color-neutral-08)] [&_h3]:!text-[var(--color-neutral-11)]',
@@ -116,15 +117,6 @@ function normalizeSelection(
   return next;
 }
 
-function statCards(stats: HousingFinderStats) {
-  return [
-    { label: '房屋总数', value: stats.total, hint: `楼栋 ${stats.buildings}`, tone: 'text-[var(--color-brand-primary)]' },
-    { label: '自住', value: stats.selfOccupied, hint: '常住台账', tone: 'text-blue-300' },
-    { label: '出租', value: stats.rental, hint: '流动关注', tone: 'text-orange-300' },
-    { label: '空置/经营', value: stats.vacant + stats.commercial, hint: `${stats.vacant} 空置 / ${stats.commercial} 经营`, tone: 'text-purple-300' },
-  ];
-}
-
 type HouseEditForm = {
   communityName: string;
   building: string;
@@ -171,16 +163,10 @@ function normalizeTags(tagsText: string) {
 function FinderStatsStrip({ stats }: { stats: HousingFinderStats }) {
   return (
     <div className="grid gap-3 lg:grid-cols-[repeat(4,minmax(0,1fr))_minmax(220px,0.9fr)]">
-      {statCards(stats).map((item) => (
-        <div
-          key={item.label}
-          className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3"
-        >
-          <div className="text-xs text-[var(--color-neutral-08)]">{item.label}</div>
-          <div className={`mt-1 text-2xl font-semibold ${item.tone}`}>{item.value}</div>
-          <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{item.hint}</div>
-        </div>
-      ))}
+      <StatCard label="房屋总数" value={stats.total} hint={`楼栋 ${stats.buildings}`} />
+      <StatCard label="自住" value={stats.selfOccupied} hint="常住台账" tone="info" />
+      <StatCard label="出租" value={stats.rental} hint="流动关注" tone="warning" />
+      <StatCard label="空置/经营" value={stats.vacant + stats.commercial} hint={`${stats.vacant} 空置 / ${stats.commercial} 经营`} />
       <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -227,6 +213,7 @@ export function HousingManagement() {
   const [isSaving, setIsSaving] = useState(false);
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editForm, setEditForm] = useState<HouseEditForm | null>(null);
+  const [pendingDeleteHouse, setPendingDeleteHouse] = useState<House | null>(null);
   const columnsContainerRef = useRef<HTMLDivElement>(null);
   const prevSelectionRef = useRef<HousingFinderSelection>({});
 
@@ -470,8 +457,13 @@ export function HousingManagement() {
     }
   };
 
-  const handleDelete = async (house: House) => {
-    if (!confirm('确定要删除此房屋吗？仅允许删除没有住户和历史记录的空房屋。')) {
+  const handleDelete = (house: House) => {
+    setPendingDeleteHouse(house);
+  };
+
+  const confirmDeleteHouse = async () => {
+    const house = pendingDeleteHouse;
+    if (!house) {
       return;
     }
 
@@ -518,7 +510,7 @@ export function HousingManagement() {
         description="按社区、楼栋、单元、楼层逐级浏览房屋台账，快速定位可查看和编辑的对象。"
       />
 
-      <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-4 py-3">
+      <div className={`${PANEL_CLASS} px-4 py-3`}>
         <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-2 text-xs text-[var(--color-neutral-08)]">
@@ -550,15 +542,12 @@ export function HousingManagement() {
           </div>
 
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative min-w-[280px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--color-neutral-08)]" />
-              <Input
-                value={searchKeyword}
-                onChange={(event) => setSearchKeyword(event.target.value)}
-                placeholder="搜索地址、产权人、楼栋、单元、房号、标签"
-                className={`${fieldClassName} pl-9`}
-              />
-            </div>
+            <SearchInput
+              value={searchKeyword}
+              onChange={setSearchKeyword}
+              placeholder="搜索地址、产权人、楼栋、单元、房号、标签"
+              className="min-w-[280px]"
+            />
             <Button
               variant="outline"
               onClick={() => void loadData()}
@@ -638,7 +627,7 @@ export function HousingManagement() {
               onRetry={loadData}
               onItemClick={selectFloor}
               collapsed={floorColumnCollapsed}
-              onHeaderClick={floorColumnCollapsed ? () => applySelection({ community: selection.community, building: selection.building, unit: selection.unit }) : undefined}
+              onHeaderClick={floorColumnCollapsed ? () => applySelection({ community: selection.community, building: selection.building }) : undefined}
               emptyTitle="没有楼层"
               emptyDescription="当前单元下没有可浏览楼层，请切换单元或清空搜索条件。"
               className={finderColumnClassName}
@@ -669,7 +658,7 @@ export function HousingManagement() {
           setSelection((current) => ({ ...current, houseId: undefined }));
         }
       }}>
-        <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-2xl">
+        <DialogContent className={`max-h-[90vh] max-w-4xl overflow-y-auto shadow-2xl ${DIALOG_CLASS}`}>
           <DialogHeader className="sr-only">
             <DialogTitle>
               {selectedHouse
@@ -685,7 +674,7 @@ export function HousingManagement() {
             loading={isDetailLoading}
             error={detailError}
             onEdit={openEditDialog}
-            onDelete={(house) => void handleDelete(house)}
+            onDelete={handleDelete}
             onRefresh={refreshSelectedHouse}
             isDeleting={isSaving}
             className="border-0 min-h-0"
@@ -698,7 +687,7 @@ export function HousingManagement() {
           closeEditDialog();
         }
       }}>
-        <DialogContent className="max-h-[86vh] max-w-3xl overflow-y-auto border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-2xl">
+        <DialogContent className={`max-h-[86vh] max-w-3xl overflow-y-auto shadow-2xl ${DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle className="text-[var(--color-neutral-11)]">编辑房屋信息</DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">保存后同步刷新房屋台账、详情面板和本地降级数据。</DialogDescription>
@@ -810,6 +799,20 @@ export function HousingManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ConfirmDialog
+        open={Boolean(pendingDeleteHouse)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingDeleteHouse(null);
+          }
+        }}
+        title="删除房屋"
+        description="确定要删除此房屋吗？仅允许删除没有住户和历史记录的空房屋。"
+        confirmText="删除"
+        destructive
+        onConfirm={() => void confirmDeleteHouse()}
+      />
     </div>
   );
 }

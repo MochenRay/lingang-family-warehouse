@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserCog, Search, Plus, Download, RefreshCw, Edit, Trash2, Lock, Unlock } from 'lucide-react';
+import { UserCog, Plus, Download, RefreshCw, Edit, Trash2, Lock, Unlock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -7,17 +7,20 @@ import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog';
 import { Label } from '../ui/label';
+import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { SearchInput } from '../patterns/FilterBar';
+import { DataTableBody } from '../patterns/DataTableShell';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { getCommunities, getDistricts, getStreets } from '../../config/regions';
 import { PageHeader } from './PageHeader';
 
-const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const DARK_DIALOG_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
 const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
 const DARK_SELECT_TRIGGER_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
-const TABLE_HEADER_CELL_CLASS = 'px-4 py-3 text-left text-xs font-medium uppercase whitespace-nowrap text-[var(--color-neutral-08)]';
-const TABLE_CELL_CLASS = 'px-4 py-3 text-sm text-[var(--color-neutral-10)]';
+const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
 
 export function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
@@ -108,23 +111,23 @@ export function UserManagement() {
 
   // 角色分布
   const roleDistribution = [
-    { role: '系统管理员', count: 1, color: '#ef4444' },
-    { role: '区域管理员', count: 1, color: '#f59e0b' },
-    { role: '街道干部', count: 1, color: '#3b82f6' },
-    { role: '网格员', count: 1, color: '#10b981' },
+    { role: '系统管理员', count: 1, color: 'var(--color-status-error)' },
+    { role: '区域管理员', count: 1, color: 'var(--color-status-warning)' },
+    { role: '街道干部', count: 1, color: 'var(--color-brand-primary-hover)' },
+    { role: '网格员', count: 1, color: 'var(--color-status-success)' },
   ];
 
   const getStatusBadge = (status: string) => {
     return status === 'active' ? (
-      <Badge className="border border-[#19B172]/35 bg-[#19B172]/15 text-[#7DE2B7]">
-        <Unlock className="w-3 h-3 mr-1" />
+      <StatusBadge tone="success">
+        <Unlock className="w-3 h-3" />
         启用
-      </Badge>
+      </StatusBadge>
     ) : (
-      <Badge className="border border-[#D52132]/35 bg-[#D52132]/15 text-[#FFB4B4]">
-        <Lock className="w-3 h-3 mr-1" />
+      <StatusBadge tone="error">
+        <Lock className="w-3 h-3" />
         禁用
-      </Badge>
+      </StatusBadge>
     );
   };
 
@@ -162,7 +165,7 @@ export function UserManagement() {
                   新建用户
                 </Button>
               </DialogTrigger>
-              <DialogContent className={`max-w-2xl ${DARK_DIALOG_CLASS}`} aria-describedby="new-user-desc">
+              <DialogContent className={`max-w-2xl ${DIALOG_CLASS}`} aria-describedby="new-user-desc">
                 <DialogHeader>
                   <DialogTitle className="text-[var(--color-neutral-11)]">新建用户</DialogTitle>
                   <DialogDescription id="new-user-desc" className={MUTED_TEXT_CLASS}>填写用户信息并配置管辖范围</DialogDescription>
@@ -269,38 +272,15 @@ export function UserManagement() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT_CLASS}`}>
-              <UserCog className="w-4 h-4" />
-              用户总数
-            </CardDescription>
-            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{stats.total}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>启用账号</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">{stats.active}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>禁用账号</CardDescription>
-            <CardTitle className="text-3xl text-[#D52132]">{stats.disabled}</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>在线用户</CardDescription>
-            <CardTitle className="text-3xl text-[#4E86DF]">{stats.online}</CardTitle>
-          </CardHeader>
-        </Card>
+        <StatCard label="用户总数" value={stats.total} icon={UserCog} tone="brand" />
+        <StatCard label="启用账号" value={stats.active} tone="success" />
+        <StatCard label="禁用账号" value={stats.disabled} tone="error" />
+        <StatCard label="在线用户" value={stats.online} tone="brand" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 角色分布 */}
-        <Card className={DARK_CARD_CLASS}>
+        <Card className={PANEL_CLASS}>
           <CardHeader>
             <CardTitle className="text-base text-[var(--color-neutral-11)]">角色分布</CardTitle>
             <CardDescription className={MUTED_TEXT_CLASS}>用户角色统计</CardDescription>
@@ -335,7 +315,7 @@ export function UserManagement() {
         </Card>
 
         {/* 用户列表 */}
-        <Card className={`lg:col-span-3 ${DARK_CARD_CLASS} overflow-hidden`}>
+        <Card className={`lg:col-span-3 ${PANEL_CLASS} overflow-hidden`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)]">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
@@ -357,78 +337,73 @@ export function UserManagement() {
                     <SelectItem value="网格员">网格员</SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="relative">
-                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${MUTED_TEXT_CLASS}`} />
-                  <Input
-                    className={`w-[200px] pl-9 ${DARK_INPUT_CLASS}`}
-                    placeholder="搜索用户..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                  />
-                </div>
+                <SearchInput
+                  className="w-[200px]"
+                  placeholder="搜索用户..."
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                />
               </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[920px] border-collapse">
-                <thead className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-                  <tr>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[132px]`}>用户</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[116px]`}>角色</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[156px]`}>部门</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[170px]`}>管辖范围</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[172px]`}>关联账户</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} text-center min-w-[92px]`}>状态</th>
-                    <th className={`${TABLE_HEADER_CELL_CLASS} text-center min-w-[92px]`}>操作</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-neutral-03)]">
-                  {filteredUsers.map((user) => (
-                    <tr key={user.id} className="transition-colors hover:bg-[var(--color-neutral-03)]/70">
-                      <td className={TABLE_CELL_CLASS}>
-                        <div>
-                          <p className="font-medium text-[var(--color-neutral-11)]">{user.realName}</p>
-                          <p className={`text-sm ${MUTED_TEXT_CLASS}`}>{user.username}</p>
+            <Table className="min-w-[920px]">
+              <TableHeader>
+                <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[132px]`}>用户</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[116px]`}>角色</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[156px]`}>部门</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[170px]`}>管辖范围</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[172px]`}>关联账户</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>状态</TableHead>
+                  <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <DataTableBody columnCount={7} empty={filteredUsers.length === 0} emptyText="没有符合条件的用户">
+                {filteredUsers.map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-[var(--color-neutral-11)]">{user.realName}</p>
+                        <p className={`text-sm ${MUTED_TEXT_CLASS}`}>{user.username}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">{user.role}</Badge>
+                    </TableCell>
+                    <TableCell className="max-w-[180px] truncate" title={user.department}>{user.department}</TableCell>
+                    <TableCell className="max-w-[200px] truncate" title={user.scope}>
+                      {user.scope}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
+                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/15 text-[10px] font-bold text-[var(--color-brand-primary-hover)]">城</div>
+                           <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
                         </div>
-                      </td>
-                      <td className={TABLE_CELL_CLASS}>
-                        <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">{user.role}</Badge>
-                      </td>
-                      <td className={`${TABLE_CELL_CLASS} max-w-[180px] truncate`} title={user.department}>{user.department}</td>
-                      <td className={`${TABLE_CELL_CLASS} max-w-[200px] truncate`} title={user.scope}>
-                        {user.scope}
-                      </td>
-                      <td className={TABLE_CELL_CLASS}>
-                        <div className="flex flex-col gap-1">
-                          <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
-                             <div className="flex h-4 w-4 items-center justify-center rounded border border-[#4E86DF]/35 bg-[#4E86DF]/15 text-[10px] font-bold text-[#9EC3FF]">城</div>
-                             <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
-                          </div>
-                          <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
-                             <div className="flex h-4 w-4 items-center justify-center rounded border border-[#D6730D]/35 bg-[#D6730D]/15 text-[10px] font-bold text-[#F6C27A]">鲁</div>
-                             <span className="truncate max-w-[100px]">{user.shandongPassId || '-'}</span>
-                          </div>
+                        <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
+                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning)]/15 text-[10px] font-bold text-[var(--color-status-warning-text)]">鲁</div>
+                           <span className="truncate max-w-[100px]">{user.shandongPassId || '-'}</span>
                         </div>
-                      </td>
-                      <td className={`${TABLE_CELL_CLASS} text-center`}>
-                        {getStatusBadge(user.status)}
-                      </td>
-                      <td className={TABLE_CELL_CLASS}>
-                        <div className="flex items-center justify-center gap-2">
-                          <Button size="sm" variant="ghost" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="ghost" className="text-[#FF8A8A] hover:bg-[#D52132]/15 hover:text-[#FFB4B4]">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      {getStatusBadge(user.status)}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center justify-center gap-2">
+                        <Button size="sm" variant="ghost" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </DataTableBody>
+            </Table>
           </CardContent>
         </Card>
       </div>
