@@ -352,15 +352,8 @@
   color: var(--color-neutral-11);
 }
 
-/* 图表深色适配 */
-.dark .recharts-cartesian-grid-horizontal line,
-.dark .recharts-cartesian-grid-vertical line {
-  stroke: var(--color-neutral-03);
-}
-
-.dark .recharts-text {
-  fill: var(--color-neutral-08);
-}
+/* 图表深色适配：P1c 起网格/坐标轴/图例均由页面经 chartConfig adapter 显式传参，
+   不再依赖 .recharts-* CSS 覆盖（双轨已消除）。 */
 
 /* 脉冲加载态深色适配（animate-pulse，如 MobileVisitForm 骨架占位） */
 .dark .animate-pulse {

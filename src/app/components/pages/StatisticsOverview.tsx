@@ -18,6 +18,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { CHART_COLORS, CHART_GRID_PROPS, CHART_GRADIENT_BLUE, CHART_TICK } from '../../config/chartConfig';
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { SortableHeader } from '../statistics/SortableHeader';
 import { PageHeader } from './PageHeader';
@@ -50,8 +51,6 @@ const DEFAULT_DISTRICT_SORT: { key: DistrictSortKey; direction: SortDirection } 
   key: 'score',
   direction: 'desc',
 };
-
-const RISK_TAG_COLORS = ['#2AA3CF', '#D6730D', '#8B5CF6', '#D52132', '#EC4899', '#4F46E5'];
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat('zh-CN').format(value);
@@ -200,7 +199,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   }
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       {showJourneyOverlay && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
           <div className="relative w-full max-w-4xl overflow-hidden rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-2xl">
@@ -359,15 +358,15 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 <AreaChart data={dashboard?.trendData ?? []} margin={{ top: 10, right: 22, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="phase10DarkPopulation" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2761CB" stopOpacity={0.45} />
-                      <stop offset="95%" stopColor="#2761CB" stopOpacity={0.06} />
+                      <stop offset="5%" stopColor={CHART_GRADIENT_BLUE.start} />
+                      <stop offset="95%" stopColor={CHART_GRADIENT_BLUE.end} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#6b7599' }} />
-                  <YAxis axisLine={false} tickLine={false} domain={['dataMin - 5', 'auto']} tick={{ fill: '#6b7599' }} />
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#3d4663" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} domain={['dataMin - 5', 'auto']} tick={CHART_TICK} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Area type="monotone" dataKey="value" name="人口数" stroke="#2761CB" strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" />
+                  <Area type="monotone" dataKey="value" name="人口数" stroke={CHART_COLORS[0]} strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
@@ -388,7 +387,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
             items={topRiskTags.map((tag, index) => ({
               label: tag.name,
               value: tag.count,
-              color: RISK_TAG_COLORS[index % RISK_TAG_COLORS.length],
+              color: CHART_COLORS[index % CHART_COLORS.length],
             }))}
           />
         </section>

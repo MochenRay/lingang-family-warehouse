@@ -3,6 +3,22 @@
 
 @import 'tw-animate-css';
 
+/* 页面进入动画（P1c）：统一替代各处手写的 animate-in fade-in duration-* */
+@utility page-enter {
+  animation: page-enter-fade 0.3s ease-out;
+}
+
+@keyframes page-enter-fade {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* iPhone 全面屏底部安全区：叠加式，保留原 padding 再叠加 inset */
 @utility safe-area-bottom {
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));

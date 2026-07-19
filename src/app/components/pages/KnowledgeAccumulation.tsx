@@ -188,7 +188,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
   }));
 
   return (
-    <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="flex h-[calc(100vh-100px)] min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] page-enter">
       <div className="shrink-0">
         <PageHeader
           eyebrow="KNOWLEDGE LEDGER"

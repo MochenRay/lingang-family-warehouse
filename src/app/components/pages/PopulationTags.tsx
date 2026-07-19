@@ -15,6 +15,7 @@ import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { CHART_COLORS, CHART_GRID_PROPS, CHART_RISK_COLORS, CHART_TICK } from '../../config/chartConfig';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 import { PageHeader } from './PageHeader';
 import {
@@ -25,11 +26,13 @@ import {
   DialogTitle,
 } from '../ui/dialog';
 
-const COLORS = ['#4E86DF', '#8B5CF6', '#2AA3CF', '#D6730D', '#D52132', '#19B172'];
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
-const GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
+const RISK_LEVEL_COLORS: Record<string, string> = {
+  High: CHART_RISK_COLORS.high,
+  Medium: CHART_RISK_COLORS.medium,
+  Low: CHART_RISK_COLORS.low,
+};
 
 type TaggedPersonRecord = TagSnapshot['people'][number];
 
@@ -157,7 +160,7 @@ export function PopulationTags() {
         .map((tag, index) => ({
           name: tag.name,
           value: tag.coverageCount,
-          fill: COLORS[index % COLORS.length],
+          fill: CHART_COLORS[index % CHART_COLORS.length],
         })),
     [snapshot],
   );
@@ -175,7 +178,7 @@ export function PopulationTags() {
     return Array.from(typeMap.entries()).map(([name, value], index) => ({
       name,
       value,
-      fill: COLORS[index % COLORS.length],
+      fill: CHART_COLORS[index % CHART_COLORS.length],
     }));
   }, [snapshot]);
 
@@ -191,10 +194,10 @@ export function PopulationTags() {
         riskMap.set(record.person.risk, (riskMap.get(record.person.risk) ?? 0) + 1);
       });
 
-    return ['High', 'Medium', 'Low'].map((risk, index) => ({
+    return ['High', 'Medium', 'Low'].map((risk) => ({
       name: risk,
       value: riskMap.get(risk) ?? 0,
-      fill: COLORS[index % COLORS.length],
+      fill: RISK_LEVEL_COLORS[risk],
     }));
   }, [snapshot]);
 
@@ -291,9 +294,9 @@ export function PopulationTags() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topTags} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="命中人数" radius={[8, 8, 0, 0]}>
                     {topTags.map((entry) => (
@@ -342,9 +345,9 @@ export function PopulationTags() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={riskDistribution} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke={GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {riskDistribution.map((entry) => (

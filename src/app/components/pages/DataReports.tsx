@@ -181,7 +181,7 @@ export function DataReports() {
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-500">
+    <div className="space-y-5 page-enter">
       <PageHeader
         eyebrow="REPORT EXPORTS"
         title="报表中心"

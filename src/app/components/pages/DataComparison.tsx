@@ -3,16 +3,18 @@ import { ArrowLeftRight, Download, Filter, Loader2, TrendingDown, TrendingUp } f
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, Legend } from 'recharts';
 import { ChartCard } from '../statistics/ChartCard';
 import { Button } from '../ui/button';
-import { Table, TableBody, TableCell, TableHeader, TableRow } from '../ui/table';
+import { Table, TableCell, TableHeader, TableRow } from '../ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/card';
 import { Label } from '../ui/label';
-import { Badge } from '../ui/badge';
 import { analysisRepository, type AnalysisGridMetric, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { CHART_AXIS, CHART_GRID_PROPS, CHART_LEGEND, CHART_PRIMARY, CHART_TICK } from '../../config/chartConfig';
 import { SortableHeader } from '../statistics/SortableHeader';
+import { DataTableBody } from '../patterns/DataTableShell';
+import { StatusBadge } from '../patterns/StatusBadge';
 import { PageHeader } from './PageHeader';
 
 type CompareMode = 'average' | 'target';
@@ -269,7 +271,7 @@ export function DataComparison() {
   };
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="COMPARISON ANALYTICS"
         title="数据对比分析"
@@ -363,13 +365,13 @@ export function DataComparison() {
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#3d4663" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
+                <CartesianGrid {...CHART_GRID_PROPS} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: '#AEC0DE' }} />
-                <Bar dataKey="当前值" fill="#4E86DF" radius={[4, 4, 0, 0]} barSize={30} />
-                <Bar dataKey="参考值" fill="#8194B5" radius={[4, 4, 0, 0]} barSize={30} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Bar dataKey="当前值" fill={CHART_PRIMARY} radius={[4, 4, 0, 0]} barSize={30} />
+                <Bar dataKey="参考值" fill={CHART_AXIS} radius={[4, 4, 0, 0]} barSize={30} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -394,43 +396,29 @@ export function DataComparison() {
                 <SortableHeader sortKey="heatScore" currentKey={sortState.key} direction={sortState.direction} label="趋势判定" align="center" onSort={handleSort} />
               </TableRow>
             </TableHeader>
-            <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-[var(--color-neutral-08)]">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2" />
-                    正在刷新对比快照...
-                  </TableCell>
-                </TableRow>
-              ) : rows.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center text-[var(--color-neutral-08)]">
-                    当前筛选范围内没有可对比的{getLevelLabel(compareLevel)}。
-                  </TableCell>
-                </TableRow>
-              ) : (
-                rows.map((row, index) => (
+            <DataTableBody loading={loading} loadingText="正在刷新对比快照…" empty={rows.length === 0} emptyText={`当前筛选范围内没有可对比的${getLevelLabel(compareLevel)}。`} columnCount={7}>
+              {rows.map((row, index) => (
                   <TableRow key={row.id} className="group border-b border-[rgba(61,70,99,0.45)]">
                     <TableCell className="font-semibold text-[var(--color-neutral-08)]">#{index + 1}</TableCell>
-                    <TableCell className="max-w-[320px] truncate font-semibold text-white">{row.name}</TableCell>
-                    <TableCell className="text-right text-base font-bold tabular-nums text-[#4E86DF]">{formatNumber(row.current)}</TableCell>
+                    <TableCell className="max-w-[320px] truncate font-semibold text-[var(--color-neutral-11)]">{row.name}</TableCell>
+                    <TableCell className="text-right text-base font-bold tabular-nums text-[var(--color-brand-primary-hover)]">{formatNumber(row.current)}</TableCell>
                     <TableCell className="text-right tabular-nums text-[var(--color-neutral-08)]">{formatNumber(row.benchmark)}</TableCell>
-                    <TableCell className={`text-right font-mono tabular-nums ${row.diff > 0 ? 'text-[#19B172]' : row.diff < 0 ? 'text-[#D52132]' : 'text-[var(--color-neutral-08)]'}`}>
+                    <TableCell className={`text-right font-mono tabular-nums ${row.diff > 0 ? 'text-[var(--color-status-success-text)]' : row.diff < 0 ? 'text-[var(--color-status-error-text)]' : 'text-[var(--color-neutral-08)]'}`}>
                       {row.diff > 0 ? '+' : ''}{Number(row.diff.toFixed(1))}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Badge variant="outline" className={`${row.diffRate > 0 ? 'border-[#19B172]/40 bg-[#19B172]/10 text-[#6EE7B7]' : row.diffRate < 0 ? 'border-[#D52132]/40 bg-[#D52132]/10 text-[#FCA5A5]' : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)]'}`}>
+                      <StatusBadge tone={row.diffRate > 0 ? 'success' : row.diffRate < 0 ? 'error' : 'neutral'}>
                         {Math.abs(row.diffRate).toFixed(1)}%
-                      </Badge>
+                      </StatusBadge>
                     </TableCell>
                     <TableCell className="text-center">
                       {row.diffRate > 0 ? (
-                        <div className="flex items-center justify-center text-[#19B172] gap-1 text-xs">
+                        <div className="flex items-center justify-center text-[var(--color-status-success-text)] gap-1 text-xs">
                           <TrendingUp className="w-4 h-4" />
                           偏高 · 热度 {row.heatScore}
                         </div>
                       ) : row.diffRate < 0 ? (
-                        <div className="flex items-center justify-center text-[#D52132] gap-1 text-xs">
+                        <div className="flex items-center justify-center text-[var(--color-status-error-text)] gap-1 text-xs">
                           <TrendingDown className="w-4 h-4" />
                           偏低 · 热度 {row.heatScore}
                         </div>
@@ -439,9 +427,8 @@ export function DataComparison() {
                       )}
                     </TableCell>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
+                ))}
+            </DataTableBody>
           </Table>
         </CardContent>
       </Card>

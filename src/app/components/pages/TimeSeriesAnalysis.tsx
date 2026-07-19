@@ -27,12 +27,21 @@ import {
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { PageHeader } from './PageHeader';
+import {
+  CHART_AXIS,
+  CHART_COLORS,
+  CHART_GRID,
+  CHART_GRID_PROPS,
+  CHART_LEGEND,
+  CHART_PRIMARY,
+  CHART_SUCCESS,
+  CHART_TICK,
+  CHART_WARNING,
+} from '../../config/chartConfig';
 
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
-const GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
 const TAB_TRIGGER_CLASS = 'data-[state=active]:bg-[#2761CB] data-[state=active]:text-white text-[var(--color-neutral-08)]';
 
 export function TimeSeriesAnalysis() {
@@ -223,12 +232,12 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <LineChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Line type="monotone" dataKey="value" name="人口总数" stroke="#4E86DF" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Line type="monotone" dataKey="value" name="人口总数" stroke={CHART_PRIMARY} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -248,12 +257,12 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <LineChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Line type="monotone" dataKey="trend" name="趋势分量" stroke="#D6730D" strokeWidth={2} dot={false} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Line type="monotone" dataKey="trend" name="趋势分量" stroke={CHART_WARNING} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -271,12 +280,12 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <BarChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Bar dataKey="seasonality" name="周期分量" fill="#19B172" />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Bar dataKey="seasonality" name="周期分量" fill={CHART_SUCCESS} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -294,12 +303,12 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <BarChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Bar dataKey="residual" name="残差分量" fill="#D6730D" />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Bar dataKey="residual" name="残差分量" fill={CHART_WARNING} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -387,14 +396,14 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                    <PolarGrid stroke={GRID_STROKE} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#AFC0E8', fontSize: 12 }} />
-                    <PolarRadiusAxis tick={{ fill: '#6b7599', fontSize: 11 }} axisLine={false} />
+                    <PolarGrid stroke={CHART_GRID} />
+                    <PolarAngleAxis dataKey="subject" tick={CHART_TICK} />
+                    <PolarRadiusAxis tick={{ fill: CHART_AXIS, fontSize: 11 }} axisLine={false} />
                     <Radar
                       name="周期分析"
                       dataKey="A"
-                      stroke="#8B5CF6"
-                      fill="#8B5CF6"
+                      stroke={CHART_COLORS[2]}
+                      fill={CHART_COLORS[2]}
                       fillOpacity={0.42}
                     />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
@@ -445,13 +454,13 @@ export function TimeSeriesAnalysis() {
           {mounted && (
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
               <ComposedChart data={forecastData} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                <YAxis domain={['dataMin - 50', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                <CartesianGrid {...CHART_GRID_PROPS} />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                <YAxis domain={['dataMin - 50', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                <Area type="monotone" dataKey="range" name="95%置信区间" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.2} />
-                <Line type="monotone" dataKey="value" name="预测值" stroke="#D6730D" strokeWidth={2} dot={{ r: 4 }} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Area type="monotone" dataKey="range" name="95%置信区间" stroke={CHART_COLORS[2]} fill={CHART_COLORS[2]} fillOpacity={0.2} />
+                <Line type="monotone" dataKey="value" name="预测值" stroke={CHART_WARNING} strokeWidth={2} dot={{ r: 4 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}

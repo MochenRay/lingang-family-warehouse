@@ -1,61 +1,17 @@
 /**
  * 全局动画和过渡效果
- * 来源: /reference/QUICK_VALUES.md
- * 统一的动画规范确保一致的用户体验
  *
- * Phase 14 (T4) 裁剪：删除 tsx 零使用的具名类/keyframes
- * （card-hover、fade-out、slide-in-*、scale-in/out、spin、pulse、
- * bounce、page-load、focus-ring、skeleton/shimmer）。
- * 保留 .fade-in：与 tw-animate-css 同名，但本文件后于 tailwind.css
- * 引入且非 layered，`animate-in fade-in` 场景下本规则实际生效。
+ * P1c 收敛：移除全局 transition:all 与按钮 hover 位移（"hover 飘"观感来源），
+ * 交互动效由各组件 class 受控声明；页面进入动画统一为 tailwind.css 的
+ * @utility page-enter（原 .fade-in 与 tw-animate-css 同名双轨已消除）。
  */
 
 /* ========================================== */
-/* 基础过渡效果 */
-/* ========================================== */
-
-/* 为所有交互元素添加默认过渡 */
-button,
-a,
-input,
-textarea,
-select {
-  transition: all 0.2s ease-in-out;
-}
-
-/* ========================================== */
-/* Hover 微动效 */
-/* ========================================== */
-
-/* 按钮 Hover 效果 */
-button:not(:disabled):hover {
-  transform: translateY(-1px);
-}
-
-button:not(:disabled):active {
-  transform: translateY(0);
-}
-
 /* 链接 Hover 效果 */
+/* ========================================== */
+
 a:hover {
   opacity: 0.85;
-}
-
-/* ========================================== */
-/* 淡入动画 */
-/* ========================================== */
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.fade-in {
-  animation: fadeIn 0.3s ease-in-out;
 }
 
 /* ========================================== */
@@ -94,14 +50,6 @@ a:hover {
 /* ========================================== */
 /* 响应式动画控制 */
 /* ========================================== */
-
-/* 在移动端减少或禁用动画以提高性能 */
-@media (max-width: 768px) {
-  /* 简化按钮动画 */
-  button:not(:disabled):hover {
-    transform: none;
-  }
-}
 
 /* 尊重用户的动画偏好设置 */
 @media (prefers-reduced-motion: reduce) {

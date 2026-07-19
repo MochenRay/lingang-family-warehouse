@@ -140,7 +140,7 @@ export function UserManagement() {
   });
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="USER MANAGEMENT"
         title="用户管理"

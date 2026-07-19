@@ -165,7 +165,7 @@ export function RoleManagement() {
   };
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="ROLE MANAGEMENT"
         title="角色管理"

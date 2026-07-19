@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ClipboardList, Home, Users } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { CHART_AXIS, CHART_COLORS, CHART_INFO, CHART_SUCCESS, CHART_WARNING } from '../../config/chartConfig';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -160,10 +161,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   const riskCount = useMemo(() => people.filter((person) => person.risk === 'High').length, [people]);
   const populationData = useMemo(() => {
     const colors: Record<string, string> = {
-      户籍: '#3b82f6',
-      流动: '#f97316',
-      留守: '#8b5cf6',
-      境外: '#06b6d4',
+      户籍: CHART_COLORS[0],
+      流动: CHART_WARNING,
+      留守: CHART_COLORS[2],
+      境外: CHART_INFO,
     };
     const counts = new Map<string, number>();
     people.forEach((person) => {
@@ -172,7 +173,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
     return Array.from(counts.entries()).map(([name, value]) => ({
       name: `${name}人口`,
       value,
-      color: colors[name] ?? '#94a3b8',
+      color: colors[name] ?? CHART_AXIS,
     }));
   }, [people]);
   const housingData = useMemo(() => {
@@ -332,7 +333,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-03)" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-neutral-10)' }} dy={8} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-neutral-08)' }} allowDecimals={false} />
-                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill={CHART_SUCCESS} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -368,7 +369,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-03)" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-neutral-10)' }} dy={8} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-neutral-08)' }} allowDecimals={false} />
-                    <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill={CHART_COLORS[1]} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>

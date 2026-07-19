@@ -18,6 +18,7 @@ import {
   X
 } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { noticeRepository } from '../../services/repositories/noticeRepository';
 
 interface NoticeFormData {
@@ -50,12 +51,12 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
   const [gridList, setGridList] = useState<string[]>([]);
 
   // 公告类型选项
-  const noticeTypes = [
-    { value: 'urgent', label: '紧急通知', color: 'bg-red-100 text-red-600' },
-    { value: 'system', label: '系统消息', color: 'bg-blue-100 text-blue-600' },
-    { value: 'guide', label: '操作指南', color: 'bg-green-100 text-green-600' },
-    { value: 'task', label: '工作任务', color: 'bg-orange-100 text-orange-600' },
-    { value: 'info', label: '普通通知', color: 'bg-gray-100 text-gray-600' },
+  const noticeTypes: Array<{ value: string; label: string; tone: StatusTone }> = [
+    { value: 'urgent', label: '紧急通知', tone: 'error' },
+    { value: 'system', label: '系统消息', tone: 'info' },
+    { value: 'guide', label: '操作指南', tone: 'success' },
+    { value: 'task', label: '工作任务', tone: 'warning' },
+    { value: 'info', label: '普通通知', tone: 'neutral' },
   ];
 
   // 通知范围选项
@@ -149,8 +150,8 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
     alert('草稿已保存');
   };
 
-  const getTypeColor = (type: string) => {
-    return noticeTypes.find(t => t.value === type)?.color || 'bg-gray-100 text-gray-600';
+  const getTypeTone = (type: string): StatusTone => {
+    return noticeTypes.find(t => t.value === type)?.tone ?? 'neutral';
   };
 
   return (
@@ -168,13 +169,13 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
             {/* 基本信息 */}
             <div className="space-y-4">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Bell className="w-4 h-4 text-blue-600" />
+                <Bell className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                 基本信息
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="title">
-                  公告标题 <span className="text-red-500">*</span>
+                  公告标题 <span className="text-[var(--color-status-error)]">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -186,7 +187,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
 
               <div className="space-y-2">
                 <Label htmlFor="type">
-                  公告类型 <span className="text-red-500">*</span>
+                  公告类型 <span className="text-[var(--color-status-error)]">*</span>
                 </Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
                   <SelectTrigger id="type">
@@ -196,9 +197,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                     {noticeTypes.map(type => (
                       <SelectItem key={type.value} value={type.value}>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${type.color}`}>
-                            {type.label}
-                          </span>
+                          <StatusBadge tone={type.tone}>{type.label}</StatusBadge>
                         </div>
                       </SelectItem>
                     ))}
@@ -208,7 +207,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
 
               <div className="space-y-2">
                 <Label htmlFor="content">
-                  公告内容 <span className="text-red-500">*</span>
+                  公告内容 <span className="text-[var(--color-status-error)]">*</span>
                 </Label>
                 <Textarea
                   id="content"
@@ -218,19 +217,19 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   className="resize-none"
                 />
-                <p className="text-xs text-gray-500">{formData.content.length} / 2000 字符</p>
+                <p className="text-xs text-[var(--color-neutral-08)]">{formData.content.length} / 2000 字符</p>
               </div>
             </div>
 
             {/* 通知范围 */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Users className="w-4 h-4 text-purple-600" />
+                <Users className="w-4 h-4 text-[var(--color-neutral-08)]" />
                 通知范围
               </div>
 
               <div className="space-y-3">
-                <Label>接收对象 <span className="text-red-500">*</span></Label>
+                <Label>接收对象 <span className="text-[var(--color-status-error)]">*</span></Label>
                 <div className="space-y-2">
                   {scopeOptions.map(option => (
                     <div key={option.value} className="flex items-center space-x-2">
@@ -254,7 +253,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
               {formData.scope.includes('grid') && (
                 <div className="space-y-3 pt-3 border-t">
                   <Label>选择网格</Label>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-[var(--color-neutral-02)] rounded-[4px]">
                     {gridList.map(grid => (
                       <div key={grid} className="flex items-center space-x-2">
                         <Checkbox
@@ -271,7 +270,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500">已选择 {formData.grids.length} 个网格</p>
+                  <p className="text-xs text-[var(--color-neutral-08)]">已选择 {formData.grids.length} 个网格</p>
                 </div>
               )}
             </div>
@@ -279,7 +278,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
             {/* 发布设置 */}
             <div className="space-y-4 pt-4 border-t">
               <div className="flex items-center gap-2 text-sm font-semibold">
-                <Calendar className="w-4 h-4 text-green-600" />
+                <Calendar className="w-4 h-4 text-[var(--color-status-success-text)]" />
                 发布设置
               </div>
 
@@ -315,7 +314,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-sm font-semibold">
-                    <Eye className="w-4 h-4 text-blue-600" />
+                    <Eye className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                     移动端预览
                   </div>
                   <Button
@@ -326,22 +325,22 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
-                <div className="bg-gray-100 rounded-lg p-3 space-y-2">
+                <div className="bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)] rounded-[4px] p-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getTypeColor(formData.type)}`}>
+                    <StatusBadge tone={getTypeTone(formData.type)}>
                       {noticeTypes.find(t => t.value === formData.type)?.label}
-                    </span>
-                    <span className="text-xs text-gray-400">刚刚</span>
+                    </StatusBadge>
+                    <span className="text-xs text-[var(--color-neutral-08)]">刚刚</span>
                   </div>
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">
                     {formData.title || '公告标题'}
                   </h3>
-                  <p className="text-xs text-gray-500 line-clamp-3 whitespace-pre-line">
+                  <p className="text-xs text-[var(--color-neutral-08)] line-clamp-3 whitespace-pre-line">
                     {formData.content || '公告内容将在此处显示...'}
                   </p>
-                  <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">烟台市社会治理中心</span>
-                    <span className="text-xs text-blue-600">查看详情</span>
+                  <div className="pt-2 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--color-neutral-08)]">烟台市社会治理中心</span>
+                    <span className="text-xs text-[var(--color-brand-primary-hover)]">查看详情</span>
                   </div>
                 </div>
               </div>
@@ -370,7 +369,6 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
             <Button 
               onClick={handlePublish}
               disabled={!formData.title || !formData.content || formData.scope.length === 0}
-              className="bg-blue-600 hover:bg-blue-700"
             >
               <Send className="w-4 h-4 mr-2" />
               {formData.publishNow ? '立即发布' : '定时发布'}

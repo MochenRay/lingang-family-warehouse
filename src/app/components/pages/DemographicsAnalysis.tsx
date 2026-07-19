@@ -15,14 +15,12 @@ import { statsRepository, type DashboardStatsResponse } from '../../services/rep
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 import type { Person } from '../../types/core';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { CHART_COLORS, CHART_GRID, CHART_GRID_PROPS, CHART_TICK } from '../../config/chartConfig';
 import { PageHeader } from './PageHeader';
 
-const COLORS = ['#2563eb', '#7c3aed', '#0f766e', '#f97316', '#dc2626', '#16a34a'];
 const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
 const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
 const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const CHART_GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fontSize: 12, fill: '#6b7599' };
 const AGE_BUCKETS = [
   { name: '60岁以上', min: 60, max: 200 },
   { name: '36-59岁', min: 36, max: 59 },
@@ -49,7 +47,7 @@ function aggregateCounts(items: Array<string | undefined>, limit = 6) {
     .map(([name, value], index) => ({
       name,
       value,
-      fill: COLORS[index % COLORS.length],
+      fill: CHART_COLORS[index % CHART_COLORS.length],
     }));
 }
 
@@ -62,7 +60,7 @@ function buildTypeDistribution(people: Person[]) {
   return PERSON_TYPE_ORDER.map((name, index) => ({
     name,
     value: counts.get(name) ?? 0,
-    fill: COLORS[index % COLORS.length],
+    fill: CHART_COLORS[index % CHART_COLORS.length],
   }));
 }
 
@@ -83,7 +81,7 @@ function buildEducationDistribution(people: Person[]) {
   return [...ordered, ...rest].map(([name, value], index) => ({
     name,
     value,
-    fill: COLORS[index % COLORS.length],
+    fill: CHART_COLORS[index % CHART_COLORS.length],
   }));
 }
 
@@ -223,7 +221,7 @@ export function DemographicsAnalysis() {
         .map((tag, index) => ({
           name: tag.name,
           value: tag.coverageCount,
-          fill: COLORS[index % COLORS.length],
+          fill: CHART_COLORS[index % CHART_COLORS.length],
         })),
     [tagSnapshot],
   );
@@ -245,7 +243,7 @@ export function DemographicsAnalysis() {
   }, [tagSnapshot]);
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="DEMOGRAPHICS ANALYTICS"
         title="人口特征分析"
@@ -321,9 +319,9 @@ export function DemographicsAnalysis() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={typeData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {typeData.map((item) => (
@@ -346,9 +344,9 @@ export function DemographicsAnalysis() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={educationData} layout="vertical" margin={{ top: 4, right: 16, left: 18, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis type="number" axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
-                  <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={AXIS_TICK} interval={0} />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID} />
+                  <XAxis type="number" axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
+                  <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[0, 6, 6, 0]} barSize={14}>
                     {educationData.map((item) => (
@@ -371,9 +369,9 @@ export function DemographicsAnalysis() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={nationData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {nationData.map((item) => (
@@ -398,9 +396,9 @@ export function DemographicsAnalysis() {
             ) : (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={topTags}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
                     {topTags.map((item) => (

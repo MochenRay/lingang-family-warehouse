@@ -11,6 +11,17 @@ import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { PageHeader } from './PageHeader';
+import {
+  CHART_COLORS,
+  CHART_ERROR,
+  CHART_GRID_PROPS,
+  CHART_LABEL,
+  CHART_LEGEND,
+  CHART_PRIMARY,
+  CHART_SUCCESS,
+  CHART_TICK,
+  CHART_WARNING,
+} from '../../config/chartConfig';
 
 const SEVERITY_COLORS: Record<AnalysisSeverity, string> = {
   high: '#D52132',
@@ -21,9 +32,6 @@ const SEVERITY_COLORS: Record<AnalysisSeverity, string> = {
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
-const GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
-const CHART_COLORS = ['#D52132', '#D6730D', '#4E86DF', '#19B172', '#8B5CF6'];
 
 function getSeverityLabel(severity: AnalysisSeverity): string {
   switch (severity) {
@@ -116,7 +124,7 @@ export function AnomalyAnalysis() {
 
   if (loading) {
     return (
-      <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+      <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
         <PageHeader
           eyebrow="ATTRIBUTION LEDGER"
           title="异常结果分析"
@@ -141,7 +149,7 @@ export function AnomalyAnalysis() {
   }
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="ATTRIBUTION LEDGER"
         title="异常结果分析"
@@ -222,7 +230,7 @@ export function AnomalyAnalysis() {
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={typeDistribution} dataKey="value" nameKey="name" outerRadius={88} label>
+                <Pie data={typeDistribution} dataKey="value" nameKey="name" outerRadius={88} label={{ fill: CHART_LABEL }}>
                   {typeDistribution.map((item, index) => (
                     <Cell
                       key={item.name}
@@ -244,14 +252,14 @@ export function AnomalyAnalysis() {
           <div className="h-[250px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={gridHeatData} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                <CartesianGrid {...CHART_GRID_PROPS} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                <Bar dataKey="热度" fill="#D6730D" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="超期" fill="#D52132" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="纠纷" fill="#4E86DF" radius={[4, 4, 0, 0]} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Bar dataKey="热度" fill={CHART_WARNING} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="超期" fill={CHART_ERROR} radius={[4, 4, 0, 0]} />
+                <Bar dataKey="纠纷" fill={CHART_PRIMARY} radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -262,14 +270,14 @@ export function AnomalyAnalysis() {
         <div className="h-[260px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={trendData} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-              <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+              <CartesianGrid {...CHART_GRID_PROPS} />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={CHART_TICK} />
+              <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
               <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-              <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-              <Line type="monotone" dataKey="走访" stroke="#19B172" strokeWidth={2} />
-              <Line type="monotone" dataKey="纠纷" stroke="#D52132" strokeWidth={2} />
-              <Line type="monotone" dataKey="迁出" stroke="#D6730D" strokeWidth={2} />
+              <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+              <Line type="monotone" dataKey="走访" stroke={CHART_SUCCESS} strokeWidth={2} />
+              <Line type="monotone" dataKey="纠纷" stroke={CHART_ERROR} strokeWidth={2} />
+              <Line type="monotone" dataKey="迁出" stroke={CHART_WARNING} strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>

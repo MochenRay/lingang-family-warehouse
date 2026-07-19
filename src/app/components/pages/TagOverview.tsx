@@ -135,7 +135,7 @@ export function TagOverview() {
   const smartTags = snapshot?.tags.filter((tag) => tag.type === '智能标签') ?? [];
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="TAG LEDGER"
         title="标签管理"

@@ -6,11 +6,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 import { statsRepository, type DashboardStatsResponse, type StatsRegionSummary } from '../../services/repositories/statsRepository';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import {
+  CHART_AXIS,
+  CHART_COLORS,
+  CHART_ERROR,
+  CHART_GRID,
+  CHART_GRID_PROPS,
+  CHART_LABEL,
+  CHART_SUCCESS,
+  CHART_TICK,
+  CHART_WARNING,
+} from '../../config/chartConfig';
 import { PageHeader } from './PageHeader';
 
 const PANEL_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const CHART_GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fontSize: 12, fill: '#6b7599' };
 
 interface DistrictHousingItem {
   name: string;
@@ -122,18 +131,18 @@ export function HousingStatistics() {
       return [];
     }
     return [
-      { name: '自住', value: dashboard.housingStats.selfOccupied, color: '#3b82f6' },
-      { name: '出租', value: dashboard.housingStats.rental, color: '#f59e0b' },
-      { name: '空置', value: dashboard.housingStats.vacant, color: '#94a3b8' },
-      { name: '经营', value: dashboard.housingStats.commercial, color: '#10b981' },
+      { name: '自住', value: dashboard.housingStats.selfOccupied, color: CHART_COLORS[0] },
+      { name: '出租', value: dashboard.housingStats.rental, color: CHART_WARNING },
+      { name: '空置', value: dashboard.housingStats.vacant, color: CHART_AXIS },
+      { name: '经营', value: dashboard.housingStats.commercial, color: CHART_SUCCESS },
     ];
   }, [dashboard]);
 
   const rentalWarnings = useMemo(
     () => [
-      { name: '出租房屋', value: dashboard?.housingStats.rental ?? 0, fill: '#f97316' },
-      { name: '预警线索', value: districtHousingRows.reduce((sum, row) => sum + row.warningCount, 0), fill: '#ef4444' },
-      { name: '空置房屋', value: dashboard?.housingStats.vacant ?? 0, fill: '#8b5cf6' },
+      { name: '出租房屋', value: dashboard?.housingStats.rental ?? 0, fill: CHART_WARNING },
+      { name: '预警线索', value: districtHousingRows.reduce((sum, row) => sum + row.warningCount, 0), fill: CHART_ERROR },
+      { name: '空置房屋', value: dashboard?.housingStats.vacant ?? 0, fill: CHART_COLORS[2] },
     ],
     [dashboard, districtHousingRows],
   );
@@ -158,7 +167,7 @@ export function HousingStatistics() {
   }));
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="HOUSING ANALYTICS"
         title="房屋网格画像"
@@ -203,13 +212,13 @@ export function HousingStatistics() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={districtChartData} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={CHART_GRID_STROKE} />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                     <RechartsTooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Bar dataKey="房屋" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="出租" fill="#f59e0b" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="预警" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="房屋" fill={CHART_COLORS[0]} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="出租" fill={CHART_WARNING} radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="预警" fill={CHART_ERROR} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -312,7 +321,7 @@ export function HousingStatistics() {
                       outerRadius={100}
                       paddingAngle={5}
                       dataKey="value"
-                      label={{ fill: '#DCE6FF', fontSize: 12 }}
+                      label={{ fill: CHART_LABEL, fontSize: 12 }}
                     >
                       {houseUsageData.map((entry) => (
                         <Cell key={entry.name} fill={entry.color} />
@@ -340,9 +349,9 @@ export function HousingStatistics() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={rentalWarnings} layout="vertical" margin={{ left: 20 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke={CHART_GRID_STROKE} />
-                    <XAxis type="number" axisLine={false} tickLine={false} tick={AXIS_TICK} allowDecimals={false} />
-                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ ...AXIS_TICK, fontWeight: 'bold' }} />
+                    <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke={CHART_GRID} />
+                    <XAxis type="number" axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
+                    <YAxis dataKey="name" type="category" width={80} axisLine={false} tickLine={false} tick={{ ...CHART_TICK, fontWeight: 'bold' }} />
                     <RechartsTooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                     <Bar dataKey="value" name="数量" radius={[0, 4, 4, 0]} barSize={40}>
                       {rentalWarnings.map((entry) => (

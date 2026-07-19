@@ -279,7 +279,7 @@ export function BatchImport() {
     : null;
 
   return (
-    <div className="space-y-4 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-4 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="BATCH IMPORT"
         title="批量导入"

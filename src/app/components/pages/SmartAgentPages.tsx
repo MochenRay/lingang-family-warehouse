@@ -110,7 +110,7 @@ function BaseSmartChat({
   };
 
   return (
-    <div className="flex h-full min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="flex h-full min-w-0 flex-col gap-5 text-[var(--color-neutral-10)] page-enter">
       <div className="shrink-0">
         <PageHeader eyebrow="AI WORKBENCH" title={title} description={description} />
       </div>

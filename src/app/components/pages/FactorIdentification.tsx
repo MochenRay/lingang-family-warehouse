@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { PageHeader } from './PageHeader';
+import { CHART_COLORS, CHART_GRID, CHART_LABEL, CHART_LEGEND, CHART_PRIMARY, CHART_TICK } from '../../config/chartConfig';
 
 type TargetVariable = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
 
@@ -48,12 +49,9 @@ interface RawFactorItem {
   impact: string;
 }
 
-const CATEGORY_COLORS = ['#4E86DF', '#19B172', '#D6730D', '#8B5CF6', '#D52132'];
 const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
-const GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
 
 function buildFactors(snapshot: GovernanceAnalysisSnapshot, targetVariable: TargetVariable): FactorItem[] {
   const totals = snapshot.totals;
@@ -353,9 +351,9 @@ export function FactorIdentification() {
             <div className="h-[240px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryStats} dataKey="contribution" nameKey="category" outerRadius={82} label>
+                  <Pie data={categoryStats} dataKey="contribution" nameKey="category" outerRadius={82} label={{ fill: CHART_LABEL }}>
                     {categoryStats.map((item, index) => (
-                      <Cell key={item.category} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                      <Cell key={item.category} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                     ))}
                   </Pie>
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
@@ -368,13 +366,13 @@ export function FactorIdentification() {
             <div className="h-[260px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-                  <CartesianGrid stroke={GRID_STROKE} strokeDasharray="3 3" />
-                  <XAxis type="number" dataKey="x" name="走访覆盖率" unit="%" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                  <YAxis type="number" dataKey="y" name="热度" axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                  <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" />
+                  <XAxis type="number" dataKey="x" name="走访覆盖率" unit="%" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis type="number" dataKey="y" name="热度" axisLine={false} tickLine={false} tick={CHART_TICK} />
                   <ZAxis type="number" dataKey="z" range={[80, 420]} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                  <Scatter name="网格样本" data={scatterData} fill="#4E86DF" />
+                  <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                  <Scatter name="网格样本" data={scatterData} fill={CHART_PRIMARY} />
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
