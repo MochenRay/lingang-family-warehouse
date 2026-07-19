@@ -144,7 +144,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
       description: 'XX小区垃圾堆放点未及时清理',
       time: '2小时前',
       status: '处理中',
-      statusColor: 'text-orange-600 bg-orange-50 border-orange-300'
+      statusColor: 'text-[var(--color-status-warning-text)] bg-[var(--color-status-warning-soft)] border-[var(--color-status-warning)]'
     },
     {
       id: 2,
@@ -152,7 +152,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
       description: 'XX楼外墙瓷砖脱落，存在安全隐患',
       time: '昨天 15:30',
       status: '已处理',
-      statusColor: 'text-green-600 bg-green-50 border-green-300'
+      statusColor: 'text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] border-[var(--color-status-success)]'
     },
     {
       id: 3,
@@ -160,23 +160,23 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
       description: 'XX路发现私自搭建阳光房',
       time: '2026-01-18',
       status: '已处理',
-      statusColor: 'text-green-600 bg-green-50 border-green-300'
+      statusColor: 'text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] border-[var(--color-status-success)]'
     }
   ];
 
   return (
     <MobileLayout currentRoute="patrol" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
-      <div className="bg-gray-50">
-        <div className="bg-white p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-800 mb-1">巡查上报</h2>
-          <p className="text-sm text-gray-500">发现问题及时登记，并同步到问题处置队列</p>
+      <div className="bg-[var(--color-neutral-01)]">
+        <div className="bg-[var(--color-neutral-01)] p-4 border-b border-[var(--color-neutral-03)]">
+          <h2 className="text-lg font-semibold text-[var(--color-neutral-11)] mb-1">巡查上报</h2>
+          <p className="text-sm text-[var(--color-neutral-08)]">发现问题及时登记，并同步到问题处置队列</p>
         </div>
 
         <div className="p-4 space-y-4">
           <Card>
             <CardContent className="p-4">
               <Label className="text-sm font-semibold mb-3 block">
-                问题分类 <span className="text-red-500">*</span>
+                问题分类 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
                 <SelectTrigger className="h-10">
@@ -205,11 +205,11 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                     className={`h-10 rounded-lg border-2 text-sm font-medium transition-all ${
                       formData.urgency === urgency
                         ? urgency === '紧急'
-                          ? 'bg-red-50 border-red-500 text-red-700'
+                          ? 'bg-[var(--color-status-error-soft)] border-[var(--color-status-error)] text-[var(--color-status-error-text)]'
                           : urgency === '较急'
-                            ? 'bg-orange-50 border-orange-500 text-orange-700'
-                            : 'bg-blue-50 border-blue-500 text-blue-700'
-                        : 'border-gray-200 text-gray-600'
+                            ? 'bg-[var(--color-status-warning-soft)] border-[var(--color-status-warning)] text-[var(--color-status-warning-text)]'
+                            : 'bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)] text-[var(--color-brand-primary-hover)]'
+                        : 'border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]'
                     }`}
                   >
                     {urgency}
@@ -223,7 +223,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-3">
                 <Label className="text-sm font-semibold">
-                  问题描述 <span className="text-red-500">*</span>
+                  问题描述 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Button
                   variant="outline"
@@ -240,7 +240,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="min-h-[120px] resize-none"
               />
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-[var(--color-neutral-08)] mt-2">
                 {formData.description.length}/500
               </p>
             </CardContent>
@@ -266,11 +266,11 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
 
               <div className="grid grid-cols-3 gap-2">
                 {photos.map((photo, index) => (
-                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                  <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-[var(--color-neutral-02)]">
                     <img src={photo} alt="" className="w-full h-full object-cover" />
                     <button
                       onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
-                      className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center shadow-md"
+                      className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center shadow-md"
                     >
                       ×
                     </button>
@@ -280,14 +280,14 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                 {photos.length < 9 && (
                   <button
                     onClick={handlePhotoCapture}
-                    className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors bg-white"
+                    className="aspect-square rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] flex flex-col items-center justify-center text-[var(--color-neutral-08)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-hover)] transition-colors bg-[var(--color-neutral-01)]"
                   >
                     <Camera className="w-8 h-8 mb-1" />
                     <span className="text-xs">上传照片</span>
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-2">现场照片会作为巡查线索附件预览，正式归档可在后续处置页补传</p>
+              <p className="text-xs text-[var(--color-neutral-08)] mt-2">现场照片会作为巡查线索附件预览，正式归档可在后续处置页补传</p>
             </CardContent>
           </Card>
 
@@ -299,7 +299,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                   variant="outline"
                   size="sm"
                   onClick={handleGetLocation}
-                  className={locationObtained ? 'bg-green-50 text-green-700 border-green-300' : ''}
+                  className={locationObtained ? 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]' : ''}
                 >
                   <MapPin className="w-4 h-4 mr-1" />
                   {locationObtained ? '已定位' : '获取定位'}
@@ -312,7 +312,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                 className="min-h-[80px] resize-none"
               />
               {locationSummary && (
-                <div className="mt-3 text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                <div className="mt-3 text-sm text-[var(--color-neutral-10)] bg-[var(--color-neutral-01)] p-3 rounded-lg">
                   {locationSummary}
                 </div>
               )}
@@ -320,7 +320,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
           </Card>
 
           <Button
-            className="w-full h-12 bg-blue-600 hover:bg-blue-700"
+            className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
             disabled={isSubmitting}
           >
@@ -329,16 +329,16 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
           </Button>
 
           <div className="pt-4">
-            <h3 className="text-sm font-semibold text-gray-700 mb-3 px-1">最近上报</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-neutral-10)] mb-3 px-1">最近上报</h3>
             <div className="space-y-2">
               {recentReports.map((report) => (
                 <Card key={report.id} className="cursor-pointer hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="w-5 h-5 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="w-5 h-5 text-[var(--color-status-warning-text)] flex-shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium text-gray-800">{report.category}</span>
+                          <span className="text-sm font-medium text-[var(--color-neutral-11)]">{report.category}</span>
                           <Badge
                             variant="outline"
                             className={`text-xs ${report.statusColor}`}
@@ -346,10 +346,10 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                             {report.status}
                           </Badge>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                        <p className="text-xs text-[var(--color-neutral-10)] mb-2 line-clamp-2">
                           {report.description}
                         </p>
-                        <div className="flex items-center gap-1 text-xs text-gray-400">
+                        <div className="flex items-center gap-1 text-xs text-[var(--color-neutral-08)]">
                           <Clock className="w-3 h-3" />
                           {report.time}
                         </div>

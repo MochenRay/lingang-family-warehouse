@@ -87,8 +87,8 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
         <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] px-5 pt-6 pb-24 border-b border-[var(--color-neutral-03)] shadow-sm z-10 relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full border border-blue-500/30 flex items-center justify-center shadow-lg shadow-blue-900/20 bg-blue-500/10">
-                <User className="w-7 h-7 text-blue-500" />
+              <div className="w-14 h-14 rounded-full border border-[var(--color-brand-primary)]/30 flex items-center justify-center shadow-lg shadow-blue-900/20 bg-[var(--color-brand-primary)]/10">
+                <User className="w-7 h-7 text-[var(--color-brand-primary-hover)]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -108,13 +108,13 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
 
           {/* 本月统计卡片 */}
           <Card 
-            className="absolute left-4 right-4 -bottom-12 bg-[var(--color-neutral-02)] shadow-xl shadow-black/20 border border-[var(--color-neutral-03)] rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
+            className="absolute left-4 right-4 -bottom-12 bg-[var(--color-neutral-02)] shadow-xl shadow-black/20 border border-[var(--color-neutral-03)] rounded-[4px] cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => onRouteChange('tasks?mode=month')}
           >
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-5 h-5 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-blue-500" />
+                  <Award className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
                 </div>
                 <span className="font-bold text-[var(--color-neutral-11)] text-sm">本月工作概览</span>
                 <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-[var(--color-neutral-03)] rounded-full text-xs text-[var(--color-neutral-08)] cursor-pointer">
@@ -179,7 +179,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
           {/* 退出登录 */}
           <Button
             variant="outline"
-            className="w-full h-12 text-red-500 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)]"
+            className="w-full h-12 text-[var(--color-status-error-text)] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)]"
             onClick={handleLogout}
           >
             <LogOut className="w-5 h-5 mr-2" />

@@ -54,13 +54,13 @@ function getDeadlineStatus(deadline: string | undefined) {
   const now = new Date();
   const hoursLeft = (parsed.getTime() - now.getTime()) / (1000 * 60 * 60);
   if (hoursLeft < 0) {
-    return { text: '已超期', color: 'text-red-400' };
+    return { text: '已超期', color: 'text-[var(--color-status-error-text)]' };
   }
   if (hoursLeft < 2) {
-    return { text: `剩余${Math.max(Math.floor(hoursLeft * 60), 1)}分钟`, color: 'text-red-400' };
+    return { text: `剩余${Math.max(Math.floor(hoursLeft * 60), 1)}分钟`, color: 'text-[var(--color-status-error-text)]' };
   }
   if (hoursLeft < 24) {
-    return { text: `剩余${Math.floor(hoursLeft)}小时`, color: 'text-orange-400' };
+    return { text: `剩余${Math.floor(hoursLeft)}小时`, color: 'text-[var(--color-status-warning-text)]' };
   }
   return { text: deadline?.split(' ')[0] ?? '待安排', color: 'text-[var(--color-neutral-08)]' };
 }
@@ -175,7 +175,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('today')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-blue-400 shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
               }`}
             >
               今日待办
@@ -183,7 +183,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('month')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-blue-400 shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
               }`}
             >
               本月工作
@@ -191,7 +191,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('all')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-blue-400 shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
               }`}
             >
               全部清单
@@ -200,24 +200,24 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
         </div>
 
         <div className="grid grid-cols-4 gap-2 p-3 bg-[var(--color-neutral-00)]">
-          <div className="bg-[var(--color-neutral-02)] rounded-xl p-2.5 text-center border border-[var(--color-neutral-03)]">
-            <div className="text-xl font-bold text-blue-400">{summary.pending}</div>
+          <div className="bg-[var(--color-neutral-02)] rounded-[4px] p-2.5 text-center border border-[var(--color-neutral-03)]">
+            <div className="text-xl font-bold text-[var(--color-brand-primary-hover)]">{summary.pending}</div>
             <div className="text-[10px] text-[var(--color-neutral-08)] mt-1 scale-90 origin-center whitespace-nowrap">
               {viewMode === 'today' ? '今日待办' : (viewMode === 'month' ? '本月待办' : '剩余待办')}
             </div>
           </div>
-          <div className="bg-[var(--color-neutral-02)] rounded-xl p-2.5 text-center border border-[var(--color-neutral-03)]">
-            <div className="text-xl font-bold text-red-400">{summary.overdue}</div>
+          <div className="bg-[var(--color-neutral-02)] rounded-[4px] p-2.5 text-center border border-[var(--color-neutral-03)]">
+            <div className="text-xl font-bold text-[var(--color-status-error-text)]">{summary.overdue}</div>
             <div className="text-[10px] text-[var(--color-neutral-08)] mt-1 scale-90 origin-center whitespace-nowrap">逾期任务</div>
           </div>
-          <div className="bg-[var(--color-neutral-02)] rounded-xl p-2.5 text-center border border-[var(--color-neutral-03)]">
-            <div className="text-xl font-bold text-green-400">{summary.completed}</div>
+          <div className="bg-[var(--color-neutral-02)] rounded-[4px] p-2.5 text-center border border-[var(--color-neutral-03)]">
+            <div className="text-xl font-bold text-[var(--color-status-success-text)]">{summary.completed}</div>
             <div className="text-[10px] text-[var(--color-neutral-08)] mt-1 scale-90 origin-center whitespace-nowrap">
               {viewMode === 'today' ? '今日已完' : '累计完成'}
             </div>
           </div>
-          <div className="bg-[var(--color-neutral-02)] rounded-xl p-2.5 text-center border border-[var(--color-neutral-03)]">
-            <div className="text-xl font-bold text-orange-400">{summary.completionRate}%</div>
+          <div className="bg-[var(--color-neutral-02)] rounded-[4px] p-2.5 text-center border border-[var(--color-neutral-03)]">
+            <div className="text-xl font-bold text-[var(--color-status-warning-text)]">{summary.completionRate}%</div>
             <div className="text-[10px] text-[var(--color-neutral-08)] mt-1 scale-90 origin-center whitespace-nowrap">完成率</div>
           </div>
         </div>
@@ -231,7 +231,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                 placeholder="搜索任务或来源对象..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="pl-9 pr-9 h-9 text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-06)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-blue-500 focus-visible:ring-0 transition-all"
+                className="pl-9 pr-9 h-9 text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-06)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-0 transition-all"
               />
               {searchQuery && (
                 <button
@@ -255,14 +255,14 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                   className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-blue-400">
+                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       待处理
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-blue-500/20 group-data-[state=active]:text-blue-400">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       {displayPending.length}
                     </span>
                   </div>
-                  <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-blue-400 opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
+                  <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary-hover)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
                 </TabsTrigger>
 
                 <TabsTrigger
@@ -270,14 +270,14 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                   className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-blue-400">
+                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       已完成
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-blue-500/20 group-data-[state=active]:text-blue-400">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       {displayCompleted.length}
                     </span>
                   </div>
-                  <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-blue-400 opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
+                  <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary-hover)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -298,14 +298,14 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                         <Card
                           key={task.id}
                           className={`cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] border border-[var(--color-neutral-03)] shadow-none overflow-hidden bg-[var(--color-neutral-02)] ${
-                            isOverdue ? 'border-l-2 border-l-red-500' : ''
+                            isOverdue ? 'border-l-2 border-l-[var(--color-status-error)]' : ''
                           }`}
                           onClick={() => onRouteChange(`/mobile/tasks/${task.id}`)}
                         >
                           <CardContent className="p-4">
                             <div className="flex items-center gap-3 mb-3">
                               <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                                isOverdue ? 'bg-red-500/20 text-red-400' : (task.urgent ? 'bg-red-500/15 text-red-400' : 'bg-orange-500/15 text-orange-400')
+                                isOverdue ? 'bg-[var(--color-status-error)]/20 text-[var(--color-status-error-text)]' : (task.urgent ? 'bg-[var(--color-status-error)]/15 text-[var(--color-status-error-text)]' : 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]')
                               }`}>
                                 {isOverdue ? <AlertCircle className="w-4.5 h-4.5" /> : <Clock className="w-4.5 h-4.5" />}
                               </div>
@@ -368,7 +368,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                         <CardContent className="p-4">
                           <div className="flex items-center gap-3 mb-3">
                             <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
-                              task.onTime ? 'bg-green-500/15 text-green-400' : 'bg-orange-500/15 text-orange-400'
+                              task.onTime ? 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]' : 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]'
                             }`}>
                               {task.onTime ? <CheckCircle className="w-4.5 h-4.5" /> : <AlertCircle className="w-4.5 h-4.5" />}
                             </div>
@@ -379,7 +379,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                               <Badge
                                 variant="outline"
                                 className={`text-[10px] px-2 py-0.5 rounded border-0 ${
-                                  task.onTime ? 'bg-green-500/15 text-green-300' : 'bg-orange-500/20 text-orange-300'
+                                  task.onTime ? 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]' : 'bg-[var(--color-status-warning)]/20 text-[var(--color-status-warning-text)]'
                                 }`}
                               >
                                 {task.statusLabel}

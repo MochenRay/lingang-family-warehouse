@@ -268,7 +268,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
 
         {/* 今日工作统计卡片 */}
         <Card 
-          className="relative bg-gradient-to-br from-[var(--color-neutral-02)] to-[var(--color-neutral-03)] border-[var(--color-neutral-03)] shadow-xl rounded-2xl cursor-pointer active:scale-[0.98] transition-transform overflow-hidden"
+          className="relative bg-gradient-to-br from-[var(--color-neutral-02)] to-[var(--color-neutral-03)] border-[var(--color-neutral-03)] shadow-xl rounded-[4px] cursor-pointer active:scale-[0.98] transition-transform overflow-hidden"
           onClick={() => onRouteChange('tasks?mode=today')}
         >
           {/* 装饰性渐变 */}
@@ -288,25 +288,25 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             </div>
             
             <div className="grid grid-cols-4 gap-2">
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
                 <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-warning)]`}>
                   {formatMetricValue(workSummary.pending)}
                 </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">待跟进</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
                 <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-success)]`}>
                   {formatMetricValue(workSummary.completed)}
                 </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">已完成</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
                 <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[#2761CB]`}>
                   {formatMetricValue(workSummary.visited)}
                 </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">走访</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
+              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
                 <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[#8B3BCC]`}>
                   {formatMetricValue(workSummary.highRisk)}
                 </div>
@@ -327,7 +327,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
               return (
                 <div
                   key={index}
-                  className="bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)] rounded-2xl p-3 h-24 flex flex-col items-center justify-center shadow-sm cursor-pointer active:scale-95 transition-transform"
+                  className="bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)] rounded-[4px] p-3 h-24 flex flex-col items-center justify-center shadow-sm cursor-pointer active:scale-95 transition-transform"
                   onClick={() => onRouteChange(action.path)}
                 >
                   <div className={`w-11 h-11 ${action.color} rounded-xl flex items-center justify-center shrink-0 shadow-lg mb-2`}>
@@ -387,7 +387,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
           <Card className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-sm overflow-hidden">
             <CardContent className="p-4 space-y-3">
               {aiSummary.map((item, index) => (
-                <div key={index} className="rounded-xl border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2 text-sm text-[var(--color-neutral-10)]">
+                <div key={index} className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2 text-sm text-[var(--color-neutral-10)]">
                   {item}
                 </div>
               ))}
@@ -423,7 +423,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                     type="button"
                     aria-label="关闭首次体验建议"
                     onClick={dismissOnboarding}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/10 text-[var(--color-neutral-10)] active:scale-95"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] active:scale-95"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -437,7 +437,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                         dismissOnboarding();
                         onRouteChange(item.route);
                       }}
-                      className="flex w-full items-start gap-3 rounded-xl border border-white/10 bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
+                      className="flex w-full items-start gap-3 rounded-[4px] border border-white/10 bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
                     >
                       <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.16)] text-xs font-semibold text-[#4E86DF]">
                         {index + 1}
