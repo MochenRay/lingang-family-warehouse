@@ -77,7 +77,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
   const documentTypes = ['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[var(--color-neutral-01)]">
+    <div className="h-full flex flex-col bg-[var(--color-neutral-01)]">
       <MobileStatusBar />
 
       {/* 顶部标题栏 */}

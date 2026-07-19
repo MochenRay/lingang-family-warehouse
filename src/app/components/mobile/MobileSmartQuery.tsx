@@ -61,7 +61,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
   const dataAreas = ['人口统计', '房屋管理', '网格分布', '重点人群', '活动参与'];
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-[var(--color-neutral-01)]">
+    <div className="h-full flex flex-col bg-[var(--color-neutral-01)]">
       <MobileStatusBar />
 
       {/* 顶部标题栏 */}

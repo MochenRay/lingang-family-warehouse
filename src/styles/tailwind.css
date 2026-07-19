@@ -2,3 +2,17 @@
 @source '../**/*.{js,ts,jsx,tsx}';
 
 @import 'tw-animate-css';
+
+/* iPhone 全面屏底部安全区：叠加式，保留原 padding 再叠加 inset */
+@utility safe-area-bottom {
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+}
+
+/* 隐藏滚动条（保留滚动能力） */
+@utility scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
