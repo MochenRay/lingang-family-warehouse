@@ -64,7 +64,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
   ];
 
   const menuItems = [
-    { icon: TrendingUp, label: '工作记录', path: 'update-history', color: 'text-[#413DD4]' },
+    { icon: TrendingUp, label: '工作记录', path: 'update-history', color: 'text-[var(--color-accent-purple)]' },
     { icon: MapPin, label: '辖区概况', path: 'grid-overview', color: 'text-primary' },
     { icon: BarChart3, label: '绩效排名', path: 'stats', color: 'text-[var(--color-status-success)]' },
     { icon: Bell, label: '消息通知', path: 'notices', badge: '3', color: 'text-[var(--color-status-warning)]' },
@@ -128,15 +128,15 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
               </div>
               <div className="grid grid-cols-4 gap-3">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#2761CB] mb-1">{stats.monthCollected}</div>
+                  <div className="text-2xl font-bold text-[var(--color-brand-primary)] mb-1">{stats.monthCollected}</div>
                   <div className="text-xs text-[var(--color-neutral-06)] font-medium">采集数</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#19B172] mb-1">{stats.monthTasks}</div>
+                  <div className="text-2xl font-bold text-[var(--color-status-success)] mb-1">{stats.monthTasks}</div>
                   <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成任务</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#D6730D] mb-1">{stats.monthReports}</div>
+                  <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-1">{stats.monthReports}</div>
                   <div className="text-xs text-[var(--color-neutral-06)] font-medium">问题上报</div>
                 </div>
                 <div className="text-center">

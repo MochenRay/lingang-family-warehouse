@@ -124,7 +124,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
       case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' };
       case '便民服务': return { icon: Wrench, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
-      case '社区音乐会': return { icon: Music, color: 'text-purple-600', bg: 'bg-purple-50' };
+      case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
       case '露天电影': return { icon: Film, color: 'text-indigo-600', bg: 'bg-indigo-50' };
       case '手工制作': return { icon: Scissors, color: 'text-pink-500', bg: 'bg-pink-50' };
       default: return { icon: CalendarIcon, color: 'text-[var(--color-neutral-08)]', bg: 'bg-[var(--color-neutral-02)]' };
@@ -205,7 +205,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
             {activity.applicationDetails && (
               <div className="pt-3 border-t border-[var(--color-neutral-03)]">
                 <h3 className="font-bold text-sm text-[var(--color-neutral-11)] mb-2 flex items-center gap-2">
-                  <span className="w-1 h-3 bg-purple-500 rounded-full"></span>
+                  <span className="w-1 h-3 bg-[var(--color-accent-purple)] rounded-full"></span>
                   申请详情
                 </h3>
                 <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed bg-[var(--color-neutral-02)] p-3 rounded-[4px]">
@@ -220,7 +220,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
             <div className="bg-[var(--color-neutral-01)] rounded-[4px] border border-[var(--color-neutral-03)] overflow-hidden">
               <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
                 <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
-                  <span className="w-1 h-3 bg-purple-500 rounded-full"></span>
+                  <span className="w-1 h-3 bg-[var(--color-accent-purple)] rounded-full"></span>
                   参与居民 ({selectedResidents.length})
                 </h3>
                 {activity.executionStatus === 'in_progress' && (
@@ -422,7 +422,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
       {/* Bottom Action Bar */}
       <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom flex gap-3 z-20 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
         {mode === 'application' && activity.approvalStatus === 'rejected' && (
-          <Button className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-xl font-bold shadow-md shadow-blue-600/20" onClick={() => onRouteChange(`activity-form?edit=${activity.id}`)}>
+          <Button className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-xl font-bold shadow-md shadow-[var(--color-brand-primary)]/20" onClick={() => onRouteChange(`activity-form?edit=${activity.id}`)}>
             <Edit3 className="w-4 h-4 mr-2" />
             修改并重新提交
           </Button>
@@ -446,7 +446,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
         )}
 
         {mode === 'execution' && activity.approvalStatus === 'approved' && activity.executionStatus === 'in_progress' && (
-          <Button className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-xl font-bold shadow-md shadow-blue-600/20" onClick={() => toast.success('活动已结束')}>
+          <Button className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-xl font-bold shadow-md shadow-[var(--color-brand-primary)]/20" onClick={() => toast.success('活动已结束')}>
             结束活动
           </Button>
         )}

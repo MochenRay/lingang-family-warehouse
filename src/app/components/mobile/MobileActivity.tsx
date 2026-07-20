@@ -104,7 +104,7 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
       case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]' };
       case '便民服务': return { icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]' };
-      case '社区音乐会': return { icon: Music, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' };
+      case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
       case '露天电影': return { icon: Film, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' };
       case '手工制作': return { icon: Scissors, color: 'text-pink-500', bg: 'bg-pink-50', border: 'border-pink-100' };
       default: return { icon: Calendar, color: 'text-[var(--color-neutral-08)]', bg: 'bg-[var(--color-neutral-01)]', border: 'border-[var(--color-neutral-03)]' };
@@ -133,7 +133,7 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
               />
             </div>
             <button
-              className="w-9 h-9 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center shadow-md shadow-blue-600/25 active:scale-90 transition-transform shrink-0"
+              className="w-9 h-9 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center shadow-md shadow-[var(--color-brand-primary)]/25 active:scale-90 transition-transform shrink-0"
               onClick={() => onRouteChange('activity-form')}
             >
               <Plus className="w-5 h-5 text-white" />

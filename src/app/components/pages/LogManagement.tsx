@@ -179,7 +179,7 @@ export function LogManagement() {
     { type: 'create', label: '新建', count: 2, color: 'var(--color-status-success)' },
     { type: 'update', label: '编辑', count: 3, color: 'var(--color-status-warning)' },
     { type: 'delete', label: '删除', count: 1, color: 'var(--color-status-error)' },
-    { type: 'export', label: '导出', count: 1, color: '#8b5cf6' },
+    { type: 'export', label: '导出', count: 1, color: 'var(--color-accent-purple)' },
     { type: 'view', label: '查看', count: 1, color: 'var(--color-neutral-06)' }
   ];
 
@@ -409,7 +409,7 @@ export function LogManagement() {
             </div>
             <div className={`${DARK_PANEL_CLASS} p-4`}>
               <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>系统日志</p>
-              <p className="mb-1 text-2xl font-bold text-[#8B5CF6]">365天</p>
+              <p className="mb-1 text-2xl font-bold text-[var(--color-accent-purple)]">365天</p>
               <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过1年的日志将自动归档</p>
             </div>
           </div>

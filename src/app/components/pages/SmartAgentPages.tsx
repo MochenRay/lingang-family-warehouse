@@ -314,9 +314,9 @@ export function SmartQuery() {
       apiKind="query"
       topic={{
         title: '核心数据领域',
-        icon: <PieChart className="h-4 w-4 text-[#8B3BCC]" />,
+        icon: <PieChart className="h-4 w-4 text-[var(--color-accent-purple)]" />,
         items: ['人口数据', '房屋网格', '特殊人群', '矛盾纠纷', '活动参与'],
-        badgeClassName: 'hover:border-[#8B3BCC] hover:bg-[#8B3BCC]/12 hover:text-[#D8B4FE]',
+        badgeClassName: 'hover:border-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple)]/12 hover:text-[var(--color-accent-purple-text)]',
       }}
       placeholder="请输入您想分析的数据问题，例如：统计本月新增流动人口数量。"
       initialMessages={[{

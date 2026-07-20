@@ -29,7 +29,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
   }, [noticeId]);
 
   return (
-    <div className="h-full bg-[#1e293b] flex flex-col overflow-hidden text-white">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden text-white">
       {/* 顶部导航 */}
       <MobileDetailHeader
         title="通知详情"
@@ -42,7 +42,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
       />
 
       {/* 内容区域 */}
-      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#1e293b] to-[#0f172a]">
+      <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-00)]">
         <div className="p-5 pb-24">
           {/* 标题区 */}
           <div className="mb-6 border-b border-[var(--color-neutral-03)] pb-4">
@@ -56,7 +56,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
                <Badge variant="outline" className="text-[var(--color-status-warning-text)] border-[var(--color-status-warning)]/50 bg-[var(--color-status-warning-soft)] px-2 py-0.5 text-xs font-normal shrink-0 rounded-full h-auto">
                  {notice?.type ?? '通知'}
                </Badge>
-               <span className="text-xs text-[var(--color-brand-primary-hover)] bg-[#3b82f6]/20 border border-[#3b82f6]/30 px-2 py-0.5 rounded">
+               <span className="text-xs text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary-hover)]/20 border border-[var(--color-brand-primary-hover)]/30 px-2 py-0.5 rounded">
                  {notice?.department ?? '蓬莱区社会治理现代化指挥中心'}
                </span>
              </div>
@@ -113,7 +113,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
       </div>
 
       {/* 底部操作栏 */}
-      <div className="bg-[#1e293b] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0 z-20">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0 z-20">
         <Button className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white text-base h-11 shadow-lg shadow-blue-900/20 border-0">
           确认收到并阅读
         </Button>

@@ -33,7 +33,7 @@ export function MobileDetailHeader({ title, onBack, action, subtitle }: MobileDe
           </button>
         ) : null}
         <div className="flex min-w-0 items-center gap-2">
-          <span className="truncate text-base font-semibold text-[var(--color-neutral-11)]">{title}</span>
+          <h1 className="truncate text-base font-semibold text-[var(--color-neutral-11)]">{title}</h1>
           {subtitle}
         </div>
         {action ? <div className="absolute right-3 top-1/2 -translate-y-1/2">{action}</div> : null}

@@ -1802,13 +1802,13 @@ export function PopulationManagement() {
                         <Card className={PANEL_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Network className="w-4 h-4 text-[#8B5CF6]" />
+                              <Network className="w-4 h-4 text-[var(--color-accent-purple)]" />
                               关系网络
                             </CardTitle>
                             <CardDescription>可视化展示人员关系网络</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <div className="relative w-full h-64 bg-gradient-to-br from-[var(--color-brand-primary-hover)]/12 to-[#8B5CF6]/10 rounded-[4px] flex items-center justify-center">
+                            <div className="relative w-full h-64 bg-gradient-to-br from-[var(--color-brand-primary-hover)]/12 to-[var(--color-accent-purple)]/10 rounded-[4px] flex items-center justify-center">
                               {/* 中心节点 */}
                               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
                                 <div className="w-16 h-16 rounded-full bg-[var(--color-brand-primary)] flex items-center justify-center text-[var(--color-neutral-11)] font-bold shadow-[0_12px_28px_rgba(0,0,0,0.35)] px-1" style={{ fontSize: selectedPopulation.name.length > 3 ? '12px' : '18px' }}>
@@ -1872,8 +1872,8 @@ export function PopulationManagement() {
                                   
                                   if (isBoth) {
                                     // 既有血缘又有同住：紫色
-                                    nodeColor = 'bg-[#8B5CF6]';
-                                    strokeColor = '#a855f7';
+                                    nodeColor = 'bg-[var(--color-accent-purple)]';
+                                    strokeColor = 'var(--color-accent-purple-text)';
                                     strokeDasharray = '';
                                   } else if (hasFamily) {
                                     // 只有血缘：红色虚线
@@ -1939,7 +1939,7 @@ export function PopulationManagement() {
                                 <span className="text-[var(--color-neutral-08)]">同住关系</span>
                               </div>
                               <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-[#8B5CF6]"></div>
+                                <div className="w-3 h-3 rounded-full bg-[var(--color-accent-purple)]"></div>
                                 <span className="text-[var(--color-neutral-08)]">血缘+同住</span>
                               </div>
                             </div>

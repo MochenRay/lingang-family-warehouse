@@ -130,7 +130,7 @@ export function DataReports() {
         title: '规则与待办快照',
         desc: `${ruleCount} 条规则 / ${snapshot.totals.pendingTasks} 条待办`,
         icon: CalendarDays,
-        accent: '#8B5CF6',
+        accent: 'var(--color-accent-purple)',
         action: async () => {
           const rules = await taskRuleRepository.getRules();
           downloadJson(`report-task-rules-${new Date().toISOString().slice(0, 10)}.json`, {

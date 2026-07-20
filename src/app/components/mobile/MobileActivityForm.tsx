@@ -170,7 +170,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
             {/* Prediction Card */}
             {prediction && selectedSub && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-lg shadow-blue-600/20">
+                <div className="rounded-[4px] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-accent-purple)] p-4 text-white shadow-lg shadow-[var(--color-brand-primary)]/20">
                   <div className="flex items-center gap-2 mb-2.5">
                     <div className="w-6 h-6 rounded-full bg-[var(--color-neutral-11)]/15 flex items-center justify-center">
                       <Info className="h-3.5 w-3.5 text-white/80" />
@@ -300,7 +300,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
           {/* Section 3: Details */}
           <div className="space-y-4 bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)]">
             <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
-              <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+              <span className="w-1 h-4 bg-[var(--color-accent-purple)] rounded-full"></span>
               详细方案
             </h3>
 
@@ -331,7 +331,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
         <Button
           type="submit"
           onClick={handleSubmit(onSubmit)}
-          className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-base font-bold rounded-xl shadow-md shadow-blue-600/20"
+          className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-base font-bold rounded-xl shadow-md shadow-[var(--color-brand-primary)]/20"
           disabled={submitting}
         >
           {submitting ? '提交中...' : (editId ? '重新提交审批' : '提交活动申请')}

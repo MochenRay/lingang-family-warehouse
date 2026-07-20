@@ -60,7 +60,7 @@ function PersonMatchCard({ record, selectedTagIds }: { record: TaggedPersonRecor
     <div className={`${PANEL_CLASS} p-4`}>
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="flex min-w-0 gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[linear-gradient(135deg,var(--color-brand-primary-hover),#8B5CF6)] text-base font-semibold text-[var(--color-neutral-11)]">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[linear-gradient(135deg,var(--color-brand-primary-hover),var(--color-accent-purple))] text-base font-semibold text-[var(--color-neutral-11)]">
             {initial}
           </div>
           <div className="min-w-0">

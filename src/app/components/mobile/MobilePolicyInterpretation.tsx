@@ -87,7 +87,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#4E86DF] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[var(--color-brand-primary-hover)] rounded-lg flex items-center justify-center">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -106,7 +106,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
             <Badge
               key={area}
               variant="outline"
-              className="cursor-pointer hover:bg-[rgba(78,134,223,0.08)] hover:text-[#4E86DF] hover:border-[#4E86DF] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
+              className="cursor-pointer hover:bg-[rgba(78,134,223,0.08)] hover:text-[var(--color-brand-primary-hover)] hover:border-[var(--color-brand-primary-hover)] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
               onClick={() => setInputMessage(`关于${area}的政策有哪些？`)}
             >
               {area}
@@ -119,7 +119,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32">
         {messages.map(msg => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[#4E86DF]' : 'bg-[var(--color-neutral-06)]'}`}>
+            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[var(--color-brand-primary-hover)]' : 'bg-[var(--color-neutral-06)]'}`}>
               <AvatarFallback>
                 {msg.role === 'ai' ? <Bot className="w-4 h-4 text-white" /> : <span className="text-white text-xs">我</span>}
               </AvatarFallback>
@@ -128,7 +128,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
               <Card className={`inline-block max-w-[85%] ${
                 msg.role === 'ai'
                   ? 'bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]'
-                  : 'bg-[#4E86DF] border-[#4E86DF] text-white'
+                  : 'bg-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary-hover)] text-white'
               }`}>
                 <div className="p-3">
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
@@ -212,7 +212,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
               void handleSendMessage();
             }}
             disabled={!inputMessage.trim() || sending}
-            className="h-[44px] px-4 bg-[#4E86DF] hover:bg-[#3d6fc7] text-white shrink-0"
+            className="h-[44px] px-4 bg-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)] text-white shrink-0"
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>

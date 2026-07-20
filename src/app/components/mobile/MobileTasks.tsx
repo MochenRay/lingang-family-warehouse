@@ -38,9 +38,9 @@ function isSameMonth(value: string | undefined, base: Date): boolean {
 
 function getTypeColor(type: string) {
   const colors: Record<string, string> = {
-    重点走访: 'bg-[#4E86DF]/15 text-[#4E86DF]',
-    走访反馈: 'bg-[#19B172]/15 text-[#19B172]',
-    矛盾调解: 'bg-[#FF9F1C]/15 text-[#FF9F1C]',
+    重点走访: 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-primary-hover)]',
+    走访反馈: 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success)]',
+    矛盾调解: 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning)]',
   };
   return colors[type] || 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)]';
 }

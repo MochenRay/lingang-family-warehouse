@@ -24,7 +24,7 @@ function getTagTypeClass(type: ManagedTagSummary['type']) {
   if (type === '规则标签') {
     return `${CHIP_BASE_CLASS} border-[var(--color-brand-primary-hover)]/45 bg-[var(--color-brand-primary)]/15 text-[var(--color-status-info-text)]`;
   }
-  return `${CHIP_BASE_CLASS} border-[#8B3BCC]/45 bg-[#8B3BCC]/15 text-[#D8B4FE]`;
+  return `${CHIP_BASE_CLASS} border-[var(--color-accent-purple)]/45 bg-[var(--color-accent-purple)]/15 text-[var(--color-accent-purple-text)]`;
 }
 
 export function TagOverview() {

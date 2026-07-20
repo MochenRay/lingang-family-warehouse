@@ -211,69 +211,10 @@
   color: var(--color-neutral-08);
 }
 
-/* 卡片和容器深色适配 */
-.dark .bg-gray-50 {
-  background-color: var(--color-neutral-01) !important;
-}
-
-.dark .bg-gray-100 {
-  background-color: var(--color-neutral-02) !important;
-}
-
-.dark .bg-white {
-  background-color: var(--color-neutral-02) !important;
-}
-
-/* 文字颜色深色适配 */
-.dark .text-gray-900 {
-  color: var(--color-neutral-11) !important;
-}
-
-.dark .text-gray-800 {
-  color: var(--color-neutral-11) !important;
-}
-
-.dark .text-gray-700 {
-  color: var(--color-neutral-10) !important;
-}
-
-.dark .text-gray-600 {
-  color: var(--color-neutral-10) !important;
-}
-
-.dark .text-gray-500 {
-  color: var(--color-neutral-08) !important;
-}
-
-.dark .text-gray-400 {
-  color: var(--color-neutral-08) !important;  /* 使用更亮的次要文字色 */
-}
-
-/* 边框颜色深色适配 */
-.dark .border-gray-100,
-.dark .border-gray-200,
-.dark .border-gray-300 {
-  border-color: var(--color-neutral-03) !important;
-}
-
-/* 悬停状态深色适配 */
-.dark .hover\:bg-gray-50:hover {
-  background-color: var(--color-neutral-02) !important;
-}
-
-.dark .hover\:bg-gray-100:hover {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .hover\:text-gray-900:hover {
-  color: var(--color-neutral-11) !important;
-}
-
-/* 分隔线深色适配 */
-.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
-.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--color-neutral-03) !important;
-}
+/* P4d：原「硬编码浅色类 !important 覆盖补丁表」已删除——
+   移动端/桌面端页面的 bg-gray-*/text-gray-*/bg-white/border-gray-* 等
+   浅色类已全部迁移为 token 直引，不再需要全局补丁。
+   保留：h/p/a/input 基础样式（上方）、禁用态、table/dialog/menu/tooltip 适配（下方）。 */
 
 /* 禁用状态深色适配 - 提高对比度以改善可读性 */
 .dark [disabled] {
@@ -292,31 +233,6 @@
 .dark button:disabled svg,
 .dark button[disabled] svg {
   opacity: 1;  /* 图标不额外降低透明度，由父元素统一控制 */
-}
-
-/* Badge 和标签深色适配 */
-.dark .bg-blue-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-green-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-orange-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-red-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-purple-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-yellow-50 {
-  background-color: var(--color-neutral-03) !important;
 }
 
 /* 表格深色适配 */
@@ -363,40 +279,6 @@
 /* 脉冲加载态深色适配（animate-pulse，如 MobileVisitForm 骨架占位） */
 .dark .animate-pulse {
   background-color: var(--color-neutral-03);
-}
-
-/* 渐变背景深色适配 */
-.dark .bg-gradient-to-r.from-blue-50,
-.dark .bg-gradient-to-br.from-blue-50 {
-  --tw-gradient-from: var(--color-neutral-02) !important;
-}
-
-.dark .bg-gradient-to-r.to-indigo-50,
-.dark .bg-gradient-to-br.to-purple-50 {
-  --tw-gradient-to: var(--color-neutral-03) !important;
-}
-
-/* 保留蓝色主题的渐变 */
-.dark .bg-gradient-to-r.from-blue-600 {
-  --tw-gradient-from: var(--color-brand-primary) !important;
-}
-
-.dark .bg-gradient-to-r.to-blue-700,
-.dark .bg-gradient-to-r.to-blue-500 {
-  --tw-gradient-to: var(--color-brand-primary-hover) !important;
-}
-
-.dark .bg-gradient-to-br.to-indigo-700 {
-  --tw-gradient-to: #413DD4 !important; /* Violet-06 */
-}
-
-/* BehaviorSupervision 城市大脑卡片特殊处理 */
-.dark .border-blue-100 {
-  border-color: var(--color-brand-primary) !important;
-}
-
-.dark .text-blue-100 {
-  color: var(--color-neutral-10) !important;
 }
 
 @theme inline {

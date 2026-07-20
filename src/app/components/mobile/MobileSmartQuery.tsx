@@ -71,7 +71,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#8B3BCC] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[var(--color-accent-purple)] rounded-lg flex items-center justify-center">
               <PieChart className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -90,7 +90,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
             <Badge
               key={area}
               variant="outline"
-              className="cursor-pointer hover:bg-[rgba(139,59,204,0.08)] hover:text-[#8B3BCC] hover:border-[#8B3BCC] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
+              className="cursor-pointer hover:bg-[var(--color-accent-purple-soft)] hover:text-[var(--color-accent-purple)] hover:border-[var(--color-accent-purple)] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
               onClick={() => setInputMessage(`查询${area}相关数据`)}
             >
               {area}
@@ -103,7 +103,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32">
         {messages.map(msg => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[#8B3BCC]' : 'bg-[var(--color-neutral-06)]'}`}>
+            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[var(--color-accent-purple)]' : 'bg-[var(--color-neutral-06)]'}`}>
               <AvatarFallback>
                 {msg.role === 'ai' ? <Bot className="w-4 h-4 text-white" /> : <span className="text-white text-xs">我</span>}
               </AvatarFallback>
@@ -112,7 +112,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
               <Card className={`inline-block max-w-[85%] ${
                 msg.role === 'ai'
                   ? 'bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]'
-                  : 'bg-[#8B3BCC] border-[#8B3BCC] text-white'
+                  : 'bg-[var(--color-accent-purple)] border-[var(--color-accent-purple)] text-white'
               }`}>
                 <div className="p-3">
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
@@ -181,7 +181,7 @@ export function MobileSmartQuery({ onBack }: MobileSmartQueryProps) {
           <Button
             onClick={() => handleSendMessage()}
             disabled={!inputMessage.trim()}
-            className="h-[44px] px-4 bg-[#8B3BCC] hover:bg-[#7432a8] text-white shrink-0"
+            className="h-[44px] px-4 bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple-text)] text-white shrink-0"
           >
             <Send className="w-5 h-5" />
           </Button>

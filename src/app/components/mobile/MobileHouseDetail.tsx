@@ -87,7 +87,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
     if (type === '自住') return 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]/35';
     if (type === '出租') return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]';
     if (type === '空置') return 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]';
-    if (type === '经营') return 'bg-purple-50 text-purple-700 border-purple-200';
+    if (type === '经营') return 'bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)] border-[var(--color-accent-purple)]/35';
     return 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]';
   };
 
@@ -236,7 +236,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <History className="w-4 h-4 text-purple-600" />
+              <History className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
               居住历史
             </h3>
           </div>

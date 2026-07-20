@@ -269,7 +269,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center shrink-0 text-purple-600">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-accent-purple-soft)] flex items-center justify-center shrink-0 text-[var(--color-accent-purple-text)]">
                     <Tag className="w-4 h-4" />
                   </div>
                   <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
@@ -623,7 +623,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <Card className="border-none shadow-sm">
               <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
                 <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
-                  <Network className="w-4 h-4 text-purple-600" />
+                  <Network className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                   关系网络
                 </h3>
               </div>
@@ -703,12 +703,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       } else if (hasFamily) {
                         // 只血缘：红色线
                         nodeColor = 'bg-[var(--color-status-error)]';
-                        strokeColor = '#ef4444';
+                        strokeColor = 'var(--color-status-error)';
                         strokeDasharray = '4 4';
                       } else {
                         // 只有同住：蓝色实线
                         nodeColor = 'bg-[var(--color-brand-primary)]';
-                        strokeColor = '#3b82f6';
+                        strokeColor = 'var(--color-brand-primary-hover)';
                         strokeDasharray = '';
                       }
                       
@@ -872,7 +872,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <Card className="border-none shadow-sm">
               <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
                 <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
-                  <History className="w-4 h-4 text-purple-600" />
+                  <History className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                   访问记录
                 </h3>
                 {visits.length > 0 && (

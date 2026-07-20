@@ -55,7 +55,7 @@ function getKnowledgeIcon(type: string) {
     case 'document':
       return <FileText className="h-5 w-5 text-[var(--color-brand-primary-hover)]" />;
     case 'image':
-      return <ImageIcon className="h-5 w-5 text-[#8B3BCC]" />;
+      return <ImageIcon className="h-5 w-5 text-[var(--color-accent-purple)]" />;
     case 'meeting':
       return <Mic className="h-5 w-5 text-[var(--color-status-warning)]" />;
     case 'article':
