@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Calendar, TrendingUp, Download, Activity } from 'lucide-react';
+import { Calendar, TrendingUp, Download, Activity, Database, Repeat, Target } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import {
@@ -26,14 +25,25 @@ import {
 } from 'recharts';
 import { ChartCard } from '../statistics/ChartCard';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
+import {
+  CHART_AXIS,
+  CHART_COLORS,
+  CHART_GRID,
+  CHART_GRID_PROPS,
+  CHART_LEGEND,
+  CHART_PRIMARY,
+  CHART_SUCCESS,
+  CHART_TICK,
+  CHART_WARNING,
+} from '../../config/chartConfig';
 
-const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
-const GRID_STROKE = '#3d4663';
-const AXIS_TICK = { fill: '#6b7599', fontSize: 12 };
-const TAB_TRIGGER_CLASS = 'data-[state=active]:bg-[#2761CB] data-[state=active]:text-white text-[var(--color-neutral-08)]';
+const TAB_TRIGGER_CLASS = 'data-[state=active]:bg-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-neutral-11)] text-[var(--color-neutral-08)]';
 
 export function TimeSeriesAnalysis() {
   const [mounted, setMounted] = useState(false);
@@ -154,59 +164,21 @@ export function TimeSeriesAnalysis() {
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT}`}>
-              <TrendingUp className="w-4 h-4" />
-              整体趋势
-            </CardDescription>
-            <CardTitle className="text-3xl text-white">稳步增长</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Badge className="border border-[#19B172]/35 bg-[#19B172]/12 text-[#B6F4D8]">
-                +2.2%/年
-              </Badge>
-              <span className={`text-xs ${MUTED_TEXT}`}>增长率</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>周期性强度</CardDescription>
-            <CardTitle className="text-3xl text-white">中等</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>
-              振幅 ±3.2% | 周期 12个月
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>预测准确度</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">92.5%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>
-              基于ARIMA模型预测
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>数据完整度</CardDescription>
-            <CardTitle className="text-3xl text-[#4E86DF]">98.8%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>
-              360个时间点
-            </p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="整体趋势"
+          value="稳步增长"
+          hint={
+            <span className="inline-flex items-center gap-2">
+              <StatusBadge tone="success">+2.2%/年</StatusBadge>
+              增长率
+            </span>
+          }
+          icon={TrendingUp}
+          tone="success"
+        />
+        <StatCard label="周期性强度" value="中等" hint="振幅 ±3.2% | 周期 12个月" icon={Repeat} tone="info" />
+        <StatCard label="预测准确度" value="92.5%" hint="基于ARIMA模型预测" icon={Target} tone="success" />
+        <StatCard label="数据完整度" value="98.8%" hint="360个时间点" icon={Database} tone="brand" />
       </div>
 
       <ChartCard title="时序分解分析" description="将时间序列分解为趋势、周期和残差三个组成部分">
@@ -223,12 +195,12 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <LineChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Line type="monotone" dataKey="value" name="人口总数" stroke="#4E86DF" strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Line type="monotone" dataKey="value" name="人口总数" stroke={CHART_PRIMARY} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
@@ -237,7 +209,7 @@ export function TimeSeriesAnalysis() {
               {populationTimeSeries.slice(-6).map((item) => (
                 <div key={item.time} className={`${INNER_PANEL_CLASS} p-2 text-center`}>
                   <p className={`mb-1 text-xs ${MUTED_TEXT}`}>{item.time}</p>
-                  <p className="font-semibold text-white">{item.value}</p>
+                  <p className="font-semibold text-[var(--color-neutral-11)]">{item.value}</p>
                 </div>
               ))}
             </div>
@@ -248,19 +220,19 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <LineChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Line type="monotone" dataKey="trend" name="趋势分量" stroke="#D6730D" strokeWidth={2} dot={false} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Line type="monotone" dataKey="trend" name="趋势分量" stroke={CHART_WARNING} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               )}
             </div>
-            <div className="rounded-lg border border-[#4E86DF]/35 bg-[#2761CB]/10 p-4">
-              <p className="mb-2 text-sm font-medium text-[#DCE6FF]">趋势解读</p>
-              <p className="text-sm leading-6 text-[#AFC0E8]">
+            <div className="rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/10 p-4">
+              <p className="mb-2 text-sm font-medium text-[var(--color-neutral-11)]">趋势解读</p>
+              <p className="text-sm leading-6 text-[var(--color-neutral-10)]">
                 数据显示人口总数呈现稳定的上升趋势，平均每月增长约0.15%，年增长率约2.2%，符合区域经济发展规律。
               </p>
             </div>
@@ -271,19 +243,19 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <BarChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Bar dataKey="seasonality" name="周期分量" fill="#19B172" />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Bar dataKey="seasonality" name="周期分量" fill={CHART_SUCCESS} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-            <div className="rounded-lg border border-[#19B172]/35 bg-[#19B172]/10 p-4">
-              <p className="mb-2 text-sm font-medium text-[#B6F4D8]">周期性特征</p>
-              <p className="text-sm leading-6 text-[#AFC0E8]">
+            <div className="rounded-lg border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] p-4">
+              <p className="mb-2 text-sm font-medium text-[var(--color-status-success-text)]">周期性特征</p>
+              <p className="text-sm leading-6 text-[var(--color-neutral-10)]">
                 明显的年度周期性特征：春节、毕业季、开学季均有显著人口波动，周期长度约12个月，振幅±3.2%。
               </p>
             </div>
@@ -294,19 +266,19 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <BarChart data={populationTimeSeries} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                    <YAxis axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                    <Bar dataKey="residual" name="残差分量" fill="#D6730D" />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Bar dataKey="residual" name="残差分量" fill={CHART_WARNING} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
-            <div className="rounded-lg border border-[#D6730D]/35 bg-[#D6730D]/10 p-4">
-              <p className="mb-2 text-sm font-medium text-[#FFD8A8]">残差分析</p>
-              <p className="text-sm leading-6 text-[#AFC0E8]">
+            <div className="rounded-lg border border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning-soft)] p-4">
+              <p className="mb-2 text-sm font-medium text-[var(--color-status-warning-text)]">残差分析</p>
+              <p className="text-sm leading-6 text-[var(--color-neutral-10)]">
                 残差部分较小且呈随机分布，说明模型拟合效果良好，没有明显的系统性偏差。
               </p>
             </div>
@@ -317,7 +289,7 @@ export function TimeSeriesAnalysis() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">周期性规律识别</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">周期性规律识别</CardTitle>
             <CardDescription className={MUTED_TEXT}>识别出的主要周期性模式</CardDescription>
           </CardHeader>
           <CardContent>
@@ -326,12 +298,12 @@ export function TimeSeriesAnalysis() {
                 <div key={index} className={`${INNER_PANEL_CLASS} p-4`}>
                   <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge className="border border-[#4E86DF]/35 bg-[#2761CB]/15 text-[#DCE6FF]">{pattern.period}</Badge>
-                      <span className="font-medium text-white">{pattern.pattern}</span>
+                      <StatusBadge tone="info">{pattern.period}</StatusBadge>
+                      <span className="font-medium text-[var(--color-neutral-11)]">{pattern.pattern}</span>
                     </div>
-                    <Badge variant="outline" className={pattern.impact.startsWith('+') ? 'border-[#19B172]/45 bg-[#19B172]/10 text-[#B6F4D8]' : 'border-[#D52132]/45 bg-[#D52132]/10 text-[#FFB4BE]'}>
+                    <StatusBadge tone={pattern.impact.startsWith('+') ? 'success' : 'error'}>
                       {pattern.impact}
-                    </Badge>
+                    </StatusBadge>
                   </div>
                   <p className={`text-sm ${MUTED_TEXT}`}>{pattern.description}</p>
                 </div>
@@ -342,7 +314,7 @@ export function TimeSeriesAnalysis() {
 
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">趋势特征分析</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">趋势特征分析</CardTitle>
             <CardDescription className={MUTED_TEXT}>时间序列的趋势特征描述</CardDescription>
           </CardHeader>
           <CardContent>
@@ -350,11 +322,11 @@ export function TimeSeriesAnalysis() {
               {trendFeatures.map((feature, index) => (
                 <div key={index} className={`${INNER_PANEL_CLASS} p-4`}>
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <span className="font-medium text-white">{feature.feature}</span>
-                    <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#DCE6FF]">{feature.rate}</Badge>
+                    <span className="font-medium text-[var(--color-neutral-11)]">{feature.feature}</span>
+                    <StatusBadge tone="info">{feature.rate}</StatusBadge>
                   </div>
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-lg font-semibold text-[#4E86DF]">{feature.value}</span>
+                    <span className="text-lg font-semibold text-[var(--color-brand-primary-hover)]">{feature.value}</span>
                     <span className={`text-sm ${MUTED_TEXT}`}>{feature.description}</span>
                   </div>
                 </div>
@@ -365,19 +337,17 @@ export function TimeSeriesAnalysis() {
 
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">周期性分析指标</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">周期性分析指标</CardTitle>
             <CardDescription className={MUTED_TEXT}>周期性特征的定量分析</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="mb-4 space-y-3">
               {cyclicalMetrics.map((item, index) => (
                 <div key={index} className="flex items-center justify-between gap-3 border-b border-[var(--color-neutral-03)] py-3 last:border-0">
-                  <span className="text-sm font-medium text-white">{item.metric}</span>
+                  <span className="text-sm font-medium text-[var(--color-neutral-11)]">{item.metric}</span>
                   <div className="flex items-center gap-3">
-                    <span className="font-semibold text-[#DCE6FF]">{item.value}</span>
-                    <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-xs text-[#DCE6FF]">
-                      置信度 {item.confidence}
-                    </Badge>
+                    <span className="font-semibold text-[var(--color-neutral-11)]">{item.value}</span>
+                    <StatusBadge tone="info">置信度 {item.confidence}</StatusBadge>
                   </div>
                 </div>
               ))}
@@ -387,14 +357,14 @@ export function TimeSeriesAnalysis() {
               {mounted && (
                 <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
                   <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
-                    <PolarGrid stroke={GRID_STROKE} />
-                    <PolarAngleAxis dataKey="subject" tick={{ fill: '#AFC0E8', fontSize: 12 }} />
-                    <PolarRadiusAxis tick={{ fill: '#6b7599', fontSize: 11 }} axisLine={false} />
+                    <PolarGrid stroke={CHART_GRID} />
+                    <PolarAngleAxis dataKey="subject" tick={CHART_TICK} />
+                    <PolarRadiusAxis tick={{ fill: CHART_AXIS, fontSize: 11 }} axisLine={false} />
                     <Radar
                       name="周期分析"
                       dataKey="A"
-                      stroke="#8B5CF6"
-                      fill="#8B5CF6"
+                      stroke={CHART_COLORS[2]}
+                      fill={CHART_COLORS[2]}
                       fillOpacity={0.42}
                     />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
@@ -407,7 +377,7 @@ export function TimeSeriesAnalysis() {
 
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-white">自相关分析</CardTitle>
+            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">自相关分析</CardTitle>
             <CardDescription className={MUTED_TEXT}>时间序列的自相关性检验</CardDescription>
           </CardHeader>
           <CardContent>
@@ -415,14 +385,14 @@ export function TimeSeriesAnalysis() {
               {autocorrelation.map((item) => (
                 <div key={item.lag} className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-white">滞后 {item.label}</span>
-                    <span className="text-sm font-semibold text-[#4E86DF]">
+                    <span className="text-sm font-medium text-[var(--color-neutral-11)]">滞后 {item.label}</span>
+                    <span className="text-sm font-semibold text-[var(--color-brand-primary-hover)]">
                       {item.value.toFixed(2)}
                     </span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-[var(--color-neutral-03)]">
                     <div
-                      className="h-2 rounded-full bg-[#4E86DF]"
+                      className="h-2 rounded-full bg-[var(--color-brand-primary-hover)]"
                       style={{ width: `${item.value * 100}%` }}
                     />
                   </div>
@@ -430,9 +400,9 @@ export function TimeSeriesAnalysis() {
               ))}
             </div>
 
-            <div className="mt-6 rounded-lg border border-[#4E86DF]/35 bg-[#2761CB]/10 p-4">
-              <p className="mb-1 text-sm font-medium text-[#DCE6FF]">分析结论</p>
-              <p className="text-sm leading-6 text-[#AFC0E8]">
+            <div className="mt-6 rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/10 p-4">
+              <p className="mb-1 text-sm font-medium text-[var(--color-neutral-11)]">分析结论</p>
+              <p className="text-sm leading-6 text-[var(--color-neutral-10)]">
                 数据具有较强的自相关性，短期记忆效应明显，适合使用ARIMA等时间序列模型进行预测。
               </p>
             </div>
@@ -445,13 +415,13 @@ export function TimeSeriesAnalysis() {
           {mounted && (
             <ResponsiveContainer width="100%" height="100%" minWidth={1} minHeight={1} aspect={undefined}>
               <ComposedChart data={forecastData} margin={{ top: 8, right: 16, left: -16, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={GRID_STROKE} />
-                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={AXIS_TICK} />
-                <YAxis domain={['dataMin - 50', 'auto']} axisLine={false} tickLine={false} tick={AXIS_TICK} />
+                <CartesianGrid {...CHART_GRID_PROPS} />
+                <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                <YAxis domain={['dataMin - 50', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: '#AFC0E8' }} />
-                <Area type="monotone" dataKey="range" name="95%置信区间" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.2} />
-                <Line type="monotone" dataKey="value" name="预测值" stroke="#D6730D" strokeWidth={2} dot={{ r: 4 }} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Area type="monotone" dataKey="range" name="95%置信区间" stroke={CHART_COLORS[2]} fill={CHART_COLORS[2]} fillOpacity={0.2} />
+                <Line type="monotone" dataKey="value" name="预测值" stroke={CHART_WARNING} strokeWidth={2} dot={{ r: 4 }} />
               </ComposedChart>
             </ResponsiveContainer>
           )}
@@ -460,15 +430,15 @@ export function TimeSeriesAnalysis() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className={`${INNER_PANEL_CLASS} p-4`}>
             <p className={`mb-2 text-sm ${MUTED_TEXT}`}>预测模型</p>
-            <p className="text-lg font-semibold text-white">ARIMA(2,1,2)</p>
+            <p className="text-lg font-semibold text-[var(--color-neutral-11)]">ARIMA(2,1,2)</p>
           </div>
           <div className={`${INNER_PANEL_CLASS} p-4`}>
             <p className={`mb-2 text-sm ${MUTED_TEXT}`}>模型准确度</p>
-            <p className="text-lg font-semibold text-[#19B172]">92.5%</p>
+            <p className="text-lg font-semibold text-[var(--color-status-success)]">92.5%</p>
           </div>
           <div className={`${INNER_PANEL_CLASS} p-4`}>
             <p className={`mb-2 text-sm ${MUTED_TEXT}`}>预测区间</p>
-            <p className="text-lg font-semibold text-white">95% 置信水平</p>
+            <p className="text-lg font-semibold text-[var(--color-neutral-11)]">95% 置信水平</p>
           </div>
         </div>
       </ChartCard>

@@ -5,7 +5,7 @@ import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { Badge } from '../ui/badge';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { 
   Send, 
   Save, 
@@ -46,12 +46,12 @@ export function PublishNotice() {
   const [gridList, setGridList] = useState<string[]>([]);
 
   // 公告类型选项
-  const noticeTypes = [
-    { value: 'urgent', label: '紧急通知', color: 'bg-red-100 text-red-600' },
-    { value: 'system', label: '系统消息', color: 'bg-blue-100 text-blue-600' },
-    { value: 'guide', label: '操作指南', color: 'bg-green-100 text-green-600' },
-    { value: 'task', label: '工作任务', color: 'bg-orange-100 text-orange-600' },
-    { value: 'info', label: '普通通知', color: 'bg-gray-100 text-gray-600' },
+  const noticeTypes: Array<{ value: string; label: string; tone: StatusTone }> = [
+    { value: 'urgent', label: '紧急通知', tone: 'error' },
+    { value: 'system', label: '系统消息', tone: 'info' },
+    { value: 'guide', label: '操作指南', tone: 'success' },
+    { value: 'task', label: '工作任务', tone: 'warning' },
+    { value: 'info', label: '普通通知', tone: 'neutral' },
   ];
 
   // 通知范围选项
@@ -150,12 +150,12 @@ export function PublishNotice() {
     alert('草稿已保存');
   };
 
-  const getTypeColor = (type: string) => {
-    return noticeTypes.find(t => t.value === type)?.color || 'bg-gray-100 text-gray-600';
+  const getTypeTone = (type: string): StatusTone => {
+    return noticeTypes.find(t => t.value === type)?.tone ?? 'neutral';
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 page-enter">
       <PageHeader
         eyebrow="NOTICE PUBLISH"
         title="发布公告"
@@ -164,12 +164,12 @@ export function PublishNotice() {
 
       {/* 成功提示 */}
       {publishSuccess && (
-        <Card className="border-green-200 bg-green-50">
+        <Card className="border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)]">
           <CardContent className="p-4 flex items-center gap-3">
-            <CheckCircle2 className="w-5 h-5 text-green-600" />
+            <CheckCircle2 className="w-5 h-5 text-[var(--color-status-success-text)]" />
             <div className="flex-1">
-              <p className="text-green-800 font-medium">公告发布成功！</p>
-              <p className="text-sm text-green-600">网格员可在移动端【通知公告】中查看</p>
+              <p className="font-medium text-[var(--color-status-success-text)]">公告发布成功！</p>
+              <p className="text-sm text-[var(--color-neutral-08)]">网格员可在移动端【通知公告】中查看</p>
             </div>
           </CardContent>
         </Card>
@@ -182,7 +182,7 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-blue-600" />
+                <Bell className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
                 基本信息
               </CardTitle>
               <CardDescription>填写公告标题、类型和内容</CardDescription>
@@ -190,7 +190,7 @@ export function PublishNotice() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="title">
-                  公告标题 <span className="text-red-500">*</span>
+                  公告标题 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -202,7 +202,7 @@ export function PublishNotice() {
 
               <div className="space-y-2">
                 <Label htmlFor="type">
-                  公告类型 <span className="text-red-500">*</span>
+                  公告类型 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
                   <SelectTrigger id="type">
@@ -212,9 +212,7 @@ export function PublishNotice() {
                     {noticeTypes.map(type => (
                       <SelectItem key={type.value} value={type.value}>
                         <div className="flex items-center gap-2">
-                          <span className={`px-2 py-0.5 rounded text-xs ${type.color}`}>
-                            {type.label}
-                          </span>
+                          <StatusBadge tone={type.tone}>{type.label}</StatusBadge>
                         </div>
                       </SelectItem>
                     ))}
@@ -224,7 +222,7 @@ export function PublishNotice() {
 
               <div className="space-y-2">
                 <Label htmlFor="content">
-                  公告内容 <span className="text-red-500">*</span>
+                  公告内容 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Textarea
                   id="content"
@@ -234,7 +232,7 @@ export function PublishNotice() {
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   className="resize-none"
                 />
-                <p className="text-xs text-gray-500">{formData.content.length} / 2000 字符</p>
+                <p className="text-xs text-[var(--color-neutral-08)]">{formData.content.length} / 2000 字符</p>
               </div>
             </CardContent>
           </Card>
@@ -243,14 +241,14 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-purple-600" />
+                <Users className="w-5 h-5 text-[var(--color-status-info)]" />
                 通知范围
               </CardTitle>
               <CardDescription>选择公告的接收对象</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-3">
-                <Label>接收对象 <span className="text-red-500">*</span></Label>
+                <Label>接收对象 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                 <div className="space-y-2">
                   {scopeOptions.map(option => (
                     <div key={option.value} className="flex items-center space-x-2">
@@ -274,7 +272,7 @@ export function PublishNotice() {
               {formData.scope.includes('grid') && (
                 <div className="space-y-3 pt-3 border-t">
                   <Label>选择网格</Label>
-                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-gray-50 rounded-lg">
+                  <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto p-2 bg-[var(--color-neutral-01)] rounded-lg">
                     {gridList.map(grid => (
                       <div key={grid} className="flex items-center space-x-2">
                         <Checkbox
@@ -291,7 +289,7 @@ export function PublishNotice() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-xs text-gray-500">已选择 {formData.grids.length} 个网格</p>
+                  <p className="text-xs text-[var(--color-neutral-08)]">已选择 {formData.grids.length} 个网格</p>
                 </div>
               )}
             </CardContent>
@@ -301,7 +299,7 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-green-600" />
+                <Calendar className="w-5 h-5 text-[var(--color-status-success)]" />
                 发布设置
               </CardTitle>
               <CardDescription>选择立即发布或定时发布</CardDescription>
@@ -345,7 +343,7 @@ export function PublishNotice() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button 
-                className="w-full bg-blue-600 hover:bg-blue-700" 
+                className="w-full"
                 onClick={handlePublish}
                 disabled={!formData.title || !formData.content || formData.scope.length === 0}
               >
@@ -381,22 +379,22 @@ export function PublishNotice() {
                 <CardDescription>网格员看到的效果</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="bg-gray-100 rounded-lg p-3 space-y-2">
+                <div className="bg-[var(--color-neutral-01)] rounded-lg p-3 space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${getTypeColor(formData.type)}`}>
+                    <StatusBadge tone={getTypeTone(formData.type)} className="text-[10px]">
                       {noticeTypes.find(t => t.value === formData.type)?.label}
-                    </span>
-                    <span className="text-xs text-gray-400">刚刚</span>
+                    </StatusBadge>
+                    <span className="text-xs text-[var(--color-neutral-08)]">刚刚</span>
                   </div>
-                  <h3 className="text-sm font-bold text-gray-900">
+                  <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">
                     {formData.title || '公告标题'}
                   </h3>
-                  <p className="text-xs text-gray-500 line-clamp-3">
+                  <p className="text-xs text-[var(--color-neutral-08)] line-clamp-3">
                     {formData.content || '公告内容将在此处显示...'}
                   </p>
-                  <div className="pt-2 border-t border-gray-200 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400">烟台市社会治理中心</span>
-                    <span className="text-xs text-blue-600">查看详情</span>
+                  <div className="pt-2 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
+                    <span className="text-[10px] text-[var(--color-neutral-08)]">烟台市社会治理中心</span>
+                    <span className="text-xs text-[var(--color-brand-primary-hover)]">查看详情</span>
                   </div>
                 </div>
               </CardContent>
@@ -404,13 +402,13 @@ export function PublishNotice() {
           )}
 
           {/* 使用提示 */}
-          <Card className="border-blue-100 bg-blue-50">
+          <Card className="border-[var(--color-status-info)]/35 bg-[var(--color-status-info-soft)]">
             <CardContent className="p-4 space-y-2">
               <div className="flex items-start gap-2">
-                <AlertCircle className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
+                <AlertCircle className="w-4 h-4 text-[var(--color-status-info-text)] mt-0.5 shrink-0" />
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-blue-900">使用提示</p>
-                  <ul className="text-xs text-blue-700 space-y-1">
+                  <p className="text-sm font-medium text-[var(--color-status-info-text)]">使用提示</p>
+                  <ul className="text-xs text-[var(--color-neutral-10)] space-y-1">
                     <li>• 紧急通知将优先展示</li>
                     <li>• 公告发布后无法撤回</li>
                     <li>• 网格员可在移动端查看</li>

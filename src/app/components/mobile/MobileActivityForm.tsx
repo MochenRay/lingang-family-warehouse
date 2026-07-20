@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { ChevronLeft, Info, MapPin, Calendar, Users, FileText, Tag, Clock } from 'lucide-react';
+import { Info, MapPin, Calendar, Users, FileText, Tag, Clock } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { MobileStatusBar } from './MobileStatusBar';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { toast } from 'sonner';
 import { CATEGORY_OPTIONS, MOCK_ACTIVITIES, Activity, SubcategoryOption } from '../../data/activities';
 import { Badge } from '../ui/badge';
@@ -106,46 +106,34 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
   const currentCategoryOptions = CATEGORY_OPTIONS.find(c => c.value === selectedCategory)?.subcategories || [];
 
   return (
-    <div className="h-full flex flex-col bg-gray-50">
+    <div className="h-full flex flex-col bg-[var(--color-neutral-01)]">
       {/* Header */}
-      <div className="bg-white border-b border-gray-100 sticky top-0 z-10">
-        <MobileStatusBar variant="dark" />
-        <div className="px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="w-8 h-8 -ml-2 flex items-center justify-center text-gray-600 active:bg-gray-100 rounded-full transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <h1 className="text-base font-bold text-gray-900">{editId ? '修改活动申请' : '发布新活动'}</h1>
-          <div className="w-8"></div>
-        </div>
-      </div>
+      <MobileDetailHeader title={editId ? '修改活动申请' : '发布新活动'} onBack={onBack} />
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         <form onSubmit={handleSubmit(onSubmit)} className="p-4 pb-28 space-y-4">
 
           {/* Section 1: Basic Info */}
-          <div className="space-y-4 bg-white p-4 rounded-2xl border border-gray-100">
-            <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-              <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+          <div className="space-y-4 bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)]">
+            <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
+              <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
               基本信息
             </h3>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500">活动名称 <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-[var(--color-neutral-08)]">活动名称 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <Input
                 placeholder="请输入活动名称"
                 className="h-10 rounded-lg"
                 {...register("title", { required: "请输入活动名称" })}
               />
-              {errors.title && <p className="text-xs text-red-500">{errors.title.message}</p>}
+              {errors.title && <p className="text-xs text-[var(--color-status-error-text)]">{errors.title.message}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
                <div className="space-y-1.5">
-                 <Label className="text-xs text-gray-500">活动大类 <span className="text-red-500">*</span></Label>
+                 <Label className="text-xs text-[var(--color-neutral-08)]">活动大类 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                  <Select value={selectedCategory} onValueChange={handleCategoryChange}>
                    <SelectTrigger className="h-10 rounded-lg">
                      <SelectValue placeholder="选择大类" />
@@ -159,7 +147,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
                </div>
 
                <div className="space-y-1.5">
-                 <Label className="text-xs text-gray-500">具体类型 <span className="text-red-500">*</span></Label>
+                 <Label className="text-xs text-[var(--color-neutral-08)]">具体类型 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                  <Select
                    value={selectedSubcategory}
                    onValueChange={handleSubcategoryChange}
@@ -182,27 +170,27 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
             {/* Prediction Card */}
             {prediction && selectedSub && (
               <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-                <div className="rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-700 p-4 text-white shadow-lg shadow-blue-600/20">
+                <div className="rounded-[4px] bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-accent-purple)] p-4 text-white shadow-lg shadow-[var(--color-brand-primary)]/20">
                   <div className="flex items-center gap-2 mb-2.5">
-                    <div className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center">
-                      <Info className="h-3.5 w-3.5 text-blue-200" />
+                    <div className="w-6 h-6 rounded-full bg-[var(--color-neutral-11)]/15 flex items-center justify-center">
+                      <Info className="h-3.5 w-3.5 text-white/80" />
                     </div>
                     <span className="text-sm font-bold">智能预测参考</span>
-                    <span className="ml-auto text-2xl font-bold text-white/90">{prediction.count}<span className="text-xs font-normal text-blue-200 ml-0.5">人</span></span>
+                    <span className="ml-auto text-2xl font-bold text-white/90">{prediction.count}<span className="text-xs font-normal text-white/80 ml-0.5">人</span></span>
                   </div>
-                  <p className="text-[13px] leading-relaxed text-blue-100/90 mb-3">
+                  <p className="text-[13px] leading-relaxed text-white/80 mb-3">
                     {prediction.text}
                   </p>
                   <div className="flex flex-wrap gap-1.5 mb-3">
                     {selectedSub.matchedTags.map(tag => (
-                      <span key={tag} className="inline-flex items-center gap-1 bg-white/15 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full border border-white/20">
+                      <span key={tag} className="inline-flex items-center gap-1 bg-[var(--color-neutral-11)]/15 backdrop-blur-sm text-white text-[11px] px-2.5 py-1 rounded-full border border-[var(--color-neutral-11)]/20">
                         <Tag className="w-3 h-3" />{tag}
                       </span>
                     ))}
                   </div>
                   <button
                     type="button"
-                    className="text-xs text-blue-200 font-medium flex items-center gap-1.5 hover:text-white transition-colors active:scale-95"
+                    className="text-xs text-white/80 font-medium flex items-center gap-1.5 hover:text-white transition-colors active:scale-95"
                     onClick={() => setShowParticipants(true)}
                   >
                     <Users className="w-3.5 h-3.5" />
@@ -212,7 +200,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
 
                 <Drawer open={showParticipants} onOpenChange={setShowParticipants}>
                   <DrawerContent className="max-h-[75vh]">
-                    <DrawerHeader className="border-b border-gray-100">
+                    <DrawerHeader className="border-b border-[var(--color-neutral-03)]">
                       <DrawerTitle className="text-base">匹配居民名单（{selectedSub.potentialParticipants.length} 人）</DrawerTitle>
                     </DrawerHeader>
                     <ScrollArea className="px-4 py-4 overflow-y-auto max-h-[55vh]">
@@ -223,18 +211,18 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
                           return (
                             <div key={tag}>
                               <div className="flex items-center gap-2 mb-2.5">
-                                <Badge className="bg-blue-600 text-white border-0 text-[11px] px-2.5 py-0.5 rounded-full">{tag}</Badge>
-                                <span className="text-[11px] text-gray-400">{people.length} 人</span>
+                                <Badge className="bg-[var(--color-brand-primary)] text-white border-0 text-[11px] px-2.5 py-0.5 rounded-full">{tag}</Badge>
+                                <span className="text-[11px] text-[var(--color-neutral-08)]">{people.length} 人</span>
                               </div>
                               <div className="space-y-2">
                                 {people.map(p => (
-                                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100">
-                                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                  <div key={p.id} className="flex items-center gap-3 p-3 rounded-[4px] bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)]">
+                                    <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)] flex items-center justify-center text-white text-xs font-bold shrink-0">
                                       {p.name[0]}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <span className="text-gray-800 text-sm font-medium block">{p.name}</span>
-                                      <span className="text-gray-400 text-xs">{p.address}</span>
+                                      <span className="text-[var(--color-neutral-11)] text-sm font-medium block">{p.name}</span>
+                                      <span className="text-[var(--color-neutral-08)] text-xs">{p.address}</span>
                                     </div>
                                   </div>
                                 ))}
@@ -244,7 +232,7 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
                         })}
                       </div>
                     </ScrollArea>
-                    <DrawerFooter className="border-t border-gray-100">
+                    <DrawerFooter className="border-t border-[var(--color-neutral-03)]">
                       <DrawerClose asChild>
                         <Button variant="outline" className="w-full rounded-xl">关闭</Button>
                       </DrawerClose>
@@ -255,9 +243,9 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
             )}
 
             <div className="space-y-1.5">
-               <Label className="text-xs text-gray-500">预计人数</Label>
+               <Label className="text-xs text-[var(--color-neutral-08)]">预计人数</Label>
                <div className="relative">
-                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                  <Input
                    type="number"
                    className="pl-9 h-10 rounded-lg"
@@ -269,55 +257,55 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
           </div>
 
           {/* Section 2: Time & Location */}
-          <div className="space-y-4 bg-white p-4 rounded-2xl border border-gray-100">
-            <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-              <span className="w-1 h-4 bg-orange-500 rounded-full"></span>
+          <div className="space-y-4 bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)]">
+            <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
+              <span className="w-1 h-4 bg-[var(--color-status-warning)] rounded-full"></span>
               时间地点
             </h3>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500">活动日期 <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-[var(--color-neutral-08)]">活动日期 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                 <Input type="date" className="pl-9 h-10 rounded-lg" {...register("date", { required: true })} />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
                <div className="space-y-1.5">
-                 <Label className="text-xs text-gray-500">开始时间 <span className="text-red-500">*</span></Label>
+                 <Label className="text-xs text-[var(--color-neutral-08)]">开始时间 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                  <div className="relative">
-                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                    <Input type="time" className="pl-9 h-10 rounded-lg" {...register("startTime", { required: true })} />
                  </div>
                </div>
                <div className="space-y-1.5">
-                 <Label className="text-xs text-gray-500">结束时间 <span className="text-red-500">*</span></Label>
+                 <Label className="text-xs text-[var(--color-neutral-08)]">结束时间 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                  <div className="relative">
-                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                   <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                    <Input type="time" className="pl-9 h-10 rounded-lg" {...register("endTime", { required: true })} />
                  </div>
                </div>
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500">活动地点 <span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-[var(--color-neutral-08)]">活动地点 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                 <Input className="pl-9 h-10 rounded-lg" placeholder="请输入具体地点" {...register("location", { required: true })} />
               </div>
             </div>
           </div>
 
           {/* Section 3: Details */}
-          <div className="space-y-4 bg-white p-4 rounded-2xl border border-gray-100">
-            <h3 className="font-bold text-sm text-gray-900 flex items-center gap-2">
-              <span className="w-1 h-4 bg-purple-500 rounded-full"></span>
+          <div className="space-y-4 bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)]">
+            <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
+              <span className="w-1 h-4 bg-[var(--color-accent-purple)] rounded-full"></span>
               详细方案
             </h3>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500">活动简介</Label>
+              <Label className="text-xs text-[var(--color-neutral-08)]">活动简介</Label>
               <Textarea
                 placeholder="简要描述活动内容（用于列表展示）"
                 className="min-h-[80px] rounded-lg"
@@ -326,24 +314,24 @@ export function MobileActivityForm({ onBack, editId }: MobileActivityFormProps) 
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs text-gray-500">申请详情（审批参考）<span className="text-red-500">*</span></Label>
+              <Label className="text-xs text-[var(--color-neutral-08)]">申请详情（审批参考）<span className="text-[var(--color-status-error-text)]">*</span></Label>
               <Textarea
                 placeholder="请详细说明活动流程、资源需求、预算计划等..."
                 className="min-h-[120px] rounded-lg"
                 {...register("applicationDetails", { required: "请填写申请详情" })}
               />
-              {errors.applicationDetails && <p className="text-xs text-red-500">{errors.applicationDetails.message}</p>}
+              {errors.applicationDetails && <p className="text-xs text-[var(--color-status-error-text)]">{errors.applicationDetails.message}</p>}
             </div>
           </div>
         </form>
       </div>
 
       {/* Fixed Bottom Button */}
-      <div className="bg-white border-t border-gray-100 p-4 safe-area-bottom">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom">
         <Button
           type="submit"
           onClick={handleSubmit(onSubmit)}
-          className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-base font-bold rounded-xl shadow-md shadow-blue-600/20"
+          className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-base font-bold rounded-xl shadow-md shadow-[var(--color-brand-primary)]/20"
           disabled={submitting}
         >
           {submitting ? '提交中...' : (editId ? '重新提交审批' : '提交活动申请')}

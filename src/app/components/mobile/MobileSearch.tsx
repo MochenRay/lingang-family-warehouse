@@ -48,24 +48,24 @@ interface SearchTagOption {
 function getRiskColor(risk: string) {
   switch (risk) {
     case 'High':
-      return 'bg-red-500';
+      return 'bg-[var(--color-status-error)]';
     case 'Medium':
-      return 'bg-yellow-500';
+      return 'bg-[var(--color-status-warning)]';
     default:
-      return 'bg-green-500';
+      return 'bg-[var(--color-status-success)]';
   }
 }
 
 function getTagColor(category: SearchTagOption['category']) {
   switch (category) {
     case 'identity':
-      return 'bg-blue-50 text-blue-600 border-blue-100';
+      return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]/30';
     case 'risk':
-      return 'bg-red-50 text-red-600 border-red-100';
+      return 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)] border-[var(--color-status-error)]/30';
     case 'health':
-      return 'bg-green-50 text-green-600 border-green-100';
+      return 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]/30';
     default:
-      return 'bg-gray-50 text-gray-600 border-gray-100';
+      return 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]';
   }
 }
 
@@ -205,50 +205,50 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
   });
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100 pb-2">
-        <MobileStatusBar variant="dark" />
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
+      <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10 border-b border-[var(--color-neutral-03)] pb-2">
+        <MobileStatusBar />
         <div className="px-4 flex items-center gap-3 py-2">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
             <Input
-              className="pl-9 bg-gray-100 border-none h-9 text-sm focus-visible:ring-0"
+              className="pl-9 bg-[var(--color-neutral-01)] border-none h-9 text-sm focus-visible:ring-0"
               placeholder={activeTab === 'people' ? '搜索姓名/地址/标签...' : '搜索房主/地址/标签...'}
               value={searchQuery}
               onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
-          <button onClick={onBack} className="text-gray-600 font-medium text-sm">
+          <button onClick={onBack} className="text-[var(--color-neutral-10)] font-medium text-sm">
             取消
           </button>
         </div>
 
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'people' | 'house')} className="w-full">
-          <TabsList className="w-full flex h-12 bg-transparent p-0 border-b border-gray-100">
+          <TabsList className="w-full flex h-12 bg-transparent p-0 border-b border-[var(--color-neutral-03)]">
             <TabsTrigger
               value="people"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-gray-500 transition-colors group-data-[state=active]:text-blue-600">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                 人员信息
               </span>
-              <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-blue-600 opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
+              <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
             </TabsTrigger>
             <TabsTrigger
               value="house"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-gray-500 transition-colors group-data-[state=active]:text-blue-600">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                 房屋信息
               </span>
-              <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-blue-600 opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
+              <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
             </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
 
-      <div className="px-4 py-2 bg-white mb-2 flex justify-between items-center shadow-sm">
-        <div className="text-xs text-gray-500">
+      <div className="px-4 py-2 bg-[var(--color-neutral-02)] mb-2 flex justify-between items-center shadow-sm">
+        <div className="text-xs text-[var(--color-neutral-08)]">
           {loading ? (
             <span className="inline-flex items-center gap-1">
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -271,9 +271,9 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                 riskLevel !== 'all' ||
                 houseStatus !== 'all' ||
                 selectedGrid !== 'all'
-                  ? 'text-blue-600 font-bold bg-blue-50'
-                  : 'text-gray-600'
-              } hover:bg-gray-50`}
+                  ? 'text-[var(--color-brand-primary-hover)] font-bold bg-[var(--color-brand-primary)]/10'
+                  : 'text-[var(--color-neutral-10)]'
+              } hover:bg-[var(--color-neutral-03)]`}
             >
               <Filter className="w-3.5 h-3.5 mr-1" />
               筛选
@@ -296,7 +296,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                <div className="text-xs text-gray-500 mt-2 flex items-center gap-1">
+                <div className="text-xs text-[var(--color-neutral-08)] mt-2 flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
                   当前默认检索范围：{currentGrid.name || '未设置网格'}
                 </div>
@@ -335,7 +335,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                   <div>
                     <div className="flex justify-between mb-2">
                       <Label className="text-sm font-medium">年龄范围</Label>
-                      <span className="text-xs text-blue-600 font-bold">{ageRange[0]}岁 - {ageRange[1]}岁</span>
+                      <span className="text-xs text-[var(--color-brand-primary-hover)] font-bold">{ageRange[0]}岁 - {ageRange[1]}岁</span>
                     </div>
                     <Slider value={ageRange} max={100} step={1} onValueChange={setAgeRange} className="py-4" />
                   </div>
@@ -374,7 +374,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                           : '其他标签';
                   return (
                     <div key={category} className="mb-4">
-                      <div className="text-xs text-gray-500 mb-2 font-medium">{title}</div>
+                      <div className="text-xs text-[var(--color-neutral-08)] mb-2 font-medium">{title}</div>
                       <div className="flex flex-wrap gap-2">
                         {tags.map((tag) => {
                           const active = selectedTags.includes(tag.label);
@@ -384,7 +384,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                               key={tag.id}
                               variant="outline"
                               className={`cursor-pointer py-1.5 px-3 transition-colors ${
-                                active ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : baseColor
+                                active ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-active)]' : baseColor
                               }`}
                               onClick={() => handleTagToggle(tag.label)}
                             >
@@ -420,7 +420,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
                       <div className={`w-2 h-2 rounded-full ${getRiskColor(person.risk)}`} />
-                      <span className="font-bold text-gray-900 text-lg">{person.name}</span>
+                      <span className="font-bold text-[var(--color-neutral-11)] text-lg">{person.name}</span>
                       <Badge variant="secondary" className="text-xs font-normal h-5">{person.type}</Badge>
                     </div>
                     <Badge variant={person.risk === 'High' ? 'destructive' : 'outline'} className="text-xs">
@@ -428,7 +428,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                     </Badge>
                   </div>
 
-                  <div className="space-y-1.5 text-sm text-gray-500 mb-3">
+                  <div className="space-y-1.5 text-sm text-[var(--color-neutral-08)] mb-3">
                     <div className="flex items-center gap-2">
                       <User className="w-3.5 h-3.5" />
                       {person.gender} | {person.age}岁 | {person.idCard.substring(0, 6)}****{person.idCard.substring(14)}
@@ -453,7 +453,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               </Card>
             ))
           ) : (
-            <div className="text-center py-10 text-gray-400 text-sm">未找到匹配的人员信息</div>
+            <div className="text-center py-10 text-[var(--color-neutral-08)] text-sm">未找到匹配的人员信息</div>
           )
         ) : filteredHouses.length > 0 ? (
           filteredHouses.map((house) => (
@@ -465,27 +465,27 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-blue-100 flex items-center justify-center text-blue-600">
+                    <div className="w-8 h-8 rounded bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)]">
                       <Home className="w-4 h-4" />
                     </div>
-                    <div className="font-bold text-gray-900 line-clamp-1 flex-1">
+                    <div className="font-bold text-[var(--color-neutral-11)] line-clamp-1 flex-1">
                       {house.communityName} {house.building} {house.unit} {house.room}
                     </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-gray-50 my-2">
+                <div className="grid grid-cols-3 gap-2 py-3 border-t border-b border-[var(--color-neutral-03)] my-2">
                   <div className="text-center">
-                    <div className="text-xs text-gray-400 mb-0.5">户主</div>
-                    <div className="text-sm font-medium text-gray-700">{house.ownerName}</div>
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">户主</div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-10)]">{house.ownerName}</div>
                   </div>
-                  <div className="text-center border-l border-gray-100">
-                    <div className="text-xs text-gray-400 mb-0.5">面积</div>
-                    <div className="text-sm font-medium text-gray-700">{house.area}</div>
+                  <div className="text-center border-l border-[var(--color-neutral-03)]">
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">面积</div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-10)]">{house.area}</div>
                   </div>
-                  <div className="text-center border-l border-gray-100">
-                    <div className="text-xs text-gray-400 mb-0.5">居住人数</div>
-                    <div className="text-sm font-medium text-gray-700">{house.memberCount}人</div>
+                  <div className="text-center border-l border-[var(--color-neutral-03)]">
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">居住人数</div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-10)]">{house.memberCount}人</div>
                   </div>
                 </div>
 
@@ -503,13 +503,13 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                       );
                     })}
                   </div>
-                  <ChevronRight className="w-4 h-4 text-gray-300" />
+                  <ChevronRight className="w-4 h-4 text-[var(--color-neutral-06)]" />
                 </div>
               </CardContent>
             </Card>
           ))
         ) : (
-          <div className="text-center py-10 text-gray-400 text-sm">未找到匹配的房屋信息</div>
+          <div className="text-center py-10 text-[var(--color-neutral-08)] text-sm">未找到匹配的房屋信息</div>
         )}
       </div>
     </div>

@@ -1,17 +1,12 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --font-size: 16px;
   /* Phase 14 (T4)：亮色 shadcn 语义 token 已删除（--background/--foreground/--card/
      --popover/--primary/--secondary/--muted/--accent/--destructive/--border/--input/
      --ring/--chart-1~6/--sidebar*）——.dark 恒激活，亮色值永不渲染，.dark 块保有全部
-     同名定义。保留 --radius（@theme inline 引用且无 .dark 覆盖）、--input-background、
-     --switch-background（同被 @theme inline 引用且无 .dark 覆盖）。 */
-  --input-background: #f3f3f5;
-  --switch-background: #cbced4;
-  --font-weight-medium: 500;
-  --font-weight-normal: 400;
-  --radius: 0.625rem;
+     同名定义。P1a：--radius、--input-background、--switch-background、--font-size、
+     --font-weight-*、--line-*、--spacing-*、--text-md 等亮色残留/死定义已移除
+     （全仓 0 引用）；字号档位移入 @theme 生效。 */
 
   /* ========================================== */
   /* SENSORO 设计规范 - 色彩系统 */
@@ -28,6 +23,27 @@
   --color-status-warning: #D6730D;  /* Orange-06 警告 */
   --color-status-error: #D52132;    /* Red-06 错误 */
   --color-status-info: #2AA3CF;     /* Light-blue-06 信息 */
+
+  /* 功能色扩展（P1a）- 深底文字色：在 neutral-01/02 背景上满足 WCAG AA 正文对比度 */
+  --color-status-success-text: #4AD3A0;
+  --color-status-warning-text: #F09640;
+  --color-status-error-text: #EB636F;
+  --color-status-info-text: #62C4E8;
+  /* 功能色扩展（P1a）- 深底软衬底色：Badge/Tag/警示条容器 */
+  --color-status-success-soft: rgba(25, 177, 114, 0.14);
+  --color-status-warning-soft: rgba(214, 115, 13, 0.16);
+  --color-status-error-soft: rgba(213, 33, 50, 0.16);
+  --color-status-info-soft: rgba(42, 163, 207, 0.16);
+
+  /* 扩展强调紫（P4d）：智能标签/关系网络/导出等紫色语义，同 chart-3 */
+  --color-accent-purple: #8B3BCC;
+  --color-accent-purple-text: #C9A5F2;  /* 深底可读 */
+  --color-accent-purple-soft: rgba(139, 59, 204, 0.16);
+
+  /* 排名奖牌：仅用于金银铜名次图标 */
+  --color-medal-gold: #FFD700;
+  --color-medal-silver: #C0C0C0;
+  --color-medal-bronze: #CD7F32;
   
   /* 中性色 - 背景层级 */
   --color-neutral-00: #131623;  /* 侧边栏（极深蓝黑） */
@@ -92,34 +108,18 @@
   /* SENSORO 设计规范 - 字体排版系统 */
   /* 来源: /reference/design-files/specs/typography.md */
   /* 公式: 行高 = 字号 + 8px */
+  /* 档位（12/14/16/18/20/24/32/46）已在 @theme 的
+     --text-* 命名空间实现，工具类直接生效；
+     字重用 Tailwind 内建档（light 300 / normal 400 /
+     medium 500 / semibold 600），不再重复定义。 */
   /* ========================================== */
-  
-  /* 字号档位 */
-  --text-xs: 12px;   --line-xs: 20px;  /* Font-01 辅助文字、标签 */
-  --text-sm: 14px;   --line-sm: 22px;  /* Font-02 正文、表单 */
-  --text-base: 16px; --line-base: 24px; /* Font-03 标题三级、重要文字 */
-  --text-md: 18px;   --line-md: 26px;  /* Font-04 标题二级 */
-  --text-lg: 20px;   --line-lg: 28px;  /* Font-05 标题一级 */
-  --text-xl: 24px;   --line-xl: 32px;  /* Font-06 大标题 */
-  --text-2xl: 32px;  --line-2xl: 40px; /* Font-07 特大标题 */
-  --text-3xl: 46px;  --line-3xl: 54px; /* Font-08 数据大屏 */
-  
-  /* 字重档位 */
-  --font-weight-light: 300;   /* 辅助信息 */
-  --font-weight-regular: 400; /* 正文（默认） */
-  --font-weight-medium: 500;  /* 小标题、强调 */
-  --font-weight-semibold: 600; /* 大标题、数字 */
-  
+
   /* ========================================== */
   /* SENSORO 设计规范 - 间距系统 */
   /* 来源: /reference/design-files/specs/spacing.md */
-  /* 原则: 遵循 8n 原则（4的倍数） */
+  /* 原则: 遵循 8n 原则（4的倍数）：4/8/12/16/24，
+     对应 Tailwind 间距刻度 1/2/3/4/6，直接用工具类。 */
   /* ========================================== */
-  --spacing-xs: 4px;   /* 图标与文字、标签内边距 */
-  --spacing-sm: 8px;   /* 按钮间距、列表项间距、Tag间距 */
-  --spacing-md: 12px;  /* 按钮内边距（小）、面板内边距 */
-  --spacing-lg: 16px;  /* 卡片内边距、表单字段间距 */
-  --spacing-xl: 24px;  /* 区块间距、页面边距、栅格Gutter */
 }
 
 .dark {
@@ -216,69 +216,10 @@
   color: var(--color-neutral-08);
 }
 
-/* 卡片和容器深色适配 */
-.dark .bg-gray-50 {
-  background-color: var(--color-neutral-01) !important;
-}
-
-.dark .bg-gray-100 {
-  background-color: var(--color-neutral-02) !important;
-}
-
-.dark .bg-white {
-  background-color: var(--color-neutral-02) !important;
-}
-
-/* 文字颜色深色适配 */
-.dark .text-gray-900 {
-  color: var(--color-neutral-11) !important;
-}
-
-.dark .text-gray-800 {
-  color: var(--color-neutral-11) !important;
-}
-
-.dark .text-gray-700 {
-  color: var(--color-neutral-10) !important;
-}
-
-.dark .text-gray-600 {
-  color: var(--color-neutral-10) !important;
-}
-
-.dark .text-gray-500 {
-  color: var(--color-neutral-08) !important;
-}
-
-.dark .text-gray-400 {
-  color: var(--color-neutral-08) !important;  /* 使用更亮的次要文字色 */
-}
-
-/* 边框颜色深色适配 */
-.dark .border-gray-100,
-.dark .border-gray-200,
-.dark .border-gray-300 {
-  border-color: var(--color-neutral-03) !important;
-}
-
-/* 悬停状态深色适配 */
-.dark .hover\:bg-gray-50:hover {
-  background-color: var(--color-neutral-02) !important;
-}
-
-.dark .hover\:bg-gray-100:hover {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .hover\:text-gray-900:hover {
-  color: var(--color-neutral-11) !important;
-}
-
-/* 分隔线深色适配 */
-.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
-.dark .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
-  border-color: var(--color-neutral-03) !important;
-}
+/* P4d：原「硬编码浅色类 !important 覆盖补丁表」已删除——
+   移动端/桌面端页面的 bg-gray-*/text-gray-*/bg-white/border-gray-* 等
+   浅色类已全部迁移为 token 直引，不再需要全局补丁。
+   保留：h/p/a/input 基础样式（上方）、禁用态、table/dialog/menu/tooltip 适配（下方）。 */
 
 /* 禁用状态深色适配 - 提高对比度以改善可读性 */
 .dark [disabled] {
@@ -297,31 +238,6 @@
 .dark button:disabled svg,
 .dark button[disabled] svg {
   opacity: 1;  /* 图标不额外降低透明度，由父元素统一控制 */
-}
-
-/* Badge 和标签深色适配 */
-.dark .bg-blue-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-green-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-orange-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-red-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-purple-50 {
-  background-color: var(--color-neutral-03) !important;
-}
-
-.dark .bg-yellow-50 {
-  background-color: var(--color-neutral-03) !important;
 }
 
 /* 表格深色适配 */
@@ -362,53 +278,12 @@
   color: var(--color-neutral-11);
 }
 
-/* 图表深色适配 */
-.dark .recharts-cartesian-grid-horizontal line,
-.dark .recharts-cartesian-grid-vertical line {
-  stroke: var(--color-neutral-03);
-}
-
-.dark .recharts-text {
-  fill: var(--color-neutral-08);
-}
+/* 图表深色适配：P1c 起网格/坐标轴/图例均由页面经 chartConfig adapter 显式传参，
+   不再依赖 .recharts-* CSS 覆盖（双轨已消除）。 */
 
 /* 脉冲加载态深色适配（animate-pulse，如 MobileVisitForm 骨架占位） */
 .dark .animate-pulse {
   background-color: var(--color-neutral-03);
-}
-
-/* 渐变背景深色适配 */
-.dark .bg-gradient-to-r.from-blue-50,
-.dark .bg-gradient-to-br.from-blue-50 {
-  --tw-gradient-from: var(--color-neutral-02) !important;
-}
-
-.dark .bg-gradient-to-r.to-indigo-50,
-.dark .bg-gradient-to-br.to-purple-50 {
-  --tw-gradient-to: var(--color-neutral-03) !important;
-}
-
-/* 保留蓝色主题的渐变 */
-.dark .bg-gradient-to-r.from-blue-600 {
-  --tw-gradient-from: var(--color-brand-primary) !important;
-}
-
-.dark .bg-gradient-to-r.to-blue-700,
-.dark .bg-gradient-to-r.to-blue-500 {
-  --tw-gradient-to: var(--color-brand-primary-hover) !important;
-}
-
-.dark .bg-gradient-to-br.to-indigo-700 {
-  --tw-gradient-to: #413DD4 !important; /* Violet-06 */
-}
-
-/* BehaviorSupervision 城市大脑卡片特殊处理 */
-.dark .border-blue-100 {
-  border-color: var(--color-brand-primary) !important;
-}
-
-.dark .text-blue-100 {
-  color: var(--color-neutral-10) !important;
 }
 
 @theme inline {
@@ -430,18 +305,52 @@
   --color-destructive-foreground: var(--destructive-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
-  --color-input-background: var(--input-background);
-  --color-switch-background: var(--switch-background);
   --color-ring: var(--ring);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --color-chart-6: var(--chart-6);
+
+  /* 字体栈：系统中文栈（P1a） */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+
+  /* SENSORO 字号档位（P1a）：行高 = 字号 + 8px */
+  --text-xs: 12px;   --text-xs--line-height: 20px;
+  --text-sm: 14px;   --text-sm--line-height: 22px;
+  --text-base: 16px; --text-base--line-height: 24px;
+  --text-md: 18px;   --text-md--line-height: 26px;
+  --text-lg: 20px;   --text-lg--line-height: 28px;
+  --text-xl: 24px;   --text-xl--line-height: 32px;
+  --text-2xl: 32px;  --text-2xl--line-height: 40px;
+  --text-3xl: 46px;  --text-3xl--line-height: 54px;
+
+  /* SENSORO 圆角档位（P1a）：按钮/输入 2px、卡片/菜单 4px、对话框 8px；xl 为过渡档 */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
+
+  /* 阴影导出为工具类（P1a）：运行时取 .dark 覆盖值 */
+  --shadow-01: var(--shadow-01);
+  --shadow-02: var(--shadow-02);
+  --shadow-03: var(--shadow-03);
+
+  /* 功能色扩展（P1a）：深底文字色与软衬底色 */
+  --color-success-text: var(--color-status-success-text);
+  --color-warning-text: var(--color-status-warning-text);
+  --color-error-text: var(--color-status-error-text);
+  --color-info-text: var(--color-status-info-text);
+  --color-success-soft: var(--color-status-success-soft);
+  --color-warning-soft: var(--color-status-warning-soft);
+  --color-error-soft: var(--color-status-error-soft);
+  --color-info-soft: var(--color-status-info-soft);
+
+  /* 强调紫（P4d）：智能标签/关系网络/导出等紫色语义 */
+  --color-purple: var(--color-accent-purple);
+  --color-purple-text: var(--color-accent-purple-text);
+  --color-purple-soft: var(--color-accent-purple-soft);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -473,10 +382,38 @@
   --color-bg-2: var(--color-neutral-02);
   --color-bg-3: var(--color-neutral-03);
   --color-bg-4: var(--color-neutral-04);
+
+  /* 中性色标尺（P1b）：页面/组件可直接用 bg-neutral-02、text-neutral-08 等工具类 */
+  --color-neutral-00: var(--color-neutral-00);
+  --color-neutral-01: var(--color-neutral-01);
+  --color-neutral-02: var(--color-neutral-02);
+  --color-neutral-03: var(--color-neutral-03);
+  --color-neutral-04: var(--color-neutral-04);
+  --color-neutral-05: var(--color-neutral-05);
+  --color-neutral-06: var(--color-neutral-06);
+  --color-neutral-07: var(--color-neutral-07);
+  --color-neutral-08: var(--color-neutral-08);
+  --color-neutral-09: var(--color-neutral-09);
+  --color-neutral-10: var(--color-neutral-10);
+  --color-neutral-11: var(--color-neutral-11);
+
+  /* 遮罩层（P1b）：Dialog/Drawer 统一 */
+  --color-overlay: rgba(0, 0, 0, 0.6);
   
   /* 中性色映射 - 文字层级 */
   --color-text-disabled: var(--color-neutral-06);
   --color-text-secondary: var(--color-neutral-08);
   --color-text-primary: var(--color-neutral-10);
   --color-text-title: var(--color-neutral-11);
+}
+
+/* P1a：边框缺省色。TW4 preflight 下裸 border 类缺省为 currentColor，
+   导致各组件边框互不统一；统一指向 --border（neutral-03）。
+   工具类仍在 utilities 层，优先级高于此 base 规则。 */
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--border);
+  }
 }

@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Home, LayoutDashboard, Building2, Users, UserCircle, MoreHorizontal, CircleDot, ChevronLeft } from 'lucide-react';
+import { LayoutDashboard, Building2, Users, UserCircle, MoreHorizontal, CircleDot, ChevronLeft } from 'lucide-react';
 import { MobileStatusBar } from './MobileStatusBar';
 
 interface MobileLayoutProps {
@@ -18,20 +18,22 @@ export function MobileLayout({ children, currentRoute = 'home', onRouteChange, o
     { path: 'profile', icon: UserCircle, label: '我的' }
   ];
 
-  const isActive = (path: string) => currentRoute === path;
+  // 二级页（tasks/patrol/conflict/activity 等）不属于底栏 tab，高亮归属「工作台」
+  const activePath = navItems.some((item) => item.path === currentRoute) ? currentRoute : 'home';
 
   return (
     <div className="h-full flex flex-col bg-[var(--color-neutral-00)] relative overflow-hidden">
       {/* 顶部状态栏区域 */}
       <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] shrink-0">
         {/* 系统信息栏 */}
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         {/* 应用标题栏 */}
         <div className="h-11 flex items-center justify-center relative">
           {currentRoute !== 'home' && (
             <button 
               onClick={() => onRouteChange && onRouteChange('home')}
               className="absolute left-0 top-0 bottom-0 px-4 flex items-center justify-center text-[var(--color-neutral-10)] active:opacity-70"
+              aria-label="返回工作台"
             >
               <ChevronLeft className="w-6 h-6" />
             </button>
@@ -52,31 +54,34 @@ export function MobileLayout({ children, currentRoute = 'home', onRouteChange, o
       </div>
 
       {/* 内容区域 */}
-      <div className="flex-1 overflow-y-auto pb-16 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto scrollbar-hide">
         {children}
       </div>
 
-      {/* 底部导航栏 */}
-      <div className="absolute bottom-0 left-0 right-0 h-16 bg-[var(--color-neutral-02)] border-t border-[var(--color-neutral-03)] flex items-center justify-around shadow-lg z-50">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const active = isActive(item.path);
-          
-          return (
-            <button
-              key={item.path}
-              onClick={() => onRouteChange && onRouteChange(item.path)}
-              className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
-                active ? 'text-[#2761CB]' : 'text-[var(--color-neutral-08)]'
-              }`}
-            >
-              <Icon className={`w-6 h-6 mb-1 ${active ? 'scale-110' : ''} transition-transform`} />
-              <span className={`text-xs ${active ? 'font-semibold' : 'font-normal'}`}>
-                {item.label}
-              </span>
-            </button>
-          );
-        })}
+      {/* 底部导航栏：文档流布局（不再 absolute 叠层），叠加安全区 */}
+      <div className="shrink-0 bg-[var(--color-neutral-02)] border-t border-[var(--color-neutral-03)] z-50 pb-[env(safe-area-inset-bottom)]">
+        <div className="h-16 flex items-center justify-around">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const active = item.path === activePath;
+
+            return (
+              <button
+                key={item.path}
+                onClick={() => onRouteChange && onRouteChange(item.path)}
+                className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
+                  active ? 'text-[var(--color-brand-primary-hover)]' : 'text-[var(--color-neutral-08)]'
+                }`}
+                aria-current={active ? 'page' : undefined}
+              >
+                <Icon className={`w-6 h-6 mb-1 ${active ? 'scale-110' : ''} transition-transform`} />
+                <span className={`text-xs ${active ? 'font-semibold' : 'font-normal'}`}>
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

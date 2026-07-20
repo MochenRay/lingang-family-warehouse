@@ -37,24 +37,24 @@ const neutralBadgeClass =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]';
 
 const houseTypeBadgeClass: Record<House['type'], string> = {
-  自住: 'border-blue-400/35 bg-blue-400/10 text-blue-200',
-  出租: 'border-orange-400/35 bg-orange-400/10 text-orange-200',
+  自住: 'border-[var(--color-status-info)]/35 bg-[var(--color-status-info-soft)] text-[var(--color-status-info-text)]',
+  出租: 'border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]',
   空置: neutralBadgeClass,
-  经营: 'border-purple-400/35 bg-purple-400/10 text-purple-200',
+  经营: 'border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)]',
   其他: neutralBadgeClass,
 };
 
 const historyTypeBadgeClass: Record<HousingHistory['type'], string> = {
-  业主: 'border-orange-400/35 bg-orange-400/10 text-orange-200',
-  租客: 'border-blue-400/35 bg-blue-400/10 text-blue-200',
-  家属: 'border-green-400/35 bg-green-400/10 text-green-200',
+  业主: 'border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]',
+  租客: 'border-[var(--color-status-info)]/35 bg-[var(--color-status-info-soft)] text-[var(--color-status-info-text)]',
+  家属: 'border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]',
   其他: neutralBadgeClass,
 };
 
 const riskBadgeClass: Record<RiskLevel, string> = {
-  High: 'border-red-400/40 bg-red-400/10 text-red-200',
-  Medium: 'border-orange-400/40 bg-orange-400/10 text-orange-200',
-  Low: 'border-green-400/40 bg-green-400/10 text-green-200',
+  High: 'border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]',
+  Medium: 'border-[var(--color-status-warning)]/40 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]',
+  Low: 'border-[var(--color-status-success)]/40 bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]',
 };
 
 function displayValue(value: string | number | undefined | null, fallback = '-') {
@@ -239,7 +239,7 @@ export function HouseDetailPanel({
               <Button
                 variant="outline"
                 size="sm"
-                className="border-red-400/40 text-red-200 hover:bg-red-400/10 hover:text-red-100"
+                className="border-[var(--color-status-error)]/40 text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error-soft)] hover:text-[var(--color-status-error-text)]"
                 disabled={isDeleting}
                 onClick={() => onDelete(house)}
               >
@@ -256,7 +256,7 @@ export function HouseDetailPanel({
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
-                <Home className="h-4 w-4 text-[#2761CB]" />
+                <Home className="h-4 w-4 text-[var(--color-brand-primary)]" />
                 基础信息
               </h3>
               <span className="text-xs text-[var(--color-neutral-08)]">更新于 {displayValue(house.updatedAt)}</span>
@@ -274,7 +274,7 @@ export function HouseDetailPanel({
 
           <section>
             <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
-              <Tag className="h-4 w-4 text-[#2761CB]" />
+              <Tag className="h-4 w-4 text-[var(--color-brand-primary)]" />
               房屋标签
             </h3>
             {house.tags.length > 0 ? (
@@ -295,7 +295,7 @@ export function HouseDetailPanel({
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-[var(--color-status-info-text)]" />
                 现居住户
               </h3>
               <Badge variant="outline" className={neutralBadgeClass}>
@@ -308,14 +308,14 @@ export function HouseDetailPanel({
                 {residents.map((person) => (
                   <div key={person.id} className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto]">
                     <div className="flex min-w-0 items-center gap-3">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-blue-400/10 text-sm font-semibold text-blue-200 ring-1 ring-blue-400/30">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[var(--color-status-info-soft)] text-sm font-semibold text-[var(--color-status-info-text)] ring-1 ring-[var(--color-status-info)]/30">
                         {getInitial(person.name)}
                       </div>
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-medium text-[var(--color-neutral-11)]">{person.name}</span>
                           {person.id === owner?.id || person.name === house.ownerName ? (
-                            <Badge variant="outline" className="border-yellow-400/35 bg-yellow-400/10 text-yellow-200">
+                            <Badge variant="outline" className="border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]">
                               户主
                             </Badge>
                           ) : null}
@@ -361,7 +361,7 @@ export function HouseDetailPanel({
           <section>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-11)]">
-                <History className="h-4 w-4 text-purple-600" />
+                <History className="h-4 w-4 text-[var(--color-accent-purple-text)]" />
                 居住历史
               </h3>
               <Badge variant="outline" className={neutralBadgeClass}>

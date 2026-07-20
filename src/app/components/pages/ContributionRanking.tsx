@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Award, Download, Loader2, Target, TrendingUp } from 'lucide-react';
+import { Award, Download, Target, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { LoadingState } from '../patterns/states';
+import { PANEL_CLASS } from '../patterns/surfaces';
 
 type RankingTarget = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
 
@@ -32,8 +35,7 @@ type RawContributionItem = [
   description: string,
 ];
 
-const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
+const INNER_PANEL_CLASS = 'rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 
 function buildContributionItems(snapshot: GovernanceAnalysisSnapshot, target: RankingTarget): ContributionItem[] {
@@ -150,9 +152,7 @@ export function ContributionRanking() {
           title="贡献程度排名"
           description="对区域与指标贡献排序，找出拉动整体变化的关键片区。"
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
@@ -186,55 +186,38 @@ export function ContributionRanking() {
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT}`}>
-              <Award className="w-4 h-4" />
-              因子总数
-            </CardDescription>
-            <CardTitle className="text-3xl text-white">{contributions.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>固定且可解释的贡献因子</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>Top 1 因子</CardDescription>
-            <CardTitle className="truncate text-xl text-white">{contributions[0]?.factor ?? '暂无'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>{contributions[0]?.contribution ?? 0}%</p>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>头部贡献度</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">{positiveContribution.toFixed(1)}%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-2">
-              <Badge className="border border-[#19B172]/35 bg-[#19B172]/12 text-[#B6F4D8]">
-                <TrendingUp className="w-3 h-3 mr-1" />
-                前四因子
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT}>尾部贡献度</CardDescription>
-            <CardTitle className="text-3xl text-[#4E86DF]">{tailContribution.toFixed(1)}%</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT}`}>剩余因子合计</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="因子总数"
+          value={contributions.length}
+          icon={Award}
+          hint="固定且可解释的贡献因子"
+        />
+        <StatCard
+          label="Top 1 因子"
+          value={contributions[0]?.factor ?? '暂无'}
+          hint={`${contributions[0]?.contribution ?? 0}%`}
+        />
+        <StatCard
+          label="头部贡献度"
+          value={`${positiveContribution.toFixed(1)}%`}
+          tone="success"
+          hint={
+            <StatusBadge tone="success">
+              <TrendingUp className="w-3 h-3" />
+              前四因子
+            </StatusBadge>
+          }
+        />
+        <StatCard
+          label="尾部贡献度"
+          value={`${tailContribution.toFixed(1)}%`}
+          hint="剩余因子合计"
+        />
       </div>
 
       <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle className="text-base font-semibold text-white">影响因子贡献排名</CardTitle>
+          <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">影响因子贡献排名</CardTitle>
           <CardDescription className={MUTED_TEXT}>统一使用真实治理快照排序，不再引用静态样例或手工排序。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -243,13 +226,13 @@ export function ContributionRanking() {
               <div className="flex items-center justify-between gap-4">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-white">{item.rank}. {item.factor}</span>
-                    <Badge variant="outline" className="border-[#4E86DF]/45 bg-[#2761CB]/15 text-[#DCE6FF]">{item.category}</Badge>
+                    <span className="font-semibold text-[var(--color-neutral-11)]">{item.rank}. {item.factor}</span>
+                    <StatusBadge tone="info">{item.category}</StatusBadge>
                   </div>
                   <p className={`text-sm ${MUTED_TEXT}`}>{item.description}</p>
                 </div>
                 <div className="text-right min-w-[110px]">
-                  <div className="text-2xl font-semibold text-[#19B172]">{item.contribution}%</div>
+                  <div className="text-2xl font-semibold text-[var(--color-status-success)]">{item.contribution}%</div>
                   <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                 </div>
               </div>

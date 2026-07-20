@@ -124,7 +124,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input
-                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[#2761CB]"
+                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
                 placeholder="搜索房主/房号/标签..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
@@ -133,7 +133,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
 
             <Button
               size="icon"
-              className="h-9 w-9 bg-[#2761CB] hover:bg-[#4E86DF] rounded-full shadow-sm"
+              className="h-9 w-9 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-full shadow-sm"
               onClick={() => onRouteChange('collect-house')}
             >
               <Plus className="w-5 h-5" />
@@ -147,7 +147,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
 
           <div className="px-4 py-3 grid grid-cols-4 gap-2">
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[#2761CB]">{stats.total}</div>
+              <div className="text-lg font-bold text-[var(--color-brand-primary)]">{stats.total}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">总数</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
@@ -256,7 +256,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
                         variant="outline"
                         className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                           selectedTypes.includes(type)
-                            ? 'bg-[#2761CB] text-white border-[#2761CB]'
+                            ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                             : 'hover:bg-[var(--color-neutral-02)]'
                         }`}
                         onClick={() => toggleType(type)}
@@ -268,7 +268,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
                 </div>
               </div>
               <DrawerFooter>
-                <Button onClick={() => setDrawerOpen(false)} className="bg-[#2761CB] hover:bg-[#4E86DF]">确认筛选</Button>
+                <Button onClick={() => setDrawerOpen(false)} className="bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]">确认筛选</Button>
                 <DrawerClose asChild>
                   <Button variant="outline" onClick={handleReset}>重置</Button>
                 </DrawerClose>
@@ -286,14 +286,14 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
               </span>
             ) : selectedBuilding !== 'all' || selectedUnit !== 'all' || selectedTypes.length > 0 ? (
               <>
-                筛选结果：<span className="text-[#2761CB] font-medium">{filteredHouses.length}</span> 条
+                筛选结果：<span className="text-[var(--color-brand-primary)] font-medium">{filteredHouses.length}</span> 条
               </>
             ) : (
               <>共 {filteredHouses.length} 条房屋</>
             )}
           </div>
           {(selectedBuilding !== 'all' || selectedUnit !== 'all' || selectedTypes.length > 0) ? (
-            <Button variant="ghost" size="sm" className="h-6 text-xs text-[var(--color-neutral-08)] hover:text-[#2761CB]" onClick={handleReset}>
+            <Button variant="ghost" size="sm" className="h-6 text-xs text-[var(--color-neutral-08)] hover:text-[var(--color-brand-primary)]" onClick={handleReset}>
               清除筛选
             </Button>
           ) : null}
@@ -309,7 +309,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2 flex-1">
-                    <div className="w-8 h-8 rounded bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center text-[#4E86DF] shrink-0">
+                    <div className="w-8 h-8 rounded bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center text-[var(--color-brand-primary-hover)] shrink-0">
                       <Home className="w-4 h-4" />
                     </div>
                     <div>
@@ -342,7 +342,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
                   <div className="flex gap-2 flex-wrap">
                     <Badge
                       variant="outline"
-                      className="text-xs bg-[rgba(78,134,223,0.15)] text-[#4E86DF] border-[rgba(78,134,223,0.3)]"
+                      className="text-xs bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]"
                     >
                       {house.type}
                     </Badge>
@@ -367,7 +367,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
               <Home className="w-12 h-12 mb-3 opacity-20" />
               <p className="text-sm">暂无房屋信息</p>
               {selectedBuilding !== 'all' || selectedUnit !== 'all' || selectedTypes.length > 0 ? (
-                <Button variant="ghost" size="sm" className="mt-3 text-[#2761CB]" onClick={handleReset}>
+                <Button variant="ghost" size="sm" className="mt-3 text-[var(--color-brand-primary)]" onClick={handleReset}>
                   清除筛选条件
                 </Button>
               ) : null}

@@ -87,7 +87,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
         </button>
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-[#19B172] rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-[var(--color-status-success)] rounded-lg flex items-center justify-center">
               <PenTool className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -106,7 +106,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
             <Badge
               key={type}
               variant="outline"
-              className="cursor-pointer hover:bg-[rgba(25,177,114,0.08)] hover:text-[#19B172] hover:border-[#19B172] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
+              className="cursor-pointer hover:bg-[rgba(25,177,114,0.08)] hover:text-[var(--color-status-success)] hover:border-[var(--color-status-success)] transition-all text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] font-normal text-xs"
               onClick={() => setInputMessage(`帮我写一份${type}`)}
             >
               {type}
@@ -119,7 +119,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-32">
         {messages.map(msg => (
           <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[#19B172]' : 'bg-[var(--color-neutral-06)]'}`}>
+            <Avatar className={`w-8 h-8 shrink-0 ${msg.role === 'ai' ? 'bg-[var(--color-status-success)]' : 'bg-[var(--color-neutral-06)]'}`}>
               <AvatarFallback>
                 {msg.role === 'ai' ? <Bot className="w-4 h-4 text-white" /> : <span className="text-white text-xs">我</span>}
               </AvatarFallback>
@@ -128,7 +128,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
               <Card className={`inline-block max-w-[85%] ${
                 msg.role === 'ai'
                   ? 'bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)]'
-                  : 'bg-[#19B172] border-[#19B172] text-white'
+                  : 'bg-[var(--color-status-success)] border-[var(--color-status-success)] text-white'
               }`}>
                 <div className="p-3">
                   <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
@@ -212,7 +212,7 @@ export function MobileOfficialWriting({ onBack }: MobileOfficialWritingProps) {
               void handleSendMessage();
             }}
             disabled={!inputMessage.trim() || sending}
-            className="h-[44px] px-4 bg-[#19B172] hover:bg-[#15965f] text-white shrink-0"
+            className="h-[44px] px-4 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)] text-white shrink-0"
           >
             {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </Button>

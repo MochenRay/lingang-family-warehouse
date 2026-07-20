@@ -42,21 +42,21 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         // 圆角 2px，高度 32px (中号) - 使用深色主题背景
-        "flex w-full items-center justify-between gap-2 rounded-[2px] border bg-[#1F293A] px-3 py-2 text-sm whitespace-nowrap transition-all outline-none",
+        "flex w-full items-center justify-between gap-2 rounded-[2px] border bg-[var(--color-neutral-02)] px-3 py-2 text-sm whitespace-nowrap transition-all outline-none",
         // 边框样式
-        "border-[#546789]/40",
+        "border-[var(--color-neutral-06)]/40",
         // Focus 状态：Blue-06 边框
-        "focus-visible:border-[#2761CB] focus-visible:ring-2 focus-visible:ring-[#2761CB]/20",
+        "focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/20",
         // Hover 状态
-        "hover:border-[#4E86DF] hover:bg-[#293449]",
+        "hover:border-[var(--color-brand-primary-hover)] hover:bg-[var(--color-neutral-03)]",
         // 占位符颜色
-        "data-[placeholder]:text-[#8194B5]",
+        "data-[placeholder]:text-[var(--color-neutral-08)]",
         // 文字颜色
-        "text-[#AEC0DE]",
+        "text-[var(--color-neutral-10)]",
         // 图标颜色
-        "[&_svg:not([class*='text-'])]:text-[#8194B5]",
+        "[&_svg:not([class*='text-'])]:text-[var(--color-neutral-08)]",
         // 禁用状态
-        "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[#161D2A]",
+        "disabled:cursor-not-allowed disabled:opacity-50 disabled:bg-[var(--color-neutral-01)]",
         // 尺寸
         "data-[size=default]:h-8 data-[size=sm]:h-8",
         // 内部样式
@@ -85,9 +85,9 @@ function SelectContent({
         data-slot="select-content"
         className={cn(
           // 圆角 4px (中圆角)，阴影
-          "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[4px] border shadow-md",
+          "relative z-50 max-h-(--radix-select-content-available-height) min-w-[8rem] origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-[4px] border shadow-01",
           // 背景和文字颜色 - 深色主题
-          "bg-[#293449] text-[#AEC0DE] border-[#546789]/30",
+          "bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border-[var(--color-neutral-06)]/30",
           // 动画
           "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           position === "popper" &&
@@ -138,15 +138,15 @@ function SelectItem({
         // 基础样式，圆角 2px
         "relative flex w-full cursor-default items-center gap-2 rounded-[2px] py-1.5 pr-8 pl-2 text-sm outline-hidden select-none transition-colors",
         // 默认状态 - 深色主题文字
-        "text-[#AEC0DE]",
-        // Hover 状态：Blue-06 8% 背景 + 亮色文字
-        "hover:bg-[#2761CB]/12 hover:text-[#F6F9FE]",
+        "text-[var(--color-neutral-10)]",
+        // Hover 状态：Blue-06 12% 背景 + 亮色文字
+        "hover:bg-[var(--color-brand-primary)]/12 hover:text-[var(--color-neutral-11)]",
         // Focus 状态
-        "focus:bg-[#2761CB]/12 focus:text-[#F6F9FE]",
+        "focus:bg-[var(--color-brand-primary)]/12 focus:text-[var(--color-neutral-11)]",
         // 禁用状态
         "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
         // 图标样式
-        "[&_svg:not([class*='text-'])]:text-[#8194B5] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+        "[&_svg:not([class*='text-'])]:text-[var(--color-neutral-08)] [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         "*:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className,
       )}
@@ -154,7 +154,7 @@ function SelectItem({
     >
       <span className="absolute right-2 flex size-3.5 items-center justify-center">
         <SelectPrimitive.ItemIndicator>
-          <CheckIcon className="size-4 text-[#2761CB]" />
+          <CheckIcon className="size-4 text-[var(--color-brand-primary)]" />
         </SelectPrimitive.ItemIndicator>
       </span>
       <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
@@ -181,7 +181,6 @@ function SelectScrollUpButton({
 }: React.ComponentProps<typeof SelectPrimitive.ScrollUpButton>) {
   return (
     <SelectPrimitive.ScrollUpButton
-      data-slot="select-scroll-up-button"
       className={cn(
         "flex cursor-default items-center justify-center py-1",
         className,
@@ -199,7 +198,6 @@ function SelectScrollDownButton({
 }: React.ComponentProps<typeof SelectPrimitive.ScrollDownButton>) {
   return (
     <SelectPrimitive.ScrollDownButton
-      data-slot="select-scroll-down-button"
       className={cn(
         "flex cursor-default items-center justify-center py-1",
         className,

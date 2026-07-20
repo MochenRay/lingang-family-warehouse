@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ChevronLeft,
   MapPin,
   Users,
   Camera,
@@ -31,7 +30,7 @@ import {
   SelectValue,
 } from '../../ui/select';
 import { Badge } from '../../ui/badge';
-import { MobileStatusBar } from '../MobileStatusBar';
+import { MobileDetailHeader } from '../MobileDetailHeader';
 import { conflictRepository } from '../../../services/repositories/conflictRepository';
 import { personRepository } from '../../../services/repositories/personRepository';
 import type { ConflictRecord, Person } from '../../../types/core';
@@ -228,31 +227,15 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] sticky top-0 z-10 shrink-0">
-        <MobileStatusBar variant="dark" />
-        <div className="px-4 py-3 flex items-center gap-3 relative h-11">
-          <button
-            onClick={onBack}
-            className="absolute left-2 w-8 h-8 flex items-center justify-center text-[var(--color-neutral-10)] active:opacity-70"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-base font-bold text-[var(--color-neutral-11)]">上报矛盾纠纷</h1>
-          </div>
-
-          <div className="w-8" />
-        </div>
-      </div>
+    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]">
+      <MobileDetailHeader title="上报矛盾纠纷" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">纠纷描述 <span className="text-red-500">*</span></Label>
+          <Label className="text-sm font-medium text-[var(--color-neutral-10)]">纠纷描述 <span className="text-[var(--color-status-error-text)]">*</span></Label>
           <Textarea
             placeholder="请详细描述纠纷发生的时间、地点、起因及经过..."
-            className="min-h-[120px] bg-white border-gray-200 resize-none focus-visible:ring-blue-500"
+            className="min-h-[120px] bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] resize-none focus-visible:ring-[var(--color-brand-primary)]"
             value={formData.description}
             onChange={(event) => setFormData((prev) => ({ ...prev, description: event.target.value }))}
             onBlur={handleDescriptionBlur}
@@ -261,19 +244,19 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <Label className="text-sm font-medium text-gray-700">标题 <span className="text-red-500">*</span></Label>
+            <Label className="text-sm font-medium text-[var(--color-neutral-10)]">标题 <span className="text-[var(--color-status-error-text)]">*</span></Label>
           </div>
           <div className="relative">
             <Input
               placeholder="输入描述后自动生成，也可手动修改"
-              className="bg-white border-gray-200 pr-8"
+              className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] pr-8"
               value={formData.title}
               onChange={(event) => setFormData((prev) => ({ ...prev, title: event.target.value }))}
             />
             {formData.title && (
               <button
                 onClick={() => setFormData((prev) => ({ ...prev, title: '' }))}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -283,9 +266,9 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
 
         <div className="grid grid-cols-1 gap-4">
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">纠纷类型 <span className="text-red-500">*</span></Label>
+            <Label className="text-sm font-medium text-[var(--color-neutral-10)]">纠纷类型 <span className="text-[var(--color-status-error-text)]">*</span></Label>
             <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}>
-              <SelectTrigger className="bg-white border-gray-200">
+              <SelectTrigger className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)]">
                 <SelectValue placeholder="请选择类型" />
               </SelectTrigger>
               <SelectContent>
@@ -298,12 +281,12 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
           </div>
 
           <div className="space-y-2">
-            <Label className="text-sm font-medium text-gray-700">发生地点</Label>
+            <Label className="text-sm font-medium text-[var(--color-neutral-10)]">发生地点</Label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input
                 placeholder="选择或输入地点"
-                className="pl-9 bg-white border-gray-200"
+                className="pl-9 bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)]"
                 value={formData.location}
                 onChange={(event) => setFormData((prev) => ({ ...prev, location: event.target.value }))}
               />
@@ -313,11 +296,11 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
 
         <div className="space-y-3">
           <div className="flex justify-between items-center">
-            <Label className="text-sm font-medium text-gray-700">当事人/单位</Label>
+            <Label className="text-sm font-medium text-[var(--color-neutral-10)]">当事人/单位</Label>
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs border-dashed text-blue-600 border-blue-200 bg-blue-50"
+              className="h-7 text-xs border-dashed text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10"
               onClick={handleAddParty}
             >
               <Plus className="w-3 h-3 mr-1" /> 添加对象
@@ -329,35 +312,35 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
               <Badge
                 key={`${party.type}-${party.id}`}
                 variant="secondary"
-                className="pl-2 pr-1 py-1 bg-white border border-gray-200 text-gray-700 flex items-center gap-1"
+                className="pl-2 pr-1 py-1 bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] flex items-center gap-1"
               >
-                <Users className="w-3 h-3 text-green-500" />
+                <Users className="w-3 h-3 text-[var(--color-status-success-text)]" />
                 {party.name}
                 <button
                   onClick={() => handleRemoveParty(party.id)}
-                  className="ml-1 p-0.5 hover:bg-gray-100 rounded-full"
+                  className="ml-1 p-0.5 hover:bg-[var(--color-neutral-02)] rounded-full"
                 >
-                  <X className="w-3 h-3 text-gray-400" />
+                  <X className="w-3 h-3 text-[var(--color-neutral-08)]" />
                 </button>
               </Badge>
             ))}
             {formData.involvedParties.length === 0 && (
-              <div className="text-xs text-gray-400 italic py-2">暂无关联当事人</div>
+              <div className="text-xs text-[var(--color-neutral-08)] italic py-2">暂无关联当事人</div>
             )}
           </div>
         </div>
 
         <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">现场照片/视频</Label>
+          <Label className="text-sm font-medium text-[var(--color-neutral-10)]">现场照片/视频</Label>
           <div className="grid grid-cols-4 gap-2">
             {formData.images.map((img, index) => (
-              <div key={`${img}-${index}`} className="aspect-square bg-gray-200 rounded-lg relative overflow-hidden">
+              <div key={`${img}-${index}`} className="aspect-square bg-[var(--color-neutral-03)] rounded-lg relative overflow-hidden">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={img} alt="现场" className="w-full h-full object-cover" />
               </div>
             ))}
             <button
-              className="aspect-square bg-gray-50 border-2 border-dashed border-gray-300 rounded-lg flex flex-col items-center justify-center gap-1 text-gray-400 active:bg-gray-100 transition-colors"
+              className="aspect-square bg-[var(--color-neutral-01)] border-2 border-dashed border-[var(--color-neutral-03)] rounded-lg flex flex-col items-center justify-center gap-1 text-[var(--color-neutral-08)] active:bg-[var(--color-neutral-02)] transition-colors"
               onClick={() => toast('当前版本暂不支持附件上传')}
             >
               <Camera className="w-6 h-6" />
@@ -367,9 +350,9 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
         </div>
       </div>
 
-      <div className="p-4 bg-white border-t border-gray-100 pb-8 md:pb-4">
+      <div className="p-4 bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] pb-8 md:pb-4">
         <Button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11 text-base shadow-lg shadow-blue-600/20"
+          className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white h-11 text-base shadow-lg shadow-blue-600/20"
           onClick={handleSubmit}
           disabled={loading}
         >
@@ -383,17 +366,17 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
 
       <Drawer open={isPartyDrawerOpen} onOpenChange={setIsPartyDrawerOpen}>
         <DrawerContent className="h-[85vh] flex flex-col rounded-t-[20px]">
-          <DrawerHeader className="border-b border-gray-100 pb-4">
-            <DrawerTitle className="text-center text-base font-bold text-gray-900">选择当事人/单位</DrawerTitle>
+          <DrawerHeader className="border-b border-[var(--color-neutral-03)] pb-4">
+            <DrawerTitle className="text-center text-base font-bold text-[var(--color-neutral-11)]">选择当事人/单位</DrawerTitle>
           </DrawerHeader>
 
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="p-4 border-b border-gray-100">
+            <div className="p-4 border-b border-[var(--color-neutral-03)]">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                 <Input
                   placeholder="搜索居民姓名、房号..."
-                  className="pl-9 bg-gray-50 border-transparent focus-visible:bg-white focus-visible:border-blue-500 transition-all"
+                  className="pl-9 bg-[var(--color-neutral-02)] border-transparent focus-visible:bg-[var(--color-neutral-01)] focus-visible:border-[var(--color-brand-primary)] transition-all"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
@@ -403,7 +386,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
             <ScrollArea className="flex-1 px-4">
               <div className="py-2 space-y-6">
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">常用机构</h3>
+                  <h3 className="text-xs font-bold text-[var(--color-neutral-08)] uppercase tracking-wider">常用机构</h3>
                   <div className="grid grid-cols-1 gap-2">
                     {COMMON_ORGS.map((org) => {
                       const isSelected = tempSelectedParties.some((party) => party.id === org.id && party.type === org.type);
@@ -413,17 +396,17 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                           onClick={() => toggleParty(org)}
                           className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                             isSelected
-                              ? 'bg-blue-50 border-blue-200 shadow-sm'
-                              : 'bg-white border-gray-100 hover:bg-gray-50'
+                              ? 'bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)]/40 shadow-sm'
+                              : 'bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-02)]'
                           }`}
                         >
                           <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
-                              <Users className="w-4 h-4 text-blue-600" />
+                            <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center">
+                              <Users className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                             </div>
-                            <span className="font-medium text-gray-900">{org.name}</span>
+                            <span className="font-medium text-[var(--color-neutral-11)]">{org.name}</span>
                           </div>
-                          <Checkbox checked={isSelected} className="rounded-full data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600" />
+                          <Checkbox checked={isSelected} className="rounded-full data-[state=checked]:bg-[var(--color-brand-primary)] data-[state=checked]:border-[var(--color-brand-primary)]" />
                         </div>
                       );
                     })}
@@ -431,15 +414,15 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                 </div>
 
                 <div className="space-y-2">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wider">该网格居民</h3>
+                  <h3 className="text-xs font-bold text-[var(--color-neutral-08)] uppercase tracking-wider">该网格居民</h3>
                   <div className="grid grid-cols-1 gap-2">
                     {residentLoading ? (
-                      <div className="flex items-center justify-center py-8 text-gray-400 text-sm">
+                      <div className="flex items-center justify-center py-8 text-[var(--color-neutral-08)] text-sm">
                         <Loader2 className="w-4 h-4 animate-spin mr-2" />
                         正在加载居民...
                       </div>
                     ) : filteredResidents.length === 0 ? (
-                      <div className="text-center py-8 text-gray-400 text-sm">无匹配居民</div>
+                      <div className="text-center py-8 text-[var(--color-neutral-08)] text-sm">无匹配居民</div>
                     ) : (
                       filteredResidents.map((resident) => {
                         const isSelected = tempSelectedParties.some((party) => party.id === resident.id && party.type === 'resident');
@@ -449,20 +432,20 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                             onClick={() => toggleParty({ id: resident.id, name: resident.name, type: 'resident' })}
                             className={`flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer ${
                               isSelected
-                                ? 'bg-green-50 border-green-200 shadow-sm'
-                                : 'bg-white border-gray-100 hover:bg-gray-50'
+                                ? 'bg-[var(--color-status-success-soft)] border-[var(--color-status-success)]/40 shadow-sm'
+                                : 'bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-02)]'
                             }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center font-bold text-green-700 text-xs">
+                              <div className="w-8 h-8 rounded-full bg-[var(--color-status-success-soft)] flex items-center justify-center font-bold text-[var(--color-status-success-text)] text-xs">
                                 {resident.name[0]}
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{resident.name}</div>
-                                <div className="text-xs text-gray-500">{resident.address}</div>
+                                <div className="font-medium text-[var(--color-neutral-11)]">{resident.name}</div>
+                                <div className="text-xs text-[var(--color-neutral-08)]">{resident.address}</div>
                               </div>
                             </div>
-                            <Checkbox checked={isSelected} className="rounded-full data-[state=checked]:bg-green-600 data-[state=checked]:border-green-600" />
+                            <Checkbox checked={isSelected} className="rounded-full data-[state=checked]:bg-[var(--color-status-success)] data-[state=checked]:border-[var(--color-status-success)]" />
                           </div>
                         );
                       })
@@ -473,11 +456,11 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
             </ScrollArea>
           </div>
 
-          <DrawerFooter className="border-t border-gray-100 pt-4 pb-8 md:pb-4 flex-row gap-3 bg-white z-10">
+          <DrawerFooter className="border-t border-[var(--color-neutral-03)] pt-4 pb-8 md:pb-4 flex-row gap-3 bg-[var(--color-neutral-01)] z-10">
             <DrawerClose asChild>
-              <Button variant="outline" className="flex-1 h-11 text-base border-gray-200">取消</Button>
+              <Button variant="outline" className="flex-1 h-11 text-base border-[var(--color-neutral-03)]">取消</Button>
             </DrawerClose>
-            <Button onClick={handleConfirmSelection} className="flex-1 h-11 text-base bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-600/20">
+            <Button onClick={handleConfirmSelection} className="flex-1 h-11 text-base bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] shadow-lg shadow-blue-600/20">
               确认关联 ({tempSelectedParties.length})
             </Button>
           </DrawerFooter>

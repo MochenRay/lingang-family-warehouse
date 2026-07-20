@@ -46,12 +46,12 @@ function TooltipContent({
         data-slot="tooltip-content"
         sideOffset={sideOffset}
         className={cn(
-          // 圆角 4px，内边距 6px 12px，背景 Neutral-04 (#314059)
+          // 圆角 4px，内边距 6px 12px，背景 Neutral-04
           "z-50 w-fit origin-(--radix-tooltip-content-transform-origin) rounded-[4px] px-3 py-1.5 text-xs text-balance",
           // 背景和文字颜色
-          "bg-[#314059] text-white",
+          "bg-[var(--color-neutral-04)] text-white",
           // 阴影 Shadow-01
-          "shadow-[0px_2px_8px_rgba(10,27,57,0.15)]",
+          "shadow-01",
           // 动画
           "animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
           className,
@@ -60,7 +60,7 @@ function TooltipContent({
       >
         {children}
         {/* 箭头：与背景色一致 */}
-        <TooltipPrimitive.Arrow className="fill-[#314059] z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
+        <TooltipPrimitive.Arrow className="fill-[var(--color-neutral-04)] z-50 size-2.5 translate-y-[calc(-50%_-_2px)] rotate-45 rounded-[2px]" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
   );

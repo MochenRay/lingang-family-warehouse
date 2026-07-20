@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Download, Filter, Loader2, MapPin } from 'lucide-react';
+import { AlertTriangle, Download, Filter, MapPin } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   Dialog,
@@ -15,15 +14,19 @@ import { analysisRepository, type AnalysisAnomalyItem, type AnalysisSeverity, ty
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { PageHeader } from './PageHeader';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { LoadingState } from '../patterns/states';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 
-function getLevelColor(level: AnalysisSeverity): string {
+function getLevelTone(level: AnalysisSeverity): StatusTone {
   switch (level) {
     case 'high':
-      return 'bg-red-100 text-red-800 border-red-200';
+      return 'error';
     case 'medium':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      return 'warning';
     default:
-      return 'bg-blue-100 text-blue-800 border-blue-200';
+      return 'info';
   }
 }
 
@@ -120,9 +123,7 @@ export function WarningMap() {
           title="预警地图"
           description="按区域和风险等级定位异常热点，支撑网格巡查与处置优先级。"
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
@@ -168,66 +169,24 @@ export function WarningMap() {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4" />
-              预警总数
-            </CardDescription>
-            <CardTitle className="text-3xl">{warningStats.total}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Badge variant="outline">待处理 {warningStats.pending}</Badge>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>严重预警</CardDescription>
-            <CardTitle className="text-3xl text-red-600">{warningStats.high}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">需立即处理</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>中等预警</CardDescription>
-            <CardTitle className="text-3xl text-yellow-600">{warningStats.medium}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">需重点关注</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>轻微预警</CardDescription>
-            <CardTitle className="text-3xl text-blue-600">{warningStats.low}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">持续监测</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>已闭环动作</CardDescription>
-            <CardTitle className="text-3xl text-green-600">{warningStats.resolved}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">纠纷化解 + 已完结待办</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-3">
-            <CardDescription>最高热区</CardDescription>
-            <CardTitle className="text-2xl">{snapshot?.grids[0]?.communityName ?? '暂无'}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-500">热度 {snapshot?.grids[0]?.heatScore ?? 0}</p>
-          </CardContent>
-        </Card>
+        <StatCard
+          label="预警总数"
+          value={warningStats.total}
+          icon={AlertTriangle}
+          hint={<StatusBadge tone="neutral">待处理 {warningStats.pending}</StatusBadge>}
+        />
+        <StatCard label="严重预警" value={warningStats.high} hint="需立即处理" tone="error" />
+        <StatCard label="中等预警" value={warningStats.medium} hint="需重点关注" tone="warning" />
+        <StatCard label="轻微预警" value={warningStats.low} hint="持续监测" tone="info" />
+        <StatCard label="已闭环动作" value={warningStats.resolved} hint="纠纷化解 + 已完结待办" tone="success" />
+        <StatCard
+          label="最高热区"
+          value={snapshot?.grids[0]?.communityName ?? '暂无'}
+          hint={`热度 ${snapshot?.grids[0]?.heatScore ?? 0}`}
+        />
       </div>
 
-      <Card>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle>网格热区视图</CardTitle>
           <CardDescription>用网格热区板替代空地图视图，直接展示随机点击最关心的热点区域。</CardDescription>
@@ -245,30 +204,30 @@ export function WarningMap() {
                   toast.info(`${area.area} 当前没有命中筛选条件下的预警明细`);
                 }
               }}
-              className="rounded-lg border p-4 text-left transition hover:shadow-md hover:border-slate-300"
+              className="rounded-[4px] border p-4 text-left transition hover:shadow-md hover:border-[var(--color-brand-primary)]/50"
             >
               <div className="flex items-start justify-between gap-3 mb-3">
                 <div>
                   <div className="font-semibold">{area.area}</div>
-                  <div className="text-xs text-muted-foreground mt-1">{area.count} 条预警信号</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] mt-1">{area.count} 条预警信号</div>
                 </div>
-                <Badge className={getLevelColor(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</Badge>
+                <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
               </div>
-              <div className="space-y-2 text-sm text-muted-foreground">
+              <div className="space-y-2 text-sm text-[var(--color-neutral-08)]">
                 <div className="flex items-center justify-between">
                   <span>热度分</span>
-                  <span className="font-medium text-foreground">{area.heatScore}</span>
+                  <span className="font-medium text-[var(--color-neutral-10)]">{area.heatScore}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>待处理</span>
-                  <span className="font-medium text-foreground">{area.pending}</span>
+                  <span className="font-medium text-[var(--color-neutral-10)]">{area.pending}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span>已闭环</span>
-                  <span className="font-medium text-foreground">{area.resolved}</span>
+                  <span className="font-medium text-[var(--color-neutral-10)]">{area.resolved}</span>
                 </div>
               </div>
-              <div className="mt-3 text-xs text-muted-foreground">
+              <div className="mt-3 text-xs text-[var(--color-neutral-08)]">
                 {area.signals.length ? area.signals.join('；') : '当前没有额外重点信号'}
               </div>
             </button>
@@ -276,27 +235,27 @@ export function WarningMap() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle>预警清单</CardTitle>
           <CardDescription>当前筛选下共 {filteredWarnings.length} 条，点击“查看详情”可展开解释。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredWarnings.map((warning) => (
-            <div key={warning.id} className="flex flex-col gap-3 rounded-lg border p-4 md:flex-row md:items-center md:justify-between">
+            <div key={warning.id} className="flex flex-col gap-3 rounded-[4px] border p-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-muted-foreground" />
+                  <MapPin className="w-4 h-4 text-[var(--color-neutral-08)]" />
                   <span className="font-medium">{warning.gridName}</span>
-                  <Badge className={getLevelColor(warning.severity)}>{getLevelLabel(warning.severity)}</Badge>
+                  <StatusBadge tone={getLevelTone(warning.severity)}>{getLevelLabel(warning.severity)}</StatusBadge>
                 </div>
                 <div className="text-sm">{warning.type}</div>
-                <div className="text-sm text-muted-foreground">{warning.reason}</div>
+                <div className="text-sm text-[var(--color-neutral-08)]">{warning.reason}</div>
               </div>
               <div className="flex items-center gap-2">
                 <div className="text-right text-sm">
                   <div className="font-medium">{warning.value}</div>
-                  <div className="text-muted-foreground">基线 {warning.baseline}</div>
+                  <div className="text-[var(--color-neutral-08)]">基线 {warning.baseline}</div>
                 </div>
                 <Button variant="outline" onClick={() => setSelectedWarningId(warning.id)}>
                   查看详情
@@ -308,38 +267,38 @@ export function WarningMap() {
       </Card>
 
       <Dialog open={Boolean(selectedWarning)} onOpenChange={(open) => !open && setSelectedWarningId(null)}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className={`${DIALOG_CLASS} max-w-xl`}>
           <DialogHeader>
             <DialogTitle>{selectedWarning?.type}</DialogTitle>
             <DialogDescription>{selectedWarning?.gridName}</DialogDescription>
           </DialogHeader>
           {selectedWarning && (
             <div className="space-y-4 text-sm">
-              <div className="grid gap-3 rounded-lg bg-slate-50 p-4 md:grid-cols-2">
+              <div className="grid gap-3 rounded-[4px] bg-[var(--color-neutral-02)] p-4 md:grid-cols-2">
                 <div>
-                  <div className="text-muted-foreground">指标值</div>
+                  <div className="text-[var(--color-neutral-08)]">指标值</div>
                   <div className="font-medium">{selectedWarning.value}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">基线</div>
+                  <div className="text-[var(--color-neutral-08)]">基线</div>
                   <div className="font-medium">{selectedWarning.baseline}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">等级</div>
+                  <div className="text-[var(--color-neutral-08)]">等级</div>
                   <div className="font-medium">{getLevelLabel(selectedWarning.severity)}</div>
                 </div>
                 <div>
-                  <div className="text-muted-foreground">更新时间</div>
+                  <div className="text-[var(--color-neutral-08)]">更新时间</div>
                   <div className="font-medium">{selectedWarning.date}</div>
                 </div>
               </div>
               <div>
                 <h4 className="mb-1 font-medium">原因说明</h4>
-                <p className="text-muted-foreground">{selectedWarning.reason}</p>
+                <p className="text-[var(--color-neutral-08)]">{selectedWarning.reason}</p>
               </div>
               <div>
                 <h4 className="mb-1 font-medium">影响判断</h4>
-                <p className="text-muted-foreground">{selectedWarning.impact}</p>
+                <p className="text-[var(--color-neutral-08)]">{selectedWarning.impact}</p>
               </div>
             </div>
           )}

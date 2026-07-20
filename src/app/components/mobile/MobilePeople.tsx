@@ -133,7 +133,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
       return 'bg-[rgba(25,177,114,0.15)] text-[var(--color-status-success)] border-[rgba(25,177,114,0.3)]';
     }
     if (category === '政治面貌' || category === '年龄段' || category === '性别' || category === '居住类型') {
-      return 'bg-[rgba(78,134,223,0.15)] text-[#4E86DF] border-[rgba(78,134,223,0.3)]';
+      return 'bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]';
     }
     return 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-09)] border-[var(--color-neutral-04)]';
   };
@@ -155,7 +155,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input 
-                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[#2761CB]" 
+                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
                 placeholder="搜索姓名/身份证/地址..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -165,7 +165,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
              {/* Add Button */}
              <Button 
               size="icon" 
-              className="h-9 w-9 bg-[#2761CB] hover:bg-[#4E86DF] rounded-full shadow-sm"
+              className="h-9 w-9 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-full shadow-sm"
               onClick={() => onRouteChange('collect-person')}
             >
               <Plus className="w-5 h-5" />
@@ -175,7 +175,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
           {/* 统计卡片 */}
           <div className="px-4 py-3 grid grid-cols-4 gap-2">
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[#2761CB]">{stats.total}</div>
+              <div className="text-lg font-bold text-[var(--color-brand-primary)]">{stats.total}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">总人数</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
@@ -246,7 +246,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('户籍') 
-                          ? 'bg-[#2761CB] text-white border-[#2761CB]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('户籍')}
@@ -255,7 +255,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('流动') 
-                          ? 'bg-[#2761CB] text-white border-[#2761CB]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('流动')}
@@ -264,7 +264,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('留守') 
-                          ? 'bg-[#2761CB] text-white border-[#2761CB]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('留守')}
@@ -273,7 +273,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('境外') 
-                          ? 'bg-[#2761CB] text-white border-[#2761CB]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('境外')}
@@ -314,7 +314,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                 </div>
               </div>
               <DrawerFooter>
-                <Button onClick={handleConfirm} className="bg-[#2761CB] hover:bg-[#4E86DF]">确认筛选</Button>
+                <Button onClick={handleConfirm} className="bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]">确认筛选</Button>
                 <DrawerClose asChild>
                   <Button variant="outline" onClick={handleReset}>重置</Button>
                 </DrawerClose>
@@ -328,7 +328,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
           <div className="text-xs text-[var(--color-neutral-08)]">
             {selectedGrid !== 'all' || selectedTypes.length > 0 || selectedRisks.length > 0 ? (
               <>
-                筛选结果：<span className="text-[#2761CB] font-medium">{filteredPeople.length}</span> 条
+                筛选结果：<span className="text-[var(--color-brand-primary)] font-medium">{filteredPeople.length}</span> 条
               </>
             ) : (
               <>共 {filteredPeople.length} 条人员</>
@@ -338,7 +338,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
             <Button 
               variant="ghost" 
               size="sm" 
-              className="h-6 text-xs text-[var(--color-neutral-08)] hover:text-[#2761CB]"
+              className="h-6 text-xs text-[var(--color-neutral-08)] hover:text-[var(--color-brand-primary)]"
               onClick={handleReset}
             >
               清除筛选
@@ -361,7 +361,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                     <span className="font-bold text-[var(--color-neutral-11)] text-base">{p.name}</span>
                     <Badge 
                       variant="outline" 
-                      className="text-xs font-normal h-5 bg-[rgba(78,134,223,0.15)] text-[#4E86DF] border-[rgba(78,134,223,0.3)]"
+                      className="text-xs font-normal h-5 bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]"
                     >
                       {p.type}
                     </Badge>
@@ -418,7 +418,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="mt-3 text-[#2761CB]"
+                  className="mt-3 text-[var(--color-brand-primary)]"
                   onClick={handleReset}
                 >
                   清除筛选条件

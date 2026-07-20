@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, User, Phone, MapPin, Tag, Users, Clock, Network, History, AlertCircle, Home, Heart, Activity, FileText, Shield, Sparkles, Loader2 } from 'lucide-react';
-import { MobileStatusBar } from './MobileStatusBar';
+import { User, Phone, MapPin, Tag, Users, Clock, Network, History, AlertCircle, Home, Heart, Activity, FileText, Shield, Sparkles, Loader2 } from 'lucide-react';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
@@ -101,10 +101,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
   if (isLoading) {
     return (
-      <div className="h-full bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-[var(--color-neutral-01)] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-gray-500">正在加载人员档案...</p>
+          <Loader2 className="w-12 h-12 text-[var(--color-brand-primary-hover)] animate-spin mx-auto mb-3" />
+          <p className="text-sm text-[var(--color-neutral-08)]">正在加载人员档案...</p>
         </div>
       </div>
     );
@@ -112,10 +112,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
   if (!person) {
     return (
-      <div className="h-full bg-gray-50 flex items-center justify-center">
+      <div className="h-full bg-[var(--color-neutral-01)] flex items-center justify-center">
         <div className="text-center">
-          <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-gray-500">未找到该人员信息</p>
+          <AlertCircle className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
+          <p className="text-[var(--color-neutral-08)]">未找到该人员信息</p>
           <Button onClick={onBack} className="mt-4">返回</Button>
         </div>
       </div>
@@ -123,9 +123,9 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
   }
 
   const getRiskColor = (risk: string) => {
-    if (risk === 'High') return 'text-red-600 bg-red-50 border-red-200';
-    if (risk === 'Medium') return 'text-yellow-600 bg-yellow-50 border-yellow-200';
-    return 'text-green-600 bg-green-50 border-green-200';
+    if (risk === 'High') return 'text-[var(--color-status-error-text)] bg-[var(--color-status-error-soft)] border-[var(--color-status-error)]/35';
+    if (risk === 'Medium') return 'text-[var(--color-status-warning-text)] bg-[var(--color-status-warning-soft)] border-[var(--color-status-warning)]/35';
+    return 'text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] border-[var(--color-status-success)]/35';
   };
 
   const getRiskLabel = (risk: string) => {
@@ -149,49 +149,41 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
   ].filter((item): item is string => Boolean(item));
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar variant="dark" />
-        <div className="h-11 flex items-center justify-between px-4">
-          <button 
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center -ml-2 text-gray-700 active:bg-gray-100 rounded-full"
+      <MobileDetailHeader
+        title="人员详情"
+        onBack={onBack}
+        action={(
+          <button
+            onClick={() => onRouteChange?.(`person-edit/${id}`)}
+            className="text-[var(--color-brand-primary-hover)] font-medium text-sm active:opacity-70"
           >
-            <ArrowLeft className="w-6 h-6" />
+            编辑
           </button>
-          <div className="text-gray-900 font-semibold text-lg">人员详情</div>
-          <div className="w-8 flex justify-end">
-            <button 
-              onClick={() => onRouteChange?.(`person-edit/${id}`)}
-              className="text-blue-600 font-medium text-sm active:opacity-70"
-            >
-               编辑
-            </button>
-          </div>
-        </div>
-      </div>
+        )}
+      />
 
       <div className="flex-1 overflow-y-auto pb-20" style={{ WebkitOverflowScrolling: 'touch', touchAction: 'pan-y' }}>
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <div className="bg-white border-b border-gray-100 sticky top-0 z-30">
+          <div className="bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] sticky top-0 z-30">
             <TabsList className="w-full grid grid-cols-3 h-12 bg-transparent rounded-none border-b-0">
               <TabsTrigger 
                 value="basic" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 基础信息
               </TabsTrigger>
               <TabsTrigger 
                 value="relation" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 关系图谱
               </TabsTrigger>
               <TabsTrigger 
                 value="history" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-blue-600 data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 历史记录
               </TabsTrigger>
@@ -202,23 +194,23 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
           <TabsContent value="basic" className="mt-0 p-4 space-y-4">
             {/* Basic Info Card */}
             <Card className="border-none shadow-sm overflow-hidden">
-              <div className="bg-white border-b border-gray-200 p-5">
+              <div className="bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center border-2 border-gray-200 text-2xl font-bold text-primary">
+                    <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center border-2 border-[var(--color-neutral-03)] text-2xl font-bold text-primary">
                       {person.name[0]}
                     </div>
                     <div>
-                      <h2 className="text-xl font-bold flex items-center gap-2 text-gray-900">
+                      <h2 className="text-xl font-bold flex items-center gap-2 text-[var(--color-neutral-11)]">
                         {person.name}
                       </h2>
-                      <div className="text-gray-600 text-sm mt-1 flex items-center gap-2">
+                      <div className="text-[var(--color-neutral-10)] text-sm mt-1 flex items-center gap-2">
                         <span>{person.gender}</span>
-                        <span className="w-px h-3 bg-gray-300"></span>
+                        <span className="w-px h-3 bg-[var(--color-neutral-03)]"></span>
                         <span>{person.age}岁</span>
                         {person.nation && (
                           <>
-                            <span className="w-px h-3 bg-gray-300"></span>
+                            <span className="w-px h-3 bg-[var(--color-neutral-03)]"></span>
                             <span>{person.nation}</span>
                           </>
                         )}
@@ -228,20 +220,20 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                   {person.tags.map((tag, i) => (
-                    <span key={i} className="text-xs bg-gray-100 px-2 py-1 rounded border border-gray-200 text-gray-700">
+                    <span key={i} className="text-xs bg-[var(--color-neutral-02)] px-2 py-1 rounded border border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
                       {tag}
                     </span>
                   ))}
                 </div>
               </div>
-              <div className="p-4 bg-white space-y-4">
+              <div className="p-4 bg-[var(--color-neutral-01)] space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center shrink-0 text-blue-600">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center shrink-0 text-[var(--color-brand-primary-hover)]">
                     <User className="w-4 h-4" />
                   </div>
-                  <div className="flex-1 border-b border-gray-50 pb-3">
-                    <div className="text-xs text-gray-500 mb-0.5">身份证号</div>
-                    <div className="text-sm font-medium text-gray-900 font-mono tracking-wide">
+                  <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">身份证号</div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-11)] font-mono tracking-wide">
                       {person.idCard.substring(0, 6)}****{person.idCard.substring(14)}
                     </div>
                   </div>
@@ -249,15 +241,15 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
                 {person.phone && (
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center shrink-0 text-green-600">
+                    <div className="w-8 h-8 rounded-full bg-[var(--color-status-success-soft)] flex items-center justify-center shrink-0 text-[var(--color-status-success-text)]">
                       <Phone className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 border-b border-gray-50 pb-3">
-                      <div className="text-xs text-gray-500 mb-0.5">联系电话</div>
-                      <div className="text-sm font-medium text-gray-900 flex items-center justify-between">
+                    <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
+                      <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">联系电话</div>
+                      <div className="text-sm font-medium text-[var(--color-neutral-11)] flex items-center justify-between">
                         {person.phone}
                         <a href={`tel:${person.phone}`}>
-                          <Button size="sm" variant="outline" className="h-6 text-xs border-green-200 text-green-700 bg-green-50 hover:bg-green-100">
+                          <Button size="sm" variant="outline" className="h-6 text-xs border-[var(--color-status-success)]/35 text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] hover:bg-[var(--color-status-success)]/25">
                             拨打
                           </Button>
                         </a>
@@ -267,21 +259,21 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 )}
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-orange-50 flex items-center justify-center shrink-0 text-orange-600">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-status-warning-soft)] flex items-center justify-center shrink-0 text-[var(--color-status-warning-text)]">
                     <MapPin className="w-4 h-4" />
                   </div>
-                  <div className="flex-1 border-b border-gray-50 pb-3">
-                    <div className="text-xs text-gray-500 mb-0.5">居住地址</div>
-                    <div className="text-sm font-medium text-gray-900 leading-normal">{person.address}</div>
+                  <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">居住地址</div>
+                    <div className="text-sm font-medium text-[var(--color-neutral-11)] leading-normal">{person.address}</div>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center shrink-0 text-purple-600">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-accent-purple-soft)] flex items-center justify-center shrink-0 text-[var(--color-accent-purple-text)]">
                     <Tag className="w-4 h-4" />
                   </div>
-                  <div className="flex-1 border-b border-gray-50 pb-3">
-                    <div className="text-xs text-gray-500 mb-0.5">人口类型</div>
+                  <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">人口类型</div>
                     <Badge variant="secondary" className="text-xs font-normal mt-1">
                       {person.type}
                     </Badge>
@@ -290,22 +282,22 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
                 {person.education && (
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
+                    <div className="w-8 h-8 rounded-full bg-[var(--color-accent-purple-soft)] flex items-center justify-center shrink-0 text-[var(--color-accent-purple-text)]">
                       <User className="w-4 h-4" />
                     </div>
-                    <div className="flex-1 border-b border-gray-50 pb-3">
-                      <div className="text-xs text-gray-500 mb-0.5">学历</div>
-                      <div className="text-sm font-medium text-gray-900">{person.education}</div>
+                    <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
+                      <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">学历</div>
+                      <div className="text-sm font-medium text-[var(--color-neutral-11)]">{person.education}</div>
                     </div>
                   </div>
                 )}
 
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-red-50 flex items-center justify-center shrink-0 text-red-600">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-status-error-soft)] flex items-center justify-center shrink-0 text-[var(--color-status-error-text)]">
                     <AlertCircle className="w-4 h-4" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-xs text-gray-500 mb-0.5">风险等级</div>
+                    <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">风险等级</div>
                     <Badge className={`text-xs font-normal mt-1 ${getRiskColor(person.risk)}`}>
                       {getRiskLabel(person.risk)}
                     </Badge>
@@ -315,10 +307,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             </Card>
 
             <Card className="border-none shadow-sm">
-              <div className="bg-white p-4">
+              <div className="bg-[var(--color-neutral-01)] p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-blue-600" />
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                     走访前准备
                   </h3>
                   <Badge variant="secondary" className="text-[10px]">
@@ -327,8 +319,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 </div>
                 <div className="space-y-2">
                   {visitPrep.map((item) => (
-                    <div key={item} className="flex gap-2 text-sm text-gray-700">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-500" />
+                    <div key={item} className="flex gap-2 text-sm text-[var(--color-neutral-10)]">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-brand-primary)]" />
                       <span className="leading-relaxed">{item}</span>
                     </div>
                   ))}
@@ -337,10 +329,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             </Card>
 
             <Card className="border-none shadow-sm">
-              <div className="bg-white p-4">
+              <div className="bg-[var(--color-neutral-01)] p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-600" />
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-[var(--color-status-warning-text)]" />
                     待办建议
                   </h3>
                   <Badge variant="secondary" className="text-[10px]">
@@ -349,8 +341,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 </div>
                 <div className="space-y-2">
                   {todoSuggestions.map((item) => (
-                    <div key={item} className="flex gap-2 text-sm text-gray-700">
-                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-amber-500" />
+                    <div key={item} className="flex gap-2 text-sm text-[var(--color-neutral-10)]">
+                      <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-status-warning)]" />
                       <span className="leading-relaxed">{item}</span>
                     </div>
                   ))}
@@ -363,76 +355,76 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               person.militaryService !== undefined || person.graduationInfo || person.workplace ||
               person.communityVolunteer !== undefined || person.skills || person.pets) && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
                     <User className="w-4 h-4" />
                     详细信息
                   </h3>
                   <div className="space-y-3">
                     {person.birthDate && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">出生年月</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.birthDate}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">出生年月</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.birthDate}</div>
                       </div>
                     )}
                     {person.birthplace && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">籍贯</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.birthplace}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">籍贯</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.birthplace}</div>
                       </div>
                     )}
                     {person.maritalStatus && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">婚姻状况</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.maritalStatus}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">婚姻状况</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.maritalStatus}</div>
                       </div>
                     )}
                     {person.religion && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">宗教信仰</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.religion}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">宗教信仰</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.religion}</div>
                       </div>
                     )}
                     {person.politicalStatus && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">政治面貌</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.politicalStatus}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">政治面貌</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.politicalStatus}</div>
                       </div>
                     )}
                     {person.militaryService !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">兵役情况</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.militaryService ? '是' : '否'}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">兵役情况</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.militaryService ? '是' : '否'}</div>
                       </div>
                     )}
                     {person.graduationInfo && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">毕业院校</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.graduationInfo}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">毕业院校</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.graduationInfo}</div>
                       </div>
                     )}
                     {person.workplace && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">工作单位</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.workplace}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">工作单位</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.workplace}</div>
                       </div>
                     )}
                     {person.communityVolunteer !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">社区志愿</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.communityVolunteer ? '是' : '否'}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">社区志愿</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.communityVolunteer ? '是' : '否'}</div>
                       </div>
                     )}
                     {person.skills && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">特长爱好</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.skills}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">特长爱好</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.skills}</div>
                       </div>
                     )}
                     {person.pets && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-20 shrink-0">宠物饲养</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.pets}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-20 shrink-0">宠物饲养</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.pets}</div>
                       </div>
                     )}
                   </div>
@@ -443,14 +435,14 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 重点关爱标签 */}
             {person.careLabels && person.careLabels.length > 0 && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-red-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
                     重点关爱
                   </h3>
                   <div className="flex flex-wrap gap-2">
                     {person.careLabels.map((label, i) => (
-                      <span key={i} className="text-xs bg-red-50 text-red-700 px-3 py-1 rounded-full border border-red-200">
+                      <span key={i} className="text-xs bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)] px-3 py-1 rounded-full border border-[var(--color-status-error)]/35">
                         {label}
                       </span>
                     ))}
@@ -462,9 +454,9 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 人员类别标签 */}
             {person.categoryLabels && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-blue-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <Shield className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                     人员类别
                   </h3>
                   <div className="space-y-2">
@@ -479,10 +471,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                     )}
                     {person.categoryLabels.focusType && person.categoryLabels.focusType.length > 0 && (
                       <div className="mt-2">
-                        <div className="text-xs text-gray-500 mb-2">重点关注类型：</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] mb-2">重点关注类型：</div>
                         <div className="flex flex-wrap gap-2">
                           {person.categoryLabels.focusType.map((type, i) => (
-                            <span key={i} className="text-xs bg-orange-50 text-orange-700 px-3 py-1 rounded-full border border-orange-200">
+                            <span key={i} className="text-xs bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)] px-3 py-1 rounded-full border border-[var(--color-status-warning)]/35">
                               {type}
                             </span>
                           ))}
@@ -497,12 +489,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 个人经历 */}
             {person.biography && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-indigo-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <FileText className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                     个人经历
                   </h3>
-                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed whitespace-pre-line">
                     {person.biography}
                   </div>
                 </div>
@@ -512,24 +504,24 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 活动参与 */}
             {person.activityParticipation && (person.activityParticipation.activities || person.activityParticipation.needs) && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-green-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 text-[var(--color-status-success-text)]" />
                     活动参与
                   </h3>
                   <div className="space-y-3">
                     {person.activityParticipation.activities && (
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">参加活动情况</div>
-                        <div className="text-sm text-gray-700 leading-relaxed">
+                        <div className="text-xs text-[var(--color-neutral-08)] mb-1">参加活动情况</div>
+                        <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed">
                           {person.activityParticipation.activities}
                         </div>
                       </div>
                     )}
                     {person.activityParticipation.needs && (
                       <div>
-                        <div className="text-xs text-gray-500 mb-1">服务需求</div>
-                        <div className="text-sm text-gray-700 leading-relaxed">
+                        <div className="text-xs text-[var(--color-neutral-08)] mb-1">服务需求</div>
+                        <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed">
                           {person.activityParticipation.needs}
                         </div>
                       </div>
@@ -542,56 +534,56 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 健康档案 */}
             {person.healthRecord && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-pink-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
                     健康档案
                   </h3>
                   <div className="space-y-3">
                     {person.healthRecord.hasChronic !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">基础疾病</div>
-                        <div className="text-sm text-gray-900 flex-1">
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">基础疾病</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">
                           {person.healthRecord.hasChronic ? '是' : '否'}
                           {person.healthRecord.chronicDetails && (
-                            <span className="ml-2 text-gray-600">({person.healthRecord.chronicDetails})</span>
+                            <span className="ml-2 text-[var(--color-neutral-10)]">({person.healthRecord.chronicDetails})</span>
                           )}
                         </div>
                       </div>
                     )}
                     {person.healthRecord.needsRegularMedicine !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">定期购药</div>
-                        <div className="text-sm text-gray-900 flex-1">
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">定期购药</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">
                           {person.healthRecord.needsRegularMedicine ? '是' : '否'}
                           {person.healthRecord.medicineFrequency && (
-                            <span className="ml-2 text-gray-600">({person.healthRecord.medicineFrequency})</span>
+                            <span className="ml-2 text-[var(--color-neutral-10)]">({person.healthRecord.medicineFrequency})</span>
                           )}
                         </div>
                       </div>
                     )}
                     {person.healthRecord.medicalVisitFrequency && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">就医频率</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.healthRecord.medicalVisitFrequency}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">就医频率</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.healthRecord.medicalVisitFrequency}</div>
                       </div>
                     )}
                     {person.healthRecord.isSeverePatient !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">重症患者</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.healthRecord.isSeverePatient ? '是' : '否'}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">重症患者</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.healthRecord.isSeverePatient ? '是' : '否'}</div>
                       </div>
                     )}
                     {person.healthRecord.isPregnant !== undefined && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">孕产妇</div>
-                        <div className="text-sm text-gray-900 flex-1">{person.healthRecord.isPregnant ? '是' : '否'}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">孕产妇</div>
+                        <div className="text-sm text-[var(--color-neutral-11)] flex-1">{person.healthRecord.isPregnant ? '是' : '否'}</div>
                       </div>
                     )}
                     {person.healthRecord.specialNotes && (
                       <div className="flex items-start gap-3">
-                        <div className="text-xs text-gray-500 w-24 shrink-0">特殊说明</div>
-                        <div className="text-sm text-gray-700 flex-1 leading-relaxed">{person.healthRecord.specialNotes}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] w-24 shrink-0">特殊说明</div>
+                        <div className="text-sm text-[var(--color-neutral-10)] flex-1 leading-relaxed">{person.healthRecord.specialNotes}</div>
                       </div>
                     )}
                   </div>
@@ -602,12 +594,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 重要事件记录 */}
             {person.importantEvents && (
               <Card className="border-none shadow-sm">
-                <div className="bg-white p-4">
-                  <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                <div className="bg-[var(--color-neutral-01)] p-4">
+                  <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-[var(--color-status-warning-text)]" />
                     重要事件记录
                   </h3>
-                  <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+                  <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed whitespace-pre-line">
                     {person.importantEvents}
                   </div>
                 </div>
@@ -617,7 +609,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             {/* 更新时间 */}
             <Card className="border-none shadow-sm">
               <div className="p-4">
-                <p className="text-xs text-gray-400 flex items-center gap-1">
+                <p className="text-xs text-[var(--color-neutral-08)] flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   最近更新：{person.updatedAt}
                 </p>
@@ -629,17 +621,17 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
           <TabsContent value="relation" className="mt-0 p-4 space-y-4">
             {/* 关系网络可视化 */}
             <Card className="border-none shadow-sm">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Network className="w-4 h-4 text-purple-600" />
+              <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
+                <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
+                  <Network className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                   关系网络
                 </h3>
               </div>
               <div className="p-4">
-                <div className="relative w-full h-64 bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg flex items-center justify-center">
+                <div className="relative w-full h-64 bg-gradient-to-br from-[var(--color-neutral-02)] to-[var(--color-neutral-03)] rounded-lg flex items-center justify-center">
                   {/* 中心节点 */}
                   <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-                    <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white font-bold shadow-lg px-1" style={{ fontSize: person.name.length > 3 ? '10px' : '16px' }}>
+                    <div className="w-14 h-14 rounded-full bg-[var(--color-brand-primary)] flex items-center justify-center text-white font-bold shadow-lg px-1" style={{ fontSize: person.name.length > 3 ? '10px' : '16px' }}>
                       {person.name}
                     </div>
                     <p className="text-center mt-1 text-[10px] font-medium">{person.name}</p>
@@ -705,18 +697,18 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       
                       if (isBoth) {
                         // 既有血缘又有同住：紫色
-                        nodeColor = 'bg-purple-500';
-                        strokeColor = '#a855f7';
+                        nodeColor = 'bg-[var(--color-accent-purple)]';
+                        strokeColor = 'var(--color-accent-purple-text)';
                         strokeDasharray = '';
                       } else if (hasFamily) {
                         // 只血缘：红色线
-                        nodeColor = 'bg-red-500';
-                        strokeColor = '#ef4444';
+                        nodeColor = 'bg-[var(--color-status-error)]';
+                        strokeColor = 'var(--color-status-error)';
                         strokeDasharray = '4 4';
                       } else {
                         // 只有同住：蓝色实线
-                        nodeColor = 'bg-blue-500';
-                        strokeColor = '#3b82f6';
+                        nodeColor = 'bg-[var(--color-brand-primary)]';
+                        strokeColor = 'var(--color-brand-primary-hover)';
                         strokeDasharray = '';
                       }
                       
@@ -764,16 +756,16 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 </div>
                 <div className="mt-3 flex items-center justify-center gap-4 text-xs">
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-red-500"></div>
-                    <span className="text-gray-600">血缘</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-status-error)]"></div>
+                    <span className="text-[var(--color-neutral-10)]">血缘</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    <span className="text-gray-600">同住</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)]"></div>
+                    <span className="text-[var(--color-neutral-10)]">同住</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
-                    <span className="text-gray-600">血缘+同住</span>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent-purple)]"></div>
+                    <span className="text-[var(--color-neutral-10)]">血缘+同住</span>
                   </div>
                 </div>
               </div>
@@ -781,12 +773,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
             {/* 血缘关系 */}
             <Card className="border-none shadow-sm">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Heart className="w-4 h-4 text-red-600" />
+              <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
+                <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
+                  <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
                   血缘关系
                 </h3>
-                <span className="text-xs text-gray-400">
+                <span className="text-xs text-[var(--color-neutral-08)]">
                   {person.familyRelations?.length || 0}人
                 </span>
               </div>
@@ -803,18 +795,18 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                         return (
                           <div key={idx} className="px-4 py-3 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold">
+                              <div className="w-10 h-10 rounded-full bg-[var(--color-neutral-02)] flex items-center justify-center text-[var(--color-neutral-08)] text-sm font-bold">
                                 {relatedPerson.name[0]}
                               </div>
                               <div>
-                                <div className="text-sm font-medium text-gray-900">{relatedPerson.name}</div>
-                                <div className="text-xs text-gray-500">{relation.relationType} · {relatedPerson.age}岁</div>
+                                <div className="text-sm font-medium text-[var(--color-neutral-11)]">{relatedPerson.name}</div>
+                                <div className="text-xs text-[var(--color-neutral-08)]">{relation.relationType} · {relatedPerson.age}岁</div>
                               </div>
                             </div>
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs text-blue-600"
+                              className="text-xs text-[var(--color-brand-primary-hover)]"
                               onClick={() => onRouteChange?.(`person-detail/${relatedPerson.id}`)}
                             >
                               查看
@@ -826,8 +818,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                   </div>
                 ) : (
                   <div className="text-center py-8">
-                    <Network className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">暂无血缘关系记录</p>
+                    <Network className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
+                    <p className="text-sm text-[var(--color-neutral-08)]">暂无血缘关系记录</p>
                   </div>
                 )}
               </div>
@@ -835,30 +827,30 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
             {/* 同住关系 */}
             <Card className="border-none shadow-sm">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Home className="w-4 h-4 text-blue-600" />
+              <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
+                <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
+                  <Home className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                   同住人员
                 </h3>
-                <span className="text-xs text-gray-400">{cohabitants.length}人</span>
+                <span className="text-xs text-[var(--color-neutral-08)]">{cohabitants.length}人</span>
               </div>
               <div>
                 {cohabitants.length > 0 ? (
                   cohabitants.map((cohabitant, i) => (
-                    <div key={i} className="px-4 py-3 flex items-center justify-between active:bg-gray-50 transition-colors">
+                    <div key={i} className="px-4 py-3 flex items-center justify-between active:bg-[var(--color-neutral-03)] transition-colors">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 text-sm font-bold">
+                        <div className="w-10 h-10 rounded-full bg-[var(--color-neutral-02)] flex items-center justify-center text-[var(--color-neutral-08)] text-sm font-bold">
                           {cohabitant.name[0]}
                         </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900">{cohabitant.name}</div>
-                          <div className="text-xs text-gray-500">{cohabitant.gender} · {cohabitant.age}岁</div>
+                          <div className="text-sm font-medium text-[var(--color-neutral-11)]">{cohabitant.name}</div>
+                          <div className="text-xs text-[var(--color-neutral-08)]">{cohabitant.gender} · {cohabitant.age}岁</div>
                         </div>
                       </div>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-blue-600"
+                        className="text-xs text-[var(--color-brand-primary-hover)]"
                         onClick={() => onRouteChange?.(`person-detail/${cohabitant.id}`)}
                       >
                         查看
@@ -867,8 +859,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                   ))
                 ) : (
                   <div className="p-4 text-center py-8">
-                    <Users className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                    <p className="text-sm text-gray-400">暂无同住人员</p>
+                    <Users className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
+                    <p className="text-sm text-[var(--color-neutral-08)]">暂无同住人员</p>
                   </div>
                 )}
               </div>
@@ -878,32 +870,32 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
           {/* 历史记录 Tab */}
           <TabsContent value="history" className="mt-0 p-4 space-y-4">
             <Card className="border-none shadow-sm">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <History className="w-4 h-4 text-purple-600" />
+              <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
+                <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
+                  <History className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                   访问记录
                 </h3>
                 {visits.length > 0 && (
-                  <span className="text-xs text-gray-400">{visits.length}条</span>
+                  <span className="text-xs text-[var(--color-neutral-08)]">{visits.length}条</span>
                 )}
               </div>
               <div className="p-4">
                 {visits.length > 0 ? (
                   <div className="space-y-0">
                     {visits.map((visit, index) => (
-                      <div key={visit.id} className={`relative pl-4 border-l-2 border-gray-100 pb-6 ${index === visits.length - 1 ? 'border-transparent pb-0' : ''}`}>
-                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-white"></div>
+                      <div key={visit.id} className={`relative pl-4 border-l-2 border-[var(--color-neutral-03)] pb-6 ${index === visits.length - 1 ? 'border-transparent pb-0' : ''}`}>
+                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)] ring-4 ring-[var(--color-neutral-11)]"></div>
                         <div className="flex justify-between items-start mb-1">
-                          <span className="text-sm font-bold text-gray-900">{visit.visitorName}</span>
-                          <span className="text-xs text-gray-400 font-mono">{visit.date}</span>
+                          <span className="text-sm font-bold text-[var(--color-neutral-11)]">{visit.visitorName}</span>
+                          <span className="text-xs text-[var(--color-neutral-08)] font-mono">{visit.date}</span>
                         </div>
-                        <div className="text-sm text-gray-600 mb-2 leading-relaxed bg-gray-50 p-3 rounded-lg">
+                        <div className="text-sm text-[var(--color-neutral-10)] mb-2 leading-relaxed bg-[var(--color-neutral-01)] p-3 rounded-lg">
                           {visit.content}
                         </div>
                         {visit.tags && visit.tags.length > 0 && (
                           <div className="flex gap-1.5 flex-wrap">
                             {visit.tags.map((tag, i) => (
-                              <span key={i} className="px-1.5 py-0.5 bg-blue-50 text-blue-600 text-[10px] rounded border border-blue-100">
+                              <span key={i} className="px-1.5 py-0.5 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] text-[10px] rounded border border-[var(--color-brand-primary)]">
                                 {tag}
                               </span>
                             ))}
@@ -914,18 +906,18 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                   </div>
                 ) : (
                   <div className="text-center py-12">
-                    <History className="w-16 h-16 text-gray-200 mx-auto mb-3" />
-                    <p className="text-sm text-gray-400">暂无访问记录</p>
-                    <p className="text-xs text-gray-300 mt-1">入户走访后会在此显示</p>
+                    <History className="w-16 h-16 text-[var(--color-neutral-08)] mx-auto mb-3" />
+                    <p className="text-sm text-[var(--color-neutral-08)]">暂无访问记录</p>
+                    <p className="text-xs text-[var(--color-neutral-08)] mt-1">入户走访后会在此显示</p>
                   </div>
                 )}
               </div>
             </Card>
 
             <Card className="border-none shadow-sm">
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-orange-600" />
+              <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
+                <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-[var(--color-status-warning-text)]" />
                   变更记录
                 </h3>
               </div>
@@ -933,12 +925,12 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 <div className="space-y-3">
                   <div className="flex gap-3">
                     <div className="flex flex-col items-center">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                      <div className="w-px h-full bg-gray-200 mt-1"></div>
+                      <div className="w-2 h-2 bg-[var(--color-brand-primary)] rounded-full"></div>
+                      <div className="w-px h-full bg-[var(--color-neutral-03)] mt-1"></div>
                     </div>
                     <div className="flex-1 pb-4">
-                      <div className="text-xs text-gray-400">{person.updatedAt}</div>
-                      <div className="text-sm text-gray-900 mt-1">信息最近更新</div>
+                      <div className="text-xs text-[var(--color-neutral-08)]">{person.updatedAt}</div>
+                      <div className="text-sm text-[var(--color-neutral-11)] mt-1">信息最近更新</div>
                     </div>
                   </div>
                 </div>
@@ -949,16 +941,16 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
       </div>
 
       {/* Bottom Action */}
-      <div className="bg-white border-t border-gray-100 p-4 safe-area-bottom sticky bottom-0 flex gap-3">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0 flex gap-3">
         <Button 
           variant="outline" 
-          className="flex-1 h-11 text-gray-700"
+          className="flex-1 h-11 text-[var(--color-neutral-10)]"
           onClick={() => onRouteChange?.(`visit-form/${id}`)}
         >
           添加走访记录
         </Button>
         <Button
-          className="flex-1 h-11 bg-blue-600 hover:bg-blue-700"
+          className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
           onClick={() => toast.info('请通过人员编辑或专项采集页发起信息变更')}
         >
           信息采集变更

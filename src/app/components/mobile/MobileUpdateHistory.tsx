@@ -160,20 +160,20 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
 
   const getRecordStyle = (type: RecordType) => {
     switch(type) {
-      case 'person': 
-        return { icon: User, color: 'text-blue-600', bg: 'bg-blue-100', border: 'border-blue-200' };
-      case 'house': 
-        return { icon: Home, color: 'text-indigo-600', bg: 'bg-indigo-100', border: 'border-indigo-200' };
-      case 'issue': 
-        return { icon: CircleAlert, color: 'text-orange-600', bg: 'bg-orange-100', border: 'border-orange-200' };
-      case 'conflict': 
-        return { icon: Handshake, color: 'text-purple-600', bg: 'bg-purple-100', border: 'border-purple-200' };
-      case 'activity': 
-        return { icon: Flag, color: 'text-pink-600', bg: 'bg-pink-100', border: 'border-pink-200' };
-      case 'task': 
-        return { icon: SquareCheck, color: 'text-green-600', bg: 'bg-green-100', border: 'border-green-200' };
-      default: 
-        return { icon: Ellipsis, color: 'text-gray-600', bg: 'bg-gray-100', border: 'border-gray-200' };
+      case 'person':
+        return { icon: User, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]/30' };
+      case 'house':
+        return { icon: Home, color: 'text-[var(--color-status-info-text)]', bg: 'bg-[var(--color-status-info-soft)]', border: 'border-[var(--color-status-info)]/30' };
+      case 'issue':
+        return { icon: CircleAlert, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]/30' };
+      case 'conflict':
+        return { icon: Handshake, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/30' };
+      case 'activity':
+        return { icon: Flag, color: 'text-[var(--color-status-error-text)]', bg: 'bg-[var(--color-status-error-soft)]', border: 'border-[var(--color-status-error)]/30' };
+      case 'task':
+        return { icon: SquareCheck, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]', border: 'border-[var(--color-status-success)]/30' };
+      default:
+        return { icon: Ellipsis, color: 'text-[var(--color-neutral-10)]', bg: 'bg-[var(--color-neutral-01)]', border: 'border-[var(--color-neutral-03)]' };
     }
   };
 
@@ -200,10 +200,10 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
   ];
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]">
       {/* Header */}
       <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] sticky top-0 z-10 shrink-0">
-        <MobileStatusBar variant="dark" />
+        <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3 relative h-11">
           <button 
             onClick={onBack} 
@@ -222,10 +222,10 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
         {/* Search & Filter Bar */}
         <div className="px-4 pb-3 flex gap-2">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
             <Input 
               placeholder="搜索工作记录..." 
-              className="pl-9 bg-[var(--color-neutral-03)] border-transparent text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-06)] h-9 text-sm focus-visible:ring-1 focus-visible:ring-blue-500"
+              className="pl-9 bg-[var(--color-neutral-03)] border-transparent text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)] h-9 text-sm focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -234,7 +234,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
             <DropdownMenuTrigger asChild>
               <button className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                 activeFilter !== 'all' 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-[var(--color-brand-primary)] text-white'
                   : 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]'
               }`}>
                 <Filter className="w-4 h-4" />
@@ -247,7 +247,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
                   onClick={() => setActiveFilter(option.value as any)}
                   className="focus:bg-[var(--color-neutral-03)] focus:text-[var(--color-neutral-11)] cursor-pointer"
                 >
-                  <span className={activeFilter === option.value ? 'text-blue-500 font-medium' : ''}>
+                  <span className={activeFilter === option.value ? 'text-[var(--color-brand-primary-hover)] font-medium' : ''}>
                     {option.label}
                   </span>
                 </DropdownMenuItem>
@@ -258,23 +258,23 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 bg-gray-50">
+      <div className="flex-1 overflow-y-auto p-4 bg-[var(--color-neutral-01)]">
         <div className="space-y-6 pb-6">
           {filteredData.length > 0 ? (
             filteredData.map((day) => (
               <div key={day.date}>
                 <div className="flex items-center gap-3 mb-3 pl-1">
-                   <div className="w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                   <div className="text-sm font-bold text-gray-500">{day.date}</div>
-                   <div className="h-px flex-1 bg-gray-200"></div>
+                   <div className="w-2 h-2 rounded-full bg-[var(--color-brand-primary)] shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                   <div className="text-sm font-bold text-[var(--color-neutral-08)]">{day.date}</div>
+                   <div className="h-px flex-1 bg-[var(--color-neutral-03)]"></div>
                 </div>
                 
-                <div className="space-y-3 pl-4 border-l-2 border-gray-100 ml-1">
+                <div className="space-y-3 pl-4 border-l-2 border-[var(--color-neutral-03)] ml-1">
                   {day.items.map((item) => {
                     const style = getRecordStyle(item.type);
                     const Icon = style.icon;
                     return (
-                      <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 flex gap-4 relative overflow-hidden group active:scale-[0.99] transition-transform">
+                      <div key={item.id} className="bg-[var(--color-neutral-02)] p-4 rounded-[4px] shadow-sm border border-[var(--color-neutral-03)] flex gap-4 relative overflow-hidden group active:scale-[0.99] transition-transform">
                         {/* Decorative background accent */}
                         <div className={`absolute top-0 right-0 w-16 h-16 opacity-5 -mr-4 -mt-4 rounded-full ${style.bg.replace('bg-', 'bg-current text-')}`}></div>
                         
@@ -284,18 +284,18 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
                         
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-gray-900 text-sm truncate pr-2">{item.title}</span>
+                            <span className="font-bold text-[var(--color-neutral-11)] text-sm truncate pr-2">{item.title}</span>
                             <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 font-normal ${style.color} ${style.bg} border-0`}>
                               {getActionLabel(item.action)}
                             </Badge>
                           </div>
                           
-                          <div className="text-xs text-gray-600 mb-2 line-clamp-2 leading-relaxed">
+                          <div className="text-xs text-[var(--color-neutral-10)] mb-2 line-clamp-2 leading-relaxed">
                             {item.desc}
                           </div>
                           
-                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
-                            <div className="flex items-center text-[10px] text-gray-400 gap-3">
+                          <div className="flex items-center justify-between mt-2 pt-2 border-t border-[var(--color-neutral-03)]">
+                            <div className="flex items-center text-[10px] text-[var(--color-neutral-08)] gap-3">
                               <span className="flex items-center gap-1">
                                 <Clock className="w-3 h-3" />
                                 {item.time}
@@ -306,7 +306,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
                               </span>
                             </div>
                             {item.status && (
-                              <span className="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                              <span className="text-[10px] font-medium text-[var(--color-neutral-08)] bg-[var(--color-neutral-01)] px-1.5 py-0.5 rounded">
                                 {item.status}
                               </span>
                             )}
@@ -319,9 +319,9 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
               </div>
             ))
           ) : (
-             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                 <Search className="w-8 h-8 text-gray-300" />
+             <div className="flex flex-col items-center justify-center py-20 text-[var(--color-neutral-08)]">
+               <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center mb-4">
+                 <Search className="w-8 h-8 text-[var(--color-neutral-06)]" />
                </div>
                <p className="text-sm">没有找到相关记录</p>
              </div>

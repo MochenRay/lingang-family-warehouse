@@ -4,15 +4,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { StatCard } from '../patterns/StatCard';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
-const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
-const TABLE_HEADER_CELL_CLASS = 'px-4 py-3 text-xs font-medium uppercase whitespace-nowrap text-[var(--color-neutral-08)]';
-const TABLE_CELL_CLASS = 'px-4 py-3 text-sm text-[var(--color-neutral-10)]';
-const NOTE_PANEL_CLASS = 'rounded-lg border border-[#4E86DF]/35 bg-[#4E86DF]/10 p-4 text-sm font-medium text-[#9EC3FF]';
+const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
+const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-primary-hover)]';
 
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
@@ -121,11 +121,11 @@ export function PermissionManagement() {
 
   // 角色列表
   const roles = [
-    { code: 'admin', name: '系统管理员', color: '#D52132' },
-    { code: 'district_admin', name: '区域管理员', color: '#D6730D' },
-    { code: 'analyst', name: '数据分析员', color: '#4E86DF' },
-    { code: 'operator', name: '数据录入员', color: '#19B172' },
-    { code: 'viewer', name: '访客', color: '#6B7599' }
+    { code: 'admin', name: '系统管理员', color: 'var(--color-status-error)' },
+    { code: 'district_admin', name: '区域管理员', color: 'var(--color-status-warning)' },
+    { code: 'analyst', name: '数据分析员', color: 'var(--color-brand-primary-hover)' },
+    { code: 'operator', name: '数据录入员', color: 'var(--color-status-success)' },
+    { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
   // 权限操作统计
@@ -140,7 +140,7 @@ export function PermissionManagement() {
   };
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="PERMISSION MATRIX"
         title="权限管理"
@@ -148,7 +148,7 @@ export function PermissionManagement() {
       />
 
       {/* 角色选择 */}
-      <Card className={DARK_CARD_CLASS}>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle className="text-base text-[var(--color-neutral-11)]">选择角色</CardTitle>
           <CardDescription className={MUTED_TEXT_CLASS}>选择要配置权限的角色</CardDescription>
@@ -161,8 +161,8 @@ export function PermissionManagement() {
                 onClick={() => setSelectedRole(role.code)}
                 className={`px-4 py-2 rounded-lg border-2 transition-all ${
                   selectedRole === role.code
-                    ? 'border-[#4E86DF] bg-[#4E86DF]/10 text-[var(--color-neutral-11)]'
-                    : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:border-[#4E86DF]/55 hover:bg-[var(--color-neutral-03)]'
+                    ? 'border-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary-hover)]/10 text-[var(--color-neutral-11)]'
+                    : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]'
                 }`}
               >
                 <div className="flex items-center gap-2">
@@ -177,55 +177,19 @@ export function PermissionManagement() {
 
       {/* 权限统计 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>功能模块</CardDescription>
-            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{permissionStats.totalModules}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>系统功能模块</p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>功能点总数</CardDescription>
-            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{permissionStats.totalFunctions}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>可配置功能点</p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>已授权功能</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">
-              {permissionStats.enabledFunctions}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
-              占比 {((permissionStats.enabledFunctions / permissionStats.totalFunctions) * 100).toFixed(0)}%
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>数据权限范围</CardDescription>
-            <CardTitle className="text-3xl text-[#4E86DF]">
-              {permissionStats.dataAreas}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>可访问区域</p>
-          </CardContent>
-        </Card>
+        <StatCard label="功能模块" value={permissionStats.totalModules} hint="系统功能模块" tone="brand" />
+        <StatCard label="功能点总数" value={permissionStats.totalFunctions} hint="可配置功能点" tone="brand" />
+        <StatCard
+          label="已授权功能"
+          value={permissionStats.enabledFunctions}
+          hint={`占比 ${((permissionStats.enabledFunctions / permissionStats.totalFunctions) * 100).toFixed(0)}%`}
+          tone="success"
+        />
+        <StatCard label="数据权限范围" value={permissionStats.dataAreas} hint="可访问区域" tone="brand" />
       </div>
 
       {/* 权限配置 */}
-      <Card className={DARK_CARD_CLASS}>
+      <Card className={PANEL_CLASS}>
         <CardHeader className="border-b border-[var(--color-neutral-03)]">
           <CardTitle className="text-base text-[var(--color-neutral-11)]">权限配置</CardTitle>
           <CardDescription className={MUTED_TEXT_CLASS}>
@@ -244,10 +208,10 @@ export function PermissionManagement() {
               {functionPermissions.map((module) => {
                 const ModuleIcon = module.icon;
                 return (
-                  <Card key={module.module} className={DARK_CARD_CLASS}>
+                  <Card key={module.module} className={PANEL_CLASS}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
-                        <ModuleIcon className="w-5 h-5 text-[#4E86DF]" />
+                        <ModuleIcon className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
                         <CardTitle className="text-lg text-[var(--color-neutral-11)]">{module.module}</CardTitle>
                         <Badge variant="outline" className={INFO_BADGE_CLASS}>
                           {module.permissions.length} 个功能
@@ -255,74 +219,72 @@ export function PermissionManagement() {
                       </div>
                     </CardHeader>
                     <CardContent className="p-0">
-                      <div className="overflow-x-auto">
-                        <table className="w-full min-w-[760px] border-collapse">
-                          <thead className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-                            <tr>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[180px] text-left`}>
-                                功能名称
-                              </th>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                                <Eye className="w-4 h-4 mx-auto" />
-                                查看
-                              </th>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                                <Edit2 className="w-4 h-4 mx-auto" />
-                                新建
-                              </th>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                                <Edit2 className="w-4 h-4 mx-auto" />
-                                编辑
-                              </th>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                                <Lock className="w-4 h-4 mx-auto" />
-                                删除
-                              </th>
-                              <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                                <Database className="w-4 h-4 mx-auto" />
-                                导出
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[var(--color-neutral-03)]">
-                            {module.permissions.map((perm, index) => (
-                              <tr key={index} className="transition-colors hover:bg-[var(--color-neutral-03)]/70">
-                                <td className={`${TABLE_CELL_CLASS} font-medium text-[var(--color-neutral-11)]`}>{perm.name}</td>
-                                <td className={`${TABLE_CELL_CLASS} text-center`}>
-                                  <Checkbox
-                                    checked={perm.view}
-                                    disabled={selectedRole === 'admin'}
-                                  />
-                                </td>
-                                <td className={`${TABLE_CELL_CLASS} text-center`}>
-                                  <Checkbox
-                                    checked={perm.create}
-                                    disabled={selectedRole === 'admin' || !perm.view}
-                                  />
-                                </td>
-                                <td className={`${TABLE_CELL_CLASS} text-center`}>
-                                  <Checkbox
-                                    checked={perm.edit}
-                                    disabled={selectedRole === 'admin' || !perm.view}
-                                  />
-                                </td>
-                                <td className={`${TABLE_CELL_CLASS} text-center`}>
-                                  <Checkbox
-                                    checked={perm.delete}
-                                    disabled={selectedRole === 'admin' || !perm.view}
-                                  />
-                                </td>
-                                <td className={`${TABLE_CELL_CLASS} text-center`}>
-                                  <Checkbox
-                                    checked={perm.export}
-                                    disabled={selectedRole === 'admin' || !perm.view}
-                                  />
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
+                      <Table className="min-w-[760px]">
+                        <TableHeader>
+                          <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                            <TableHead className={`${TABLE_HEAD_CLASS} min-w-[180px]`}>
+                              功能名称
+                            </TableHead>
+                            <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                              <Eye className="w-4 h-4 mx-auto" />
+                              查看
+                            </TableHead>
+                            <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                              <Edit2 className="w-4 h-4 mx-auto" />
+                              新建
+                            </TableHead>
+                            <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                              <Edit2 className="w-4 h-4 mx-auto" />
+                              编辑
+                            </TableHead>
+                            <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                              <Lock className="w-4 h-4 mx-auto" />
+                              删除
+                            </TableHead>
+                            <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                              <Database className="w-4 h-4 mx-auto" />
+                              导出
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {module.permissions.map((perm, index) => (
+                            <TableRow key={index}>
+                              <TableCell className="font-medium text-[var(--color-neutral-11)]">{perm.name}</TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={perm.view}
+                                  disabled={selectedRole === 'admin'}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={perm.create}
+                                  disabled={selectedRole === 'admin' || !perm.view}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={perm.edit}
+                                  disabled={selectedRole === 'admin' || !perm.view}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={perm.delete}
+                                  disabled={selectedRole === 'admin' || !perm.view}
+                                />
+                              </TableCell>
+                              <TableCell className="text-center">
+                                <Checkbox
+                                  checked={perm.export}
+                                  disabled={selectedRole === 'admin' || !perm.view}
+                                />
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
                     </CardContent>
                   </Card>
                 );
@@ -337,74 +299,72 @@ export function PermissionManagement() {
 
             {/* 数据权限 */}
             <TabsContent value="data" className="space-y-4">
-              <Card className={DARK_CARD_CLASS}>
+              <Card className={PANEL_CLASS}>
                 <CardHeader>
                   <CardTitle className="text-base text-[var(--color-neutral-11)]">区域数据权限</CardTitle>
                   <CardDescription className={MUTED_TEXT_CLASS}>配置角色可访问的数据范围</CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[680px] border-collapse">
-                      <thead className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-                        <tr>
-                          <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[140px] text-left`}>
-                            区域名称
-                          </th>
-                          <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[90px] text-left`}>
-                            层级
-                          </th>
-                          <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                            可查看
-                          </th>
-                          <th className={`${TABLE_HEADER_CELL_CLASS} text-center`}>
-                            可编辑
-                          </th>
-                          <th className={`${TABLE_HEADER_CELL_CLASS} min-w-[220px] text-left`}>
-                            说明
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-[var(--color-neutral-03)]">
-                        {dataPermissions.map((area, index) => (
-                          <tr key={index} className="transition-colors hover:bg-[var(--color-neutral-03)]/70">
-                            <td className={`${TABLE_CELL_CLASS} font-medium text-[var(--color-neutral-11)]`}>{area.area}</td>
-                            <td className={TABLE_CELL_CLASS}>
-                              <Badge variant="outline" className={INFO_BADGE_CLASS}>
-                                {area.level === 'city' ? '市级' : '区级'}
-                              </Badge>
-                            </td>
-                            <td className={`${TABLE_CELL_CLASS} text-center`}>
-                              <Checkbox
-                                checked={area.canView}
-                                disabled={selectedRole === 'admin'}
-                              />
-                            </td>
-                            <td className={`${TABLE_CELL_CLASS} text-center`}>
-                              <Checkbox
-                                checked={area.canEdit}
-                                disabled={selectedRole === 'admin' || !area.canView}
-                              />
-                            </td>
-                            <td className={`${TABLE_CELL_CLASS} ${MUTED_TEXT_CLASS}`}>
-                              {area.description}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                  <Table className="min-w-[680px]">
+                    <TableHeader>
+                      <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                        <TableHead className={`${TABLE_HEAD_CLASS} min-w-[140px]`}>
+                          区域名称
+                        </TableHead>
+                        <TableHead className={`${TABLE_HEAD_CLASS} min-w-[90px]`}>
+                          层级
+                        </TableHead>
+                        <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                          可查看
+                        </TableHead>
+                        <TableHead className={`${TABLE_HEAD_CLASS} text-center`}>
+                          可编辑
+                        </TableHead>
+                        <TableHead className={`${TABLE_HEAD_CLASS} min-w-[220px]`}>
+                          说明
+                        </TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dataPermissions.map((area, index) => (
+                        <TableRow key={index}>
+                          <TableCell className="font-medium text-[var(--color-neutral-11)]">{area.area}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={INFO_BADGE_CLASS}>
+                              {area.level === 'city' ? '市级' : '区级'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={area.canView}
+                              disabled={selectedRole === 'admin'}
+                            />
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={area.canEdit}
+                              disabled={selectedRole === 'admin' || !area.canView}
+                            />
+                          </TableCell>
+                          <TableCell className={MUTED_TEXT_CLASS}>
+                            {area.description}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </CardContent>
               </Card>
 
               {/* 数据范围说明 */}
-              <Card className={DARK_CARD_CLASS}>
+              <Card className={PANEL_CLASS}>
                 <CardHeader>
                   <CardTitle className="text-base text-[var(--color-neutral-11)]">数据权限说明</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
                     <div className="flex items-start gap-3">
-                      <div className="mt-2 h-2 w-2 rounded-full bg-[#4E86DF]" />
+                      <div className="mt-2 h-2 w-2 rounded-full bg-[var(--color-brand-primary-hover)]" />
                       <div>
                         <p className="font-medium text-[var(--color-neutral-11)]">查看权限</p>
                         <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
@@ -413,7 +373,7 @@ export function PermissionManagement() {
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="mt-2 h-2 w-2 rounded-full bg-[#19B172]" />
+                      <div className="mt-2 h-2 w-2 rounded-full bg-[var(--color-status-success)]" />
                       <div>
                         <p className="font-medium text-[var(--color-neutral-11)]">编辑权限</p>
                         <p className={`text-sm ${MUTED_TEXT_CLASS}`}>
@@ -422,7 +382,7 @@ export function PermissionManagement() {
                       </div>
                     </div>
                     <div className="flex items-start gap-3">
-                      <div className="mt-2 h-2 w-2 rounded-full bg-[#D6730D]" />
+                      <div className="mt-2 h-2 w-2 rounded-full bg-[var(--color-status-warning)]" />
                       <div>
                         <p className="font-medium text-[var(--color-neutral-11)]">数据隔离</p>
                         <p className={`text-sm ${MUTED_TEXT_CLASS}`}>

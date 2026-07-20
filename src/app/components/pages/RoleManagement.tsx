@@ -7,16 +7,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Checkbox } from '../ui/checkbox';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
-const DARK_CARD_CLASS = 'rounded-lg border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
-const DARK_DIALOG_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] shadow-2xl';
 const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
 const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
-const STATUS_ACTIVE_BADGE_CLASS = 'border border-[#19B172]/35 bg-[#19B172]/15 text-[#7DE2B7]';
-const STATUS_DISABLED_BADGE_CLASS = 'border border-[#D52132]/35 bg-[#D52132]/15 text-[#FFB4B4]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 
 export function RoleManagement() {
@@ -165,7 +164,7 @@ export function RoleManagement() {
   };
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="ROLE MANAGEMENT"
         title="角色管理"
@@ -178,7 +177,7 @@ export function RoleManagement() {
                 新建角色
               </Button>
             </DialogTrigger>
-            <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DARK_DIALOG_CLASS}`}>
+            <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DIALOG_CLASS}`}>
               <DialogHeader>
                 <DialogTitle className="text-[var(--color-neutral-11)]">新建角色</DialogTitle>
                 <DialogDescription className={MUTED_TEXT_CLASS}>配置角色基本信息和权限范围</DialogDescription>
@@ -260,78 +259,36 @@ export function RoleManagement() {
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={`flex items-center gap-2 ${MUTED_TEXT_CLASS}`}>
-              <Shield className="w-4 h-4" />
-              角色总数
-            </CardDescription>
-            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{roles.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>系统预设角色</p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>启用角色</CardDescription>
-            <CardTitle className="text-3xl text-[#19B172]">
-              {roles.filter(r => r.status === 'active').length}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>可正常使用</p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>分配用户</CardDescription>
-            <CardTitle className="text-3xl text-[#4E86DF]">
-              {roles.reduce((sum, r) => sum + r.userCount, 0)}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>已关联用户</p>
-          </CardContent>
-        </Card>
-
-        <Card className={DARK_CARD_CLASS}>
-          <CardHeader className="pb-3">
-            <CardDescription className={MUTED_TEXT_CLASS}>权限模块</CardDescription>
-            <CardTitle className="text-3xl text-[var(--color-neutral-11)]">{permissionTree.length}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className={`text-sm ${MUTED_TEXT_CLASS}`}>可配置模块</p>
-          </CardContent>
-        </Card>
+        <StatCard label="角色总数" value={roles.length} hint="系统预设角色" icon={Shield} tone="brand" />
+        <StatCard label="启用角色" value={roles.filter(r => r.status === 'active').length} hint="可正常使用" tone="success" />
+        <StatCard label="分配用户" value={roles.reduce((sum, r) => sum + r.userCount, 0)} hint="已关联用户" tone="brand" />
+        <StatCard label="权限模块" value={permissionTree.length} hint="可配置模块" tone="brand" />
       </div>
 
       {/* 角色列表 */}
       <div className="grid grid-cols-1 gap-4">
         {roles.map((role) => (
-          <Card key={role.id} className={`${DARK_CARD_CLASS} transition-colors hover:bg-[var(--color-neutral-03)]/70`}>
+          <Card key={role.id} className={`${PANEL_CLASS} transition-colors hover:bg-[var(--color-neutral-03)]/70`}>
             <CardHeader>
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#4E86DF]/35 bg-[#4E86DF]/10">
-                    <Shield className="w-6 h-6 text-[#9EC3FF]" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10">
+                    <Shield className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-[var(--color-neutral-11)]">{role.name}</CardTitle>
                       <Badge variant="outline" className={INFO_BADGE_CLASS}>{role.code}</Badge>
                       {role.status === 'active' ? (
-                        <Badge className={STATUS_ACTIVE_BADGE_CLASS}>
-                          <CheckCircle2 className="w-3 h-3 mr-1" />
+                        <StatusBadge tone="success">
+                          <CheckCircle2 className="w-3 h-3" />
                           启用
-                        </Badge>
+                        </StatusBadge>
                       ) : (
-                        <Badge className={STATUS_DISABLED_BADGE_CLASS}>
-                          <XCircle className="w-3 h-3 mr-1" />
+                        <StatusBadge tone="error">
+                          <XCircle className="w-3 h-3" />
                           禁用
-                        </Badge>
+                        </StatusBadge>
                       )}
                     </div>
                     <CardDescription className={MUTED_TEXT_CLASS}>{role.description}</CardDescription>
@@ -347,7 +304,7 @@ export function RoleManagement() {
                     <Edit className="w-4 h-4 mr-2" />
                     编辑
                   </Button>
-                  <Button size="sm" variant="outline" className="border-[#D52132]/35 bg-[#D52132]/10 text-[#FF8A8A] hover:bg-[#D52132]/20 hover:text-[#FFB4B4]">
+                  <Button size="sm" variant="outline" className="border-[var(--color-status-error)]/35 bg-[var(--color-status-error)]/10 text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/20 hover:text-[var(--color-status-error-text)]">
                     <Trash2 className="w-4 h-4 mr-2" />
                     删除
                   </Button>
@@ -384,7 +341,7 @@ export function RoleManagement() {
                 <p className={`text-sm font-medium ${MUTED_TEXT_CLASS}`}>权限列表：</p>
                 <div className="flex flex-wrap gap-2">
                   {role.permissions.map((perm, index) => (
-                    <Badge key={index} variant="outline" className="border-[#4E86DF]/35 bg-[#4E86DF]/10 text-[#9EC3FF]">
+                    <Badge key={index} variant="outline" className="border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 text-[var(--color-brand-primary-hover)]">
                       {getPermissionName(perm)}
                     </Badge>
                   ))}
@@ -400,7 +357,7 @@ export function RoleManagement() {
       </div>
 
       {/* 权限模块说明 */}
-      <Card className={DARK_CARD_CLASS}>
+      <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle className="text-base text-[var(--color-neutral-11)]">权限模块说明</CardTitle>
           <CardDescription className={MUTED_TEXT_CLASS}>系统功能模块和权限点说明</CardDescription>
@@ -410,7 +367,7 @@ export function RoleManagement() {
             {permissionTree.map((module) => (
               <div key={module.code} className={`${DARK_PANEL_CLASS} p-4`}>
                 <h3 className="font-semibold mb-2 flex items-center gap-2 text-[var(--color-neutral-11)]">
-                  <Shield className="w-4 h-4 text-[#4E86DF]" />
+                  <Shield className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                   {module.module}
                 </h3>
                 <ul className="space-y-1">
@@ -430,7 +387,7 @@ export function RoleManagement() {
       {/* 编辑角色对话框 */}
       {selectedRole && (
         <Dialog open={!!selectedRole} onOpenChange={() => setSelectedRole(null)}>
-          <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DARK_DIALOG_CLASS}`}>
+          <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DIALOG_CLASS}`}>
             <DialogHeader>
               <DialogTitle className="text-[var(--color-neutral-11)]">编辑角色 - {selectedRole.name}</DialogTitle>
               <DialogDescription className={MUTED_TEXT_CLASS}>修改角色配置和权限</DialogDescription>

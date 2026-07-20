@@ -40,14 +40,14 @@ function Slider({
         data-slot="slider-track"
         className={cn(
           // 圆角 9999px，背景 Neutral-03
-          "bg-[#293449] relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
+          "bg-[var(--color-neutral-03)] relative grow overflow-hidden rounded-full data-[orientation=horizontal]:h-1.5 data-[orientation=horizontal]:w-full data-[orientation=vertical]:h-full data-[orientation=vertical]:w-1.5",
         )}
       >
         <SliderPrimitive.Range
           data-slot="slider-range"
           className={cn(
             // Blue-06 填充
-            "bg-[#2761CB] absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full rounded-full",
+            "bg-[var(--color-brand-primary)] absolute data-[orientation=horizontal]:h-full data-[orientation=vertical]:w-full rounded-full",
           )}
         />
       </SliderPrimitive.Track>
@@ -56,7 +56,7 @@ function Slider({
           data-slot="slider-thumb"
           key={index}
           // 圆形滑块，Blue-06 边框，白色背景
-          className="border-[#2761CB] bg-white block size-4 shrink-0 rounded-full border-2 shadow-sm transition-all hover:ring-4 hover:ring-[#2761CB]/20 focus-visible:ring-4 focus-visible:ring-[#2761CB]/20 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
+          className="border-[var(--color-brand-primary)] bg-white block size-4 shrink-0 rounded-full border-2 shadow-sm transition-all hover:ring-4 hover:ring-[var(--color-brand-primary)]/20 focus-visible:ring-4 focus-visible:ring-[var(--color-brand-primary)]/20 focus-visible:outline-hidden disabled:pointer-events-none disabled:opacity-50"
         />
       ))}
     </SliderPrimitive.Root>

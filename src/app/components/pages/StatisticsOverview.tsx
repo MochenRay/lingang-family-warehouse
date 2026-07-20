@@ -4,7 +4,6 @@ import {
   ArrowRight,
   Database,
   Home,
-  Loader2,
   ShieldAlert,
   Sparkles,
   TrendingUp,
@@ -15,9 +14,14 @@ import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YA
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { StatCard } from '../patterns/StatCard';
+import { StatusBadge } from '../patterns/StatusBadge';
+import { LoadingState } from '../patterns/states';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import { CHART_COLORS, CHART_GRID_PROPS, CHART_GRADIENT_BLUE, CHART_TICK } from '../../config/chartConfig';
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { SortableHeader } from '../statistics/SortableHeader';
 import { PageHeader } from './PageHeader';
@@ -51,21 +55,27 @@ const DEFAULT_DISTRICT_SORT: { key: DistrictSortKey; direction: SortDirection } 
   direction: 'desc',
 };
 
-const RISK_TAG_COLORS = ['#2AA3CF', '#D6730D', '#8B5CF6', '#D52132', '#EC4899', '#4F46E5'];
-
 function formatNumber(value: number) {
   return new Intl.NumberFormat('zh-CN').format(value);
 }
 
-function getScoreColor(score: number) {
+type ScoreTone = 'warning' | 'info' | 'success';
+
+function getScoreTone(score: number): ScoreTone {
   if (score >= 70) {
-    return '#D6730D';
+    return 'warning';
   }
   if (score >= 45) {
-    return '#2761CB';
+    return 'info';
   }
-  return '#19B172';
+  return 'success';
 }
+
+const SCORE_BAR_CLASS: Record<ScoreTone, string> = {
+  warning: 'bg-[var(--color-status-warning)]',
+  info: 'bg-[var(--color-status-info)]',
+  success: 'bg-[var(--color-status-success)]',
+};
 
 function formatScore(score: number) {
   return Number.isInteger(score) ? String(score) : score.toFixed(1);
@@ -158,12 +168,12 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   const floatingPeople = dashboard?.mobilePeopleStats.floating ?? 0;
 
   const kpiCards = [
-    { label: '总人口数', value: totalPopulation, color: '#2761CB', icon: Users },
-    { label: '房屋总数', value: totalHouses, color: '#2AA3CF', icon: Home },
-    { label: `${RANGE_LABELS[selectedRange]}走访`, value: totalVisits, color: '#19B172', icon: TrendingUp },
-    { label: '待化解矛盾', value: activeConflicts, color: '#D6730D', icon: ShieldAlert },
-    { label: '流动人口', value: floatingPeople, color: '#D52132', icon: AlertTriangle },
-  ];
+    { label: '总人口数', value: totalPopulation, tone: 'brand', icon: Users },
+    { label: '房屋总数', value: totalHouses, tone: 'info', icon: Home },
+    { label: `${RANGE_LABELS[selectedRange]}走访`, value: totalVisits, tone: 'success', icon: TrendingUp },
+    { label: '待化解矛盾', value: activeConflicts, tone: 'warning', icon: ShieldAlert },
+    { label: '流动人口', value: floatingPeople, tone: 'error', icon: AlertTriangle },
+  ] as const;
 
   const handleExportReport = () => {
     const payload = {
@@ -192,33 +202,29 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   ];
 
   if (loading && !dashboard) {
-    return (
-      <div className="flex justify-center p-8">
-        <Loader2 className="animate-spin" />
-      </div>
-    );
+    return <LoadingState title="正在加载驾驶舱数据…" />;
   }
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       {showJourneyOverlay && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-sm">
-          <div className="relative w-full max-w-4xl overflow-hidden rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[var(--color-neutral-00)]/55 px-4 backdrop-blur-sm">
+          <div className={`relative w-full max-w-4xl overflow-hidden rounded-lg border shadow-2xl ${DIALOG_CLASS}`}>
             <button
               type="button"
               aria-label="关闭浏览建议"
               onClick={closeJourneyOverlay}
-              className="absolute right-4 top-4 rounded-full border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-2 text-[var(--color-neutral-08)] transition-colors hover:bg-[var(--color-neutral-03)] hover:text-white"
+              className="absolute right-4 top-4 rounded-full border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-2 text-[var(--color-neutral-08)] transition-colors hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
             >
               <X className="h-4 w-4" />
             </button>
             <div className="grid grid-cols-1 lg:grid-cols-[0.95fr,1.3fr]">
-              <div className="border-r border-[var(--color-neutral-03)] bg-[rgba(39,97,203,0.08)] p-8">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[#4E86DF]">
+              <div className="border-r border-[var(--color-neutral-03)] bg-[var(--color-brand-primary)]/10 p-8">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-primary-hover)]">
                   <Sparkles className="h-4 w-4" />
                   首次使用建议
                 </div>
-                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-white">
+                <h2 className="mt-4 text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">
                   先看统计分析，再进入业务台账和处置链路
                 </h2>
                 <p className="mt-4 text-sm leading-7 text-[var(--color-neutral-08)]">
@@ -250,14 +256,14 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                       index % 2 === 0 ? 'sm:border-r border-[var(--color-neutral-03)]' : ''
                     } ${index < 2 ? 'border-b border-[var(--color-neutral-03)]' : ''}`}
                   >
-                    <div className="inline-flex items-center rounded-full border border-[#2761CB]/40 bg-[#2761CB]/15 px-2.5 py-1 text-xs font-semibold text-[#4E86DF]">
+                    <div className="inline-flex items-center rounded-full border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/15 px-2.5 py-1 text-xs font-semibold text-[var(--color-brand-primary-hover)]">
                       {item.step}
                     </div>
                     <div>
-                      <div className="text-base font-semibold text-white">{item.title}</div>
+                      <div className="text-base font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
                       <div className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">{item.detail}</div>
                     </div>
-                    <div className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-[#4E86DF]">
+                    <div className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-[var(--color-brand-primary-hover)]">
                       {item.action}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </div>
@@ -290,10 +296,10 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
         }
       />
 
-      <section className="rounded-lg border border-[#2761CB]/35 bg-[#2761CB]/10 px-6 py-5">
+      <section className="rounded-[4px] border border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)]/10 px-6 py-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
-            <div className="mb-2 text-xs font-semibold tracking-[0.12em] text-[#4E86DF]">AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}</div>
+            <div className="mb-2 text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-primary-hover)]">AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}</div>
             <div className="text-sm leading-7 text-[var(--color-neutral-10)]">
               {actionItems.length > 0 ? (
                 actionItems.slice(0, 3).map((item, index) => (
@@ -301,9 +307,9 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                     key={item.id}
                     type="button"
                     onClick={() => onRouteChange?.(item.route)}
-                    className="mr-4 inline-flex text-left text-[var(--color-neutral-10)] transition-colors hover:text-white"
+                    className="mr-4 inline-flex text-left text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)]"
                   >
-                    <span className="font-semibold text-white">{index + 1}. {item.title}</span>
+                    <span className="font-semibold text-[var(--color-neutral-11)]">{index + 1}. {item.title}</span>
                     <span className="ml-1 text-[var(--color-neutral-08)]">{item.area} · {item.metric}</span>
                   </button>
                 ))
@@ -314,15 +320,15 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
           </div>
           <div className="grid shrink-0 grid-cols-3 gap-6 text-center">
             <div>
-              <div className="text-3xl font-bold text-[#2761CB]">{formatNumber(totalPopulation)}</div>
+              <div className="text-3xl font-bold text-[var(--color-brand-primary)]">{formatNumber(totalPopulation)}</div>
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">总人口</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#19B172]">{formatNumber(totalVisits)}</div>
+              <div className="text-3xl font-bold text-[var(--color-status-success)]">{formatNumber(totalVisits)}</div>
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{RANGE_LABELS[selectedRange]}走访</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[#D6730D]">{districtRows.length}</div>
+              <div className="text-3xl font-bold text-[var(--color-status-warning)]">{districtRows.length}</div>
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">区县样本</div>
             </div>
           </div>
@@ -330,27 +336,15 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
       </section>
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
-        {kpiCards.map((item) => {
-          const Icon = item.icon;
-          return (
-            <div key={item.label} className="relative overflow-hidden rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4">
-              <div className="absolute inset-x-0 top-0 h-0.5" style={{ backgroundColor: item.color }} />
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-xs text-[var(--color-neutral-08)]">{item.label}</div>
-                  <div className="mt-2 text-3xl font-bold leading-none text-white">{formatNumber(item.value)}</div>
-                </div>
-                <Icon className="h-5 w-5" style={{ color: item.color }} />
-              </div>
-            </div>
-          );
-        })}
+        {kpiCards.map((item) => (
+          <StatCard key={item.label} label={item.label} value={formatNumber(item.value)} icon={item.icon} tone={item.tone} />
+        ))}
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(300px,0.95fr)]">
-        <section className="h-full rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
+        <section className={`${PANEL_CLASS} h-full p-5`}>
           <div>
-            <h2 className="text-base font-semibold text-white">人口变化趋势</h2>
+            <h2 className="text-base font-semibold text-[var(--color-neutral-11)]">人口变化趋势</h2>
             <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{RANGE_LABELS[selectedRange]} · 烟台市样本</div>
           </div>
           <div className="mt-4 h-[238px] w-full xl:h-[252px]">
@@ -359,25 +353,25 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 <AreaChart data={dashboard?.trendData ?? []} margin={{ top: 10, right: 22, left: 0, bottom: 0 }}>
                   <defs>
                     <linearGradient id="phase10DarkPopulation" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#2761CB" stopOpacity={0.45} />
-                      <stop offset="95%" stopColor="#2761CB" stopOpacity={0.06} />
+                      <stop offset="5%" stopColor={CHART_GRADIENT_BLUE.start} />
+                      <stop offset="95%" stopColor={CHART_GRADIENT_BLUE.end} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#6b7599' }} />
-                  <YAxis axisLine={false} tickLine={false} domain={['dataMin - 5', 'auto']} tick={{ fill: '#6b7599' }} />
-                  <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="#3d4663" />
+                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <YAxis axisLine={false} tickLine={false} domain={['dataMin - 5', 'auto']} tick={CHART_TICK} />
+                  <CartesianGrid {...CHART_GRID_PROPS} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Area type="monotone" dataKey="value" name="人口数" stroke="#2761CB" strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" />
+                  <Area type="monotone" dataKey="value" name="人口数" stroke={CHART_COLORS[0]} strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex h-full items-center justify-center text-sm text-[var(--color-neutral-08)]">加载中...</div>
+              <LoadingState title="加载中..." />
             )}
           </div>
         </section>
 
-        <section className="flex h-full flex-col rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
-          <h2 className="text-base font-semibold text-white">重点标签人员</h2>
+        <section className={`${PANEL_CLASS} flex h-full flex-col p-5`}>
+          <h2 className="text-base font-semibold text-[var(--color-neutral-11)]">重点标签人员</h2>
           <HorizontalBarList
             className="mt-5 flex-1 space-y-3.5"
             columnsClassName="grid-cols-[88px_minmax(96px,1fr)_48px] xl:grid-cols-[104px_minmax(120px,1fr)_54px]"
@@ -388,16 +382,16 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
             items={topRiskTags.map((tag, index) => ({
               label: tag.name,
               value: tag.count,
-              color: RISK_TAG_COLORS[index % RISK_TAG_COLORS.length],
+              color: CHART_COLORS[index % CHART_COLORS.length],
             }))}
           />
         </section>
       </div>
 
-      <section className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-5">
+      <section className={`${PANEL_CLASS} p-5`}>
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h2 className="text-base font-semibold text-white">区县概览</h2>
+            <h2 className="text-base font-semibold text-[var(--color-neutral-11)]">区县概览</h2>
             <div className="mt-1 text-xs text-[var(--color-neutral-08)]">点击列头排序</div>
           </div>
           <Button variant="ghost" size="sm" onClick={() => onRouteChange?.('data-comparison')}>进入数据对比</Button>
@@ -418,24 +412,24 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
             </thead>
             <tbody>
               {districtRows.map((row, index) => {
-                const scoreColor = getScoreColor(row.score);
+                const scoreTone = getScoreTone(row.score);
                 return (
-                  <tr key={row.id} className="border-b border-[rgba(61,70,99,0.45)] transition-colors hover:bg-[rgba(39,97,203,0.08)]">
-                    <td className={`px-4 py-3 text-sm font-semibold ${index < 3 ? 'text-[#D6730D]' : 'text-[var(--color-neutral-08)]'}`}>#{index + 1}</td>
-                    <td className="px-4 py-3 text-sm font-semibold text-white">{row.name}</td>
+                  <tr key={row.id} className="border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[var(--color-brand-primary)]/10">
+                    <td className={`px-4 py-3 text-sm font-semibold ${index < 3 ? 'text-[var(--color-status-warning)]' : 'text-[var(--color-neutral-08)]'}`}>#{index + 1}</td>
+                    <td className="px-4 py-3 text-sm font-semibold text-[var(--color-neutral-11)]">{row.name}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.peopleCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.houseCount)}</td>
-                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[#19B172]">{formatNumber(row.visitCount)}</td>
-                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[#D6730D]">{formatNumber(row.activeConflictCount)}</td>
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-success)]">{formatNumber(row.visitCount)}</td>
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-warning)]">{formatNumber(row.activeConflictCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.floatingCount)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="ml-auto grid w-[236px] grid-cols-[148px_64px] items-center justify-end gap-4">
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                          <div className="h-full rounded-full" style={{ width: `${Math.min(100, row.score)}%`, backgroundColor: scoreColor }} />
+                          <div className={`h-full rounded-full ${SCORE_BAR_CLASS[scoreTone]}`} style={{ width: `${Math.min(100, row.score)}%` }} />
                         </div>
-                        <span className="inline-flex h-7 w-16 items-center justify-center rounded bg-[rgba(39,97,203,0.18)] text-sm font-semibold tabular-nums" style={{ color: scoreColor }}>
+                        <StatusBadge tone={scoreTone} className="h-7 w-16 justify-center rounded-[4px] text-sm font-semibold tabular-nums">
                           {formatScore(row.score)}
-                        </span>
+                        </StatusBadge>
                       </div>
                     </td>
                   </tr>

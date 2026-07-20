@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ChevronLeft,
   MapPin,
   Users,
   ShieldCheck,
@@ -23,7 +22,8 @@ import {
   DialogClose,
   DialogDescription,
 } from '../../ui/dialog';
-import { MobileStatusBar } from '../MobileStatusBar';
+import { MobileDetailHeader } from '../MobileDetailHeader';
+import { ConfirmDialog } from '../../patterns/ConfirmDialog';
 import { conflictRepository, type ConflictContext } from '../../../services/repositories/conflictRepository';
 import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
 import type { ConflictRecord } from '../../../types/core';
@@ -175,6 +175,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const [isSubmittingProgress, setIsSubmittingProgress] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiTab, setAiTab] = useState<'policy' | 'script'>('policy');
+  const [resolveConfirmOpen, setResolveConfirmOpen] = useState(false);
 
   const reloadConflict = async () => {
     const next = await loadConflictDetail(id);
@@ -261,9 +262,6 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     if (!conflict) {
       return;
     }
-    if (!window.confirm('确认将此纠纷标记为已化解吗？')) {
-      return;
-    }
 
     try {
       const now = new Date().toLocaleString();
@@ -292,72 +290,60 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center bg-gray-50">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+      <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]">
+        <Loader2 className="w-8 h-8 text-[var(--color-brand-primary-hover)] animate-spin" />
       </div>
     );
   }
 
   if (!conflict || !context) {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-gray-50 gap-4">
-        <p className="text-gray-500">未找到记录</p>
+      <div className="flex h-full flex-col items-center justify-center bg-[var(--color-neutral-01)] gap-4">
+        <p className="text-[var(--color-neutral-08)]">未找到记录</p>
         <Button onClick={onBack}>返回</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
-      <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] sticky top-0 z-10 shrink-0">
-        <MobileStatusBar variant="dark" />
-        <div className="px-4 py-3 flex items-center gap-3 relative h-11">
-          <button
-            onClick={onBack}
-            className="absolute left-2 w-8 h-8 flex items-center justify-center text-[var(--color-neutral-10)] active:opacity-70"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
-
-          <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-base font-bold text-[var(--color-neutral-11)]">纠纷详情</h1>
-          </div>
-
-          <div className="absolute right-4">
-            <Badge className={conflict.status === '已化解' ? 'bg-green-600 text-white border-0' : 'bg-orange-500 text-white border-0'}>
-              {conflict.status}
-            </Badge>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]">
+      <MobileDetailHeader
+        title="纠纷详情"
+        onBack={onBack}
+        action={
+          <Badge className={conflict.status === '已化解' ? 'bg-[var(--color-status-success)] text-white border-0' : 'bg-[var(--color-status-warning)] text-white border-0'}>
+            {conflict.status}
+          </Badge>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <Card className="border-none shadow-sm">
           <CardContent className="p-4 space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900 mb-2">{conflict.title}</h2>
-              <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
-                <span className="bg-gray-100 px-2 py-0.5 rounded text-gray-600">{conflict.source}</span>
+              <h2 className="text-xl font-bold text-[var(--color-neutral-11)] mb-2">{conflict.title}</h2>
+              <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-08)] mb-4">
+                <span className="bg-[var(--color-neutral-02)] px-2 py-0.5 rounded text-[var(--color-neutral-10)]">{conflict.source}</span>
                 <span>•</span>
                 <span>{conflict.type}</span>
                 <span>•</span>
                 <span>{conflict.createdAt.split(' ')[0]}</span>
               </div>
-              <p className="text-sm text-gray-700 leading-relaxed bg-gray-50 p-3 rounded-lg border border-gray-100">
+              <p className="text-sm text-[var(--color-neutral-10)] leading-relaxed bg-[var(--color-neutral-01)] p-3 rounded-lg border border-[var(--color-neutral-03)]">
                 {conflict.description}
               </p>
             </div>
 
             <div className="grid grid-cols-1 gap-3 pt-2">
               <div className="flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                <span className="text-sm text-gray-600">{conflict.location}</span>
+                <MapPin className="w-4 h-4 text-[var(--color-neutral-08)] mt-0.5" />
+                <span className="text-sm text-[var(--color-neutral-10)]">{conflict.location}</span>
               </div>
               <div className="flex items-start gap-2">
-                <Users className="w-4 h-4 text-gray-400 mt-0.5" />
+                <Users className="w-4 h-4 text-[var(--color-neutral-08)] mt-0.5" />
                 <div className="flex flex-wrap gap-1.5">
                   {conflict.involvedParties.map((party) => (
-                    <span key={`${party.type}-${party.id}`} className="text-sm text-gray-600 bg-blue-50 px-1.5 rounded text-blue-700">
+                    <span key={`${party.type}-${party.id}`} className="text-sm text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary)]/10 px-1.5 rounded">
                       {party.name}
                     </span>
                   ))}
@@ -366,10 +352,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
             </div>
 
             {(context.relatedPeople.length > 0 || context.relatedHouse) && (
-              <div className="pt-3 border-t border-gray-100 space-y-2">
+              <div className="pt-3 border-t border-[var(--color-neutral-03)] space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-medium text-gray-500">关联对象</span>
-                  <span className="text-[10px] text-gray-400">可直接跳转查看</span>
+                  <span className="text-xs font-medium text-[var(--color-neutral-08)]">关联对象</span>
+                  <span className="text-[10px] text-[var(--color-neutral-08)]">可直接跳转查看</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {context.relatedPeople.map((person) => (
@@ -377,7 +363,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                       key={person.id}
                       type="button"
                       onClick={() => onRouteChange?.(`person-detail/${person.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs text-blue-700 active:opacity-80"
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs text-[var(--color-brand-primary-hover)] active:opacity-80"
                     >
                       <Users className="w-3 h-3" />
                       {person.name}
@@ -388,7 +374,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                     <button
                       type="button"
                       onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 active:opacity-80"
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 py-1 text-xs text-[var(--color-status-success-text)] active:opacity-80"
                     >
                       <MapPin className="w-3 h-3" />
                       {context.relatedHouse.address}
@@ -402,7 +388,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
             {conflict.images && conflict.images.length > 0 && (
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {conflict.images.map((img, index) => (
-                  <div key={`${img}-${index}`} className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                  <div key={`${img}-${index}`} className="aspect-square bg-[var(--color-neutral-02)] rounded-lg overflow-hidden">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={img} alt="附件" className="w-full h-full object-cover" />
                   </div>
@@ -415,20 +401,20 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <Card className="border-none shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-4 h-4 text-blue-600" />
-              <h3 className="text-sm font-bold text-gray-900">案件推导</h3>
-              <Badge className="ml-auto bg-blue-50 text-blue-700 border-0 text-[10px]">
+              <BookOpen className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">案件推导</h3>
+              <Badge className="ml-auto bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-0 text-[10px]">
                 {context.followUpStatus.label}
               </Badge>
             </div>
 
-            <div className="flex bg-gray-100 rounded-lg p-0.5 mb-4">
+            <div className="flex bg-[var(--color-neutral-01)] rounded-lg p-0.5 mb-4">
               <button
                 onClick={() => setAiTab('policy')}
                 className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
                   aiTab === 'policy'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm'
+                    : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
                 }`}
               >
                 关联政策法规
@@ -437,8 +423,8 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 onClick={() => setAiTab('script')}
                 className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
                   aiTab === 'script'
-                    ? 'bg-white text-blue-700 shadow-sm'
-                    : 'text-gray-500 hover:text-gray-700'
+                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm'
+                    : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
                 }`}
               >
                 话术推荐
@@ -450,40 +436,40 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 {relatedPolicies.map((policy, index) => (
                   <div
                     key={`${policy.title}-${index}`}
-                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow"
+                    className="bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)] shadow-sm hover:shadow-md transition-shadow"
                   >
                     <div className="flex items-start gap-2 mb-3">
                       <div className="flex-1">
-                        <h4 className="text-sm font-bold text-gray-900 leading-snug mb-1">
+                        <h4 className="text-sm font-bold text-[var(--color-neutral-11)] leading-snug mb-1">
                           {policy.title}
                         </h4>
-                        <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                          <span className="bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium">
+                        <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-neutral-08)]">
+                          <span className="bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] px-2 py-0.5 rounded font-medium">
                             {policy.source}
                           </span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-3 rounded-lg mb-2.5 border border-gray-100">
-                      <p className="text-xs text-gray-800 leading-relaxed">
+                    <div className="bg-[var(--color-neutral-02)] p-3 rounded-lg mb-2.5 border border-[var(--color-neutral-03)]">
+                      <p className="text-xs text-[var(--color-neutral-11)] leading-relaxed">
                         {policy.summary}
                       </p>
                     </div>
 
                     <div className="flex items-start gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-blue-500 shrink-0 mt-1.5" />
-                      <p className="text-xs text-blue-700 leading-relaxed flex-1">
+                      <div className="w-1 h-1 rounded-full bg-[var(--color-brand-primary)] shrink-0 mt-1.5" />
+                      <p className="text-xs text-[var(--color-brand-primary-hover)] leading-relaxed flex-1">
                         <span className="font-medium">适用场景：</span>{policy.relevance}
                       </p>
                     </div>
                   </div>
                 ))}
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="bg-gray-50 rounded-lg p-3 border-l-2 border-blue-500">
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      <span className="font-medium text-gray-700">提示</span>
+                <div className="mt-4 pt-4 border-t border-[var(--color-neutral-03)]">
+                  <div className="bg-[var(--color-neutral-02)] rounded-lg p-3 border-l-2 border-[var(--color-brand-primary)]">
+                    <p className="text-xs text-[var(--color-neutral-10)] leading-relaxed">
+                      <span className="font-medium text-[var(--color-neutral-10)]">提示</span>
                       <span className="ml-1">
                         以上内容由纠纷类型、关联对象和回访状态自动推导，不调用大模型。
                       </span>
@@ -498,34 +484,34 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 {scripts.map((item, index) => (
                   <div
                     key={`${item.scenario}-${index}`}
-                    className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm"
+                    className="bg-[var(--color-neutral-01)] p-4 rounded-[4px] border border-[var(--color-neutral-03)] shadow-sm"
                   >
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="bg-orange-50 text-orange-700 text-[10px] font-medium px-2 py-0.5 rounded">
+                      <span className="bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)] text-[10px] font-medium px-2 py-0.5 rounded">
                         {item.scenario}
                       </span>
-                      <span className="text-[10px] text-gray-400">对象：{item.target}</span>
+                      <span className="text-[10px] text-[var(--color-neutral-08)]">对象：{item.target}</span>
                     </div>
 
-                    <div className="bg-blue-50 p-3 rounded-lg mb-3 border border-blue-100">
-                      <p className="text-xs text-gray-800 leading-relaxed italic">
+                    <div className="bg-[var(--color-brand-primary)]/10 p-3 rounded-lg mb-3 border border-[var(--color-brand-primary)]/20">
+                      <p className="text-xs text-[var(--color-neutral-11)] leading-relaxed italic">
                         "{item.script}"
                       </p>
                     </div>
 
                     <div className="flex items-start gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-orange-500 shrink-0 mt-1.5" />
-                      <p className="text-xs text-orange-700 leading-relaxed flex-1">
+                      <div className="w-1 h-1 rounded-full bg-[var(--color-status-warning)] shrink-0 mt-1.5" />
+                      <p className="text-xs text-[var(--color-status-warning-text)] leading-relaxed flex-1">
                         <span className="font-medium">要点：</span>{item.tips}
                       </p>
                     </div>
                   </div>
                 ))}
 
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <div className="bg-gray-50 rounded-lg p-3 border-l-2 border-orange-400">
-                    <p className="text-xs text-gray-600 leading-relaxed">
-                      <span className="font-medium text-gray-700">提示</span>
+                <div className="mt-4 pt-4 border-t border-[var(--color-neutral-03)]">
+                  <div className="bg-[var(--color-neutral-02)] rounded-lg p-3 border-l-2 border-[var(--color-status-warning)]">
+                    <p className="text-xs text-[var(--color-neutral-10)] leading-relaxed">
+                      <span className="font-medium text-[var(--color-neutral-10)]">提示</span>
                       <span className="ml-1">
                         以上话术由案件上下文和处置状态自动整理，沟通时保持中立、耐心倾听。
                       </span>
@@ -538,16 +524,16 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         </Card>
 
         <div>
-          <h3 className="text-sm font-bold text-gray-900 mb-3 ml-1">处理进度</h3>
+          <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3 ml-1">处理进度</h3>
           <div className="space-y-4 pl-2">
             {[...conflict.timeline].reverse().map((item, index) => (
-              <div key={`${item.date}-${index}`} className="relative pl-6 pb-2 border-l-2 border-gray-200 last:border-0">
-                <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-blue-50" />
-                <div className="text-xs text-gray-400 mb-1 flex justify-between pr-2">
+              <div key={`${item.date}-${index}`} className="relative pl-6 pb-2 border-l-2 border-[var(--color-neutral-03)] last:border-0">
+                <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)] ring-4 ring-[var(--color-brand-primary)]/10" />
+                <div className="text-xs text-[var(--color-neutral-08)] mb-1 flex justify-between pr-2">
                   <span>{item.date}</span>
                   <span>{item.operator}</span>
                 </div>
-                <div className="text-sm text-gray-800 bg-white p-3 rounded-lg shadow-sm border border-gray-100">
+                <div className="text-sm text-[var(--color-neutral-11)] bg-[var(--color-neutral-01)] p-3 rounded-lg shadow-sm border border-[var(--color-neutral-03)]">
                   {item.content}
                 </div>
               </div>
@@ -559,10 +545,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       </div>
 
       {conflict.status !== '已化解' && (
-        <div className="bg-white border-t border-gray-100 p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
+        <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1 gap-2 border-blue-200 text-blue-700 bg-blue-50 hover:bg-blue-100">
+              <Button variant="outline" className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20">
                 <MessageSquarePlus className="w-4 h-4" /> 添加进展
               </Button>
             </DialogTrigger>
@@ -593,11 +579,21 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
           </Dialog>
 
           <Button
-            className="flex-1 gap-2 bg-green-600 hover:bg-green-700"
-            onClick={handleMarkResolved}
+            className="flex-1 gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
+            onClick={() => setResolveConfirmOpen(true)}
           >
             <ShieldCheck className="w-4 h-4" /> 标记化解
           </Button>
+
+          {/* 化解确认弹窗（替代原生 confirm） */}
+          <ConfirmDialog
+            open={resolveConfirmOpen}
+            onOpenChange={setResolveConfirmOpen}
+            title="标记已化解"
+            description="确认将此纠纷标记为已化解吗？"
+            confirmText="标记化解"
+            onConfirm={() => void handleMarkResolved()}
+          />
         </div>
       )}
     </div>

@@ -31,6 +31,8 @@ import { MobileActivity } from './MobileActivity';
 import { MobilePolicyInterpretation } from './MobilePolicyInterpretation';
 import { MobileOfficialWriting } from './MobileOfficialWriting';
 import { MobileSmartQuery } from './MobileSmartQuery';
+import { ConfirmDialog } from '../patterns/ConfirmDialog';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { toast } from 'sonner';
 
 interface MobileAppProps {
@@ -107,6 +109,9 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   const [history, setHistory] = useState<string[]>(() => {
     return buildInitialHistory();
   });
+
+  // 退出确认弹窗：'mobile'=退出移动端模式，'logout'=退出登录返回电脑端
+  const [pendingExitAction, setPendingExitAction] = useState<'mobile' | 'logout' | null>(null);
   
   // 获取当前路由（栈顶）
   const currentRoute = history[history.length - 1];
@@ -207,15 +212,21 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     });
   };
 
-  // 退出移动端模式
+  // 退出移动端模式（确认弹窗替代原生 confirm）
   const handleExitMobile = () => {
-    if (confirm('确定要退出移动端模式吗？')) {
-      if (onExitMobile) {
-        onExitMobile();
-      } else {
-        setHistory(['home']);
-        toast.info('已返回移动端工作台首页');
-      }
+    setPendingExitAction('mobile');
+  };
+
+  const executePendingExit = () => {
+    if (pendingExitAction === 'logout') {
+      mobileContextRepository.clearCurrentWorkerName();
+    }
+
+    if (onExitMobile) {
+      onExitMobile();
+    } else {
+      setHistory(['home']);
+      toast.info(pendingExitAction === 'logout' ? '已退出登录' : '已返回移动端工作台首页');
     }
   };
 
@@ -302,16 +313,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'profile':
         return <MobileProfile 
           onRouteChange={handleRouteChange} 
-          onLogout={() => {
-            if (confirm('确定要退出登录并返回电脑端吗？')) {
-              if (onExitMobile) {
-                onExitMobile();
-              } else {
-                setHistory(['home']);
-                toast.info('已返回移动端工作台首页');
-              }
-            }
-          }} 
+          onLogout={() => setPendingExitAction('logout')}
           onExitMobile={handleExitMobile}
         />;
       case 'collect-house':
@@ -369,13 +371,24 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 md:py-8 font-sans">
-      <div id="mobile-viewport" className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-gray-900 bg-white overflow-hidden relative shadow-black/20 ring-1 ring-gray-900/5 transform-gpu">
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-neutral-00)] md:py-8 font-sans">
+      <div id="mobile-viewport" className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)] overflow-hidden relative shadow-black/20 ring-1 ring-white/5 transform-gpu">
         {/* 顶部刘海模拟 (仅在桌面模式显示) */}
-        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-gray-900 rounded-b-[1rem] z-[60]"></div>
+        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-[var(--color-neutral-03)] rounded-b-[1rem] z-[60]"></div>
         
         {renderPage()}
       </div>
+
+      {/* 退出确认弹窗（替代原生 confirm） */}
+      <ConfirmDialog
+        open={pendingExitAction !== null}
+        onOpenChange={(open) => !open && setPendingExitAction(null)}
+        title={pendingExitAction === 'logout' ? '退出登录' : '退出移动端模式'}
+        description={pendingExitAction === 'logout' ? '确定要退出登录并返回电脑端吗？' : '确定要退出移动端模式吗？'}
+        confirmText="退出"
+        destructive
+        onConfirm={executePendingExit}
+      />
     </div>
   );
 }

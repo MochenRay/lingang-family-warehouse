@@ -11,6 +11,8 @@ import { noticeRepository } from '../../services/repositories/noticeRepository';
 import { knowledgeRepository } from '../../services/repositories/knowledgeRepository';
 import { taskRuleRepository } from '../../services/repositories/taskRuleRepository';
 import { downloadJson } from '../../services/export';
+import { EmptyState } from '../patterns/states';
+import { PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
 type ReportType = 'monthly' | 'special' | 'task' | 'knowledge';
@@ -24,7 +26,6 @@ interface ExportRecord {
   summary: string;
 }
 
-const PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] shadow-none';
 const INNER_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 
@@ -76,7 +77,7 @@ export function DataReports() {
         title: '治理总览快照',
         desc: `${snapshot.totals.people} 人 / ${snapshot.totals.houses} 房`,
         icon: FileText,
-        accent: '#4E86DF',
+        accent: 'var(--color-brand-primary-hover)',
         action: () => {
           const payload = {
             generatedAt: snapshot.generatedAt,
@@ -92,7 +93,7 @@ export function DataReports() {
         title: '重点对象清单',
         desc: `${snapshot.grids.reduce((sum, grid) => sum + grid.highRiskCount, 0)} 名高风险对象`,
         icon: Layers,
-        accent: '#D6730D',
+        accent: 'var(--color-status-warning)',
         action: () => {
           const payload = {
             generatedAt: snapshot.generatedAt,
@@ -111,7 +112,7 @@ export function DataReports() {
         title: '公告与知识索引',
         desc: `${noticeCount} 条公告 / ${knowledgeCount} 条知识`,
         icon: FileBarChart,
-        accent: '#19B172',
+        accent: 'var(--color-status-success)',
         action: async () => {
           const [notices, knowledge] = await Promise.all([
             noticeRepository.getNotices({ limit: 50 }),
@@ -129,7 +130,7 @@ export function DataReports() {
         title: '规则与待办快照',
         desc: `${ruleCount} 条规则 / ${snapshot.totals.pendingTasks} 条待办`,
         icon: CalendarDays,
-        accent: '#8B5CF6',
+        accent: 'var(--color-accent-purple)',
         action: async () => {
           const rules = await taskRuleRepository.getRules();
           downloadJson(`report-task-rules-${new Date().toISOString().slice(0, 10)}.json`, {
@@ -181,7 +182,7 @@ export function DataReports() {
   };
 
   return (
-    <div className="space-y-5 animate-in fade-in duration-500">
+    <div className="space-y-5 page-enter">
       <PageHeader
         eyebrow="REPORT EXPORTS"
         title="报表中心"
@@ -191,8 +192,8 @@ export function DataReports() {
       <div className="grid gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
         <Card className={`lg:col-span-1 ${PANEL_CLASS}`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-4 pt-5">
-            <CardTitle className="flex items-center gap-2 text-base font-semibold text-white">
-              <FileText className="h-5 w-5 text-[#4E86DF]" />
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
+              <FileText className="h-5 w-5 text-[var(--color-brand-primary-hover)]" />
               生成导出包
             </CardTitle>
             <CardDescription className={MUTED_TEXT}>根据真实治理快照生成一个新的导出文件。</CardDescription>
@@ -200,7 +201,7 @@ export function DataReports() {
           <CardContent className="space-y-4 px-5 pt-5">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
-                <FileText className="h-4 w-4 text-[#4E86DF]" />
+                <FileText className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
                 报表类型
               </Label>
               <Select value={config.type} onValueChange={(value: ReportType) => setConfig((current) => ({ ...current, type: value }))}>
@@ -218,7 +219,7 @@ export function DataReports() {
 
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
-                <CalendarDays className="h-4 w-4 text-[#4E86DF]" />
+                <CalendarDays className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
                 统计范围
               </Label>
               <Select value={config.time} onValueChange={(value) => setConfig((current) => ({ ...current, time: value }))}>
@@ -237,18 +238,18 @@ export function DataReports() {
             <div className={`${INNER_PANEL_CLASS} grid gap-3 p-4 text-sm`}>
               <div>
                 <div className={`text-xs ${MUTED_TEXT}`}>当前口径</div>
-                <div className="mt-1 font-semibold text-white">
+                <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">
                   {snapshot ? `${snapshot.totals.people} 人 / ${snapshot.totals.houses} 房 / ${snapshot.anomalies.length} 条异常` : '加载中'}
                 </div>
               </div>
               <div>
                 <div className={`text-xs ${MUTED_TEXT}`}>内容索引</div>
-                <div className="mt-1 font-semibold text-white">{noticeCount} 条公告 / {knowledgeCount} 条知识 / {ruleCount} 条规则</div>
+                <div className="mt-1 font-semibold text-[var(--color-neutral-11)]">{noticeCount} 条公告 / {knowledgeCount} 条知识 / {ruleCount} 条规则</div>
               </div>
             </div>
           </CardContent>
           <CardFooter className="px-5 pb-5 pt-2">
-            <Button className="w-full bg-[#2761CB] hover:bg-[#4E86DF]" onClick={() => void handleGenerate()} disabled={isGenerating || !snapshot}>
+            <Button className="w-full" onClick={() => void handleGenerate()} disabled={isGenerating || !snapshot}>
               {isGenerating ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -271,14 +272,14 @@ export function DataReports() {
                 key={item.title}
                 type="button"
                 onClick={() => void item.action()}
-                className={`${PANEL_CLASS} group flex min-h-[126px] flex-col items-start justify-between p-4 text-left transition-colors hover:border-[#4E86DF]/55 hover:bg-[var(--color-neutral-03)]`}
+                className={`${PANEL_CLASS} group flex min-h-[126px] flex-col items-start justify-between p-4 text-left transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}
               >
                 <div className="flex w-full items-center justify-between gap-3">
                   <item.icon className="h-5 w-5" style={{ color: item.accent }} />
                   <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.accent }} />
                 </div>
                 <div>
-                  <span className="block text-sm font-semibold text-white">{item.title}</span>
+                  <span className="block text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</span>
                   <span className={`mt-1 block text-xs ${MUTED_TEXT}`}>{item.desc}</span>
                 </div>
               </button>
@@ -287,30 +288,32 @@ export function DataReports() {
 
           <Card className={PANEL_CLASS}>
             <CardHeader className="px-5 pb-3 pt-5">
-              <CardTitle className="text-base font-semibold text-white">本次导出记录</CardTitle>
+              <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">本次导出记录</CardTitle>
               <CardDescription className={MUTED_TEXT}>只记录当前会话里真实生成过的导出包，不伪装成历史归档。</CardDescription>
             </CardHeader>
             <CardContent className="px-5 pb-5">
               <div className="space-y-2">
                 {generatedReports.length === 0 ? (
-                  <div className={`rounded-lg border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-6 text-sm ${MUTED_TEXT}`}>
-                    还没有生成新的导出包。点击左侧“立即导出”或上方快捷入口，会在这里留下本次会话的真实记录。
-                  </div>
+                  <EmptyState
+                    icon={FileText}
+                    title="还没有生成新的导出包"
+                    description="点击左侧“立即导出”或上方快捷入口，会在这里留下本次会话的真实记录。"
+                  />
                 ) : (
                   generatedReports.map((file) => (
-                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex items-center justify-between gap-4 p-4 transition-colors hover:border-[#4E86DF]/55 hover:bg-[var(--color-neutral-03)]`}>
+                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex items-center justify-between gap-4 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}>
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[#4E86DF]/35 bg-[#2761CB]/15 text-sm font-bold text-[#DCE6FF]">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/15 text-sm font-bold text-[var(--color-brand-primary-hover)]">
                           {file.type}
                         </div>
                         <div>
-                          <div className="mb-1 font-semibold text-white">{file.name}</div>
+                          <div className="mb-1 font-semibold text-[var(--color-neutral-11)]">{file.name}</div>
                           <div className={`flex flex-wrap items-center gap-3 text-xs ${MUTED_TEXT}`}>
                             <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {file.date}</span>
                             <span>•</span>
                             <span>{file.size}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-[#19B172]">
+                            <span className="flex items-center gap-1 text-[var(--color-status-success)]">
                               <CheckCircle className="h-3 w-3" /> 已下载
                             </span>
                           </div>

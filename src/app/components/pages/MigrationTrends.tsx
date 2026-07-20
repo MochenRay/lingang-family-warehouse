@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Download, Loader2 } from 'lucide-react';
+import { ArrowLeftRight, Download, TrendingDown, TrendingUp } from 'lucide-react';
 import { ChartCard } from '../statistics/ChartCard';
+import { StatCard } from '../patterns/StatCard';
+import { LoadingState } from '../patterns/states';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import {
   AreaChart,
@@ -16,6 +18,15 @@ import { analysisRepository, type GovernanceAnalysisSnapshot } from '../../servi
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
+import {
+  CHART_GRADIENT_BLUE,
+  CHART_GRADIENT_ORANGE,
+  CHART_GRID_PROPS,
+  CHART_LEGEND,
+  CHART_PRIMARY,
+  CHART_TICK,
+  CHART_WARNING,
+} from '../../config/chartConfig';
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { PageHeader } from './PageHeader';
 
@@ -91,7 +102,7 @@ export function MigrationTrends() {
 
   if (loading) {
     return (
-      <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+      <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
         <PageHeader
           eyebrow="MIGRATION ANALYTICS"
           title="人口流动趋势"
@@ -111,15 +122,13 @@ export function MigrationTrends() {
             </div>
           }
         />
-        <div className="flex justify-center p-8">
-          <Loader2 className="animate-spin" />
-        </div>
+        <LoadingState />
       </div>
     );
   }
 
   return (
-    <div className="space-y-5 text-[var(--color-neutral-10)] animate-in fade-in duration-500">
+    <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="MIGRATION ANALYTICS"
         title="人口流动趋势"
@@ -141,33 +150,34 @@ export function MigrationTrends() {
       />
 
       <div className="grid gap-3 md:grid-cols-3">
-        <ChartCard title="近六月总迁入" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className="text-4xl font-bold tabular-nums text-[#4E86DF]">{snapshot?.migration.totalIn ?? 0}</span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
-          </div>
-        </ChartCard>
-        <ChartCard title="近六月总迁出" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className="text-4xl font-bold tabular-nums text-[#D6730D]">{snapshot?.migration.totalOut ?? 0}</span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">人次</span>
-          </div>
-        </ChartCard>
-        <ChartCard title="净流入" className="md:col-span-1">
-          <div className="flex items-end justify-between py-2">
-            <span className={`text-4xl font-bold tabular-nums ${(snapshot?.migration.net ?? 0) >= 0 ? 'text-[#19B172]' : 'text-[#D52132]'}`}>
-              {(snapshot?.migration.net ?? 0) > 0 ? '+' : ''}{snapshot?.migration.net ?? 0}
-            </span>
-            <span className="pb-1 text-xs text-[var(--color-neutral-08)]">近六月累计</span>
-          </div>
-        </ChartCard>
+        <StatCard
+          label="近六月总迁入"
+          value={snapshot?.migration.totalIn ?? 0}
+          hint="人次"
+          icon={TrendingUp}
+          tone="brand"
+        />
+        <StatCard
+          label="近六月总迁出"
+          value={snapshot?.migration.totalOut ?? 0}
+          hint="人次"
+          icon={TrendingDown}
+          tone="warning"
+        />
+        <StatCard
+          label="净流入"
+          value={`${(snapshot?.migration.net ?? 0) > 0 ? '+' : ''}${snapshot?.migration.net ?? 0}`}
+          hint="近六月累计"
+          icon={ArrowLeftRight}
+          tone={(snapshot?.migration.net ?? 0) >= 0 ? 'success' : 'error'}
+        />
       </div>
 
       <ChartCard
         title="近六个月迁入迁出对比"
         description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
         action={(
-          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-white" onClick={handleExport}>
+          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]" onClick={handleExport}>
             <Download className="h-4 w-4" />
           </button>
         )}
@@ -177,21 +187,21 @@ export function MigrationTrends() {
             <AreaChart data={trendData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorIn" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#4E86DF" stopOpacity={0.45} />
-                  <stop offset="95%" stopColor="#4E86DF" stopOpacity={0.06} />
+                  <stop offset="5%" stopColor={CHART_GRADIENT_BLUE.start} />
+                  <stop offset="95%" stopColor={CHART_GRADIENT_BLUE.end} />
                 </linearGradient>
                 <linearGradient id="colorOut" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#D6730D" stopOpacity={0.38} />
-                  <stop offset="95%" stopColor="#D6730D" stopOpacity={0.05} />
+                  <stop offset="5%" stopColor={CHART_GRADIENT_ORANGE.start} />
+                  <stop offset="95%" stopColor={CHART_GRADIENT_ORANGE.end} />
                 </linearGradient>
               </defs>
-              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
-              <YAxis axisLine={false} tickLine={false} tick={{ fill: '#8194B5' }} />
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#3d4663" />
+              <XAxis dataKey="month" axisLine={false} tickLine={false} tick={CHART_TICK} />
+              <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
+              <CartesianGrid {...CHART_GRID_PROPS} />
               <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-              <Legend wrapperStyle={{ color: '#AEC0DE' }} />
-              <Area type="monotone" dataKey="迁入" stroke="#4E86DF" strokeWidth={2} fillOpacity={1} fill="url(#colorIn)" />
-              <Area type="monotone" dataKey="迁出" stroke="#D6730D" strokeWidth={2} fillOpacity={1} fill="url(#colorOut)" />
+              <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+              <Area type="monotone" dataKey="迁入" stroke={CHART_PRIMARY} strokeWidth={2} fillOpacity={1} fill="url(#colorIn)" />
+              <Area type="monotone" dataKey="迁出" stroke={CHART_WARNING} strokeWidth={2} fillOpacity={1} fill="url(#colorOut)" />
             </AreaChart>
           </ResponsiveContainer>
         </div>
@@ -203,7 +213,7 @@ export function MigrationTrends() {
             items={filteredInbound.map((item) => ({
               label: item.name,
               value: item.value,
-              color: '#4E86DF',
+              color: CHART_PRIMARY,
             }))}
             emptyText="暂无匹配区县"
           />
@@ -214,7 +224,7 @@ export function MigrationTrends() {
             items={filteredOutbound.map((item) => ({
               label: item.name,
               value: item.value,
-              color: '#D6730D',
+              color: CHART_WARNING,
             }))}
             emptyText="暂无匹配区县"
           />

@@ -3,13 +3,10 @@ import {
   User,
   MapPin,
   BarChart3,
-  Settings,
   Bell,
-  HelpCircle,
   LogOut,
   ChevronRight,
   Award,
-  Calendar,
   TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
@@ -20,7 +17,7 @@ import { mobileContextRepository } from '../../services/repositories/mobileConte
 
 interface MobileProfileProps {
   onRouteChange: (route: string) => void;
-  onLogout?: () => void;
+  onLogout: () => void;
   onExitMobile?: () => void;
 }
 
@@ -30,7 +27,6 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     const saved = mobileContextRepository.getCurrentGridSelection();
     return { id: saved.id || 'g1', name: saved.name || '登州街道海梦苑社区第一网格' };
   });
-
   // 模拟切换网格身份（开发调试用）
   const switchGrid = (gridId: string) => {
     const grids: Record<string, { id: string; name: string }> = {
@@ -62,23 +58,11 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
   ];
 
   const menuItems = [
-    { icon: TrendingUp, label: '工作记录', path: 'update-history', color: 'text-[#413DD4]' },
+    { icon: TrendingUp, label: '工作记录', path: 'update-history', color: 'text-[var(--color-accent-purple)]' },
     { icon: MapPin, label: '辖区概况', path: 'grid-overview', color: 'text-primary' },
     { icon: BarChart3, label: '绩效排名', path: 'stats', color: 'text-[var(--color-status-success)]' },
     { icon: Bell, label: '消息通知', path: 'notices', badge: '3', color: 'text-[var(--color-status-warning)]' },
-    { icon: Settings, label: '系统设置', path: 'settings', color: 'text-muted-foreground' },
   ];
-
-  const handleLogout = () => {
-    if (confirm('确定要退出登录吗？')) {
-      mobileContextRepository.clearCurrentWorkerName();
-      if (onLogout) {
-        onLogout();
-      } else {
-        onRouteChange('/mobile');
-      }
-    }
-  };
 
   return (
     <MobileLayout currentRoute="profile" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
@@ -87,8 +71,8 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
         <div className="bg-gradient-to-b from-[var(--color-neutral-01)] to-[var(--color-neutral-02)] px-5 pt-6 pb-24 border-b border-[var(--color-neutral-03)] shadow-sm z-10 relative">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full border border-blue-500/30 flex items-center justify-center shadow-lg shadow-blue-900/20 bg-blue-500/10">
-                <User className="w-7 h-7 text-blue-500" />
+              <div className="w-14 h-14 rounded-full border border-[var(--color-brand-primary)]/30 flex items-center justify-center shadow-lg shadow-blue-900/20 bg-[var(--color-brand-primary)]/10">
+                <User className="w-7 h-7 text-[var(--color-brand-primary-hover)]" />
               </div>
               <div>
                 <div className="flex items-center gap-2">
@@ -108,13 +92,13 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
 
           {/* 本月统计卡片 */}
           <Card 
-            className="absolute left-4 right-4 -bottom-12 bg-[var(--color-neutral-02)] shadow-xl shadow-black/20 border border-[var(--color-neutral-03)] rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
+            className="absolute left-4 right-4 -bottom-12 bg-[var(--color-neutral-02)] shadow-xl shadow-black/20 border border-[var(--color-neutral-03)] rounded-[4px] cursor-pointer active:scale-[0.98] transition-transform"
             onClick={() => onRouteChange('tasks?mode=month')}
           >
             <CardContent className="p-5">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-5 h-5 flex items-center justify-center">
-                  <Award className="w-5 h-5 text-blue-500" />
+                  <Award className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
                 </div>
                 <span className="font-bold text-[var(--color-neutral-11)] text-sm">本月工作概览</span>
                 <div className="ml-auto flex items-center gap-1 px-2 py-0.5 bg-[var(--color-neutral-03)] rounded-full text-xs text-[var(--color-neutral-08)] cursor-pointer">
@@ -124,20 +108,20 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
               </div>
               <div className="grid grid-cols-4 gap-3">
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#2761CB] mb-1">{stats.monthCollected}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">采集数</div>
+                  <div className="text-2xl font-bold text-[var(--color-brand-primary)] mb-1">{stats.monthCollected}</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">采集数</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#19B172] mb-1">{stats.monthTasks}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成任务</div>
+                  <div className="text-2xl font-bold text-[var(--color-status-success)] mb-1">{stats.monthTasks}</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">完成任务</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#D6730D] mb-1">{stats.monthReports}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">问题上报</div>
+                  <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-1">{stats.monthReports}</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">问题上报</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#8B3BCC] mb-1">{stats.completionRate}%</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成率</div>
+                  <div className="text-2xl font-bold text-[var(--color-accent-purple)] mb-1">{stats.completionRate}%</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">完成率</div>
                 </div>
               </div>
             </CardContent>
@@ -179,15 +163,15 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
           {/* 退出登录 */}
           <Button
             variant="outline"
-            className="w-full h-12 text-red-500 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)]"
-            onClick={handleLogout}
+            className="w-full h-12 text-[var(--color-status-error-text)] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)]"
+            onClick={onLogout}
           >
             <LogOut className="w-5 h-5 mr-2" />
             退出登录
           </Button>
 
           {/* 版本信息 */}
-          <div className="text-center text-xs text-[var(--color-neutral-06)] pb-4">
+          <div className="text-center text-xs text-[var(--color-neutral-08)] pb-4">
             <p>烟台家庭数仓移动采集端</p>
             <p className="mt-1">版本 v1.0.0</p>
           </div>

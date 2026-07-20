@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Calendar, User, Camera, MapPin, Home, CheckCircle2, AlertCircle, Lightbulb, Mic, Square, Loader2, Sparkles, RefreshCw, Clock } from 'lucide-react';
-import { MobileStatusBar } from './MobileStatusBar';
+import { Calendar, User, Camera, MapPin, Home, CheckCircle2, AlertCircle, Lightbulb, Mic, Square, Loader2, Sparkles, RefreshCw, Clock } from 'lucide-react';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
 import { Label } from '../ui/label';
@@ -332,7 +332,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
     return (
       <div className="h-full bg-[var(--color-bg-primary)] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-2" />
+          <Loader2 className="w-12 h-12 text-[var(--color-brand-primary-hover)] animate-spin mx-auto mb-2" />
           <p className="text-[var(--color-text-tertiary)]">正在加载走访对象信息...</p>
         </div>
       </div>
@@ -354,32 +354,20 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
   return (
     <div className="h-full bg-[var(--color-bg-primary)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-[var(--color-bg-secondary)] sticky top-0 z-10 border-b border-[var(--color-border-primary)]">
-        <MobileStatusBar variant="dark" />
-        <div className="h-11 flex items-center justify-between px-4">
-          <button 
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center -ml-2 text-[var(--color-text-primary)] active:bg-[var(--color-bg-tertiary)] rounded-full"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div className="text-[var(--color-text-title)] font-semibold text-lg">添加走访记录</div>
-          <div className="w-8"></div>
-        </div>
-      </div>
+      <MobileDetailHeader title="添加走访记录" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto pb-24 p-4 space-y-4">
         {/* 走访对象信息 */}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-600" />
+              <User className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
               走访对象
             </h3>
           </div>
           <div className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 text-lg font-bold">
+              <div className="w-12 h-12 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)] text-lg font-bold">
                 {person.name[0]}
               </div>
               <div>
@@ -400,7 +388,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-green-600" />
+              <Calendar className="w-4 h-4 text-[var(--color-status-success-text)]" />
               走访信息
             </h3>
           </div>
@@ -408,7 +396,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访人 */}
             <div>
               <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访人 <span className="text-red-500">*</span>
+                走访人 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Input
                 value={formData.visitorName}
@@ -422,7 +410,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  走访日期 <span className="text-red-500">*</span>
+                  走访日期 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Input
                   type="date"
@@ -447,7 +435,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访类型 */}
             <div>
               <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访类型 <span className="text-red-500">*</span>
+                走访类型 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Select value={formData.visitType} onValueChange={(value) => setFormData({ ...formData, visitType: value })}>
                 <SelectTrigger className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
@@ -467,7 +455,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访目的 */}
             <div>
               <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访目的 <span className="text-red-500">*</span>
+                走访目的 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Textarea
                 value={formData.visitPurpose}
@@ -485,10 +473,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-                <Lightbulb className="w-4 h-4 text-amber-500" />
+                <Lightbulb className="w-4 h-4 text-[var(--color-status-warning-text)]" />
                 走访前准备
               </h3>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+              <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)] border border-[var(--color-status-warning)]/35">
                 规则建议
               </span>
             </div>
@@ -497,7 +485,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             <ul className="space-y-2">
               {getVisitGuidance(person).map((text, idx) => (
                 <li key={idx} className="flex gap-2 text-sm text-[var(--color-text-primary)]">
-                  <span className="shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                  <span className="shrink-0 mt-1.5 w-1.5 h-1.5 rounded-full bg-[var(--color-status-warning)]"></span>
                   <span className="leading-relaxed">{text}</span>
                 </li>
               ))}
@@ -506,21 +494,21 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
-                    <Sparkles className="h-4 w-4 text-purple-600" />
+                    <Sparkles className="h-4 w-4 text-[var(--color-accent-purple-text)]" />
                     Gemini 对象化走访提纲
                   </div>
                   <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
                     仅向模型发送年龄、风险及由标签映射出的固定分类信号，不发送原始标签、姓名、电话、证件号、地址或走访原文。
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-purple-200 bg-purple-50 px-2 py-1 text-[10px] text-purple-700">
+                <span className="shrink-0 rounded-full border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] px-2 py-1 text-[10px] text-[var(--color-accent-purple-text)]">
                   {VISIT_AI_STATUS_LABELS[visitAiStatus]}
                 </span>
               </div>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-purple-200 text-purple-700"
+                className="w-full border-[var(--color-accent-purple)]/35 text-[var(--color-accent-purple-text)]"
                 disabled={visitAiStatus === 'loading'}
                 onClick={() => void requestGeminiVisitOutline()}
               >
@@ -532,8 +520,8 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 {visitAiStatus === 'loading' ? '正在请求 Gemini' : '生成走访提纲'}
               </Button>
               {visitAiContent && (
-                <div className="mt-3 rounded-lg border border-purple-200 bg-purple-50/60 p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-purple-700">
+                <div className="mt-3 rounded-lg border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-[var(--color-accent-purple-text)]">
                     <span>{visitAiStatus === 'live' ? '真实模型结果' : '安全降级结果'}</span>
                     {visitAiModel && <span>model: {visitAiModel}</span>}
                   </div>
@@ -549,7 +537,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Clock className="w-4 h-4 text-blue-600" />
+              <Clock className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
               近期走访摘要
             </h3>
           </div>
@@ -578,10 +566,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-purple-600" />
+                <Sparkles className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                 待办建议
               </h3>
-              <span className="text-[10px] px-2 py-1 rounded-full bg-purple-50 text-purple-700 border border-purple-200">
+              <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)] border border-[var(--color-accent-purple)]/35">
                 规则建议
               </span>
             </div>
@@ -589,7 +577,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 space-y-2">
             {todoSuggestions.map((item) => (
               <div key={item} className="flex gap-2 text-sm text-[var(--color-text-primary)]">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-purple-500" />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent-purple)]" />
                 <span className="leading-relaxed">{item}</span>
               </div>
             ))}
@@ -600,7 +588,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Home className="w-4 h-4 text-orange-600" />
+              <Home className="w-4 h-4 text-[var(--color-status-warning-text)]" />
               在家情况
             </h3>
           </div>
@@ -608,14 +596,14 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 是否在家 */}
             <div>
               <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                人员是否在家 <span className="text-red-500">*</span>
+                人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   onClick={() => setFormData({ ...formData, isHome: 'yes', notHomeReason: '' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'yes'
-                      ? 'border-green-500 bg-green-50 text-green-700'
+                      ? 'border-[var(--color-status-success)] bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]'
                       : 'border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]'
                   }`}
                 >
@@ -626,7 +614,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   onClick={() => setFormData({ ...formData, isHome: 'no' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'no'
-                      ? 'border-red-500 bg-red-50 text-red-700'
+                      ? 'border-[var(--color-status-error)] bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]'
                       : 'border-[var(--color-border-primary)] bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]'
                   }`}
                 >
@@ -640,7 +628,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {formData.isHome === 'no' && (
               <div>
                 <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  不在家原因 <span className="text-red-500">*</span>
+                  不在家原因 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Textarea
                   value={formData.notHomeReason}
@@ -659,7 +647,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)] overflow-hidden">
             <div className="p-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-                <Mic className="w-4 h-4 text-purple-600" />
+                <Mic className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                 走访记录
               </h3>
               {recordingStatus === 'done' && (
@@ -679,9 +667,9 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               {/* 状态：空闲 */}
               {recordingStatus === 'idle' && (
                 <div className="text-center py-6">
-                  <div className="w-20 h-20 bg-purple-50 rounded-full flex items-center justify-center mx-auto mb-6 relative group">
-                    <div className="absolute inset-0 bg-purple-200 rounded-full opacity-30 group-hover:scale-110 transition-transform duration-500"></div>
-                    <Mic className="w-8 h-8 text-purple-600 relative z-10" />
+                  <div className="w-20 h-20 bg-[var(--color-accent-purple-soft)] rounded-full flex items-center justify-center mx-auto mb-6 relative group">
+                    <div className="absolute inset-0 bg-[var(--color-accent-purple)]/30 rounded-full opacity-30 group-hover:scale-110 transition-transform duration-500"></div>
+                    <Mic className="w-8 h-8 text-[var(--color-accent-purple-text)] relative z-10" />
                   </div>
                   <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">开始语音记录</h4>
                   <p className="text-sm text-[var(--color-text-tertiary)] mb-6 max-w-[240px] mx-auto">
@@ -689,7 +677,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   </p>
                   <Button 
                     size="lg" 
-                    className="w-full h-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-lg shadow-purple-900/20"
+                    className="w-full h-12 rounded-full bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple-text)] text-white shadow-lg shadow-[var(--color-accent-purple)]/20"
                     onClick={startRecording}
                   >
                     开始记录
@@ -700,10 +688,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               {/* 状态：录音中 */}
               {recordingStatus === 'recording' && (
                 <div className="flex flex-col items-center py-4">
-                  <div className="mb-5 w-full rounded-2xl border border-purple-500/20 bg-[linear-gradient(180deg,rgba(139,92,246,0.12),rgba(79,70,229,0.06))] p-4">
+                  <div className="mb-5 w-full rounded-[4px] border border-[var(--color-accent-purple)]/20 bg-[linear-gradient(180deg,var(--color-accent-purple-soft),rgba(139,59,204,0.06))] p-4">
                     <div className="mb-5 flex items-center justify-between gap-3">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-red-400/20 bg-red-500/10 px-3 py-1 text-xs font-medium text-red-200">
-                        <span className="visit-recording-dot h-2 w-2 rounded-full bg-red-400" />
+                      <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-status-error)]/20 bg-[var(--color-status-error)]/10 px-3 py-1 text-xs font-medium text-[var(--color-status-error-text)]">
+                        <span className="visit-recording-dot h-2 w-2 rounded-full bg-[var(--color-status-error-text)]" />
                         正在录音
                       </div>
                       <div className="rounded-full bg-[var(--color-bg-primary)] px-3 py-1 font-mono text-xl font-semibold tracking-wider text-[var(--color-text-title)]">
@@ -712,15 +700,15 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     </div>
 
                     <div className="flex items-center justify-center gap-6">
-                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-purple-600 shadow-sm ring-8 ring-purple-500/10">
+                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-purple)] shadow-sm ring-8 ring-[var(--color-accent-purple)]/10">
                         <Mic className="h-7 w-7 text-white" />
-                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[var(--color-bg-secondary)] bg-red-400" />
+                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[var(--color-bg-secondary)] bg-[var(--color-status-error-text)]" />
                       </div>
                       <div className="flex h-12 items-end gap-1.5" aria-hidden="true">
                         {[16, 28, 40, 24, 34].map((height, index) => (
                           <span
                             key={`${height}-${index}`}
-                            className="visit-recording-bar w-1.5 rounded-full bg-purple-300/80"
+                            className="visit-recording-bar w-1.5 rounded-full bg-[var(--color-accent-purple-text)]/80"
                             style={{ height: `${height}px`, animationDelay: `${index * 0.16}s` }}
                           />
                         ))}
@@ -728,7 +716,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     </div>
                   </div>
 
-                  <div className="w-full bg-[var(--color-bg-primary)] rounded-xl p-4 mb-5 h-32 overflow-y-auto border border-[var(--color-border-primary)]">
+                  <div className="w-full bg-[var(--color-bg-primary)] rounded-[4px] p-4 mb-5 h-32 overflow-y-auto border border-[var(--color-border-primary)]">
                     <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-wrap">
                       {transcript || "正在聆听现场对话..."}
                     </p>
@@ -736,7 +724,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
 
                   <Button 
                     size="lg" 
-                    className="w-full h-12 rounded-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm shadow-purple-900/10"
+                    className="w-full h-12 rounded-full bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple-text)] text-white shadow-sm shadow-[var(--color-accent-purple)]/10"
                     onClick={stopRecording}
                   >
                     <Square className="w-4 h-4 mr-2 fill-current" />
@@ -748,7 +736,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               {/* 状态：处理中 */}
               {recordingStatus === 'processing' && (
                 <div className="text-center py-12">
-                  <Loader2 className="w-12 h-12 text-purple-600 animate-spin mx-auto mb-6" />
+                  <Loader2 className="w-12 h-12 text-[var(--color-accent-purple-text)] animate-spin mx-auto mb-6" />
                   <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">正在分析对话...</h4>
                   <p className="text-sm text-[var(--color-text-tertiary)] animate-pulse">
                     演示规则正在提取关键信息并生成走访草稿
@@ -759,10 +747,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
               {/* 状态：完成 (显示生成的表单) */}
               {recordingStatus === 'done' && (
                 <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="bg-purple-900/10 rounded-lg p-3 flex items-start gap-3 border border-purple-500/20">
-                    <Sparkles className="w-5 h-5 text-purple-400 mt-0.5 shrink-0" />
-                    <div className="text-sm text-purple-300">
-                      <span className="font-bold text-purple-200">演示规则已完成整理：</span>
+                  <div className="bg-[var(--color-accent-purple-soft)] rounded-lg p-3 flex items-start gap-3 border border-[var(--color-accent-purple)]/20">
+                    <Sparkles className="w-5 h-5 text-[var(--color-accent-purple-text)] mt-0.5 shrink-0" />
+                    <div className="text-sm text-[var(--color-accent-purple-text)]">
+                      <span className="font-bold text-[var(--color-accent-purple-text)]">演示规则已完成整理：</span>
                       请核对以下内容，如有误可直接点击文本框进行修改。
                     </div>
                   </div>
@@ -772,7 +760,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          健康状况
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
+                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.healthStatus}
@@ -785,7 +773,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          生活情况
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
+                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.livingSituation}
@@ -798,7 +786,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          需求协助
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
+                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.needsAssistance}
@@ -811,7 +799,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     <div className="space-y-2">
                       <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
                          安全检查
-                        <span className="text-[10px] text-purple-300 bg-purple-900/30 px-1.5 py-0.5 rounded border border-purple-500/20">演示填充</span>
+                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
                       </Label>
                       <Textarea
                         value={formData.safetyCheck}
@@ -850,7 +838,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Camera className="w-4 h-4 text-cyan-600" />
+              <Camera className="w-4 h-4 text-[var(--color-status-info-text)]" />
               现场照片
             </h3>
           </div>

@@ -9,21 +9,21 @@ const alertVariants = cva(
   {
     variants: {
       variant: {
-        default: 
+        default:
           // Neutral-02 背景，Neutral-10 文字
-          "bg-[#1F293A] text-[#AEC0DE] border-[#293449]",
+          "bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]",
         destructive:
           // Red-06 背景 8% 透明度，Red-06 文字和边框
-          "bg-[#D52132]/8 text-[#D52132] border-[#D52132]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[#D52132]/90",
+          "bg-[var(--color-status-error)]/8 text-[var(--color-status-error)] border-[var(--color-status-error)]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[var(--color-status-error)]/90",
         success:
           // Green-06 背景 8% 透明度，Green-06 文字和边框
-          "bg-[#19B172]/8 text-[#19B172] border-[#19B172]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[#19B172]/90",
+          "bg-[var(--color-status-success)]/8 text-[var(--color-status-success)] border-[var(--color-status-success)]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[var(--color-status-success)]/90",
         warning:
           // Orange-06 背景 8% 透明度，Orange-06 文字和边框
-          "bg-[#D6730D]/8 text-[#D6730D] border-[#D6730D]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[#D6730D]/90",
+          "bg-[var(--color-status-warning)]/8 text-[var(--color-status-warning)] border-[var(--color-status-warning)]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[var(--color-status-warning)]/90",
         info:
           // Light-blue-06 背景 8% 透明度，Light-blue-06 文字和边框
-          "bg-[#2AA3CF]/8 text-[#2AA3CF] border-[#2AA3CF]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[#2AA3CF]/90",
+          "bg-[var(--color-status-info)]/8 text-[var(--color-status-info)] border-[var(--color-status-info)]/30 [&>svg]:text-current *:data-[slot=alert-description]:text-[var(--color-status-info)]/90",
       },
     },
     defaultVariants: {

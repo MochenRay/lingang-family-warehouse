@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, ChevronLeft, ClipboardList, Home, Users } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Pie, PieChart, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { CHART_AXIS, CHART_COLORS, CHART_INFO, CHART_SUCCESS, CHART_WARNING } from '../../config/chartConfig';
 import { MobileStatusBar } from './MobileStatusBar';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
@@ -160,10 +161,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   const riskCount = useMemo(() => people.filter((person) => person.risk === 'High').length, [people]);
   const populationData = useMemo(() => {
     const colors: Record<string, string> = {
-      户籍: '#3b82f6',
-      流动: '#f97316',
-      留守: '#8b5cf6',
-      境外: '#06b6d4',
+      户籍: CHART_COLORS[0],
+      流动: CHART_WARNING,
+      留守: CHART_COLORS[2],
+      境外: CHART_INFO,
     };
     const counts = new Map<string, number>();
     people.forEach((person) => {
@@ -172,7 +173,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
     return Array.from(counts.entries()).map(([name, value]) => ({
       name: `${name}人口`,
       value,
-      color: colors[name] ?? '#94a3b8',
+      color: colors[name] ?? CHART_AXIS,
     }));
   }, [people]);
   const housingData = useMemo(() => {
@@ -212,16 +213,16 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   );
 
   const basicStats = [
-    { label: '实有人口', value: people.length, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-    { label: '实有房屋', value: houses.length, icon: Home, color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
-    { label: '走访记录', value: visits.length, icon: ClipboardList, color: 'text-green-600', bg: 'bg-green-500/10' },
-    { label: '重点关注', value: riskCount, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-500/10' },
+    { label: '实有人口', value: people.length, icon: Users, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' },
+    { label: '实有房屋', value: houses.length, icon: Home, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' },
+    { label: '走访记录', value: visits.length, icon: ClipboardList, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]' },
+    { label: '重点关注', value: riskCount, icon: AlertTriangle, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' },
   ];
 
   return (
     <div className="flex h-full flex-col overflow-hidden bg-background">
       <div className="sticky top-0 z-20 border-b border-border bg-card">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="flex items-center justify-between px-4 py-3">
           <Button variant="ghost" size="sm" onClick={onBack} className="h-8 w-8 p-0 text-foreground">
             <ChevronLeft className="h-5 w-5" />
@@ -332,7 +333,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-03)" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-neutral-10)' }} dy={8} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-neutral-08)' }} allowDecimals={false} />
-                    <Bar dataKey="value" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill={CHART_SUCCESS} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -368,7 +369,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-neutral-03)" />
                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: 'var(--color-neutral-10)' }} dy={8} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10, fill: 'var(--color-neutral-08)' }} allowDecimals={false} />
-                    <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="value" fill={CHART_COLORS[1]} radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -386,7 +387,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="font-bold text-foreground">{completenessRate}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${completenessRate}%` }} />
+                  <div className="h-full rounded-full bg-[var(--color-status-success)]" style={{ width: `${completenessRate}%` }} />
                 </div>
               </div>
               <div>
@@ -395,7 +396,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="font-bold text-foreground">{visitCoverage}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${visitCoverage}%` }} />
+                  <div className="h-full rounded-full bg-[var(--color-brand-primary)]" style={{ width: `${visitCoverage}%` }} />
                 </div>
               </div>
               {conflictStats.total > 0 ? (
@@ -403,10 +404,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="text-sm text-muted-foreground">矛盾纠纷</span>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="text-foreground">
-                      <span className="font-bold text-orange-500">{conflictStats.active}</span> 调解中
+                      <span className="font-bold text-[var(--color-status-warning-text)]">{conflictStats.active}</span> 调解中
                     </span>
                     <span className="text-foreground">
-                      <span className="font-bold text-green-500">{conflictStats.resolved}</span> 已化解
+                      <span className="font-bold text-[var(--color-status-success-text)]">{conflictStats.resolved}</span> 已化解
                     </span>
                   </div>
                 </div>

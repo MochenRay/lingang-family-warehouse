@@ -24,13 +24,13 @@ const statusCopy: Record<
   live: {
     label: 'AI 在线',
     detail: '真实模型已返回',
-    className: 'border-[#19B172]/30 bg-[#19B172]/10 text-[#0f7a4c]',
+    className: 'border-[var(--color-status-success)]/30 bg-[var(--color-status-success)]/10 text-[var(--color-status-success-text)]',
     icon: CheckCircle2,
   },
   degraded: {
     label: 'AI 降级',
     detail: '当前使用本地安全样例',
-    className: 'border-[#D6730D]/30 bg-[#D6730D]/10 text-[#9b5208]',
+    className: 'border-[var(--color-status-warning)]/30 bg-[var(--color-status-warning)]/10 text-[var(--color-status-warning-text)]',
     icon: AlertTriangle,
   },
   disabled: {
@@ -48,7 +48,7 @@ const statusCopy: Record<
   placeholder: {
     label: 'AI 占位',
     detail: '当前为占位接口',
-    className: 'border-[#2AA3CF]/30 bg-[#2AA3CF]/10 text-[#176d8c]',
+    className: 'border-[var(--color-status-info)]/30 bg-[var(--color-status-info)]/10 text-[var(--color-status-info-text)]',
     icon: Info,
   },
 };

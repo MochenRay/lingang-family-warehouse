@@ -22,7 +22,7 @@ const TableHeader = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <thead ref={ref} className={cn(
     // 表头边框 Neutral-03
-    "[&_tr]:border-b [&_tr]:border-[#293449]",
+    "[&_tr]:border-b [&_tr]:border-[var(--color-neutral-03)]",
     className
   )} {...props} />
 ))
@@ -48,7 +48,7 @@ const TableFooter = React.forwardRef<
     ref={ref}
     className={cn(
       // 表尾边框和背景
-      "border-t border-[#293449] bg-[#1F293A] font-medium [&>tr]:last:border-b-0",
+      "border-t border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] font-medium [&>tr]:last:border-b-0",
       className
     )}
     {...props}
@@ -64,7 +64,7 @@ const TableRow = React.forwardRef<
     ref={ref}
     className={cn(
       // 行边框 Neutral-03，Hover 背景 Blue-06 8%，选中背景
-      "border-b border-[#293449] transition-colors hover:bg-[#2761CB]/8 data-[state=selected]:bg-[#2761CB]/8",
+      "border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[var(--color-brand-primary)]/8 data-[state=selected]:bg-[var(--color-brand-primary)]/8",
       className
     )}
     {...props}
@@ -80,7 +80,7 @@ const TableHead = React.forwardRef<
     ref={ref}
     className={cn(
       // 表头：高度 48px，内边距 16px，文字 Neutral-08
-      "h-12 px-4 text-left align-middle font-medium text-[#8194B5] [&:has([role=checkbox])]:pr-0",
+      "h-12 px-4 text-left align-middle font-medium text-[var(--color-neutral-08)] [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -96,7 +96,7 @@ const TableCell = React.forwardRef<
     ref={ref}
     className={cn(
       // 单元格：内边距 16px，文字 Neutral-10
-      "p-4 align-middle text-[#AEC0DE] [&:has([role=checkbox])]:pr-0",
+      "p-4 align-middle text-[var(--color-neutral-10)] [&:has([role=checkbox])]:pr-0",
       className
     )}
     {...props}
@@ -112,7 +112,7 @@ const TableCaption = React.forwardRef<
     ref={ref}
     className={cn(
       // 表格说明：文字 Neutral-08
-      "mt-4 text-sm text-[#8194B5]",
+      "mt-4 text-sm text-[var(--color-neutral-08)]",
       className
     )}
     {...props}

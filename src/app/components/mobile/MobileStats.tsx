@@ -72,10 +72,10 @@ function aggregate(workers: StatsPerformanceItem[], groupBy: (w: StatsPerformanc
 }
 
 const scoreColor = (score: number) => {
-  if (score >= 85) return 'text-green-600';
-  if (score >= 70) return 'text-blue-600';
-  if (score >= 55) return 'text-yellow-600';
-  return 'text-red-500';
+  if (score >= 85) return 'text-[var(--color-status-success-text)]';
+  if (score >= 70) return 'text-[var(--color-brand-primary-hover)]';
+  if (score >= 55) return 'text-[var(--color-status-warning-text)]';
+  return 'text-[var(--color-status-error-text)]';
 };
 
 export function MobileStats({ onBack }: MobileStatsProps) {
@@ -212,9 +212,9 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
-      case 1: return <Crown className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />;
-      case 2: return <Medal className="w-5 h-5 text-[#C0C0C0] fill-[#E8E8E8]" />;
-      case 3: return <Medal className="w-5 h-5 text-[#CD7F32] fill-[#F4A460]" />;
+      case 1: return <Crown className="w-5 h-5 text-[var(--color-medal-gold)] fill-[var(--color-medal-gold)]" />;
+      case 2: return <Medal className="w-5 h-5 text-[var(--color-medal-silver)] fill-[var(--color-medal-silver)]" />;
+      case 3: return <Medal className="w-5 h-5 text-[var(--color-medal-bronze)] fill-[var(--color-medal-bronze)]" />;
       default: return <span className="text-muted-foreground font-bold w-5 text-center">{rank}</span>;
     }
   };
@@ -223,7 +223,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
     <div className="h-full bg-background flex flex-col overflow-hidden">
       {/* Header */}
       <div className="bg-card border-b border-border sticky top-0 z-20">
-        <MobileStatusBar variant="light" />
+        <MobileStatusBar />
         <div className="px-4 h-[44px] flex items-center justify-between">
           <button
             onClick={onBack}
@@ -262,13 +262,13 @@ export function MobileStats({ onBack }: MobileStatsProps) {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 scrollbar-hide">
         {loading && (
-          <div className="mb-4 rounded-xl border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
+          <div className="mb-4 rounded-[4px] border border-border bg-card px-4 py-3 text-sm text-muted-foreground">
             正在刷新真实绩效口径...
           </div>
         )}
 
         {/* 个人成绩卡 */}
-        <div className="mb-4 relative overflow-hidden rounded-2xl bg-card border border-border shadow-sm">
+        <div className="mb-4 relative overflow-hidden rounded-[4px] bg-card border border-border shadow-sm">
           <div className="absolute top-0 right-0 p-4 opacity-5">
             <Trophy className="w-32 h-32 transform rotate-12 translate-x-8 -translate-y-8" />
           </div>
@@ -313,7 +313,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
         {/* 评分公式（可折叠） */}
         <button
-          className="w-full flex items-center justify-between px-3 py-2.5 mb-4 rounded-lg bg-blue-600 text-white text-xs"
+          className="w-full flex items-center justify-between px-3 py-2.5 mb-4 rounded-lg bg-[var(--color-brand-primary)] text-white text-xs"
           onClick={() => setShowFormula(!showFormula)}
         >
           <div className="flex items-center gap-1.5">

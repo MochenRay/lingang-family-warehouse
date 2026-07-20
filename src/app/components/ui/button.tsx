@@ -5,20 +5,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "./utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-medium transition-all disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
   {
     variants: {
       variant: {
-        default: "bg-[#2761CB] text-white/85 hover:bg-[#4E86DF] active:bg-[#2251A8] rounded-[2px]",
+        default: "bg-[var(--color-brand-primary)] text-white/85 hover:bg-[var(--color-brand-primary-hover)] active:bg-[var(--color-brand-primary-active)] rounded-[2px]",
         destructive:
-          "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 rounded-[2px]",
+          "bg-destructive/60 text-white hover:bg-destructive/90 focus-visible:ring-destructive/40 rounded-[2px]",
         outline:
-          "border bg-background text-foreground hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 rounded-[2px]",
+          "border border-input bg-input/30 text-foreground hover:bg-input/50 hover:text-accent-foreground rounded-[2px]",
         secondary:
-          "bg-[#293449] text-white/85 hover:bg-[#314059] rounded-[2px]",
+          "bg-[var(--color-neutral-03)] text-white/85 hover:bg-[var(--color-neutral-04)] rounded-[2px]",
         ghost:
-          "hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50 rounded-[2px]",
-        link: "text-[#2761CB] underline-offset-4 hover:underline rounded-[2px]",
+          "hover:bg-accent/50 hover:text-accent-foreground rounded-[2px]",
+        link: "text-[var(--color-brand-primary)] underline-offset-4 hover:underline rounded-[2px]",
       },
       size: {
         default: "h-8 px-3 py-2 has-[>svg]:px-2.5",
