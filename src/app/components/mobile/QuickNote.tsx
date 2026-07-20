@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronLeft, Sparkles, Save, Camera, X, Search, Link as LinkIcon, MapPin, History } from 'lucide-react';
+import { Sparkles, Save, Camera, X, Search, Link as LinkIcon, MapPin, History } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
-import { MobileStatusBar } from './MobileStatusBar';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import {
   Drawer,
   DrawerClose,
@@ -132,39 +132,33 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
   };
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
       {/* 顶部导航 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
-        <MobileStatusBar />
-        <div className="px-4 py-3 flex items-center justify-between">
-          <button 
-            onClick={onBack}
-            className="p-2 -ml-2 hover:bg-gray-100 rounded-full active:scale-95 transition-transform"
-          >
-            <ChevronLeft className="w-6 h-6 text-gray-700" />
-          </button>
-          <h1 className="text-lg font-bold text-gray-900">电子记事本</h1>
-          <button 
+      <MobileDetailHeader
+        title="电子记事本"
+        onBack={onBack}
+        action={
+          <button
             onClick={() => onRouteChange?.('quick-note-history')}
-            className="p-2 -mr-2 text-gray-600 hover:bg-gray-100 rounded-full active:scale-95 transition-transform"
+            className="p-2 -mr-2 text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)] active:bg-[var(--color-neutral-03)] rounded-full active:scale-95 transition-transform"
           >
             <History className="w-5 h-5" />
           </button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         {/* 输入区域 */}
-        <Card className="border-blue-100 shadow-sm">
+        <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-blue-800">
-              <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+            <CardTitle className="text-base flex items-center gap-2 text-[var(--color-brand-primary-hover)]">
+              <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
               情况描述
             </CardTitle>
           </CardHeader>
           <CardContent>
             <textarea
-              className="w-full min-h-[150px] p-3 text-base bg-gray-50 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none placeholder-gray-400"
+              className="w-full min-h-[150px] p-3 text-base bg-[var(--color-neutral-01)] rounded-lg border border-[var(--color-neutral-03)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)] focus:border-transparent resize-none placeholder-[var(--color-neutral-08)]"
               placeholder="请输入您在走访中发现的情况，例如：&#10;“李大爷最近腿脚不太方便，子女都在外地，家里只有他一个人，建议多关注。”"
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -173,7 +167,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
               <Button 
                 onClick={handleAnalyze} 
                 disabled={!content.trim()}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 shadow-sm"
+                className="bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple)]/80 text-white gap-2 shadow-sm"
               >
                 <>
                   <Sparkles className="w-4 h-4" />
@@ -185,34 +179,34 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         </Card>
 
         {/* 关联对象区域 */}
-        <Card className="border-blue-100 shadow-sm">
+        <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center justify-between text-blue-800">
+            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-primary-hover)]">
               <div className="flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+                <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
                 关联对象
               </div>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {associatedPerson ? (
-              <div className="bg-blue-50/50 rounded-lg border border-blue-100 p-3 relative">
+              <div className="bg-[var(--color-brand-primary)]/10 rounded-lg border border-[var(--color-brand-primary)]/30 p-3 relative">
                  <button 
                    onClick={() => setAssociatedPerson(null)}
-                   className="absolute top-2 right-2 text-gray-400 hover:text-red-500"
+                   className="absolute top-2 right-2 text-[var(--color-neutral-08)] hover:text-[var(--color-status-error-text)]"
                  >
                    <X className="w-4 h-4" />
                  </button>
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                    <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)] font-bold">
                       {associatedPerson.name.charAt(0)}
                     </div>
                     <div>
-                      <div className="font-bold text-gray-800 flex items-center gap-2">
+                      <div className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
                         {associatedPerson.name}
-                        <Badge variant="outline" className="text-xs font-normal bg-white">居民</Badge>
+                        <Badge variant="outline" className="text-xs font-normal bg-[var(--color-neutral-02)]">居民</Badge>
                       </div>
-                      <div className="text-xs text-gray-500 mt-0.5 flex items-center gap-1">
+                      <div className="text-xs text-[var(--color-neutral-08)] mt-0.5 flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
                         {associatedPerson.address}
                       </div>
@@ -222,7 +216,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
             ) : (
               <Drawer open={isPersonDrawerOpen} onOpenChange={setIsPersonDrawerOpen}>
                 <DrawerTrigger asChild>
-                  <Button variant="outline" className="w-full border-dashed text-gray-500 hover:text-blue-600 hover:border-blue-300 h-12">
+                  <Button variant="outline" className="w-full border-dashed text-[var(--color-neutral-08)] hover:text-[var(--color-brand-primary-hover)] hover:border-[var(--color-brand-primary)] h-12">
                     <LinkIcon className="w-4 h-4 mr-2" />
                     关联辖区居民 (可选)
                   </Button>
@@ -236,7 +230,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
                   </DrawerHeader>
                   <div className="p-4 space-y-4">
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                       <Input 
                         placeholder="搜索姓名或地址..." 
                         className="pl-9"
@@ -246,33 +240,33 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
                     </div>
                     <div className="max-h-[300px] overflow-y-auto space-y-2">
                       {isLoadingPeople && (
-                        <div className="text-center py-8 text-gray-400 text-sm">
+                        <div className="text-center py-8 text-[var(--color-neutral-08)] text-sm">
                           正在加载辖区居民...
                         </div>
                       )}
                       {filteredPeople.map(person => (
                         <div 
                           key={person.id}
-                          className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 active:bg-blue-50 cursor-pointer"
+                          className="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-neutral-03)] active:bg-[var(--color-brand-primary)]/10 cursor-pointer"
                           onClick={() => {
                             setAssociatedPerson(person);
                             setIsPersonDrawerOpen(false);
                           }}
                         >
-                          <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 text-sm">
+                          <div className="w-8 h-8 rounded-full bg-[var(--color-neutral-01)] flex items-center justify-center text-[var(--color-neutral-10)] text-sm">
                             {person.name.charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <div className="font-medium text-gray-900">{person.name}</div>
-                            <div className="text-xs text-gray-500">{person.address}</div>
+                            <div className="font-medium text-[var(--color-neutral-11)]">{person.name}</div>
+                            <div className="text-xs text-[var(--color-neutral-08)]">{person.address}</div>
                           </div>
-                          <div className="px-2 py-1 text-xs bg-gray-50 rounded text-gray-500">
+                          <div className="px-2 py-1 text-xs bg-[var(--color-neutral-01)] rounded text-[var(--color-neutral-08)]">
                              选择
                           </div>
                         </div>
                       ))}
                       {!isLoadingPeople && filteredPeople.length === 0 && (
-                        <div className="text-center py-8 text-gray-400 text-sm">
+                        <div className="text-center py-8 text-[var(--color-neutral-08)] text-sm">
                           未找到匹配居民
                         </div>
                       )}
@@ -290,23 +284,23 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         </Card>
 
         {/* 佐证材料上传 */}
-        <Card className="border-blue-100 shadow-sm">
+        <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center justify-between text-blue-800">
+            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-primary-hover)]">
               <div className="flex items-center gap-2">
-                <span className="w-1 h-4 bg-blue-600 rounded-full"></span>
+                <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
                 佐证材料
               </div>
-              <span className="text-xs font-normal text-gray-400">可选</span>
+              <span className="text-xs font-normal text-[var(--color-neutral-08)]">可选</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
              <div className="grid grid-cols-4 gap-2">
-                  <div className="aspect-square rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50 transition-all cursor-pointer" onClick={() => toast.info('佐证材料请在走访记录页统一归档，电子记事页当前仅保留文字研判。')}>
+                  <div className="aspect-square rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] flex flex-col items-center justify-center text-[var(--color-neutral-08)] hover:border-[var(--color-brand-primary-hover)] hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/10 transition-all cursor-pointer" onClick={() => toast.info('佐证材料请在走访记录页统一归档，电子记事页当前仅保留文字研判。')}>
                     <Camera className="w-6 h-6 mb-1" />
                     <span className="text-[10px]">添加图片</span>
                   </div>
-                  <div className="aspect-square rounded-lg border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 hover:bg-blue-50 transition-all cursor-pointer" onClick={() => toast.info('如需补充视频证据，请改从走访记录页统一上传。')}>
+                  <div className="aspect-square rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] flex flex-col items-center justify-center text-[var(--color-neutral-08)] hover:border-[var(--color-brand-primary-hover)] hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/10 transition-all cursor-pointer" onClick={() => toast.info('如需补充视频证据，请改从走访记录页统一上传。')}>
                     <div className="w-6 h-6 mb-1 flex items-center justify-center border-2 border-current rounded-full">
                        <span className="text-[10px] font-bold">▶</span>
                     </div>
@@ -319,9 +313,9 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         {/* 智能提取结果 */}
         {showAnalysis && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <Card className="border-indigo-100 bg-indigo-50/30">
+            <Card className="border-[var(--color-accent-purple)]/30 bg-[var(--color-accent-purple-soft)]">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2 text-indigo-800">
+                <CardTitle className="text-base flex items-center gap-2 text-[var(--color-accent-purple-text)]">
                   <Sparkles className="w-4 h-4" />
                   智能提取结果
                 </CardTitle>
@@ -334,15 +328,15 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
                       onClick={() => setActiveTags(prev => ({ ...prev, [tag]: !prev[tag] }))}
                       className={`px-3 py-1.5 text-sm cursor-pointer select-none transition-all active:scale-95 ${
                         activeTags[tag]
-                          ? 'bg-indigo-100 text-indigo-700 border-indigo-200 hover:bg-indigo-200'
-                          : 'bg-gray-100 text-gray-400 border-gray-200 hover:bg-gray-200'
+                          ? 'bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)] border-[var(--color-accent-purple)]/30 hover:bg-[var(--color-accent-purple)]/25'
+                          : 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)] border-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]'
                       }`}
                     >
                       {tag}
                     </Badge>
                   ))}
                 </div>
-                <div className="text-xs text-gray-500 bg-white p-3 rounded border border-indigo-100">
+                <div className="text-xs text-[var(--color-neutral-08)] bg-[var(--color-neutral-02)] p-3 rounded border border-[var(--color-accent-purple)]/30">
                   <p>根据您输入的内容，AI 识别到以上标签。您可以点击标签进行取消或重新选中，{associatedPerson ? `确认后将关联到居民【${associatedPerson.name}】。` : '请先在上方关联居民，再将标签关联到对应的人。'}</p>
                 </div>
               </CardContent>
@@ -352,9 +346,9 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
       </div>
 
       {/* 底部按钮 */}
-      <div className="p-4 bg-white border-t border-gray-200 safe-area-bottom">
+      <div className="p-4 bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] safe-area-bottom">
         <Button 
-          className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-6 shadow-sm"
+          className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-active)] text-lg py-6 shadow-sm"
           onClick={handleSave}
           disabled={!content.trim() || suggestedTags.length === 0}
         >

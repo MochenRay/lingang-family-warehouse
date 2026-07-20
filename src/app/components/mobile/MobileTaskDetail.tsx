@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import {
-  ArrowLeft,
   Calendar,
   CheckCircle,
   Clock,
@@ -16,7 +15,7 @@ import { Badge } from '../ui/badge';
 import { Textarea } from '../ui/textarea';
 import { Label } from '../ui/label';
 import { toast } from 'sonner';
-import { MobileStatusBar } from './MobileStatusBar';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { taskRepository, type MobileTaskDetail as MobileTaskDetailData } from '../../services/repositories/taskRepository';
 
 interface MobileTaskDetailProps {
@@ -31,7 +30,7 @@ function getTaskBadgeClass(type: string) {
     走访反馈: 'bg-[#19B172]/15 text-[#19B172]',
     矛盾调解: 'bg-[#FF9F1C]/15 text-[#FF9F1C]',
   };
-  return colors[type] || 'bg-gray-100 text-gray-600';
+  return colors[type] || 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
 }
 
 function getDeadlineTone(detail: MobileTaskDetailData) {
@@ -114,17 +113,17 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-blue-600 mr-2" />
-        <span className="text-gray-500">正在同步任务详情...</span>
+      <div className="min-h-screen bg-[var(--color-neutral-01)] flex items-center justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-brand-primary-hover)] mr-2" />
+        <span className="text-[var(--color-neutral-08)]">正在同步任务详情...</span>
       </div>
     );
   }
 
   if (!detail) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center gap-4">
-        <p className="text-gray-500">未找到任务详情</p>
+      <div className="min-h-screen bg-[var(--color-neutral-01)] flex flex-col items-center justify-center gap-4">
+        <p className="text-[var(--color-neutral-08)]">未找到任务详情</p>
         <Button onClick={onBack}>返回</Button>
       </div>
     );
@@ -134,29 +133,24 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
   const canSubmit = feedback.trim().length > 0 && !isSubmitting;
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-gray-50">
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
-        <MobileStatusBar />
-        <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack} className="p-1 -ml-1">
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
-          </button>
-          <div className="flex-1 min-w-0">
-            <h1 className="font-semibold text-gray-800 truncate">任务详情</h1>
-          </div>
+    <div className="relative flex h-full flex-col overflow-hidden bg-[var(--color-neutral-01)]">
+      <MobileDetailHeader
+        title="任务详情"
+        onBack={onBack}
+        action={
           <Badge
             variant={isCompleted ? 'outline' : 'default'}
-            className={isCompleted ? 'text-green-600 border-green-200 bg-green-50' : 'bg-blue-600'}
+            className={isCompleted ? 'text-[var(--color-status-success-text)] border-[var(--color-status-success)]/40 bg-[var(--color-status-success-soft)]' : 'bg-[var(--color-brand-primary)]'}
           >
             {isCompleted ? '已完成' : '待处理'}
           </Badge>
-        </div>
-      </div>
+        }
+      />
 
       <div className="flex-1 overflow-y-auto pb-36">
-        <div className="bg-white p-4 mb-3 shadow-sm">
+        <div className="bg-[var(--color-neutral-01)] p-4 mb-3 shadow-sm">
           <div className="flex items-start justify-between mb-3 gap-3">
-            <h2 className="text-lg font-bold text-gray-900 leading-snug">{detail.title}</h2>
+            <h2 className="text-lg font-bold text-[var(--color-neutral-11)] leading-snug">{detail.title}</h2>
           </div>
 
           <div className="flex flex-wrap gap-2 mb-4">
@@ -168,24 +162,24 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                 紧急
               </Badge>
             )}
-            <Badge variant="outline" className="text-xs border-gray-200 bg-gray-50 text-gray-600">
+            <Badge variant="outline" className="text-xs border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
               {detail.statusLabel}
             </Badge>
           </div>
 
-          <div className="space-y-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">
+          <div className="space-y-2 text-sm text-[var(--color-neutral-10)] bg-[var(--color-neutral-02)] p-3 rounded-lg border border-[var(--color-neutral-03)]">
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-gray-400" />
+              <User className="w-4 h-4 text-[var(--color-neutral-08)]" />
               <span>下发来源：{detail.assignedBy}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-gray-400" />
-              <span className={!isCompleted && detail.urgent ? 'text-red-600 font-medium' : ''}>
+              <Clock className="w-4 h-4 text-[var(--color-neutral-08)]" />
+              <span className={!isCompleted && detail.urgent ? 'text-[var(--color-status-error-text)] font-medium' : ''}>
                 {isCompleted ? '完成时间' : '截止时间'}：{getDeadlineTone(detail)}
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
+              <MapPin className="w-4 h-4 text-[var(--color-neutral-08)]" />
               <span>{detail.subjectName}</span>
             </div>
           </div>
@@ -194,11 +188,11 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
         <div className="px-4 mb-3">
           <Card className="border-none shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-2 font-semibold text-gray-800">
-                <FileText className="w-4 h-4 text-blue-600" />
+              <div className="flex items-center gap-2 mb-2 font-semibold text-[var(--color-neutral-11)]">
+                <FileText className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
                 任务摘要
               </div>
-              <p className="text-sm text-gray-600 leading-relaxed">{detail.description}</p>
+              <p className="text-sm text-[var(--color-neutral-10)] leading-relaxed">{detail.description}</p>
             </CardContent>
           </Card>
         </div>
@@ -208,8 +202,8 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
             <CardContent className="p-4 space-y-4">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <div className="font-semibold text-gray-800">关联对象</div>
-                  <div className="text-xs text-gray-500 mt-1">从真实人物、房屋、走访、矛盾上下文投影</div>
+                  <div className="font-semibold text-[var(--color-neutral-11)]">关联对象</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] mt-1">从真实人物、房屋、走访、矛盾上下文投影</div>
                 </div>
                 <Button
                   variant="outline"
@@ -230,7 +224,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     type="button"
                     onClick={() => handleOpenSource(`person-detail/${person.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-gray-100 text-xs text-gray-700 disabled:cursor-default"
+                    className="px-3 py-1.5 rounded-full bg-[var(--color-neutral-01)] text-xs text-[var(--color-neutral-10)] disabled:cursor-default"
                   >
                     {person.name}
                     {person.risk ? ` · ${person.risk}` : ''}
@@ -241,7 +235,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     type="button"
                     onClick={() => handleOpenSource(`house-detail/${detail.context.house!.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-blue-50 text-xs text-blue-700 disabled:cursor-default"
+                    className="px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-primary-hover)] disabled:cursor-default"
                   >
                     房屋 · {detail.context.house.address}
                   </button>
@@ -249,18 +243,18 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
               </div>
 
               {detail.context.followUpStatus && (
-                <div className="rounded-lg bg-amber-50 border border-amber-100 p-3">
-                  <div className="text-sm font-medium text-amber-800">{detail.context.followUpStatus.label}</div>
-                  <div className="text-xs text-amber-700 mt-1">{detail.context.followUpStatus.detail}</div>
+                <div className="rounded-lg bg-[var(--color-status-warning-soft)] border border-[var(--color-status-warning)]/30 p-3">
+                  <div className="text-sm font-medium text-[var(--color-status-warning-text)]">{detail.context.followUpStatus.label}</div>
+                  <div className="text-xs text-[var(--color-status-warning-text)] mt-1">{detail.context.followUpStatus.detail}</div>
                 </div>
               )}
 
               <div>
-                <div className="text-xs text-gray-500 mb-2">建议动作</div>
+                <div className="text-xs text-[var(--color-neutral-08)] mb-2">建议动作</div>
                 <div className="space-y-2">
                   {detail.context.suggestedActions.map((item, index) => (
-                    <div key={`${detail.id}-action-${index}`} className="flex gap-2 text-sm text-gray-700">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <div key={`${detail.id}-action-${index}`} className="flex gap-2 text-sm text-[var(--color-neutral-10)]">
+                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[var(--color-brand-primary)] shrink-0" />
                       <span>{item}</span>
                     </div>
                   ))}
@@ -268,18 +262,18 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
               </div>
 
               <div>
-                <div className="text-xs text-gray-500 mb-2">最近记录</div>
+                <div className="text-xs text-[var(--color-neutral-08)] mb-2">最近记录</div>
                 {detail.context.visits.length === 0 ? (
-                  <div className="text-sm text-gray-400">暂无关联走访记录</div>
+                  <div className="text-sm text-[var(--color-neutral-08)]">暂无关联走访记录</div>
                 ) : (
                   <div className="space-y-2">
                     {detail.context.visits.map((visit) => (
-                      <div key={visit.id} className="rounded-lg bg-gray-50 border border-gray-100 p-3">
-                        <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+                      <div key={visit.id} className="rounded-lg bg-[var(--color-neutral-01)] border border-[var(--color-neutral-03)] p-3">
+                        <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-08)] mb-1">
                           <Calendar className="w-3.5 h-3.5" />
                           {visit.date}
                         </div>
-                        <div className="text-sm text-gray-700 leading-relaxed">{visit.content}</div>
+                        <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed">{visit.content}</div>
                       </div>
                     ))}
                   </div>
@@ -292,15 +286,15 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
         <div className="px-4 mb-6">
           <Card className="border-none shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3 font-semibold text-gray-800">
-                <CheckCircle className="w-4 h-4 text-green-600" />
+              <div className="flex items-center gap-2 mb-3 font-semibold text-[var(--color-neutral-11)]">
+                <CheckCircle className="w-4 h-4 text-[var(--color-status-success-text)]" />
                 {isCompleted ? '处理结果' : '回填反馈'}
               </div>
 
               <div className="mb-4">
-                <Label className="text-xs text-gray-500 mb-1.5 block">情况说明</Label>
+                <Label className="text-xs text-[var(--color-neutral-08)] mb-1.5 block">情况说明</Label>
                 {isCompleted ? (
-                  <div className="p-3 bg-gray-50 rounded text-sm text-gray-800 whitespace-pre-wrap">
+                  <div className="p-3 bg-[var(--color-neutral-01)] rounded text-sm text-[var(--color-neutral-11)] whitespace-pre-wrap">
                     {feedback || '暂无回填说明'}
                   </div>
                 ) : (
@@ -308,14 +302,14 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     placeholder="请输入本次处理结果、发现的问题或后续安排..."
                     value={feedback}
                     onChange={(event) => setFeedback(event.target.value)}
-                    className="min-h-[120px] resize-none bg-gray-50 border-gray-200 focus:bg-white transition-colors"
+                    className="min-h-[120px] resize-none bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] focus:bg-[var(--color-neutral-02)] transition-colors"
                   />
                 )}
               </div>
 
               {!isCompleted && (
-                <div className="text-xs text-gray-500 flex items-center gap-2">
-                  <CheckCircle className="w-3.5 h-3.5 text-green-600" />
+                <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
+                  <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
                   提交后会写回真实走访记录或纠纷处置时间线。
                 </div>
               )}
@@ -325,7 +319,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
       </div>
 
       {!isCompleted && (
-        <div className="absolute bottom-0 left-0 right-0 z-20 space-y-3 border-t border-gray-200 bg-white p-4 safe-area-bottom">
+        <div className="absolute bottom-0 left-0 right-0 z-20 space-y-3 border-t border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 safe-area-bottom">
           <Button
             variant="outline"
             className="w-full h-11 text-base"
@@ -336,7 +330,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
             查看来源对象
           </Button>
           <Button
-            className="w-full bg-blue-600 hover:bg-blue-700 h-11 text-base disabled:bg-blue-600/45 disabled:text-white/70"
+            className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base disabled:bg-[var(--color-brand-primary)]/45 disabled:text-white/70"
             onClick={handleSubmit}
             disabled={!canSubmit}
           >

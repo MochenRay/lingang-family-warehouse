@@ -34,6 +34,11 @@
   --color-status-warning-soft: rgba(214, 115, 13, 0.16);
   --color-status-error-soft: rgba(213, 33, 50, 0.16);
   --color-status-info-soft: rgba(42, 163, 207, 0.16);
+
+  /* 扩展强调紫（P4d）：智能标签/关系网络/导出等紫色语义，同 chart-3 */
+  --color-accent-purple: #8B3BCC;
+  --color-accent-purple-text: #C9A5F2;  /* 深底可读 */
+  --color-accent-purple-soft: rgba(139, 59, 204, 0.16);
   
   /* 中性色 - 背景层级 */
   --color-neutral-00: #131623;  /* 侧边栏（极深蓝黑） */
@@ -454,6 +459,11 @@
   --color-warning-soft: var(--color-status-warning-soft);
   --color-error-soft: var(--color-status-error-soft);
   --color-info-soft: var(--color-status-info-soft);
+
+  /* 强调紫（P4d）：智能标签/关系网络/导出等紫色语义 */
+  --color-purple: var(--color-accent-purple);
+  --color-purple-text: var(--color-accent-purple-text);
+  --color-purple-soft: var(--color-accent-purple-soft);
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);

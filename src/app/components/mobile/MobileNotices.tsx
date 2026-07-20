@@ -35,11 +35,11 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
 
   const getTypeLabel = (type: string) => {
     switch(type) {
-      case 'urgent': return { text: '紧急', color: 'bg-red-100 text-red-600' };
-      case 'system': return { text: '系统', color: 'bg-blue-100 text-blue-600' };
-      case 'guide': return { text: '指南', color: 'bg-green-100 text-green-600' };
-      case 'task': return { text: '任务', color: 'bg-orange-100 text-orange-600' };
-      default: return { text: '通知', color: 'bg-gray-100 text-gray-600' };
+      case 'urgent': return { text: '紧急', color: 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]' };
+      case 'system': return { text: '系统', color: 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)]' };
+      case 'guide': return { text: '指南', color: 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]' };
+      case 'task': return { text: '任务', color: 'bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]' };
+      default: return { text: '通知', color: 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]' };
     }
   };
 
@@ -50,31 +50,31 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
   });
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col">
       {/* 顶部导航 */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
+      <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10 border-b border-[var(--color-neutral-03)]">
         <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
           <button 
             onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center -ml-2 text-gray-700 active:bg-gray-100 rounded-full"
+            className="w-8 h-8 flex items-center justify-center -ml-2 text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-02)] rounded-full"
           >
             <ChevronLeft className="w-6 h-6" />
           </button>
-          <div className="text-gray-900 font-semibold text-lg">通知公告</div>
+          <div className="text-[var(--color-neutral-11)] font-semibold text-lg">通知公告</div>
           <div className="w-8"></div> {/* 占位，保持标题居中 */}
         </div>
 
         {/* 搜索栏 */}
         <div className="px-4 py-2">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
             <input 
               type="text" 
               placeholder="搜索通知标题或内容"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full h-9 pl-9 pr-4 bg-gray-100 rounded-lg text-sm text-gray-800 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              className="w-full h-9 pl-9 pr-4 bg-[var(--color-neutral-02)] rounded-lg text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-primary)]/20"
             />
           </div>
         </div>
@@ -92,8 +92,8 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id 
-                  ? 'bg-blue-600 text-white shadow-sm' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  ? 'bg-[var(--color-brand-primary)] text-white shadow-sm' 
+                  : 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]'
               }`}
             >
               {tab.label}
@@ -108,29 +108,29 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
           filteredNotices.map(notice => {
             const badge = getTypeLabel(notice.type);
             return (
-              <div 
+              <div
                 key={notice.id} 
-                className="bg-white rounded-xl p-4 shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
+                className="bg-[var(--color-neutral-01)] rounded-[4px] p-4 shadow-sm active:scale-[0.99] transition-transform cursor-pointer"
                 onClick={() => onNoticeClick && onNoticeClick(notice.id)}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
                   <div className={`px-1.5 py-0.5 rounded text-[10px] font-medium shrink-0 ${badge.color}`}>
                     {badge.text}
                   </div>
-                  <span className="text-xs text-gray-400 flex items-center gap-1 shrink-0">
+                  <span className="text-xs text-[var(--color-neutral-08)] flex items-center gap-1 shrink-0">
                     <Calendar className="w-3 h-3" />
                     {formatNoticeTime(notice.publishedAt)}
                   </span>
                 </div>
-                <h3 className="text-sm font-bold text-gray-900 mb-2 leading-tight">
+                <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-2 leading-tight">
                   {notice.title}
                 </h3>
-                <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
+                <p className="text-xs text-[var(--color-neutral-08)] line-clamp-2 leading-relaxed">
                   {notice.content}
                 </p>
-                <div className="mt-3 pt-3 border-t border-gray-50 flex items-center justify-between">
-                  <span className="text-[10px] text-gray-400">{notice.department}</span>
-                  <div className="flex items-center text-xs text-blue-600 font-medium">
+                <div className="mt-3 pt-3 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
+                  <span className="text-[10px] text-[var(--color-neutral-08)]">{notice.department}</span>
+                  <div className="flex items-center text-xs text-[var(--color-brand-primary-hover)] font-medium">
                     查看详情
                     <ChevronRight className="w-3 h-3 ml-0.5" />
                   </div>
@@ -139,7 +139,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
             );
           })
         ) : (
-          <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <div className="flex flex-col items-center justify-center py-20 text-[var(--color-neutral-08)]">
             <Bell className="w-12 h-12 mb-3 opacity-20" />
             <p className="text-sm">暂无相关通知</p>
           </div>

@@ -164,17 +164,17 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
   };
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
       {/* 顶部导航栏 */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-200">
+      <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10 border-b border-[var(--color-neutral-03)]">
         <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3">
           <button onClick={onBack}>
-            <ArrowLeft className="w-6 h-6 text-gray-700" />
+            <ArrowLeft className="w-6 h-6 text-[var(--color-neutral-10)]" />
           </button>
           <div className="flex-1">
-            <h1 className="font-semibold text-gray-800">人口信息采集</h1>
-            <p className="text-xs text-gray-500">请如实填写人口基本信息</p>
+            <h1 className="font-semibold text-[var(--color-neutral-11)]">人口信息采集</h1>
+            <p className="text-xs text-[var(--color-neutral-08)]">请如实填写人口基本信息</p>
           </div>
           <Badge variant="outline" className="text-xs">
             <Users className="w-3 h-3 mr-1" />
@@ -189,11 +189,11 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <Label className="text-sm font-semibold mb-3 block">人员照片</Label>
           <div className="flex items-center gap-4">
             {photo ? (
-              <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-gray-100">
+              <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-[var(--color-neutral-02)]">
                 <img src={photo} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={() => setPhoto('')}
-                  className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+                  className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center"
                 >
                   ×
                 </button>
@@ -201,16 +201,16 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
             ) : (
               <button
                 onClick={handlePhotoCapture}
-                className="w-24 h-24 rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
+                className="w-24 h-24 rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] flex flex-col items-center justify-center text-[var(--color-neutral-08)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-hover)] transition-colors"
               >
                 <Camera className="w-8 h-8 mb-1" />
                 <span className="text-xs">拍照</span>
               </button>
             )}
             <div className="flex-1">
-              <p className="text-sm text-gray-700 mb-2">请拍摄正面免冠照片</p>
-              <p className="text-xs text-gray-500">• 光线充足，背景简洁</p>
-              <p className="text-xs text-gray-500">• 正面拍摄，五官清晰</p>
+              <p className="text-sm text-[var(--color-neutral-10)] mb-2">请拍摄正面免冠照片</p>
+              <p className="text-xs text-[var(--color-neutral-08)]">• 光线充足，背景简洁</p>
+              <p className="text-xs text-[var(--color-neutral-08)]">• 正面拍摄，五官清晰</p>
             </div>
           </div>
         </Card>
@@ -218,12 +218,12 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
         {/* 基本信息（含身份证扫描） */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-gray-900">基本信息</h3>
+            <h3 className="text-sm font-semibold text-[var(--color-neutral-11)]">基本信息</h3>
             <Button
               variant="outline"
               size="sm"
               onClick={handleScanID}
-              className={idScanned ? 'bg-green-50 text-green-700 border-green-300' : ''}
+              className={idScanned ? 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]/35' : ''}
             >
               <CreditCard className="w-4 h-4 mr-1" />
               {idScanned ? '已扫描' : '扫描身份证'}
@@ -232,7 +232,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
 
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium mb-2 block">姓名 <span className="text-red-500">*</span></Label>
+              <Label className="text-sm font-medium mb-2 block">姓名 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <Input
                 placeholder="请输入或扫描身份证获取"
                 value={formData.name}
@@ -241,7 +241,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">身份证号 <span className="text-red-500">*</span></Label>
+              <Label className="text-sm font-medium mb-2 block">身份证号 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <Input
                 placeholder="请输入或扫描身份证获取"
                 value={formData.idNumber}
@@ -283,7 +283,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">联系电话 <span className="text-red-500">*</span></Label>
+              <Label className="text-sm font-medium mb-2 block">联系电话 <span className="text-[var(--color-status-error-text)]">*</span></Label>
               <Input
                 type="tel"
                 placeholder="请输入手机号"
@@ -343,7 +343,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <button
             type="button"
             onClick={() => toggleSection('detail')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>详细信息</span>
             {expandedSections.detail ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -458,7 +458,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <button
             type="button"
             onClick={() => toggleSection('work')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>个人经历</span>
             {expandedSections.work ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -473,7 +473,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
                 rows={6}
                 className="resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--color-neutral-08)] mt-1">
                 示例：2007-2011年，在山东大学学习计算机科学与技术专业。2011-2015年，在北京某互联网公司从事软件开发工作...
               </p>
             </div>
@@ -485,7 +485,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <button
             type="button"
             onClick={() => toggleSection('activity')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>活动参与</span>
             {expandedSections.activity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -521,7 +521,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <button
             type="button"
             onClick={() => toggleSection('health')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>健康档案</span>
             {expandedSections.health ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -619,7 +619,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
 
         {/* 重要事件记录（常显） */}
         <Card className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">重要事件记录</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3">重要事件记录</h3>
           <Textarea
             value={formData.importantEvents}
             onChange={(e) => setFormData({ ...formData, importantEvents: e.target.value })}
@@ -631,7 +631,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
       </div>
 
       {/* 底部按钮 */}
-      <div className="bg-white border-t border-gray-100 p-4 safe-area-bottom sticky bottom-0">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0">
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -641,7 +641,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
             取消
           </Button>
           <Button
-            className="flex-1 h-11 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
           >
             <Save className="w-5 h-5 mr-2" />

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ArrowLeft, Save, ChevronDown, ChevronUp, X, Plus, Search, Tag } from 'lucide-react';
-import { MobileStatusBar } from './MobileStatusBar';
+import { Save, ChevronDown, ChevronUp, X, Plus, Search, Tag } from 'lucide-react';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -227,26 +227,14 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
   }
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar />
-        <div className="h-11 flex items-center justify-between px-4">
-          <button 
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center -ml-2 text-gray-700 active:bg-gray-100 rounded-full"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div className="text-gray-900 font-semibold text-lg">编辑人员信息</div>
-          <div className="w-8"></div>
-        </div>
-      </div>
+      <MobileDetailHeader title="编辑人员信息" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
         {/* 基本信息 */}
         <Card className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-4">基本信息</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-4">基本信息</h3>
           <div className="space-y-4">
             <div>
               <Label className="text-sm font-medium mb-2 block">姓名</Label>
@@ -323,13 +311,13 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         {/* 标签管理 */}
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-1.5">
-              <Tag className="w-4 h-4 text-blue-600" />
+            <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] flex items-center gap-1.5">
+              <Tag className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
               标签管理
             </h3>
             <button
               onClick={() => { setShowTagPicker(true); setTagSearch(''); }}
-              className="text-xs text-blue-600 flex items-center gap-1 active:opacity-70"
+              className="text-xs text-[var(--color-brand-primary-hover)] flex items-center gap-1 active:opacity-70"
             >
               <Plus className="w-3.5 h-3.5" />
               关联标签
@@ -337,19 +325,19 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           </div>
 
           {personTags.length === 0 ? (
-            <p className="text-xs text-gray-400 py-2">暂无标签，点击右上角关联标签</p>
+            <p className="text-xs text-[var(--color-neutral-08)] py-2">暂无标签，点击右上角关联标签</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {personTags.map(tag => (
                 <Badge
                   key={tag}
                   variant="secondary"
-                  className="pl-2 pr-1 py-1 text-xs flex items-center gap-1 bg-blue-50 text-blue-700 border border-blue-200"
+                  className="pl-2 pr-1 py-1 text-xs flex items-center gap-1 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border border-[var(--color-brand-primary)]"
                 >
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(tag)}
-                    className="ml-0.5 p-0.5 rounded-full hover:bg-blue-200 active:scale-90 transition-transform"
+                    className="ml-0.5 p-0.5 rounded-full hover:bg-[var(--color-brand-primary)]/20 active:scale-90 transition-transform"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -362,17 +350,17 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         {/* 标签选择器 */}
         {showTagPicker && (
           <div className="fixed inset-0 z-50 bg-black/40 flex flex-col justify-end">
-            <div className="bg-white rounded-t-2xl max-h-[75vh] flex flex-col">
+            <div className="bg-[var(--color-neutral-01)] rounded-t-[4px] max-h-[75vh] flex flex-col">
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <h3 className="text-base font-semibold text-gray-900">关联标签</h3>
-                <button onClick={() => setShowTagPicker(false)} className="p-1 rounded-full hover:bg-gray-100">
-                  <X className="w-5 h-5 text-gray-500" />
+                <h3 className="text-base font-semibold text-[var(--color-neutral-11)]">关联标签</h3>
+                <button onClick={() => setShowTagPicker(false)} className="p-1 rounded-full hover:bg-[var(--color-neutral-03)]">
+                  <X className="w-5 h-5 text-[var(--color-neutral-08)]" />
                 </button>
               </div>
 
               <div className="px-4 pb-3">
                 <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]" />
                   <Input
                     value={tagSearch}
                     onChange={(e) => setTagSearch(e.target.value)}
@@ -384,14 +372,14 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
 
               <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
                 {Object.keys(filteredGroupedTags).length === 0 ? (
-                  <p className="text-sm text-gray-400 text-center py-8">无匹配标签</p>
+                  <p className="text-sm text-[var(--color-neutral-08)] text-center py-8">无匹配标签</p>
                 ) : (
                   Object.entries(filteredGroupedTags).map(([type, categories]) => (
                     <div key={type}>
-                      <div className="text-xs font-semibold text-gray-500 mb-2 sticky top-0 bg-white py-1">{type}</div>
+                      <div className="text-xs font-semibold text-[var(--color-neutral-08)] mb-2 sticky top-0 bg-[var(--color-neutral-01)] py-1">{type}</div>
                       {Object.entries(categories).map(([category, tags]) => (
                         <div key={category} className="mb-3">
-                          <div className="text-xs text-gray-400 mb-1.5 ml-1">{category}</div>
+                          <div className="text-xs text-[var(--color-neutral-08)] mb-1.5 ml-1">{category}</div>
                           <div className="flex flex-wrap gap-2">
                             {tags.map(tag => {
                               const isSelected = personTags.includes(tag);
@@ -401,8 +389,8 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
                                   onClick={() => isSelected ? handleRemoveTag(tag) : handleAddTag(tag)}
                                   className={`text-xs px-2.5 py-1.5 rounded-full border transition-all active:scale-95 ${
                                     isSelected
-                                      ? 'bg-blue-600 text-white border-blue-600'
-                                      : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300'
+                                      ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
+                                      : 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] hover:border-[var(--color-brand-primary)]'
                                   }`}
                                 >
                                   {tag}
@@ -425,7 +413,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           <button
             type="button"
             onClick={() => toggleSection('detail')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>详细信息</span>
             {expandedSections.detail ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -549,7 +537,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           <button
             type="button"
             onClick={() => toggleSection('work')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>个人经历</span>
             {expandedSections.work ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -564,7 +552,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
                 rows={6}
                 className="resize-none"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-[var(--color-neutral-08)] mt-1">
                 示例：2007-2011年，在山东大学学习计算机科学与技术专业。2011-2015年，在北京某互联网公司从事软件开发工作...
               </p>
             </div>
@@ -576,7 +564,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           <button
             type="button"
             onClick={() => toggleSection('activity')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>活动参与</span>
             {expandedSections.activity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -613,7 +601,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           <button
             type="button"
             onClick={() => toggleSection('health')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-gray-900 mb-3"
+            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
           >
             <span>健康档案</span>
             {expandedSections.health ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -711,7 +699,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
 
         {/* 重要事件记录 */}
         <Card className="p-4">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">重要事件记录</h3>
+          <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3">重要事件记录</h3>
           <div>
             <Textarea
               value={formData.importantEvents}
@@ -723,17 +711,17 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
           </div>
         </Card>
 
-        <Card className="p-4 bg-blue-50 border-blue-100">
-          <p className="text-xs text-blue-600">
+        <Card className="p-4 bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)]">
+          <p className="text-xs text-[var(--color-brand-primary-hover)]">
             <strong>注意：</strong>身份证号、性别、年龄等基础信息不可修改，如需修改请联系管理员。
           </p>
         </Card>
       </div>
 
       {/* Bottom Action */}
-      <div className="bg-white border-t border-gray-100 p-4 safe-area-bottom sticky bottom-0">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0">
         <Button 
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+          className="w-full h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
           onClick={handleSave}
         >
           <Save className="w-4 h-4 mr-2" />

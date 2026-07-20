@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, Save } from 'lucide-react';
-import { MobileStatusBar } from './MobileStatusBar';
+import { Save } from 'lucide-react';
+import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -69,21 +69,9 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
   }
 
   return (
-    <div className="h-full bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-full bg-[var(--color-neutral-01)] flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white sticky top-0 z-10 border-b border-gray-100">
-        <MobileStatusBar />
-        <div className="h-11 flex items-center justify-between px-4">
-          <button 
-            onClick={onBack}
-            className="w-8 h-8 flex items-center justify-center -ml-2 text-gray-700 active:bg-gray-100 rounded-full"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <div className="text-gray-900 font-semibold text-lg">编辑房屋信息</div>
-          <div className="w-8"></div>
-        </div>
-      </div>
+      <MobileDetailHeader title="编辑房屋信息" onBack={onBack} />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <Card className="p-4">
@@ -133,17 +121,17 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
           </div>
         </Card>
 
-        <Card className="p-4 bg-blue-50 border-blue-100">
-          <p className="text-xs text-blue-600">
+        <Card className="p-4 bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)]">
+          <p className="text-xs text-[var(--color-brand-primary-hover)]">
             <strong>注意：</strong>社区名称、楼栋单元等基础信息不可修改，如需修改请联系管理员。
           </p>
         </Card>
       </div>
 
       {/* Bottom Action */}
-      <div className="bg-white border-t border-gray-100 p-4 safe-area-bottom sticky bottom-0">
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0">
         <Button 
-          className="w-full h-11 bg-blue-600 hover:bg-blue-700"
+          className="w-full h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
           onClick={handleSave}
         >
           <Save className="w-4 h-4 mr-2" />

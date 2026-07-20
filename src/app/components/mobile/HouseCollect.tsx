@@ -162,7 +162,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
         <Card>
           <CardContent className="p-4">
             <Label className="text-sm font-semibold mb-3 block">
-              房屋编号 <span className="text-red-500">*</span>
+              房屋编号 <span className="text-[var(--color-status-error-text)]">*</span>
             </Label>
             <div className="flex gap-2">
               <Input
@@ -179,7 +179,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                 <QrCode className="w-5 h-5" />
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-2">建议格式：PL-楼栋-单元-房号，可根据现场二维码或门牌调整</p>
+            <p className="text-xs text-[var(--color-neutral-08)] mt-2">建议格式：PL-楼栋-单元-房号，可根据现场二维码或门牌调整</p>
           </CardContent>
         </Card>
 
@@ -187,13 +187,13 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <Label className="text-sm font-semibold">
-                位置信息 <span className="text-red-500">*</span>
+                位置信息 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleGetLocation}
-                className={locationObtained ? 'bg-green-50 text-green-700 border-green-300' : ''}
+                className={locationObtained ? 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]/35' : ''}
               >
                 <MapPin className="w-4 h-4 mr-1" />
                 {locationObtained ? '已定位' : '获取定位'}
@@ -202,13 +202,13 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
 
             <div className="space-y-3">
               {locationSummary && (
-                <div className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
+                <div className="text-sm text-[var(--color-neutral-10)] bg-[var(--color-neutral-01)] p-3 rounded-lg">
                   {locationSummary}
                 </div>
               )}
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">区/县</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">区/县</Label>
                   <Select value={formData.district} onValueChange={(v) => setFormData({ ...formData, district: v })}>
                     <SelectTrigger className="h-9">
                       <SelectValue />
@@ -219,7 +219,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">街道/乡镇</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">街道/乡镇</Label>
                   <Select value={formData.street} onValueChange={(v) => setFormData({ ...formData, street: v })}>
                     <SelectTrigger className="h-9">
                       <SelectValue />
@@ -232,7 +232,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
               </div>
 
               <div>
-                <Label className="text-xs text-gray-600 mb-1 block">社区 <span className="text-red-500">*</span></Label>
+                <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">社区 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                 <Input
                   placeholder="请输入社区名称"
                   value={formData.community}
@@ -243,7 +243,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
 
               <div className="grid grid-cols-4 gap-2">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">楼栋 <span className="text-red-500">*</span></Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">楼栋 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                   <Input
                     placeholder="1号楼"
                     value={formData.building}
@@ -252,7 +252,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">单元</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">单元</Label>
                   <Input
                     placeholder="1单元"
                     value={formData.unit}
@@ -261,7 +261,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">楼层</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">楼层</Label>
                   <Input
                     placeholder="3层"
                     value={formData.floor}
@@ -270,7 +270,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">房号</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">房号</Label>
                   <Input
                     placeholder="301"
                     value={formData.room}
@@ -289,7 +289,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
             <div className="space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">房屋结构</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">房屋结构</Label>
                   <Select value={formData.structure} onValueChange={(v) => setFormData({ ...formData, structure: v })}>
                     <SelectTrigger className="h-9">
                       <SelectValue placeholder="选择结构" />
@@ -303,7 +303,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">总楼层</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">总楼层</Label>
                   <Input
                     type="number"
                     placeholder="如：6"
@@ -316,7 +316,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">建筑面积(㎡)</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">建筑面积(㎡)</Label>
                   <Input
                     type="number"
                     placeholder="如：90"
@@ -326,7 +326,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   />
                 </div>
                 <div>
-                  <Label className="text-xs text-gray-600 mb-1 block">建成年份</Label>
+                  <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">建成年份</Label>
                   <Input
                     type="number"
                     placeholder="如：2010"
@@ -338,7 +338,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
               </div>
 
               <div>
-                <Label className="text-xs text-gray-600 mb-1 block">房屋用途</Label>
+                <Label className="text-xs text-[var(--color-neutral-10)] mb-1 block">房屋用途</Label>
                 <Select value={formData.usage} onValueChange={(v) => setFormData({ ...formData, usage: v })}>
                   <SelectTrigger className="h-9">
                     <SelectValue placeholder="选择用途" />
@@ -375,11 +375,11 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
 
             <div className="grid grid-cols-3 gap-2">
               {photos.map((photo, index) => (
-                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-gray-100">
+                <div key={index} className="relative aspect-square rounded-lg overflow-hidden bg-[var(--color-neutral-02)]">
                   <img src={photo} alt="" className="w-full h-full object-cover" />
                   <button
                     onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
-                    className="absolute top-1 right-1 w-6 h-6 bg-red-500 rounded-full text-white text-xs flex items-center justify-center"
+                    className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center"
                   >
                     ×
                   </button>
@@ -389,14 +389,14 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
               {photos.length < 9 && (
                 <button
                   onClick={handlePhotoCapture}
-                  className="aspect-square rounded-lg border-2 border-dashed border-gray-300 flex flex-col items-center justify-center text-gray-400 hover:border-blue-400 hover:text-blue-400 transition-colors"
+                  className="aspect-square rounded-lg border-2 border-dashed border-[var(--color-neutral-03)] flex flex-col items-center justify-center text-[var(--color-neutral-08)] hover:border-[var(--color-brand-primary)] hover:text-[var(--color-brand-primary-hover)] transition-colors"
                 >
                   <Camera className="w-8 h-8 mb-1" />
                   <span className="text-xs">上传照片</span>
                 </button>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-2">建议补充门牌号、房屋外观与入户口照片</p>
+            <p className="text-xs text-[var(--color-neutral-08)] mt-2">建议补充门牌号、房屋外观与入户口照片</p>
           </CardContent>
         </Card>
 
