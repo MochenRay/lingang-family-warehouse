@@ -74,7 +74,12 @@ async function checkIconOnlyButtons(page: Page, pageId: string, viewport: string
       if (el.offsetParent === null) continue; // 不可见
       const text = (el.textContent ?? '').trim();
       const hasName = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') || el.getAttribute('title');
-      if (!text && !hasName) {
+      // 关联 label（htmlFor / 被 label 包裹）同样提供可访问名称
+      const id = el.getAttribute('id');
+      const hasLinkedLabel =
+        (id !== null && document.querySelector(`label[for="${id}"]`) !== null) ||
+        el.closest('label') !== null;
+      if (!text && !hasName && !hasLinkedLabel) {
         const cls = (el.getAttribute('class') ?? '').slice(0, 80);
         bad.push({
           selector: el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + `.${cls.split(' ')[0]}`,
@@ -90,28 +95,48 @@ async function checkIconOnlyButtons(page: Page, pageId: string, viewport: string
 }
 
 async function checkFocusVisibility(page: Page, pageId: string, viewport: string) {
-  // 真实 Tab 路径检查：逐步按 Tab，读取每个新聚焦元素的 computed 样式
-  //（程序式 el.focus() 不触发 :focus-visible，会产生误报——上轮评审教训）
-  const steps = 12;
+  // 真实 Tab 全路径：持续按 Tab，直到回到首个聚焦元素（循环）或焦点不再变化（走尽），
+  // 安全上限防死循环。读取每个新聚焦元素的 computed 样式。
+  const MAX_STEPS = 100;
   const flagged = new Set<string>();
-  for (let step = 0; step < steps; step++) {
+  const seenSelectors = new Set<string>();
+  let firstSelector: string | null = null;
+  let lastSelector = '';
+
+  for (let step = 0; step < MAX_STEPS; step++) {
     await page.keyboard.press('Tab');
     const result = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
-      if (!el || el === document.body) return null;
+      if (!el || el === document.body) return { selector: '__body__', noRing: false, evidence: '' };
+      const cls = (el.getAttribute('class') ?? '').split(' ')[0];
+      const selector = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + `.${cls}`;
       const style = getComputedStyle(el);
       const hasOutline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
       const hasRing = style.boxShadow !== 'none' && style.boxShadow !== '';
-      if (hasOutline || hasRing) return null;
       return {
-        selector: el.tagName.toLowerCase() + `.${(el.getAttribute('class') ?? '').split(' ')[0]}`,
+        selector,
+        noRing: !hasOutline && !hasRing,
         evidence: `Tab 聚焦时 outline=${style.outlineStyle}/${style.outlineWidth}，box-shadow=none，text=${(el.textContent ?? '').trim().slice(0, 24)}`,
       };
     });
-    if (result) {
+
+    if (result.selector === '__body__') break; // 焦点回到 body，路径走尽
+    if (firstSelector === null) {
+      firstSelector = result.selector;
+    } else if (result.selector === firstSelector) {
+      break; // 回到首个焦点，循环结束
+    }
+    if (result.selector === lastSelector) {
+      break; // 焦点不再变化（到达末尾或陷阱），防死循环
+    }
+    lastSelector = result.selector;
+
+    if (result.noRing && !seenSelectors.has(result.selector)) {
+      seenSelectors.add(result.selector);
       flagged.add(`${result.selector}|${result.evidence}`);
     }
   }
+
   for (const item of flagged) {
     const [selector, evidence] = item.split('|');
     findings.push({ page: pageId, viewport, rule: 'focus-visible', severity: 'blocker', selector, evidence });
@@ -227,14 +252,40 @@ async function checkContrast(page: Page, pageId: string, viewport: string) {
 }
 
 async function auditPage(page: Page, routeId: string, path: string, viewportName: string) {
-  await page.goto(path, { waitUntil: 'networkidle' }).catch(() => undefined);
-  await page.waitForTimeout(800);
-  await checkIconOnlyButtons(page, routeId, viewportName);
-  await checkFocusVisibility(page, routeId, viewportName);
-  if (viewportName.startsWith('mobile')) {
-    await checkTouchTargets(page, routeId, viewportName);
+  const pageErrors: string[] = [];
+  const onPageError = (error: Error) => pageErrors.push(String(error));
+  page.on('pageerror', onPageError);
+  try {
+    await page.goto(path, { waitUntil: 'networkidle' }).catch(() => undefined);
+    await page.waitForTimeout(800);
+    // ready 断言：页面必须有实质文本内容，且不得有 pageerror——
+    // 白屏/崩溃页（body 为空）不得被当成审计成功（权限页 structuredClone 崩溃的教训）。
+    // 注意：不以 h1-h3 为据（移动端部分页面用 div 渲染标题）。
+    const ready = await page.evaluate(() => {
+      const textLength = (document.body?.textContent ?? '').trim().length;
+      const hasInteractives = document.querySelector('button, a, input, [role="button"], h1, h2, h3') !== null;
+      return textLength > 20 && hasInteractives;
+    });
+    if (!ready || pageErrors.length > 0) {
+      findings.push({
+        page: routeId,
+        viewport: viewportName,
+        rule: 'page-ready',
+        severity: 'blocker',
+        selector: 'body',
+        evidence: `页面未正常渲染：ready=${ready}${pageErrors.length > 0 ? `，pageerror=${pageErrors[0].slice(0, 160)}` : ''}`,
+      });
+      return; // 崩溃页不做后续检查（数据无意义）
+    }
+    await checkIconOnlyButtons(page, routeId, viewportName);
+    await checkFocusVisibility(page, routeId, viewportName);
+    if (viewportName.startsWith('mobile')) {
+      await checkTouchTargets(page, routeId, viewportName);
+    }
+    await checkContrast(page, routeId, viewportName);
+  } finally {
+    page.off('pageerror', onPageError);
   }
-  await checkContrast(page, routeId, viewportName);
 }
 
 test.describe('a11y audit @audit', () => {
@@ -280,14 +331,10 @@ test.describe('a11y audit @audit', () => {
   // 硬断言（T1b 复审裁决）：非豁免阻断项必须为 0，否则套件失败。
   // 豁免须精确到 page + rule + 元素特征（selector 子串），禁止整类放行；
   // 每条均附逐条核实的原因。
-  const EXEMPTIONS: Array<{ page: string; rule: string; evidenceIncludes: string; reason: string }> = [
-    {
-      page: 'publish-notice',
-      rule: 'icon-button-name',
-      evidenceIncludes: 'peer h-4 w-4',
-      reason: 'Radix Checkbox 经 htmlFor 关联 label 已有可访问名称（扫描器不识别 label 关联）；该页 T5 将删除',
-    },
-  ];
+  // 硬断言（T1b 复审裁决）：阻断项必须为 0，否则套件失败。
+  // 豁免机制保留但当前为空——htmlFor 关联 label 已由扫描器直接识别，
+  // 今后新增豁免须精确到 evidence 子串并附逐条核实的原因，禁止整类放行。
+  const EXEMPTIONS: Array<{ page: string; rule: string; evidenceIncludes: string; reason: string }> = [];
 
   test('非豁免阻断项为零', async () => {
     const remaining = findings.filter(

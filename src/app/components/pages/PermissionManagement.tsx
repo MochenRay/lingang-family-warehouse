@@ -130,17 +130,20 @@ export function PermissionManagement() {
     { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
-  // 各角色独立的权限矩阵（修改互不影响——此前全局单一状态会跨角色串联）
+  // 各角色独立的权限矩阵（修改互不影响——此前全局单一状态会跨角色串联）。
+  // 注意：手工深拷贝纯数据并保留 icon 引用——structuredClone 会因
+  // Lucide forwardRef 对象含 Symbol(react.forward_ref) 抛 DataCloneError（整页白屏的教训）。
+  const clonePerms = () => ({
+    function: functionPermissionsSeed.map((mod) => ({
+      ...mod,
+      permissions: mod.permissions.map((perm) => ({ ...perm })),
+    })),
+    data: dataPermissionsSeed.map((area) => ({ ...area })),
+  });
+
   const [permsByRole, setPermsByRole] = useState<
     Record<string, { function: typeof functionPermissionsSeed; data: typeof dataPermissionsSeed }>
-  >(() =>
-    Object.fromEntries(
-      roles.map((role) => [
-        role.code,
-        structuredClone({ function: functionPermissionsSeed, data: dataPermissionsSeed }),
-      ]),
-    ),
-  );
+  >(() => Object.fromEntries(roles.map((role) => [role.code, clonePerms()])));
 
   const currentPerms = permsByRole[selectedRole];
 
