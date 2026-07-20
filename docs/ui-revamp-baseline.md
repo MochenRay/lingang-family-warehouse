@@ -128,3 +128,16 @@
 | 原生 `confirm()` | 0 | 通过 |
 | theme.css `!important` | 3 | 通过；补丁表已删除 |
 | chartConfig 消费者 | 12 | 通过 |
+
+## 9. 公网发布证据（2026-07-20，P6 实测）
+
+发布链路：真相层 `lingang-family-warehouse` → `scripts/sync_homedata_web.sh` → 发布仓 `homedata-web` → Vercel（`https://homedata.lilei.dev`，API 反代 Railway）。
+
+| 环节 | 证据 | 结果 |
+| --- | --- | --- |
+| 源仓合并 | `88269de` Merge PR #69（codex/projection-playwright-config，补投影白名单缺 `playwright.config.ts` 的合同阻断） | 已合并 |
+| 发布仓同步 | `homedata-web` commit `ce7fbb1`（sync: source 88269de）→ PR #14 → merge `0f2cc3e` | 已合并 |
+| 漂移检测 | `scripts/check_homedata_web_remote_stale.sh`：`homedata-web@main` = 源仓 `88269de` | OK |
+| 公网前端 | `curl https://homedata.lilei.dev` | HTTP 200 |
+| 公网 API | `curl https://homedata.lilei.dev/api/health` | `{"status":"ok","backend":"ready","database":"ok","ai":"ready"}` |
+| 投影产物门禁 | `scripts/sync_homedata_web.sh` 对暂存产物强制 `npm ci → typecheck → vitest → build`（临时目录实测） | 通过 |

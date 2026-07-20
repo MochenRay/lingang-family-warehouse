@@ -37,6 +37,7 @@ bash scripts/sync_homedata_web.sh /Users/rayli/Desktop/homedata-web
 - 发布仓禁止人工直改页面逻辑
 - 发布仓根目录必须保留 `SYNC_SOURCE.json`
 - 发布仓 `README.md` 为独立模板，不从真相层根 `README.md` 镜像
+- **投影产物门禁（2026-07-20 起强制）**：同步脚本在暂存目录强制执行 `npm ci → npm run typecheck → npm test → npm run build`，任一失败即中止、不写入发布仓。背景：PR #68 合并后投影缺 `playwright.config.ts`（PR #69 修复），证明「源仓绿 ≠ 投影绿」。门禁产生的 `node_modules/dist/coverage/test-results/playwright-report` 等可再生产物禁止进入发布仓：同步前先清理目标侧同类目录，带排除 rsync，同步后断言其不存在。紧急热修可用 `PROJECTION_SKIP_VERIFY=1` 跳过；跳过会写入 `SYNC_SOURCE.json` 的 `projection_verification: "skipped"` 作为持久审计记录，且必须在 PR body 说明。
 
 ### 漂移检测
 
