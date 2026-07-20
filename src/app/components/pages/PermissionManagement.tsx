@@ -12,7 +12,7 @@ import { PageHeader } from './PageHeader';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
-const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-primary-hover)]';
+const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-text)]';
 
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
@@ -139,6 +139,8 @@ export function PermissionManagement() {
     dataAreas: dataPermissions.filter(d => d.canView).length
   };
 
+  const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
+
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
@@ -211,7 +213,7 @@ export function PermissionManagement() {
                   <Card key={module.module} className={PANEL_CLASS}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
-                        <ModuleIcon className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
+                        <ModuleIcon className="w-5 h-5 text-[var(--color-brand-text)]" />
                         <CardTitle className="text-lg text-[var(--color-neutral-11)]">{module.module}</CardTitle>
                         <Badge variant="outline" className={INFO_BADGE_CLASS}>
                           {module.permissions.length} 个功能
@@ -255,30 +257,35 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.view}
                                   disabled={selectedRole === 'admin'}
+                                  aria-label={`${selectedRoleName}-${perm.name}-查看`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.create}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-新建`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.edit}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-编辑`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.delete}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-删除`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.export}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-导出`}
                                 />
                               </TableCell>
                             </TableRow>
@@ -338,12 +345,14 @@ export function PermissionManagement() {
                             <Checkbox
                               checked={area.canView}
                               disabled={selectedRole === 'admin'}
+                              aria-label={`${selectedRoleName}-${area.area}-可查看`}
                             />
                           </TableCell>
                           <TableCell className="text-center">
                             <Checkbox
                               checked={area.canEdit}
                               disabled={selectedRole === 'admin' || !area.canView}
+                              aria-label={`${selectedRoleName}-${area.area}-可编辑`}
                             />
                           </TableCell>
                           <TableCell className={MUTED_TEXT_CLASS}>

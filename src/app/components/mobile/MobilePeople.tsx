@@ -127,13 +127,13 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
     const category = tag?.category || 'other';
     
     if (category === '重点关注') {
-      return 'bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error)] border-[rgba(213,33,50,0.3)]';
+      return 'bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error-text)] border-[rgba(213,33,50,0.3)]';
     }
     if (category === '健康状况' || category === '社会保障') {
-      return 'bg-[rgba(25,177,114,0.15)] text-[var(--color-status-success)] border-[rgba(25,177,114,0.3)]';
+      return 'bg-[rgba(25,177,114,0.15)] text-[var(--color-status-success-text)] border-[rgba(25,177,114,0.3)]';
     }
     if (category === '政治面貌' || category === '年龄段' || category === '性别' || category === '居住类型') {
-      return 'bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]';
+      return 'bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-text)] border-[rgba(78,134,223,0.3)]';
     }
     return 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-09)] border-[var(--color-neutral-04)]';
   };
@@ -155,7 +155,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input 
-                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
+                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-11 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
                 placeholder="搜索姓名/身份证/地址..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -165,7 +165,8 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
              {/* Add Button */}
              <Button 
               size="icon" 
-              className="h-9 w-9 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-full shadow-sm"
+              aria-label="采集人员"
+              className="h-11 w-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] rounded-full shadow-sm"
               onClick={() => onRouteChange('collect-person')}
             >
               <Plus className="w-5 h-5" />
@@ -179,15 +180,15 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">总人数</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[var(--color-status-success)]">{stats.registered}</div>
+              <div className="text-lg font-bold text-[var(--color-status-success-text)]">{stats.registered}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">户籍</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[var(--color-status-warning)]">{stats.floating}</div>
+              <div className="text-lg font-bold text-[var(--color-status-warning-text)]">{stats.floating}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">流动</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[var(--color-status-error)]">{stats.highRisk}</div>
+              <div className="text-lg font-bold text-[var(--color-status-error-text)]">{stats.highRisk}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">重点</div>
             </div>
           </div>
@@ -199,7 +200,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
           <div className="flex items-center gap-1.5 shrink-0">
             <UsersIcon className="w-3.5 h-3.5 text-[var(--color-neutral-08)]" />
             <Select value={selectedGrid} onValueChange={setSelectedGrid}>
-              <SelectTrigger className="h-7 text-xs border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] min-w-[90px]">
+              <SelectTrigger className="min-h-[44px] text-xs border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] min-w-[90px]">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -216,7 +217,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
           {/* 更多筛选 */}
           <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
             <DrawerTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-7 text-xs text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)] shrink-0">
+              <Button variant="ghost" size="sm" className="min-h-[44px] text-xs text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)] shrink-0">
                 <Filter className="w-3.5 h-3.5 mr-1" />
                 更多
               </Button>
@@ -288,7 +289,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedRisks.includes('High') 
                           ? 'bg-[var(--color-status-error)] text-white border-[var(--color-status-error)]' 
-                          : 'bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error)] border-[rgba(213,33,50,0.3)] hover:bg-[rgba(213,33,50,0.25)]'
+                          : 'bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error-text)] border-[rgba(213,33,50,0.3)] hover:bg-[rgba(213,33,50,0.25)]'
                       }`}
                       onClick={() => toggleRisk('High')}
                     >高危</Badge>
@@ -297,7 +298,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedRisks.includes('Medium') 
                           ? 'bg-[var(--color-status-warning)] text-white border-[var(--color-status-warning)]' 
-                          : 'bg-[rgba(214,115,13,0.15)] text-[var(--color-status-warning)] border-[rgba(214,115,13,0.3)] hover:bg-[rgba(214,115,13,0.25)]'
+                          : 'bg-[rgba(214,115,13,0.15)] text-[var(--color-status-warning-text)] border-[rgba(214,115,13,0.3)] hover:bg-[rgba(214,115,13,0.25)]'
                       }`}
                       onClick={() => toggleRisk('Medium')}
                     >中危</Badge>
@@ -306,7 +307,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedRisks.includes('Low') 
                           ? 'bg-[var(--color-status-success)] text-white border-[var(--color-status-success)]' 
-                          : 'bg-[rgba(25,177,114,0.15)] text-[var(--color-status-success)] border-[rgba(25,177,114,0.3)] hover:bg-[rgba(25,177,114,0.25)]'
+                          : 'bg-[rgba(25,177,114,0.15)] text-[var(--color-status-success-text)] border-[rgba(25,177,114,0.3)] hover:bg-[rgba(25,177,114,0.25)]'
                       }`}
                       onClick={() => toggleRisk('Low')}
                     >低危</Badge>
@@ -361,7 +362,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                     <span className="font-bold text-[var(--color-neutral-11)] text-base">{p.name}</span>
                     <Badge 
                       variant="outline" 
-                      className="text-xs font-normal h-5 bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]"
+                      className="text-xs font-normal h-5 bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-text)] border-[rgba(78,134,223,0.3)]"
                     >
                       {p.type}
                     </Badge>
@@ -369,7 +370,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                   {p.risk === 'High' && (
                     <Badge 
                       variant="outline" 
-                      className="text-xs bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error)] border-[rgba(213,33,50,0.3)]"
+                      className="text-xs bg-[rgba(213,33,50,0.15)] text-[var(--color-status-error-text)] border-[rgba(213,33,50,0.3)]"
                     >
                       重点关注
                     </Badge>

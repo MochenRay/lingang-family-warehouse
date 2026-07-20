@@ -122,7 +122,7 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
         </Card>
 
         <Card className="p-4 bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)]">
-          <p className="text-xs text-[var(--color-brand-primary-hover)]">
+          <p className="text-xs text-[var(--color-brand-text)]">
             <strong>注意：</strong>社区名称、楼栋单元等基础信息不可修改，如需修改请联系管理员。
           </p>
         </Card>

@@ -103,7 +103,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
     return (
       <div className="h-full bg-[var(--color-neutral-01)] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[var(--color-brand-primary-hover)] animate-spin mx-auto mb-3" />
+          <Loader2 className="w-12 h-12 text-[var(--color-brand-text)] animate-spin mx-auto mb-3" />
           <p className="text-sm text-[var(--color-neutral-08)]">正在加载人员档案...</p>
         </div>
       </div>
@@ -157,7 +157,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         action={(
           <button
             onClick={() => onRouteChange?.(`person-edit/${id}`)}
-            className="text-[var(--color-brand-primary-hover)] font-medium text-sm active:opacity-70"
+            className="text-[var(--color-brand-text)] font-medium text-sm active:opacity-70 min-h-[44px] min-w-[44px] inline-flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
           >
             编辑
           </button>
@@ -171,19 +171,19 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <TabsList className="w-full grid grid-cols-3 h-12 bg-transparent rounded-none border-b-0">
               <TabsTrigger 
                 value="basic" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 基础信息
               </TabsTrigger>
               <TabsTrigger 
                 value="relation" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 关系图谱
               </TabsTrigger>
               <TabsTrigger 
                 value="history" 
-                className="rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
               >
                 历史记录
               </TabsTrigger>
@@ -228,7 +228,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               </div>
               <div className="p-4 bg-[var(--color-neutral-01)] space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center shrink-0 text-[var(--color-brand-primary-hover)]">
+                  <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center shrink-0 text-[var(--color-brand-text)]">
                     <User className="w-4 h-4" />
                   </div>
                   <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
@@ -248,8 +248,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">联系电话</div>
                       <div className="text-sm font-medium text-[var(--color-neutral-11)] flex items-center justify-between">
                         {person.phone}
-                        <a href={`tel:${person.phone}`}>
-                          <Button size="sm" variant="outline" className="h-6 text-xs border-[var(--color-status-success)]/35 text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] hover:bg-[var(--color-status-success)]/25">
+                        <a href={`tel:${person.phone}`} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40 rounded">
+                          <Button size="sm" variant="outline" className="min-h-[44px] text-xs border-[var(--color-status-success)]/35 text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] hover:bg-[var(--color-status-success)]/25">
                             拨打
                           </Button>
                         </a>
@@ -310,7 +310,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <div className="bg-[var(--color-neutral-01)] p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] flex items-center gap-2">
-                    <Sparkles className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                    <Sparkles className="w-4 h-4 text-[var(--color-brand-text)]" />
                     走访前准备
                   </h3>
                   <Badge variant="secondary" className="text-[10px]">
@@ -456,7 +456,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <Card className="border-none shadow-sm">
                 <div className="bg-[var(--color-neutral-01)] p-4">
                   <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
-                    <Shield className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                    <Shield className="w-4 h-4 text-[var(--color-brand-text)]" />
                     人员类别
                   </h3>
                   <div className="space-y-2">
@@ -806,7 +806,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs text-[var(--color-brand-primary-hover)]"
+                              className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                               onClick={() => onRouteChange?.(`person-detail/${relatedPerson.id}`)}
                             >
                               查看
@@ -829,7 +829,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <Card className="border-none shadow-sm">
               <div className="p-4 border-b border-[var(--color-neutral-03)] flex items-center justify-between">
                 <h3 className="font-bold text-[var(--color-neutral-11)] flex items-center gap-2">
-                  <Home className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                  <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
                   同住人员
                 </h3>
                 <span className="text-xs text-[var(--color-neutral-08)]">{cohabitants.length}人</span>
@@ -850,7 +850,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-[var(--color-brand-primary-hover)]"
+                        className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                         onClick={() => onRouteChange?.(`person-detail/${cohabitant.id}`)}
                       >
                         查看
@@ -895,7 +895,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                         {visit.tags && visit.tags.length > 0 && (
                           <div className="flex gap-1.5 flex-wrap">
                             {visit.tags.map((tag, i) => (
-                              <span key={i} className="px-1.5 py-0.5 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] text-[10px] rounded border border-[var(--color-brand-primary)]">
+                              <span key={i} className="px-1.5 py-0.5 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] text-[10px] rounded border border-[var(--color-brand-primary)]">
                                 {tag}
                               </span>
                             ))}

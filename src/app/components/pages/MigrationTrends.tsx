@@ -177,7 +177,7 @@ export function MigrationTrends() {
         title="近六个月迁入迁出对比"
         description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
         action={(
-          <button type="button" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]" onClick={handleExport}>
+          <button type="button" aria-label="导出数据" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]" onClick={handleExport}>
             <Download className="h-4 w-4" />
           </button>
         )}
@@ -199,7 +199,7 @@ export function MigrationTrends() {
               <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
               <CartesianGrid {...CHART_GRID_PROPS} />
               <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-              <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+              <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
               <Area type="monotone" dataKey="迁入" stroke={CHART_PRIMARY} strokeWidth={2} fillOpacity={1} fill="url(#colorIn)" />
               <Area type="monotone" dataKey="迁出" stroke={CHART_WARNING} strokeWidth={2} fillOpacity={1} fill="url(#colorOut)" />
             </AreaChart>

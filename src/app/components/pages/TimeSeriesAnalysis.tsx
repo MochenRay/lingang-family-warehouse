@@ -199,7 +199,7 @@ export function TimeSeriesAnalysis() {
                     <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                     <Line type="monotone" dataKey="value" name="人口总数" stroke={CHART_PRIMARY} strokeWidth={2} dot={{ r: 4 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -224,7 +224,7 @@ export function TimeSeriesAnalysis() {
                     <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <YAxis domain={['auto', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                     <Line type="monotone" dataKey="trend" name="趋势分量" stroke={CHART_WARNING} strokeWidth={2} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
@@ -247,7 +247,7 @@ export function TimeSeriesAnalysis() {
                     <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                     <Bar dataKey="seasonality" name="周期分量" fill={CHART_SUCCESS} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -270,7 +270,7 @@ export function TimeSeriesAnalysis() {
                     <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                     <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                    <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                    <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                     <Bar dataKey="residual" name="残差分量" fill={CHART_WARNING} />
                   </BarChart>
                 </ResponsiveContainer>
@@ -326,7 +326,7 @@ export function TimeSeriesAnalysis() {
                     <StatusBadge tone="info">{feature.rate}</StatusBadge>
                   </div>
                   <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="text-lg font-semibold text-[var(--color-brand-primary-hover)]">{feature.value}</span>
+                    <span className="text-lg font-semibold text-[var(--color-brand-text)]">{feature.value}</span>
                     <span className={`text-sm ${MUTED_TEXT}`}>{feature.description}</span>
                   </div>
                 </div>
@@ -386,7 +386,7 @@ export function TimeSeriesAnalysis() {
                 <div key={item.lag} className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-[var(--color-neutral-11)]">滞后 {item.label}</span>
-                    <span className="text-sm font-semibold text-[var(--color-brand-primary-hover)]">
+                    <span className="text-sm font-semibold text-[var(--color-brand-text)]">
                       {item.value.toFixed(2)}
                     </span>
                   </div>
@@ -419,7 +419,7 @@ export function TimeSeriesAnalysis() {
                 <XAxis dataKey="time" axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <YAxis domain={['dataMin - 50', 'auto']} axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                 <Area type="monotone" dataKey="range" name="95%置信区间" stroke={CHART_COLORS[2]} fill={CHART_COLORS[2]} fillOpacity={0.2} />
                 <Line type="monotone" dataKey="value" name="预测值" stroke={CHART_WARNING} strokeWidth={2} dot={{ r: 4 }} />
               </ComposedChart>
@@ -434,7 +434,7 @@ export function TimeSeriesAnalysis() {
           </div>
           <div className={`${INNER_PANEL_CLASS} p-4`}>
             <p className={`mb-2 text-sm ${MUTED_TEXT}`}>模型准确度</p>
-            <p className="text-lg font-semibold text-[var(--color-status-success)]">92.5%</p>
+            <p className="text-lg font-semibold text-[var(--color-status-success-text)]">92.5%</p>
           </div>
           <div className={`${INNER_PANEL_CLASS} p-4`}>
             <p className={`mb-2 text-sm ${MUTED_TEXT}`}>预测区间</p>

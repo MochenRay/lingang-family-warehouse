@@ -70,7 +70,7 @@ export function MobileLayout({ children, currentRoute = 'home', onRouteChange, o
                 key={item.path}
                 onClick={() => onRouteChange && onRouteChange(item.path)}
                 className={`flex flex-col items-center justify-center w-full h-full transition-colors ${
-                  active ? 'text-[var(--color-brand-primary-hover)]' : 'text-[var(--color-neutral-08)]'
+                  active ? 'text-[var(--color-brand-text)]' : 'text-[var(--color-neutral-08)]'
                 }`}
                 aria-current={active ? 'page' : undefined}
               >

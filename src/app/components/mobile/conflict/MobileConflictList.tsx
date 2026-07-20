@@ -30,13 +30,13 @@ function getStatusClassName(status: ConflictRecord['status']) {
   if (status === '调解中') {
     return 'text-[var(--color-status-warning-text)] bg-[var(--color-status-warning-soft)]';
   }
-  return 'text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary)]/10';
+  return 'text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10';
 }
 
 function getTypeClassName(type: ConflictRecord['type']) {
   switch (type) {
     case '邻里纠纷':
-      return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)]';
+      return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)]';
     case '家庭纠纷':
       return 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]';
     case '物业纠纷':
@@ -192,7 +192,7 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
                 <CardContent className="p-4 relative">
                   <div
                     className={`absolute top-0 left-0 px-2 py-0.5 text-[10px] font-medium rounded-br-lg ${
-                      conflict.source === '上级下派' ? 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]' : 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)]'
+                      conflict.source === '上级下派' ? 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]' : 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)]'
                     }`}
                   >
                     {conflict.source}
@@ -232,7 +232,7 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
                     </div>
                   </div>
 
-                  <div className="mt-3 flex items-center justify-end text-[11px] text-[var(--color-brand-primary-hover)] font-medium">
+                  <div className="mt-3 flex items-center justify-end text-[11px] text-[var(--color-brand-text)] font-medium">
                     查看详情
                     <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                   </div>

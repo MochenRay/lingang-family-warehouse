@@ -76,7 +76,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
             <div key={day.id}>
               {/* Date Header */}
               <div className="flex items-center gap-2 mb-4">
-                <div className="bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                <div className="bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
                   <Calendar className="w-3 h-3" />
                   {day.date}
                 </div>
@@ -114,7 +114,7 @@ export function QuickNoteHistory({ onBack }: QuickNoteHistoryProps) {
                         <div className="bg-[var(--color-neutral-01)] rounded-lg p-2 space-y-1">
                           {item.person && (
                             <div className="flex items-center gap-1.5 text-xs text-[var(--color-neutral-10)] font-medium">
-                              <User className="w-3 h-3 text-[var(--color-brand-primary-hover)]" />
+                              <User className="w-3 h-3 text-[var(--color-brand-text)]" />
                               {item.person}
                             </div>
                           )}

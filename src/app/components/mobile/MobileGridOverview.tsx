@@ -213,7 +213,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   );
 
   const basicStats = [
-    { label: '实有人口', value: people.length, icon: Users, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' },
+    { label: '实有人口', value: people.length, icon: Users, color: 'text-[var(--color-brand-text)]', bg: 'bg-[var(--color-brand-primary)]/10' },
     { label: '实有房屋', value: houses.length, icon: Home, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' },
     { label: '走访记录', value: visits.length, icon: ClipboardList, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]' },
     { label: '重点关注', value: riskCount, icon: AlertTriangle, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' },

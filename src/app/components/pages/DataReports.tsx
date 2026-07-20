@@ -193,7 +193,7 @@ export function DataReports() {
         <Card className={`lg:col-span-1 ${PANEL_CLASS}`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-4 pt-5">
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-              <FileText className="h-5 w-5 text-[var(--color-brand-primary-hover)]" />
+              <FileText className="h-5 w-5 text-[var(--color-brand-text)]" />
               生成导出包
             </CardTitle>
             <CardDescription className={MUTED_TEXT}>根据真实治理快照生成一个新的导出文件。</CardDescription>
@@ -201,7 +201,7 @@ export function DataReports() {
           <CardContent className="space-y-4 px-5 pt-5">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
-                <FileText className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                <FileText className="h-4 w-4 text-[var(--color-brand-text)]" />
                 报表类型
               </Label>
               <Select value={config.type} onValueChange={(value: ReportType) => setConfig((current) => ({ ...current, type: value }))}>
@@ -219,7 +219,7 @@ export function DataReports() {
 
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
-                <CalendarDays className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                <CalendarDays className="h-4 w-4 text-[var(--color-brand-text)]" />
                 统计范围
               </Label>
               <Select value={config.time} onValueChange={(value) => setConfig((current) => ({ ...current, time: value }))}>
@@ -303,7 +303,7 @@ export function DataReports() {
                   generatedReports.map((file) => (
                     <div key={file.id} className={`${INNER_PANEL_CLASS} group flex items-center justify-between gap-4 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}>
                       <div className="flex items-center gap-4">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/15 text-sm font-bold text-[var(--color-brand-primary-hover)]">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/15 text-sm font-bold text-[var(--color-brand-text)]">
                           {file.type}
                         </div>
                         <div>
@@ -313,7 +313,7 @@ export function DataReports() {
                             <span>•</span>
                             <span>{file.size}</span>
                             <span>•</span>
-                            <span className="flex items-center gap-1 text-[var(--color-status-success)]">
+                            <span className="flex items-center gap-1 text-[var(--color-status-success-text)]">
                               <CheckCircle className="h-3 w-3" /> 已下载
                             </span>
                           </div>

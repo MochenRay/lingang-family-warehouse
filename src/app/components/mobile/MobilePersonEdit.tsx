@@ -312,12 +312,12 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         <Card className="p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] flex items-center gap-1.5">
-              <Tag className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <Tag className="w-4 h-4 text-[var(--color-brand-text)]" />
               标签管理
             </h3>
             <button
               onClick={() => { setShowTagPicker(true); setTagSearch(''); }}
-              className="text-xs text-[var(--color-brand-primary-hover)] flex items-center gap-1 active:opacity-70"
+              className="text-xs text-[var(--color-brand-text)] flex items-center gap-1 active:opacity-70"
             >
               <Plus className="w-3.5 h-3.5" />
               关联标签
@@ -332,11 +332,12 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
                 <Badge
                   key={tag}
                   variant="secondary"
-                  className="pl-2 pr-1 py-1 text-xs flex items-center gap-1 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border border-[var(--color-brand-primary)]"
+                  className="pl-2 pr-1 py-1 text-xs flex items-center gap-1 bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] border border-[var(--color-brand-primary)]"
                 >
                   {tag}
                   <button
                     onClick={() => handleRemoveTag(tag)}
+                    aria-label={`移除标签${tag}`}
                     className="ml-0.5 p-0.5 rounded-full hover:bg-[var(--color-brand-primary)]/20 active:scale-90 transition-transform"
                   >
                     <X className="w-3 h-3" />
@@ -353,7 +354,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
             <div className="bg-[var(--color-neutral-01)] rounded-t-[4px] max-h-[75vh] flex flex-col">
               <div className="flex items-center justify-between px-4 pt-4 pb-2">
                 <h3 className="text-base font-semibold text-[var(--color-neutral-11)]">关联标签</h3>
-                <button onClick={() => setShowTagPicker(false)} className="p-1 rounded-full hover:bg-[var(--color-neutral-03)]">
+                <button onClick={() => setShowTagPicker(false)} aria-label="关闭标签选择" className="p-1 rounded-full hover:bg-[var(--color-neutral-03)]">
                   <X className="w-5 h-5 text-[var(--color-neutral-08)]" />
                 </button>
               </div>
@@ -712,7 +713,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         </Card>
 
         <Card className="p-4 bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)]">
-          <p className="text-xs text-[var(--color-brand-primary-hover)]">
+          <p className="text-xs text-[var(--color-brand-text)]">
             <strong>注意：</strong>身份证号、性别、年龄等基础信息不可修改，如需修改请联系管理员。
           </p>
         </Card>

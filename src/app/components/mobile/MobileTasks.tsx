@@ -38,11 +38,11 @@ function isSameMonth(value: string | undefined, base: Date): boolean {
 
 function getTypeColor(type: string) {
   const colors: Record<string, string> = {
-    重点走访: 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-primary-hover)]',
-    走访反馈: 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success)]',
-    矛盾调解: 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning)]',
+    重点走访: 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-text)]',
+    走访反馈: 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]',
+    矛盾调解: 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]',
   };
-  return colors[type] || 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)]';
+  return colors[type] || 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]';
 }
 
 function getDeadlineStatus(deadline: string | undefined) {
@@ -175,7 +175,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('today')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
               今日待办
@@ -183,7 +183,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('month')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
               本月工作
@@ -191,7 +191,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
             <button
               onClick={() => setViewMode('all')}
               className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
-                viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm' : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
+                viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
               全部清单
@@ -201,7 +201,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
 
         <div className="grid grid-cols-4 gap-2 p-3 bg-[var(--color-neutral-00)]">
           <div className="bg-[var(--color-neutral-02)] rounded-[4px] p-2.5 text-center border border-[var(--color-neutral-03)]">
-            <div className="text-xl font-bold text-[var(--color-brand-primary-hover)]">{summary.pending}</div>
+            <div className="text-xl font-bold text-[var(--color-brand-text)]">{summary.pending}</div>
             <div className="text-[10px] text-[var(--color-neutral-08)] mt-1 scale-90 origin-center whitespace-nowrap">
               {viewMode === 'today' ? '今日待办' : (viewMode === 'month' ? '本月待办' : '剩余待办')}
             </div>
@@ -258,7 +258,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                     <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       待处理
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       {displayPending.length}
                     </span>
                   </div>
@@ -273,7 +273,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                     <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       已完成
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
                       {displayCompleted.length}
                     </span>
                   </div>
@@ -319,7 +319,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                                     紧急
                                   </Badge>
                                 )}
-                                <Badge variant="outline" className="rounded text-xs font-medium px-2 py-0.5 border-0 bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)]">
+                                <Badge variant="outline" className="rounded text-xs font-medium px-2 py-0.5 border-0 bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
                                   {task.statusLabel}
                                 </Badge>
                               </div>
@@ -392,7 +392,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                           </div>
 
                           {task.feedback && (
-                            <div className="bg-[var(--color-neutral-03)] rounded p-2 text-xs text-[var(--color-neutral-08)] mb-3">
+                            <div className="bg-[var(--color-neutral-03)] rounded p-2 text-xs text-[var(--color-neutral-10)] mb-3">
                               <span className="font-medium text-[var(--color-neutral-10)]">反馈：</span>{task.feedback}
                             </div>
                           )}

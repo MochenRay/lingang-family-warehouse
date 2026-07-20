@@ -111,7 +111,7 @@ export function ActivityManagement() {
       {/* Section 1: Pending Approvals */}
       <section>
         <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
-          <Clock className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
+          <Clock className="w-5 h-5 text-[var(--color-brand-text)]" />
           待办审批 ({pendingActivities.length})
         </h2>
         
@@ -145,7 +145,7 @@ export function ActivityManagement() {
                         <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
                         <span>{activity.date} {activity.startTime}</span>
                       </div>
-                      <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-primary-hover)]">
+                      <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-text)]">
                         <span className="font-bold">系统预测:</span> {activity.predictionText || '暂无预测'}
                       </div>
                    </div>
@@ -197,7 +197,7 @@ export function ActivityManagement() {
         <div className="overflow-hidden rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
           <Table>
             <TableHeader>
-              <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] hover:bg-[var(--color-neutral-03)]">
+              <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
                 <TableHead>活动名称</TableHead>
                 <TableHead>类型</TableHead>
                 <TableHead>时间/地点</TableHead>
@@ -237,8 +237,8 @@ export function ActivityManagement() {
                      {activity.approvalStatus === 'approved' && (
                        <div className="flex flex-col gap-1">
                          <span className={
-                           activity.executionStatus === 'in_progress' ? 'text-[var(--color-status-success)] font-bold text-xs' :
-                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[var(--color-brand-primary-hover)] text-xs'
+                           activity.executionStatus === 'in_progress' ? 'text-[var(--color-status-success-text)] font-bold text-xs' :
+                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[var(--color-brand-text)] text-xs'
                          }>
                            {activity.executionStatus === 'in_progress' ? '进行中' : 
                             activity.executionStatus === 'ended' ? '已结束' : '待开始'}

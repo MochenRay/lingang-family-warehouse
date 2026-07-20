@@ -52,7 +52,7 @@ export function HorizontalBarList({
               }}
             />
           </div>
-          <span className={cn('text-right font-semibold tabular-nums', valueClassName)} style={{ color: item.color }}>
+          <span className={cn('text-right font-semibold tabular-nums text-[var(--color-neutral-11)]', valueClassName)}>
             {valueFormatter(item.value)}
           </span>
         </div>

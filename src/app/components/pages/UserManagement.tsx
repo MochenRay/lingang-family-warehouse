@@ -378,7 +378,7 @@ export function UserManagement() {
                     <TableCell>
                       <div className="flex flex-col gap-1">
                         <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
-                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/15 text-[10px] font-bold text-[var(--color-brand-primary-hover)]">城</div>
+                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/15 text-[10px] font-bold text-[var(--color-brand-text)]">城</div>
                            <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
                         </div>
                         <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
@@ -392,10 +392,10 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
-                        <Button size="sm" variant="ghost" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                        <Button size="sm" variant="ghost" aria-label="编辑用户" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
+                        <Button size="sm" variant="ghost" aria-label="删除用户" className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

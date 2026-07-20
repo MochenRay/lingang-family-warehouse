@@ -11,7 +11,7 @@ export function PageHeader({ eyebrow, title, description, actions }: PageHeaderP
   return (
     <div data-page-header className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
       <div className="min-w-0">
-        <div data-page-eyebrow className="text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-primary-hover)]">{eyebrow}</div>
+        <div data-page-eyebrow className="text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-text)]">{eyebrow}</div>
         <h2 data-page-title className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-neutral-11)]">{title}</h2>
         <p className="mt-1 max-w-3xl text-sm leading-6 text-[var(--color-neutral-08)]">{description}</p>
       </div>

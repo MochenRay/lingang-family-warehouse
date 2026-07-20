@@ -208,7 +208,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                           ? 'bg-[var(--color-status-error-soft)] border-[var(--color-status-error)] text-[var(--color-status-error-text)]'
                           : urgency === '较急'
                             ? 'bg-[var(--color-status-warning-soft)] border-[var(--color-status-warning)] text-[var(--color-status-warning-text)]'
-                            : 'bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)] text-[var(--color-brand-primary-hover)]'
+                            : 'bg-[var(--color-brand-primary)]/10 border-[var(--color-brand-primary)] text-[var(--color-brand-text)]'
                         : 'border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]'
                     }`}
                   >
@@ -270,6 +270,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
                     <img src={photo} alt="" className="w-full h-full object-cover" />
                     <button
                       onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
+                      aria-label="删除照片"
                       className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center shadow-md"
                     >
                       ×

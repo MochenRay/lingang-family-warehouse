@@ -53,28 +53,28 @@ const TINY_TAG_CLASS =
 function getKnowledgeIcon(type: string) {
   switch (type) {
     case 'document':
-      return <FileText className="h-5 w-5 text-[var(--color-brand-primary-hover)]" />;
+      return <FileText className="h-5 w-5 text-[var(--color-brand-text)]" />;
     case 'image':
       return <ImageIcon className="h-5 w-5 text-[var(--color-accent-purple)]" />;
     case 'meeting':
-      return <Mic className="h-5 w-5 text-[var(--color-status-warning)]" />;
+      return <Mic className="h-5 w-5 text-[var(--color-status-warning-text)]" />;
     case 'article':
-      return <Newspaper className="h-5 w-5 text-[var(--color-status-success)]" />;
+      return <Newspaper className="h-5 w-5 text-[var(--color-status-success-text)]" />;
     default:
-      return <Database className="h-5 w-5 text-[var(--color-neutral-08)]" />;
+      return <Database className="h-5 w-5 text-[var(--color-neutral-10)]" />;
   }
 }
 
 function getSearchResultIcon(kind: SearchResultItem['kind']) {
   switch (kind) {
     case 'person':
-      return <User className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />;
+      return <User className="h-4 w-4 text-[var(--color-brand-text)]" />;
     case 'house':
-      return <Home className="h-4 w-4 text-[var(--color-status-info)]" />;
+      return <Home className="h-4 w-4 text-[var(--color-status-info-text)]" />;
     case 'notice':
-      return <Bell className="h-4 w-4 text-[var(--color-status-warning)]" />;
+      return <Bell className="h-4 w-4 text-[var(--color-status-warning-text)]" />;
     case 'knowledge':
-      return <Database className="h-4 w-4 text-[var(--color-status-success)]" />;
+      return <Database className="h-4 w-4 text-[var(--color-status-success-text)]" />;
   }
 }
 
@@ -260,7 +260,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
                         <div className="mb-1 flex min-w-0 items-center gap-2">
                           {getSearchResultIcon(item.kind)}
                           <h3 className="truncate font-medium text-[var(--color-neutral-11)]">{item.title}</h3>
-                          <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[10px] text-[var(--color-neutral-08)]">
+                          <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[10px] text-[var(--color-neutral-10)]">
                             {getSearchResultBadge(item.kind)}
                           </Badge>
                         </div>
@@ -318,7 +318,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
                       <h4 className="truncate font-medium text-[var(--color-neutral-11)]" title={item.title}>
                         {item.title}
                       </h4>
-                      <Badge variant="outline" className="h-5 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-xs text-[var(--color-neutral-08)]">
+                      <Badge variant="outline" className="h-5 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-xs text-[var(--color-neutral-10)]">
                         {item.category}
                       </Badge>
                     </div>

@@ -237,7 +237,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
           variant="outline"
           size="sm"
           onClick={() => onRouteChange('mobile')}
-          className="w-full justify-center bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)] hover:bg-[var(--color-neutral-03)]"
+          className="w-full justify-center bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] border-[var(--color-brand-primary)] hover:bg-[var(--color-neutral-03)]"
         >
           <Smartphone className={cn("shrink-0", collapsed ? "w-5 h-5" : "w-4 h-4")} />
           {!collapsed && <span className="ml-2 text-xs">体验移动端工作台</span>}

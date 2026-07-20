@@ -161,7 +161,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
   const getRecordStyle = (type: RecordType) => {
     switch(type) {
       case 'person':
-        return { icon: User, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]/30' };
+        return { icon: User, color: 'text-[var(--color-brand-text)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]/30' };
       case 'house':
         return { icon: Home, color: 'text-[var(--color-status-info-text)]', bg: 'bg-[var(--color-status-info-soft)]', border: 'border-[var(--color-status-info)]/30' };
       case 'issue':
@@ -207,6 +207,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
         <div className="px-4 py-3 flex items-center gap-3 relative h-11">
           <button 
             onClick={onBack} 
+            aria-label="返回"
             className="absolute left-2 w-8 h-8 flex items-center justify-center text-[var(--color-neutral-10)] active:opacity-70"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -232,7 +233,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+              <button aria-label="筛选" className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                 activeFilter !== 'all' 
                   ? 'bg-[var(--color-brand-primary)] text-white'
                   : 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]'
@@ -247,7 +248,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
                   onClick={() => setActiveFilter(option.value as any)}
                   className="focus:bg-[var(--color-neutral-03)] focus:text-[var(--color-neutral-11)] cursor-pointer"
                 >
-                  <span className={activeFilter === option.value ? 'text-[var(--color-brand-primary-hover)] font-medium' : ''}>
+                  <span className={activeFilter === option.value ? 'text-[var(--color-brand-text)] font-medium' : ''}>
                     {option.label}
                   </span>
                 </DropdownMenuItem>

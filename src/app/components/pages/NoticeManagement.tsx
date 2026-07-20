@@ -232,6 +232,7 @@ export function NoticeManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            aria-label="预览公告"
                             onClick={() => setPreviewNotice(notice)}
                             className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-brand-primary-hover)]"
                           >
@@ -240,6 +241,7 @@ export function NoticeManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
+                            aria-label="删除公告"
                             onClick={() => setDeleteTargetId(notice.id)}
                             className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error)]"
                           >

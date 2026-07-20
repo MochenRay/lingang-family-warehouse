@@ -246,7 +246,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             <div>
               <div className="flex items-center gap-2">
                 <div className="text-[var(--color-neutral-11)] font-bold text-lg tracking-wide">{username}</div>
-                <div className="px-2 py-0.5 bg-[rgba(78,134,223,0.15)] rounded text-xs text-[var(--color-brand-primary-hover)] border border-[rgba(78,134,223,0.3)] font-medium">
+                <div className="px-2 py-0.5 bg-[rgba(78,134,223,0.15)] rounded text-xs text-[var(--color-brand-text)] border border-[rgba(78,134,223,0.3)] font-medium">
                   网格员
                 </div>
               </div>
@@ -260,7 +260,8 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
           {/* 扫码按钮 */}
           <button 
             onClick={() => onRouteChange('scan')}
-            className="p-2.5 bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] border border-[var(--color-neutral-03)] rounded-xl transition-all active:scale-95 shadow-sm"
+            aria-label="扫一扫"
+            className="p-3 bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] border border-[var(--color-neutral-03)] rounded-xl transition-all active:scale-95 shadow-sm"
           >
             <Scan className="w-5 h-5 text-[var(--color-neutral-10)]" />
           </button>
@@ -289,13 +290,13 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             
             <div className="grid grid-cols-4 gap-2">
               <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-warning)]`}>
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-warning-text)]`}>
                   {formatMetricValue(workSummary.pending)}
                 </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">待跟进</div>
               </div>
               <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-success)]`}>
+                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-success-text)]`}>
                   {formatMetricValue(workSummary.completed)}
                 </div>
                 <div className="text-xs text-[var(--color-neutral-08)] font-medium">已完成</div>
@@ -346,7 +347,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
             <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">治理焦点</h3>
             <button 
               onClick={() => onRouteChange('tasks?mode=today')}
-              className="text-xs text-[var(--color-brand-primary)] flex items-center font-medium active:opacity-70"
+              className="text-xs text-[var(--color-brand-primary)] flex items-center font-medium active:opacity-70 min-h-[44px] px-3"
             >
               去处理
               <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
@@ -363,7 +364,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center shrink-0">
-                    <ShieldAlert className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                    <ShieldAlert className="w-4 h-4 text-[var(--color-brand-text)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-[var(--color-neutral-11)] truncate">{item.title}</div>
@@ -381,7 +382,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
 
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-3 px-1">
-            <Sparkles className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+            <Sparkles className="w-4 h-4 text-[var(--color-brand-text)]" />
             <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">AI 提示</h3>
           </div>
           <Card className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-sm overflow-hidden">
@@ -411,7 +412,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-hover)]">
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-text)]">
                       <Sparkles className="w-4 h-4" />
                       首次体验建议
                     </div>
@@ -439,7 +440,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                       }}
                       className="flex w-full items-start gap-3 rounded-[4px] border border-white/10 bg-[var(--color-neutral-01)] px-3 py-3 text-left active:bg-[var(--color-neutral-02)]"
                     >
-                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.16)] text-xs font-semibold text-[var(--color-brand-primary-hover)]">
+                      <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[rgba(39,97,203,0.16)] text-xs font-semibold text-[var(--color-brand-text)]">
                         {index + 1}
                       </div>
                       <div>

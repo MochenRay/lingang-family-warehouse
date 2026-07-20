@@ -27,7 +27,7 @@ export function MobileDetailHeader({ title, onBack, action, subtitle }: MobileDe
             type="button"
             onClick={onBack}
             aria-label="返回"
-            className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-03)]"
+            className="absolute left-2 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-03)]"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>

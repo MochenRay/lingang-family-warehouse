@@ -82,7 +82,7 @@ export function MobilePolicyInterpretation({ onBack }: MobilePolicyInterpretatio
 
       {/* 顶部标题栏 */}
       <div className="bg-[var(--color-neutral-02)] border-b border-[var(--color-neutral-03)] px-4 py-3 flex items-center gap-3 shrink-0">
-        <button onClick={onBack} className="p-2 -ml-2 active:bg-[var(--color-neutral-03)] rounded-lg transition-colors">
+        <button onClick={onBack} aria-label="返回" className="p-2 -ml-2 active:bg-[var(--color-neutral-03)] rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5 text-[var(--color-neutral-10)]" />
         </button>
         <div className="flex-1">

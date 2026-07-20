@@ -291,14 +291,14 @@ export function RelationshipManagement() {
                     <TableRow key={relationship.id} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
                       <TableCell className="text-[var(--color-neutral-10)]">
                         <div className="flex items-center gap-2">
-                          <UserCheck className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                          <UserCheck className="h-4 w-4 text-[var(--color-brand-text)]" />
                           {relationship.personName}
                         </div>
                       </TableCell>
                       <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">{relationship.personIdCard}</TableCell>
                       <TableCell className="text-[var(--color-neutral-10)]">
                         <div className="flex items-center gap-2">
-                          <Home className="h-4 w-4 text-[var(--color-status-success)]" />
+                          <Home className="h-4 w-4 text-[var(--color-status-success-text)]" />
                           {relationship.houseAddress}
                         </div>
                       </TableCell>
@@ -314,7 +314,7 @@ export function RelationshipManagement() {
                       </TableCell>
                       <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
+                        <Button variant="ghost" size="sm" aria-label="查看关系详情" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -349,13 +349,13 @@ export function RelationshipManagement() {
                     <TableRow key={relationship.id} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
                       <TableCell className="text-[var(--color-neutral-10)]">
                         <div className="flex items-center gap-2">
-                          <History className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                          <History className="h-4 w-4 text-[var(--color-brand-text)]" />
                           {relationship.personName}
                         </div>
                       </TableCell>
                       <TableCell className="text-[var(--color-neutral-10)]">
                         <div className="flex items-center gap-2">
-                          <Home className="h-4 w-4 text-[var(--color-status-success)]" />
+                          <Home className="h-4 w-4 text-[var(--color-status-success-text)]" />
                           {relationship.houseAddress}
                         </div>
                       </TableCell>
@@ -367,7 +367,7 @@ export function RelationshipManagement() {
                       <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
                       <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveOutDate ?? '至今'}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
+                        <Button variant="ghost" size="sm" aria-label="查看关系详情" onClick={() => openRelationshipDetail(relationship)} className="hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
                           <Eye className="h-4 w-4" />
                         </Button>
                       </TableCell>
@@ -392,7 +392,7 @@ export function RelationshipManagement() {
                 <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <UserCheck className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />
+                      <UserCheck className="h-4 w-4 text-[var(--color-brand-text)]" />
                       人员信息
                     </CardTitle>
                   </CardHeader>
@@ -437,7 +437,7 @@ export function RelationshipManagement() {
                 <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Home className="h-4 w-4 text-[var(--color-status-success)]" />
+                      <Home className="h-4 w-4 text-[var(--color-status-success-text)]" />
                       房屋信息
                     </CardTitle>
                   </CardHeader>
@@ -480,7 +480,7 @@ export function RelationshipManagement() {
                 <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Link2 className="h-4 w-4 text-[var(--color-status-success)]" />
+                      <Link2 className="h-4 w-4 text-[var(--color-status-success-text)]" />
                       现居关系摘要
                     </CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">当前房屋内可交叉印证的住户关系。</CardDescription>
@@ -506,7 +506,7 @@ export function RelationshipManagement() {
                 <Card className={PANEL_CLASS}>
                   <CardHeader className="pb-3">
                     <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Shield className="h-4 w-4 text-[var(--color-status-warning)]" />
+                      <Shield className="h-4 w-4 text-[var(--color-status-warning-text)]" />
                       历史迁居备注
                     </CardTitle>
                     <CardDescription className="text-[var(--color-neutral-08)]">来自房屋历史档案的原始说明。</CardDescription>

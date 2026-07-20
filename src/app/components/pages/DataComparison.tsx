@@ -369,7 +369,7 @@ export function DataComparison() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                 <Bar dataKey="当前值" fill={CHART_PRIMARY} radius={[4, 4, 0, 0]} barSize={30} />
                 <Bar dataKey="参考值" fill={CHART_AXIS} radius={[4, 4, 0, 0]} barSize={30} />
               </BarChart>
@@ -401,7 +401,7 @@ export function DataComparison() {
                   <TableRow key={row.id} className="group border-b border-[rgba(61,70,99,0.45)]">
                     <TableCell className="font-semibold text-[var(--color-neutral-08)]">#{index + 1}</TableCell>
                     <TableCell className="max-w-[320px] truncate font-semibold text-[var(--color-neutral-11)]">{row.name}</TableCell>
-                    <TableCell className="text-right text-base font-bold tabular-nums text-[var(--color-brand-primary-hover)]">{formatNumber(row.current)}</TableCell>
+                    <TableCell className="text-right text-base font-bold tabular-nums text-[var(--color-brand-text)]">{formatNumber(row.current)}</TableCell>
                     <TableCell className="text-right tabular-nums text-[var(--color-neutral-08)]">{formatNumber(row.benchmark)}</TableCell>
                     <TableCell className={`text-right font-mono tabular-nums ${row.diff > 0 ? 'text-[var(--color-status-success-text)]' : row.diff < 0 ? 'text-[var(--color-status-error-text)]' : 'text-[var(--color-neutral-08)]'}`}>
                       {row.diff > 0 ? '+' : ''}{Number(row.diff.toFixed(1))}

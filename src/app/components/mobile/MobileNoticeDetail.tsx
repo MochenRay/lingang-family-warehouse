@@ -35,7 +35,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
         title="通知详情"
         onBack={onBack}
         action={
-          <button className="text-white/90 active:opacity-70">
+          <button aria-label="分享" className="text-white/90 active:opacity-70">
             <Share2 className="w-5 h-5" />
           </button>
         }
@@ -56,7 +56,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
                <Badge variant="outline" className="text-[var(--color-status-warning-text)] border-[var(--color-status-warning)]/50 bg-[var(--color-status-warning-soft)] px-2 py-0.5 text-xs font-normal shrink-0 rounded-full h-auto">
                  {notice?.type ?? '通知'}
                </Badge>
-               <span className="text-xs text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary-hover)]/20 border border-[var(--color-brand-primary-hover)]/30 px-2 py-0.5 rounded">
+               <span className="text-xs text-[var(--color-brand-text)] bg-[var(--color-brand-primary-hover)]/20 border border-[var(--color-brand-primary-hover)]/30 px-2 py-0.5 rounded">
                  {notice?.department ?? '蓬莱区社会治理现代化指挥中心'}
                </span>
              </div>
@@ -100,7 +100,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
                         <p className="text-sm font-medium text-[var(--color-neutral-10)] truncate mb-0.5">{file.name}</p>
                         <p className="text-xs text-[var(--color-neutral-08)]">{file.size}</p>
                       </div>
-                      <Button variant="ghost" size="icon" className="text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-neutral-03)]">
+                      <Button variant="ghost" size="icon" className="text-[var(--color-brand-text)] hover:bg-[var(--color-neutral-03)]">
                         <Download className="w-5 h-5" />
                       </Button>
                     </div>

@@ -249,13 +249,14 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
           <div className="relative">
             <Input
               placeholder="输入描述后自动生成，也可手动修改"
-              className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] pr-8"
+              className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] pr-8 h-11"
               value={formData.title}
               onChange={(event) => setFormData((prev) => ({ ...prev, title: event.target.value }))}
             />
             {formData.title && (
               <button
                 onClick={() => setFormData((prev) => ({ ...prev, title: '' }))}
+                aria-label="清除标题"
                 className="absolute right-2 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]"
               >
                 <X className="w-4 h-4" />
@@ -268,7 +269,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
           <div className="space-y-2">
             <Label className="text-sm font-medium text-[var(--color-neutral-10)]">纠纷类型 <span className="text-[var(--color-status-error-text)]">*</span></Label>
             <Select onValueChange={(value) => setFormData((prev) => ({ ...prev, type: value }))}>
-              <SelectTrigger className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)]">
+              <SelectTrigger className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] min-h-[44px]">
                 <SelectValue placeholder="请选择类型" />
               </SelectTrigger>
               <SelectContent>
@@ -286,7 +287,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input
                 placeholder="选择或输入地点"
-                className="pl-9 bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)]"
+                className="pl-9 bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] h-11"
                 value={formData.location}
                 onChange={(event) => setFormData((prev) => ({ ...prev, location: event.target.value }))}
               />
@@ -300,7 +301,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
             <Button
               variant="outline"
               size="sm"
-              className="h-7 text-xs border-dashed text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10"
+              className="min-h-[44px] text-xs border-dashed text-[var(--color-brand-text)] border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10"
               onClick={handleAddParty}
             >
               <Plus className="w-3 h-3 mr-1" /> 添加对象
@@ -318,6 +319,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                 {party.name}
                 <button
                   onClick={() => handleRemoveParty(party.id)}
+                  aria-label={`移除当事人${party.name}`}
                   className="ml-1 p-0.5 hover:bg-[var(--color-neutral-02)] rounded-full"
                 >
                   <X className="w-3 h-3 text-[var(--color-neutral-08)]" />
@@ -376,7 +378,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
                 <Input
                   placeholder="搜索居民姓名、房号..."
-                  className="pl-9 bg-[var(--color-neutral-02)] border-transparent focus-visible:bg-[var(--color-neutral-01)] focus-visible:border-[var(--color-brand-primary)] transition-all"
+                  className="pl-9 bg-[var(--color-neutral-02)] border-transparent focus-visible:bg-[var(--color-neutral-01)] focus-visible:border-[var(--color-brand-primary)] transition-all h-11"
                   value={searchTerm}
                   onChange={(event) => setSearchTerm(event.target.value)}
                 />
@@ -402,7 +404,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-8 h-8 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center">
-                              <Users className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                              <Users className="w-4 h-4 text-[var(--color-brand-text)]" />
                             </div>
                             <span className="font-medium text-[var(--color-neutral-11)]">{org.name}</span>
                           </div>

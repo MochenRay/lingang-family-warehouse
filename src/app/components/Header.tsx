@@ -56,6 +56,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
+          aria-label={sidebarCollapsed ? '展开侧边导航' : '收起侧边导航'}
           className="text-[var(--color-neutral-10)] hover:text-[var(--color-neutral-11)]"
         >
           <Menu className="w-5 h-5" />
@@ -63,7 +64,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         
         <div className="flex items-center gap-2">
           <span className="text-sm text-[var(--color-neutral-08)]">当前辖区:</span>
-          <Badge variant="outline" className="text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)] bg-[var(--color-neutral-02)]">
+          <Badge variant="outline" className="text-[var(--color-brand-text)] border-[var(--color-brand-primary)] bg-[var(--color-neutral-02)]">
             烟台市
           </Badge>
           <Tooltip>
@@ -112,9 +113,9 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         </Button>
 
         {/* 通知图标 */}
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" aria-label="通知（3 条未读）">
           <Bell className="w-5 h-5 text-[var(--color-neutral-10)]" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--color-status-error)] rounded-full" />
+          <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--color-status-error)] rounded-full" aria-hidden="true" />
         </Button>
 
         {/* 用户下拉菜单 */}
