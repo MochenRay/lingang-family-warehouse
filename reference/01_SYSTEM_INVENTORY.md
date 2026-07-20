@@ -121,7 +121,7 @@
 - [x] Header - 顶部导航栏
 - [x] MobileStatusBar - 移动端状态栏
 - [x] ChartCard - 图表卡片容器
-- [x] RegionFilter - 区域筛选组件
+- [x] RegionFilter - 区域筛选组件（2026-07-20 已删除：零引用，见 PR #71）
 - [x] ImageWithFallback - 图片容器
 
 ### 3.3 图表组件 (Recharts)
