@@ -175,7 +175,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
 
               <div className="space-y-2">
                 <Label htmlFor="title">
-                  公告标题 <span className="text-[var(--color-status-error)]">*</span>
+                  公告标题 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Input
                   id="title"
@@ -187,7 +187,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
 
               <div className="space-y-2">
                 <Label htmlFor="type">
-                  公告类型 <span className="text-[var(--color-status-error)]">*</span>
+                  公告类型 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
                   <SelectTrigger id="type">
@@ -207,7 +207,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
 
               <div className="space-y-2">
                 <Label htmlFor="content">
-                  公告内容 <span className="text-[var(--color-status-error)]">*</span>
+                  公告内容 <span className="text-[var(--color-status-error-text)]">*</span>
                 </Label>
                 <Textarea
                   id="content"
@@ -229,7 +229,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
               </div>
 
               <div className="space-y-3">
-                <Label>接收对象 <span className="text-[var(--color-status-error)]">*</span></Label>
+                <Label>接收对象 <span className="text-[var(--color-status-error-text)]">*</span></Label>
                 <div className="space-y-2">
                   {scopeOptions.map(option => (
                     <div key={option.value} className="flex items-center space-x-2">
@@ -340,7 +340,7 @@ export function PublishNoticeDialog({ open, onOpenChange }: PublishNoticeDialogP
                   </p>
                   <div className="pt-2 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
                     <span className="text-[10px] text-[var(--color-neutral-08)]">烟台市社会治理中心</span>
-                    <span className="text-xs text-[var(--color-brand-primary-hover)]">查看详情</span>
+                    <span className="text-xs text-[var(--color-brand-text)]">查看详情</span>
                   </div>
                 </div>
               </div>

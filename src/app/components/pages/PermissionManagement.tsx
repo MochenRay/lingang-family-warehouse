@@ -18,7 +18,7 @@ export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
 
   // 功能权限矩阵
-  const functionPermissions = [
+  const [functionPermissions, setFunctionPermissions] = useState(() => [
     {
       module: '数据管理',
       icon: Database,
@@ -78,10 +78,10 @@ export function PermissionManagement() {
         { name: '日志管理', view: true, create: false, edit: false, delete: false, export: true }
       ]
     }
-  ];
+  ]);
 
   // 数据权限配置
-  const dataPermissions = [
+  const [dataPermissions, setDataPermissions] = useState(() => [
     {
       area: '全辖区',
       level: 'city',
@@ -117,7 +117,24 @@ export function PermissionManagement() {
       canEdit: false,
       description: '无权限'
     }
-  ];
+  ]);
+
+  type FunctionPermField = 'view' | 'create' | 'edit' | 'delete' | 'export';
+
+  // 权限矩阵勾选（演示数据，本地状态可操作；admin 角色保持只读）
+  const toggleFunctionPermission = (moduleIndex: number, permIndex: number, field: FunctionPermField, checked: boolean) => {
+    setFunctionPermissions((prev) =>
+      prev.map((mod, mi) =>
+        mi === moduleIndex
+          ? { ...mod, permissions: mod.permissions.map((perm, pi) => (pi === permIndex ? { ...perm, [field]: checked } : perm)) }
+          : mod,
+      ),
+    );
+  };
+
+  const toggleDataPermission = (areaIndex: number, field: 'canView' | 'canEdit', checked: boolean) => {
+    setDataPermissions((prev) => prev.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)));
+  };
 
   // 角色列表
   const roles = [
@@ -207,7 +224,7 @@ export function PermissionManagement() {
 
             {/* 功能权限 */}
             <TabsContent value="function" className="space-y-4">
-              {functionPermissions.map((module) => {
+              {functionPermissions.map((module, moduleIndex) => {
                 const ModuleIcon = module.icon;
                 return (
                   <Card key={module.module} className={PANEL_CLASS}>
@@ -256,6 +273,7 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.view}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'view', checked === true)}
                                   disabled={selectedRole === 'admin'}
                                   aria-label={`${selectedRoleName}-${perm.name}-查看`}
                                 />
@@ -263,6 +281,7 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.create}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'create', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-新建`}
                                 />
@@ -270,6 +289,7 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.edit}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'edit', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-编辑`}
                                 />
@@ -277,6 +297,7 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.delete}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'delete', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-删除`}
                                 />
@@ -284,6 +305,7 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.export}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'export', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-导出`}
                                 />
@@ -344,6 +366,7 @@ export function PermissionManagement() {
                           <TableCell className="text-center">
                             <Checkbox
                               checked={area.canView}
+                              onCheckedChange={(checked) => toggleDataPermission(index, 'canView', checked === true)}
                               disabled={selectedRole === 'admin'}
                               aria-label={`${selectedRoleName}-${area.area}-可查看`}
                             />
@@ -351,6 +374,7 @@ export function PermissionManagement() {
                           <TableCell className="text-center">
                             <Checkbox
                               checked={area.canEdit}
+                              onCheckedChange={(checked) => toggleDataPermission(index, 'canEdit', checked === true)}
                               disabled={selectedRole === 'admin' || !area.canView}
                               aria-label={`${selectedRoleName}-${area.area}-可编辑`}
                             />

@@ -24,17 +24,17 @@
   --color-status-error: #D52132;    /* Red-06 错误 */
   --color-status-info: #2AA3CF;     /* Light-blue-06 信息 */
 
-  /* 功能色扩展（P1a）- 深底文字色：在 neutral-01/02 背景上满足 WCAG AA 正文对比度
-     T1b 实测修正：error-text 由 #EB636F（实测 4.0:1 不达标）调亮为 #F58A92（neutral-02 上 5.4:1） */
+  /* 功能色扩展（P1a）- 深底文字色：在 neutral-01/02/03 背景上满足 WCAG AA 正文对比度
+     T1b 两轮实测修正：error-text 由 #EB636F(4.0) → #F58A92(03 底 3.96) → #F99CA3（01/02/03 底 7.66/6.11/4.57） */
   --color-status-success-text: #4AD3A0;
   --color-status-warning-text: #F09640;
-  --color-status-error-text: #F58A92;
+  --color-status-error-text: #F99CA3;
   --color-status-info-text: #62C4E8;
 
   /* 品牌文字色（T1b 新增）：brand-hover #4E86DF 作正文实测仅 3.44:1，
-     文字/链接/小字场景统一改用本 token（neutral-02 上 5.5:1）；
+     文字/链接/小字场景统一改用本 token（01/02/03 底 7.61/6.07/4.55）；
      brand-hover 继续只作 hover/大字号（≥24px）用途 */
-  --color-brand-text: #8FB5EF;
+  --color-brand-text: #91B7F1;
   /* 功能色扩展（P1a）- 深底软衬底色：Badge/Tag/警示条容器 */
   --color-status-success-soft: rgba(25, 177, 114, 0.14);
   --color-status-warning-soft: rgba(214, 115, 13, 0.16);

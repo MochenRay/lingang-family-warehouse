@@ -229,7 +229,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               value="people"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-text)]">
                 人员信息
               </span>
               <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
@@ -238,7 +238,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               value="house"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-text)]">
                 房屋信息
               </span>
               <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />

@@ -248,11 +248,11 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">联系电话</div>
                       <div className="text-sm font-medium text-[var(--color-neutral-11)] flex items-center justify-between">
                         {person.phone}
-                        <a href={`tel:${person.phone}`} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40 rounded">
-                          <Button size="sm" variant="outline" className="min-h-[44px] text-xs border-[var(--color-status-success)]/35 text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] hover:bg-[var(--color-status-success)]/25">
+                        <Button asChild size="sm" variant="outline" className="min-h-[44px] text-xs border-[var(--color-status-success)]/35 text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] hover:bg-[var(--color-status-success)]/25">
+                          <a href={`tel:${person.phone}`} className="focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40 rounded">
                             拨打
-                          </Button>
-                        </a>
+                          </a>
+                        </Button>
                       </div>
                     </div>
                   </div>

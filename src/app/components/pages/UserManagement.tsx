@@ -392,10 +392,10 @@ export function UserManagement() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-center gap-2">
-                        <Button size="sm" variant="ghost" aria-label="编辑用户" className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                        <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`编辑用户 ${user.realName}`} className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" aria-label="删除用户" className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
+                        <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`删除用户 ${user.realName}`} className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>

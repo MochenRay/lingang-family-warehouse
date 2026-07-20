@@ -11,6 +11,7 @@ import {
 } from './ui/dropdown-menu';
 import { Badge } from './ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from './ui/tooltip';
+import { toast } from 'sonner';
 import { API_DATA_SOURCE_EVENT, getApiDataSourceSnapshot, type ApiDataSourceSnapshot } from '../services/api';
 
 interface HeaderProps {
@@ -113,7 +114,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
         </Button>
 
         {/* 通知图标 */}
-        <Button variant="ghost" size="icon" className="relative" aria-label="通知（3 条未读）">
+        <Button variant="ghost" size="icon" className="relative" aria-label="通知（3 条未读）" onClick={() => toast.info('通知中心为演示占位，暂未开放')}>
           <Bell className="w-5 h-5 text-[var(--color-neutral-10)]" />
           <span className="absolute top-1 right-1 w-2 h-2 bg-[var(--color-status-error)] rounded-full" aria-hidden="true" />
         </Button>
@@ -144,7 +145,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
               账户设置
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-[var(--color-status-error)]">
+            <DropdownMenuItem className="text-[var(--color-status-error-text)]">
               <LogOut className="w-4 h-4 mr-2" />
               退出登录
             </DropdownMenuItem>

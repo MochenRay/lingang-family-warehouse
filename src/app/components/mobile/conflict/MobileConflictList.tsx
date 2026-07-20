@@ -159,7 +159,7 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
                 <TabsTrigger
                   key={String(tab)}
                   value={String(tab)}
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-primary-hover)] text-[var(--color-neutral-08)] font-medium text-sm transition-colors"
+                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] text-[var(--color-neutral-08)] font-medium text-sm transition-colors"
                 >
                   <span>{label}</span>
                   <span className="ml-1 text-[10px] text-[var(--color-neutral-08)]">{count}</span>

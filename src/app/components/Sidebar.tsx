@@ -167,7 +167,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
           className={cn(
             "w-full flex items-center gap-3 h-10 rounded-[2px] transition-colors duration-200",
             paddingClass,
-            isActive && "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-primary-hover)]",
+            isActive && "bg-[var(--color-brand-primary)]/12 text-[var(--color-brand-text)]",
             !isActive && "text-[var(--color-neutral-08)] hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/8",
             collapsed && "justify-center px-2"
           )}
@@ -225,7 +225,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
       <div className="p-3 border-t border-[var(--color-neutral-03)] shrink-0 space-y-2">
         {!collapsed && (
           <div className="rounded-[4px] border border-[rgba(78,134,223,0.18)] bg-[rgba(78,134,223,0.06)] px-3 py-3">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-primary-hover)]">
+            <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[var(--color-brand-text)]">
               建议这样看
             </div>
             <div className="mt-2 text-xs leading-5 text-[var(--color-neutral-09)]">

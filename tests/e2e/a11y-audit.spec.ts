@@ -1,4 +1,4 @@
-import { test, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
 /**
@@ -275,5 +275,24 @@ test.describe('a11y audit @audit', () => {
     mkdirSync('test-results/a11y-audit', { recursive: true });
     writeFileSync('test-results/a11y-audit/findings.json', JSON.stringify(findings, null, 2), 'utf-8');
     console.log(`findings written: ${findings.length}`);
+  });
+
+  // 硬断言（T1b 复审裁决）：非豁免阻断项必须为 0，否则套件失败。
+  // 豁免仅含已逐条确认的误报/扫描器局限：
+  const EXEMPTIONS: Array<{ page: string; rule: string; reason: string }> = [
+    { page: 'publish-notice', rule: 'icon-button-name', reason: 'Checkbox 经 htmlFor 关联 label 已有可访问名称（扫描器不识别 label 关联）；该页 T5 将删除' },
+    { page: 'mobile-person-detail', rule: 'focus-visible', reason: 'Radix ScrollArea viewport 原生键盘滚动行为 + :focus-visible 在程序式聚焦下不触发的扫描器局限；真实按钮已验证有 ring' },
+  ];
+
+  test('非豁免阻断项为零', async () => {
+    const remaining = findings.filter(
+      (finding) =>
+        finding.severity === 'blocker' &&
+        !EXEMPTIONS.some((exemption) => exemption.page === finding.page && exemption.rule === finding.rule),
+    );
+    expect(
+      remaining,
+      `存在 ${remaining.length} 条非豁免阻断项：\n${remaining.map((f) => `[${f.page}] ${f.rule} ${f.evidence}`).join('\n')}`,
+    ).toHaveLength(0);
   });
 });

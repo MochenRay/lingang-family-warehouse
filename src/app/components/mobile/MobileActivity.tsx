@@ -146,13 +146,13 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
             <TabsList className="w-full flex h-10 bg-transparent p-0 border-b border-[var(--color-neutral-03)]">
               <TabsTrigger
                 value="grid"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-primary-hover)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
               >
                 本网格活动
               </TabsTrigger>
               <TabsTrigger
                 value="my"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-primary-hover)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
               >
                 我的申请
               </TabsTrigger>

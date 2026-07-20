@@ -5,6 +5,7 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { noticeRepository, type NoticeRecord } from '../../services/repositories/noticeRepository';
+import { toast } from 'sonner';
 
 interface MobileNoticeDetailProps {
   onBack: () => void;
@@ -35,7 +36,7 @@ export function MobileNoticeDetail({ onBack, noticeId }: MobileNoticeDetailProps
         title="通知详情"
         onBack={onBack}
         action={
-          <button aria-label="分享" className="text-white/90 active:opacity-70">
+          <button aria-label="分享" className="text-white/90 active:opacity-70" onClick={() => toast.info('分享功能为演示占位，暂未开放')}>
             <Share2 className="w-5 h-5" />
           </button>
         }

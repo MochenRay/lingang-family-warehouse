@@ -255,10 +255,10 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                   className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="text-[15px] font-medium text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)] group-data-[state=active]:text-[var(--color-brand-text)]">
                       待处理
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-text)]">
                       {displayPending.length}
                     </span>
                   </div>
@@ -270,10 +270,10 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                   className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
-                    <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="text-[15px] font-medium text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)] group-data-[state=active]:text-[var(--color-brand-text)]">
                       已完成
                     </span>
-                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+                    <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-[var(--color-neutral-03)] px-1.5 text-xs text-[var(--color-neutral-10)] transition-colors group-data-[state=active]:bg-[var(--color-brand-primary)]/20 group-data-[state=active]:text-[var(--color-brand-text)]">
                       {displayCompleted.length}
                     </span>
                   </div>
