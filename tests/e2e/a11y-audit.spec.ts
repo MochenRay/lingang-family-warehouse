@@ -24,45 +24,45 @@ type Finding = {
 
 const findings: Finding[] = [];
 
-const DESKTOP_ROUTES: Array<{ id: string; path: string }> = [
-  { id: 'statistics-overview', path: '/' },
-  { id: 'demographics-analysis', path: '/analysis/demographics' },
-  { id: 'housing-statistics', path: '/analysis/housing' },
-  { id: 'migration-trends', path: '/analysis/migration-trends' },
-  { id: 'population-tags', path: '/analysis/tags' },
-  { id: 'data-comparison', path: '/analysis/comparison' },
-  { id: 'data-reports', path: '/analysis/reports' },
-  { id: 'heatmap', path: '/analysis/warning-map' },
-  { id: 'population', path: '/population' },
-  { id: 'housing', path: '/housing' },
-  { id: 'relationship', path: '/relationship' },
-  { id: 'batch-import', path: '/batch-import' },
-  { id: 'tag-overview', path: '/tags' },
-  { id: 'knowledge-accumulation', path: '/knowledge' },
-  { id: 'policy-interpretation', path: '/ai/policy' },
-  { id: 'document-writing', path: '/ai/document-writing' },
-  { id: 'smart-query', path: '/ai/smart-query' },
-  { id: 'behavior-supervision', path: '/grid/behavior' },
-  { id: 'activity-management', path: '/grid/activities' },
-  { id: 'conflict-management', path: '/grid/conflicts' },
-  { id: 'notice-management', path: '/grid/notices' },
-  { id: 'publish-notice', path: '/grid/notices/publish' },
-  { id: 'rule-config', path: '/grid/rules' },
-  { id: 'anomaly-analysis', path: '/attribution/anomaly' },
-  { id: 'time-series', path: '/attribution/time-series' },
-  { id: 'factor-identification', path: '/attribution/factors' },
-  { id: 'contribution-ranking', path: '/attribution/contribution' },
-  { id: 'user-management', path: '/settings/users' },
-  { id: 'role-management', path: '/settings/roles' },
-  { id: 'permission-management', path: '/settings/permissions' },
-  { id: 'log-management', path: '/settings/logs' },
+const DESKTOP_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
+  { id: 'statistics-overview', path: '/', readyText: '综合统计驾驶舱' },
+  { id: 'demographics-analysis', path: '/analysis/demographics', readyText: '人口特征分析' },
+  { id: 'housing-statistics', path: '/analysis/housing', readyText: '房屋网格画像' },
+  { id: 'migration-trends', path: '/analysis/migration-trends', readyText: '人口流动趋势' },
+  { id: 'population-tags', path: '/analysis/tags', readyText: '标签分析画像' },
+  { id: 'data-comparison', path: '/analysis/comparison', readyText: '数据对比分析' },
+  { id: 'data-reports', path: '/analysis/reports', readyText: '报表中心' },
+  { id: 'heatmap', path: '/analysis/warning-map', readyText: '预警地图' },
+  { id: 'population', path: '/population', readyText: '人口管理' },
+  { id: 'housing', path: '/housing', readyText: '房屋管理' },
+  { id: 'relationship', path: '/relationship', readyText: '人房关系管理' },
+  { id: 'batch-import', path: '/batch-import', readyText: '批量导入' },
+  { id: 'tag-overview', path: '/tags', readyText: '标签管理' },
+  { id: 'knowledge-accumulation', path: '/knowledge', readyText: '知识沉淀' },
+  { id: 'policy-interpretation', path: '/ai/policy', readyText: '政策解读' },
+  { id: 'document-writing', path: '/ai/document-writing', readyText: '公文写作' },
+  { id: 'smart-query', path: '/ai/smart-query', readyText: '智能问数' },
+  { id: 'behavior-supervision', path: '/grid/behavior', readyText: '行为督导中心' },
+  { id: 'activity-management', path: '/grid/activities', readyText: '活动综合管理' },
+  { id: 'conflict-management', path: '/grid/conflicts', readyText: '矛盾调解' },
+  { id: 'notice-management', path: '/grid/notices', readyText: '公告管理' },
+  { id: 'publish-notice', path: '/grid/notices/publish', readyText: '发布公告' },
+  { id: 'rule-config', path: '/grid/rules', readyText: '待办规则配置' },
+  { id: 'anomaly-analysis', path: '/attribution/anomaly', readyText: '异常结果分析' },
+  { id: 'time-series', path: '/attribution/time-series', readyText: '时序分析' },
+  { id: 'factor-identification', path: '/attribution/factors', readyText: '影响因子识别' },
+  { id: 'contribution-ranking', path: '/attribution/contribution', readyText: '贡献程度排名' },
+  { id: 'user-management', path: '/settings/users', readyText: '用户管理' },
+  { id: 'role-management', path: '/settings/roles', readyText: '角色管理' },
+  { id: 'permission-management', path: '/settings/permissions', readyText: '权限管理' },
+  { id: 'log-management', path: '/settings/logs', readyText: '日志管理' },
 ];
 
-const MOBILE_ROUTES: Array<{ id: string; path: string }> = [
-  { id: 'mobile-home', path: '/mobile' },
-  { id: 'mobile-people', path: '/mobile/people' },
-  { id: 'mobile-person-detail', path: '/mobile/person/:first' },
-  { id: 'mobile-conflict-form', path: '/mobile/conflict/new' },
+const MOBILE_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
+  { id: 'mobile-home', path: '/mobile', readyText: '快捷功能' },
+  { id: 'mobile-people', path: '/mobile/people', readyText: '条人员' },
+  { id: 'mobile-person-detail', path: '/mobile/person/:first', readyText: '人员详情' },
+  { id: 'mobile-conflict-form', path: '/mobile/conflict/new', readyText: '上报矛盾纠纷' },
 ];
 
 async function checkIconOnlyButtons(page: Page, pageId: string, viewport: string) {
@@ -97,42 +97,51 @@ async function checkIconOnlyButtons(page: Page, pageId: string, viewport: string
 async function checkFocusVisibility(page: Page, pageId: string, viewport: string) {
   // 真实 Tab 全路径：持续按 Tab，直到回到首个聚焦元素（循环）或焦点不再变化（走尽），
   // 安全上限防死循环。读取每个新聚焦元素的 computed 样式。
+  // 元素身份用临时 data-a11y-audit-id（真实 DOM 身份），展示 selector 与身份分离——
+  // 同名 class 的无 id 按钮（如侧栏 button.w-full）不再被误判为同一元素。
   const MAX_STEPS = 100;
   const flagged = new Set<string>();
-  const seenSelectors = new Set<string>();
-  let firstSelector: string | null = null;
-  let lastSelector = '';
+  let firstElementId: number | null = null;
+  let lastElementId = -1;
+
+  await page.evaluate(() => {
+    (window as unknown as { __a11yAuditSeq: number }).__a11yAuditSeq = 0;
+  });
 
   for (let step = 0; step < MAX_STEPS; step++) {
     await page.keyboard.press('Tab');
     const result = await page.evaluate(() => {
-      const el = document.activeElement as HTMLElement | null;
-      if (!el || el === document.body) return { selector: '__body__', noRing: false, evidence: '' };
+      const w = window as unknown as { __a11yAuditSeq: number };
+      const el = document.activeElement as (HTMLElement & { dataset: DOMStringMap }) | null;
+      if (!el || el === document.body) return { elementId: -2, selector: '__body__', noRing: false, evidence: '' };
+      if (!el.dataset.a11yAuditId) {
+        w.__a11yAuditSeq += 1;
+        el.dataset.a11yAuditId = String(w.__a11yAuditSeq);
+      }
       const cls = (el.getAttribute('class') ?? '').split(' ')[0];
-      const selector = el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + `.${cls}`;
       const style = getComputedStyle(el);
       const hasOutline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
       const hasRing = style.boxShadow !== 'none' && style.boxShadow !== '';
       return {
-        selector,
+        elementId: Number(el.dataset.a11yAuditId),
+        selector: el.tagName.toLowerCase() + (el.id ? `#${el.id}` : '') + `.${cls}`,
         noRing: !hasOutline && !hasRing,
         evidence: `Tab 聚焦时 outline=${style.outlineStyle}/${style.outlineWidth}，box-shadow=none，text=${(el.textContent ?? '').trim().slice(0, 24)}`,
       };
     });
 
-    if (result.selector === '__body__') break; // 焦点回到 body，路径走尽
-    if (firstSelector === null) {
-      firstSelector = result.selector;
-    } else if (result.selector === firstSelector) {
-      break; // 回到首个焦点，循环结束
+    if (result.elementId === -2) break; // 焦点回到 body，路径走尽
+    if (firstElementId === null) {
+      firstElementId = result.elementId;
+    } else if (result.elementId === firstElementId) {
+      break; // 同一实际元素再次出现，循环结束
     }
-    if (result.selector === lastSelector) {
-      break; // 焦点不再变化（到达末尾或陷阱），防死循环
+    if (result.elementId === lastElementId) {
+      break; // 焦点不再移动（到达末尾或陷阱），防死循环
     }
-    lastSelector = result.selector;
+    lastElementId = result.elementId;
 
-    if (result.noRing && !seenSelectors.has(result.selector)) {
-      seenSelectors.add(result.selector);
+    if (result.noRing) {
       flagged.add(`${result.selector}|${result.evidence}`);
     }
   }
@@ -251,21 +260,21 @@ async function checkContrast(page: Page, pageId: string, viewport: string) {
   }
 }
 
-async function auditPage(page: Page, routeId: string, path: string, viewportName: string) {
+async function auditPage(page: Page, routeId: string, path: string, viewportName: string, readyText: string) {
   const pageErrors: string[] = [];
   const onPageError = (error: Error) => pageErrors.push(String(error));
   page.on('pageerror', onPageError);
+  let navigationError = '';
   try {
-    await page.goto(path, { waitUntil: 'networkidle' }).catch(() => undefined);
+    try {
+      await page.goto(path, { waitUntil: 'networkidle' });
+    } catch (error) {
+      navigationError = String(error);
+    }
     await page.waitForTimeout(800);
-    // ready 断言：页面必须有实质文本内容，且不得有 pageerror——
-    // 白屏/崩溃页（body 为空）不得被当成审计成功（权限页 structuredClone 崩溃的教训）。
-    // 注意：不以 h1-h3 为据（移动端部分页面用 div 渲染标题）。
-    const ready = await page.evaluate(() => {
-      const textLength = (document.body?.textContent ?? '').trim().length;
-      const hasInteractives = document.querySelector('button, a, input, [role="button"], h1, h2, h3') !== null;
-      return textLength > 20 && hasInteractives;
-    });
+    // ready 断言（route 专属文本 + 无 pageerror + 无导航异常）：
+    // 白屏/崩溃/导航失败均不得被当成审计成功（权限页崩溃、导航吞异常两轮教训）
+    const ready = navigationError === '' && (await page.getByText(readyText, { exact: false }).first().isVisible().catch(() => false));
     if (!ready || pageErrors.length > 0) {
       findings.push({
         page: routeId,
@@ -273,7 +282,7 @@ async function auditPage(page: Page, routeId: string, path: string, viewportName
         rule: 'page-ready',
         severity: 'blocker',
         selector: 'body',
-        evidence: `页面未正常渲染：ready=${ready}${pageErrors.length > 0 ? `，pageerror=${pageErrors[0].slice(0, 160)}` : ''}`,
+        evidence: `页面未正常渲染（readyText="${readyText}" 不可见）${navigationError ? `，navigationError=${navigationError.slice(0, 120)}` : ''}${pageErrors.length > 0 ? `，pageerror=${pageErrors[0].slice(0, 160)}` : ''}`,
       });
       return; // 崩溃页不做后续检查（数据无意义）
     }
@@ -298,7 +307,7 @@ test.describe('a11y audit @audit', () => {
       window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1');
     });
     for (const route of DESKTOP_ROUTES) {
-      await auditPage(page, route.id, route.path, 'desktop-1440');
+      await auditPage(page, route.id, route.path, 'desktop-1440', route.readyText);
     }
   });
 
@@ -318,7 +327,7 @@ test.describe('a11y audit @audit', () => {
     }
     for (const route of MOBILE_ROUTES) {
       const path = route.path === '/mobile/person/:first' ? personPath : route.path;
-      await auditPage(page, route.id, path, 'mobile-390');
+      await auditPage(page, route.id, path, 'mobile-390', route.readyText);
     }
   });
 
