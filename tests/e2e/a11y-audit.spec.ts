@@ -90,31 +90,31 @@ async function checkIconOnlyButtons(page: Page, pageId: string, viewport: string
 }
 
 async function checkFocusVisibility(page: Page, pageId: string, viewport: string) {
-  const results = await page.evaluate(async () => {
-    const bad: Array<{ selector: string; evidence: string }> = [];
-    const focusables = Array.from(
-      document.querySelectorAll('a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])'),
-    ).filter((el) => (el as HTMLElement).offsetParent !== null).slice(0, 12) as HTMLElement[];
-
-    for (const el of focusables) {
-      el.focus();
-      await new Promise((resolve) => setTimeout(resolve, 30));
+  // 真实 Tab 路径检查：逐步按 Tab，读取每个新聚焦元素的 computed 样式
+  //（程序式 el.focus() 不触发 :focus-visible，会产生误报——上轮评审教训）
+  const steps = 12;
+  const flagged = new Set<string>();
+  for (let step = 0; step < steps; step++) {
+    await page.keyboard.press('Tab');
+    const result = await page.evaluate(() => {
+      const el = document.activeElement as HTMLElement | null;
+      if (!el || el === document.body) return null;
       const style = getComputedStyle(el);
       const hasOutline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
       const hasRing = style.boxShadow !== 'none' && style.boxShadow !== '';
-      if (!hasOutline && !hasRing) {
-        const cls = (el.getAttribute('class') ?? '').slice(0, 60);
-        bad.push({
-          selector: el.tagName.toLowerCase() + `.${cls.split(' ')[0]}`,
-          evidence: `focus 时 outline=${style.outlineStyle}/${style.outlineWidth}，box-shadow=none`,
-        });
-      }
+      if (hasOutline || hasRing) return null;
+      return {
+        selector: el.tagName.toLowerCase() + `.${(el.getAttribute('class') ?? '').split(' ')[0]}`,
+        evidence: `Tab 聚焦时 outline=${style.outlineStyle}/${style.outlineWidth}，box-shadow=none，text=${(el.textContent ?? '').trim().slice(0, 24)}`,
+      };
+    });
+    if (result) {
+      flagged.add(`${result.selector}|${result.evidence}`);
     }
-    (document.activeElement as HTMLElement | null)?.blur?.();
-    return bad;
-  });
-  for (const item of results) {
-    findings.push({ page: pageId, viewport, rule: 'focus-visible', severity: 'blocker', ...item });
+  }
+  for (const item of flagged) {
+    const [selector, evidence] = item.split('|');
+    findings.push({ page: pageId, viewport, rule: 'focus-visible', severity: 'blocker', selector, evidence });
   }
 }
 
@@ -278,17 +278,27 @@ test.describe('a11y audit @audit', () => {
   });
 
   // 硬断言（T1b 复审裁决）：非豁免阻断项必须为 0，否则套件失败。
-  // 豁免仅含已逐条确认的误报/扫描器局限：
-  const EXEMPTIONS: Array<{ page: string; rule: string; reason: string }> = [
-    { page: 'publish-notice', rule: 'icon-button-name', reason: 'Checkbox 经 htmlFor 关联 label 已有可访问名称（扫描器不识别 label 关联）；该页 T5 将删除' },
-    { page: 'mobile-person-detail', rule: 'focus-visible', reason: 'Radix ScrollArea viewport 原生键盘滚动行为 + :focus-visible 在程序式聚焦下不触发的扫描器局限；真实按钮已验证有 ring' },
+  // 豁免须精确到 page + rule + 元素特征（selector 子串），禁止整类放行；
+  // 每条均附逐条核实的原因。
+  const EXEMPTIONS: Array<{ page: string; rule: string; evidenceIncludes: string; reason: string }> = [
+    {
+      page: 'publish-notice',
+      rule: 'icon-button-name',
+      evidenceIncludes: 'peer h-4 w-4',
+      reason: 'Radix Checkbox 经 htmlFor 关联 label 已有可访问名称（扫描器不识别 label 关联）；该页 T5 将删除',
+    },
   ];
 
   test('非豁免阻断项为零', async () => {
     const remaining = findings.filter(
       (finding) =>
         finding.severity === 'blocker' &&
-        !EXEMPTIONS.some((exemption) => exemption.page === finding.page && exemption.rule === finding.rule),
+        !EXEMPTIONS.some(
+          (exemption) =>
+            exemption.page === finding.page &&
+            exemption.rule === finding.rule &&
+            finding.evidence.includes(exemption.evidenceIncludes),
+        ),
     );
     expect(
       remaining,

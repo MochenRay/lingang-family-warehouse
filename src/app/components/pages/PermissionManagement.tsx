@@ -17,8 +17,8 @@ const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-ho
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
 
-  // 功能权限矩阵
-  const [functionPermissions, setFunctionPermissions] = useState(() => [
+  // 功能权限矩阵（种子数据，各角色独立拷贝，见 permsByRole）
+  const functionPermissionsSeed = [
     {
       module: '数据管理',
       icon: Database,
@@ -78,10 +78,10 @@ export function PermissionManagement() {
         { name: '日志管理', view: true, create: false, edit: false, delete: false, export: true }
       ]
     }
-  ]);
+  ];
 
-  // 数据权限配置
-  const [dataPermissions, setDataPermissions] = useState(() => [
+  // 数据权限配置（种子数据，各角色独立拷贝）
+  const dataPermissionsSeed = [
     {
       area: '全辖区',
       level: 'city',
@@ -117,24 +117,9 @@ export function PermissionManagement() {
       canEdit: false,
       description: '无权限'
     }
-  ]);
+  ];
 
   type FunctionPermField = 'view' | 'create' | 'edit' | 'delete' | 'export';
-
-  // 权限矩阵勾选（演示数据，本地状态可操作；admin 角色保持只读）
-  const toggleFunctionPermission = (moduleIndex: number, permIndex: number, field: FunctionPermField, checked: boolean) => {
-    setFunctionPermissions((prev) =>
-      prev.map((mod, mi) =>
-        mi === moduleIndex
-          ? { ...mod, permissions: mod.permissions.map((perm, pi) => (pi === permIndex ? { ...perm, [field]: checked } : perm)) }
-          : mod,
-      ),
-    );
-  };
-
-  const toggleDataPermission = (areaIndex: number, field: 'canView' | 'canEdit', checked: boolean) => {
-    setDataPermissions((prev) => prev.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)));
-  };
 
   // 角色列表
   const roles = [
@@ -145,15 +130,54 @@ export function PermissionManagement() {
     { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
-  // 权限操作统计
+  // 各角色独立的权限矩阵（修改互不影响——此前全局单一状态会跨角色串联）
+  const [permsByRole, setPermsByRole] = useState<
+    Record<string, { function: typeof functionPermissionsSeed; data: typeof dataPermissionsSeed }>
+  >(() =>
+    Object.fromEntries(
+      roles.map((role) => [
+        role.code,
+        structuredClone({ function: functionPermissionsSeed, data: dataPermissionsSeed }),
+      ]),
+    ),
+  );
+
+  const currentPerms = permsByRole[selectedRole];
+
+  // 权限矩阵勾选（演示数据，本地状态按角色可操作；admin 角色保持只读）
+  const toggleFunctionPermission = (moduleIndex: number, permIndex: number, field: FunctionPermField, checked: boolean) => {
+    setPermsByRole((prev) => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        function: prev[selectedRole].function.map((mod, mi) =>
+          mi === moduleIndex
+            ? { ...mod, permissions: mod.permissions.map((perm, pi) => (pi === permIndex ? { ...perm, [field]: checked } : perm)) }
+            : mod,
+        ),
+      },
+    }));
+  };
+
+  const toggleDataPermission = (areaIndex: number, field: 'canView' | 'canEdit', checked: boolean) => {
+    setPermsByRole((prev) => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        data: prev[selectedRole].data.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)),
+      },
+    }));
+  };
+
+  // 权限操作统计（按当前角色视图）
   const permissionStats = {
-    totalModules: functionPermissions.length,
-    totalFunctions: functionPermissions.reduce((sum, m) => sum + m.permissions.length, 0),
-    enabledFunctions: functionPermissions.reduce(
+    totalModules: currentPerms.function.length,
+    totalFunctions: currentPerms.function.reduce((sum, m) => sum + m.permissions.length, 0),
+    enabledFunctions: currentPerms.function.reduce(
       (sum, m) => sum + m.permissions.filter(p => p.view).length,
       0
     ),
-    dataAreas: dataPermissions.filter(d => d.canView).length
+    dataAreas: currentPerms.data.filter(d => d.canView).length
   };
 
   const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
@@ -224,7 +248,7 @@ export function PermissionManagement() {
 
             {/* 功能权限 */}
             <TabsContent value="function" className="space-y-4">
-              {functionPermissions.map((module, moduleIndex) => {
+              {currentPerms.function.map((module, moduleIndex) => {
                 const ModuleIcon = module.icon;
                 return (
                   <Card key={module.module} className={PANEL_CLASS}>
@@ -355,7 +379,7 @@ export function PermissionManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {dataPermissions.map((area, index) => (
+                      {currentPerms.data.map((area, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium text-[var(--color-neutral-11)]">{area.area}</TableCell>
                           <TableCell>

@@ -1,6 +1,6 @@
-# UI 精修 P5 实施计划（V3 定点修订稿，待冻结）
+# UI 精修 P5 实施计划（V3 已冻结，执行中）
 
-> 状态：V1 五项缺口、V2 一项阻断 + 两项合同修正均已按 Codex 复审定点补齐；用户冻结后执行。
+> 状态：**已于 2026-07-20 冻结**。V1 五项缺口、V2 一项阻断 + 两项合同修正、V3 一项阻断 + 两项合同修正均经 Codex 复审定点补齐并冻结。当前执行进度：T1a 完成（PR #72 合并）、T1b 修复中（PR #73 复审返修）。
 > V2→V3 定点修订：① T3 e2e 改 `page.route()` fixture 注入（conflicts API 无 DELETE，不可测后清理，亦不得为测试加后端端点）；KPI 改精确数值断言。② T1a 页面数改 31 项路由 ID 清单，流程门明确「用户评审冻结后才进 T1b」。③ T2 冻结 @visual 三脚本机制（test:e2e 非视觉 / test:e2e:ci 全量 / test:e2e:visual:update 更新基线，CI 改调 test:e2e:ci）；Playwright 版本以 package-lock.json 为准。
 > 依据：P1–P4 与 P6 已发布（main `605959a`）。
 

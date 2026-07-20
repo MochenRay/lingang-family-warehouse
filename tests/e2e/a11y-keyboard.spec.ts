@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 
 /**
  * T1b 键盘可达性断言：真实 Tab 路径、Dialog 焦点进入、Esc 关闭、可见 focus 环。
@@ -14,19 +14,16 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-/** 用真实 Tab 键走到目标元素（最多 maxSteps 步），返回是否到达 */
-async function tabUntilFocused(page: Page, targetName: string | RegExp, maxSteps = 12) {
-  for (let step = 0; step < maxSteps; step++) {
-    const reached = await page.evaluate((name) => {
-      const active = document.activeElement;
-      if (!active) return false;
-      const label = active.getAttribute('aria-label') || active.textContent?.trim() || '';
-      return label.includes(name);
-    }, typeof targetName === 'string' ? targetName : String(targetName));
-    if (reached) return true;
+/** 用真实 Tab 键走到目标按钮（返回步数；-1 表示未到达）。初始焦点不在目标上，故返回值必须 > 0。 */
+async function tabUntilFocused(dialog: Locator, page: Page, targetName: string, maxSteps = 12) {
+  const target = dialog.getByRole('button', { name: targetName, exact: true });
+  for (let step = 0; step <= maxSteps; step++) {
+    if (await target.evaluate((el) => document.activeElement === el).catch(() => false)) {
+      return step;
+    }
     await page.keyboard.press('Tab');
   }
-  return false;
+  return -1;
 }
 
 test('ConfirmDialog 打开后焦点进入弹窗，Tab 可达删除按钮且 focus 环可见', async ({ page }) => {
@@ -47,11 +44,12 @@ test('ConfirmDialog 打开后焦点进入弹窗，Tab 可达删除按钮且 focu
   });
   expect(focusInside).toBe(true);
 
-  // 真实 Tab 路径走到「删除」按钮
-  const reached = await tabUntilFocused(page, '删除');
-  expect(reached).toBe(true);
+  // 真实 Tab 路径走到「删除」按钮；步数必须 > 0（证明键盘路径真实可走，而非初始巧合命中）
+  const steps = await tabUntilFocused(dialog, page, '删除');
+  expect(steps).toBeGreaterThan(0);
 
-  // 当前聚焦的「删除」按钮应有可见 focus 环（outline 或 box-shadow）
+  // 聚焦的「删除」按钮应有可见 focus 环（outline 或 box-shadow）
+  await expect(dialog.getByRole('button', { name: '删除', exact: true })).toBeFocused();
   const hasVisibleRing = await page.evaluate(() => {
     const active = document.activeElement as HTMLElement | null;
     if (!active) return false;

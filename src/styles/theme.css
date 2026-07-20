@@ -24,17 +24,20 @@
   --color-status-error: #D52132;    /* Red-06 错误 */
   --color-status-info: #2AA3CF;     /* Light-blue-06 信息 */
 
-  /* 功能色扩展（P1a）- 深底文字色：在 neutral-01/02/03 背景上满足 WCAG AA 正文对比度
-     T1b 两轮实测修正：error-text 由 #EB636F(4.0) → #F58A92(03 底 3.96) → #F99CA3（01/02/03 底 7.66/6.11/4.57） */
-  --color-status-success-text: #4AD3A0;
-  --color-status-warning-text: #F09640;
+  /* 功能色扩展（P1a）- 深底文字色：须在 neutral-01/02/03 纯色底及对应
+     soft 衬底（自身半透明底色）上均满足 WCAG AA ≥4.5:1。
+     T1b 三轮实测修正（机械断言见 src/styles/statusTextContrast.test.ts）：
+     error #EB636F→#F99CA3、warning #F09640→#F7BC6B、info #62C4E8→#8AD7F0、
+     success #4AD3A0→#5BDCAC（soft 底 4.19 不达标）；brand-text #91B7F1→#9DC0F2（brand/10 底 4.36 不达标） */
+  --color-status-success-text: #5BDCAC;
+  --color-status-warning-text: #F7BC6B;
   --color-status-error-text: #F99CA3;
-  --color-status-info-text: #62C4E8;
+  --color-status-info-text: #8AD7F0;
 
   /* 品牌文字色（T1b 新增）：brand-hover #4E86DF 作正文实测仅 3.44:1，
-     文字/链接/小字场景统一改用本 token（01/02/03 底 7.61/6.07/4.55）；
+     文字/链接/小字场景统一改用本 token（纯色底 8.36/6.67/4.99，brand/10 底 4.79）；
      brand-hover 继续只作 hover/大字号（≥24px）用途 */
-  --color-brand-text: #91B7F1;
+  --color-brand-text: #9DC0F2;
   /* 功能色扩展（P1a）- 深底软衬底色：Badge/Tag/警示条容器 */
   --color-status-success-soft: rgba(25, 177, 114, 0.14);
   --color-status-warning-soft: rgba(214, 115, 13, 0.16);
@@ -197,15 +200,6 @@
 /* 段落和普通文字深色适配 */
 .dark p {
   color: var(--color-neutral-10);
-}
-
-/* 链接深色适配 */
-.dark a {
-  color: var(--color-brand-primary-hover);
-}
-
-.dark a:hover {
-  color: var(--color-brand-primary);
 }
 
 /* 输入框背景深色适配 */
@@ -424,5 +418,16 @@
   ::before,
   ::after {
     border-color: var(--border);
+  }
+
+  /* 链接默认品牌色（T1b 移入 base 层）：base 层低于 utilities，
+     带 text-* 工具类的链接以工具类为准（此前 unlayered 规则会覆盖工具类，
+     导致 Button asChild 的 <a> 丢失语义色）。 */
+  .dark a {
+    color: var(--color-brand-primary-hover);
+  }
+
+  .dark a:hover {
+    color: var(--color-brand-primary);
   }
 }
