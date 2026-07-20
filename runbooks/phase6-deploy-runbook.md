@@ -65,6 +65,7 @@ ALLOW_DIRTY_SOURCE=1 bash scripts/check_homedata_web_stale.sh /Users/rayli/Deskt
 - `package-lock.json`
 - `tsconfig.json`
 - `vite.config.ts`
+- `playwright.config.ts`（`src/previewIsolation.test.ts` 的测试合同依赖）
 - `postcss.config.mjs`
 - `vercel.json`
 - `.gitignore`
