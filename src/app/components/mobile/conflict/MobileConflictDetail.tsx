@@ -23,6 +23,7 @@ import {
   DialogDescription,
 } from '../../ui/dialog';
 import { MobileDetailHeader } from '../MobileDetailHeader';
+import { ConfirmDialog } from '../../patterns/ConfirmDialog';
 import { conflictRepository, type ConflictContext } from '../../../services/repositories/conflictRepository';
 import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
 import type { ConflictRecord } from '../../../types/core';
@@ -174,6 +175,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const [isSubmittingProgress, setIsSubmittingProgress] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiTab, setAiTab] = useState<'policy' | 'script'>('policy');
+  const [resolveConfirmOpen, setResolveConfirmOpen] = useState(false);
 
   const reloadConflict = async () => {
     const next = await loadConflictDetail(id);
@@ -258,9 +260,6 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
   const handleMarkResolved = async () => {
     if (!conflict) {
-      return;
-    }
-    if (!window.confirm('确认将此纠纷标记为已化解吗？')) {
       return;
     }
 
@@ -581,10 +580,20 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
           <Button
             className="flex-1 gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
-            onClick={handleMarkResolved}
+            onClick={() => setResolveConfirmOpen(true)}
           >
             <ShieldCheck className="w-4 h-4" /> 标记化解
           </Button>
+
+          {/* 化解确认弹窗（替代原生 confirm） */}
+          <ConfirmDialog
+            open={resolveConfirmOpen}
+            onOpenChange={setResolveConfirmOpen}
+            title="标记已化解"
+            description="确认将此纠纷标记为已化解吗？"
+            confirmText="标记化解"
+            onConfirm={() => void handleMarkResolved()}
+          />
         </div>
       )}
     </div>

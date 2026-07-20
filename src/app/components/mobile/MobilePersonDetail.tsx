@@ -697,8 +697,8 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       
                       if (isBoth) {
                         // 既有血缘又有同住：紫色
-                        nodeColor = 'bg-purple-500';
-                        strokeColor = '#a855f7';
+                        nodeColor = 'bg-[var(--color-accent-purple)]';
+                        strokeColor = 'var(--color-accent-purple-text)';
                         strokeDasharray = '';
                       } else if (hasFamily) {
                         // 只血缘：红色线
@@ -764,7 +764,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                     <span className="text-[var(--color-neutral-10)]">同住</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <div className="w-2.5 h-2.5 rounded-full bg-purple-500"></div>
+                    <div className="w-2.5 h-2.5 rounded-full bg-[var(--color-accent-purple)]"></div>
                     <span className="text-[var(--color-neutral-10)]">血缘+同住</span>
                   </div>
                 </div>

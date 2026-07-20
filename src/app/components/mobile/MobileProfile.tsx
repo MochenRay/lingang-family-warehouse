@@ -16,6 +16,7 @@ import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MobileLayout } from './MobileLayout';
+import { ConfirmDialog } from '../patterns/ConfirmDialog';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobileProfileProps {
@@ -30,6 +31,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     const saved = mobileContextRepository.getCurrentGridSelection();
     return { id: saved.id || 'g1', name: saved.name || '登州街道海梦苑社区第一网格' };
   });
+  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
 
   // 模拟切换网格身份（开发调试用）
   const switchGrid = (gridId: string) => {
@@ -70,13 +72,15 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
   ];
 
   const handleLogout = () => {
-    if (confirm('确定要退出登录吗？')) {
-      mobileContextRepository.clearCurrentWorkerName();
-      if (onLogout) {
-        onLogout();
-      } else {
-        onRouteChange('/mobile');
-      }
+    setLogoutConfirmOpen(true);
+  };
+
+  const executeLogout = () => {
+    mobileContextRepository.clearCurrentWorkerName();
+    if (onLogout) {
+      onLogout();
+    } else {
+      onRouteChange('/mobile');
     }
   };
 
@@ -136,7 +140,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
                   <div className="text-xs text-[var(--color-neutral-06)] font-medium">问题上报</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-2xl font-bold text-[#8B3BCC] mb-1">{stats.completionRate}%</div>
+                  <div className="text-2xl font-bold text-[var(--color-accent-purple)] mb-1">{stats.completionRate}%</div>
                   <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成率</div>
                 </div>
               </div>
@@ -185,6 +189,17 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
             <LogOut className="w-5 h-5 mr-2" />
             退出登录
           </Button>
+
+          {/* 退出确认弹窗（替代原生 confirm） */}
+          <ConfirmDialog
+            open={logoutConfirmOpen}
+            onOpenChange={setLogoutConfirmOpen}
+            title="退出登录"
+            description="确定要退出登录吗？"
+            confirmText="退出"
+            destructive
+            onConfirm={executeLogout}
+          />
 
           {/* 版本信息 */}
           <div className="text-center text-xs text-[var(--color-neutral-06)] pb-4">

@@ -31,6 +31,7 @@ import { MobileActivity } from './MobileActivity';
 import { MobilePolicyInterpretation } from './MobilePolicyInterpretation';
 import { MobileOfficialWriting } from './MobileOfficialWriting';
 import { MobileSmartQuery } from './MobileSmartQuery';
+import { ConfirmDialog } from '../patterns/ConfirmDialog';
 import { toast } from 'sonner';
 
 interface MobileAppProps {
@@ -107,6 +108,9 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   const [history, setHistory] = useState<string[]>(() => {
     return buildInitialHistory();
   });
+
+  // 退出确认弹窗：'mobile'=退出移动端模式，'logout'=退出登录返回电脑端
+  const [pendingExitAction, setPendingExitAction] = useState<'mobile' | 'logout' | null>(null);
   
   // 获取当前路由（栈顶）
   const currentRoute = history[history.length - 1];
@@ -207,15 +211,17 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     });
   };
 
-  // 退出移动端模式
+  // 退出移动端模式（确认弹窗替代原生 confirm）
   const handleExitMobile = () => {
-    if (confirm('确定要退出移动端模式吗？')) {
-      if (onExitMobile) {
-        onExitMobile();
-      } else {
-        setHistory(['home']);
-        toast.info('已返回移动端工作台首页');
-      }
+    setPendingExitAction('mobile');
+  };
+
+  const executePendingExit = () => {
+    if (onExitMobile) {
+      onExitMobile();
+    } else {
+      setHistory(['home']);
+      toast.info('已返回移动端工作台首页');
     }
   };
 
@@ -302,16 +308,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'profile':
         return <MobileProfile 
           onRouteChange={handleRouteChange} 
-          onLogout={() => {
-            if (confirm('确定要退出登录并返回电脑端吗？')) {
-              if (onExitMobile) {
-                onExitMobile();
-              } else {
-                setHistory(['home']);
-                toast.info('已返回移动端工作台首页');
-              }
-            }
-          }} 
+          onLogout={() => setPendingExitAction('logout')} 
           onExitMobile={handleExitMobile}
         />;
       case 'collect-house':
@@ -376,6 +373,17 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
         
         {renderPage()}
       </div>
+
+      {/* 退出确认弹窗（替代原生 confirm） */}
+      <ConfirmDialog
+        open={pendingExitAction !== null}
+        onOpenChange={(open) => !open && setPendingExitAction(null)}
+        title={pendingExitAction === 'logout' ? '退出登录' : '退出移动端模式'}
+        description={pendingExitAction === 'logout' ? '确定要退出登录并返回电脑端吗？' : '确定要退出移动端模式吗？'}
+        confirmText="退出"
+        destructive
+        onConfirm={executePendingExit}
+      />
     </div>
   );
 }
