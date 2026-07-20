@@ -257,7 +257,8 @@ import { DIALOG_CLASS } from '@/app/components/patterns/surfaces';
 | 组件/常量 | 一句话用法 |
 |-----------|-----------|
 | `StatCard` | 顶部指标卡：`<StatCard label value hint icon tone?>` |
-| `StatusBadge` / `RiskBadge` | 状态/风险徽标，tone: `success \| warning \| error \| info \| neutral` |
+| `StatusBadge` | 状态徽标：`<StatusBadge tone>`，tone: `success \| warning \| error \| info \| neutral` |
+| `RiskBadge` | 风险徽标：`<RiskBadge level>`，level 接 `高/中/低`（或 `high/medium/low`），内部映射到 StatusBadge tone |
 | `EmptyState` / `ErrorState` / `LoadingState` | 空态/错误态/加载态占位，替代各页手写空列表提示 |
 | `DataTableBody` / `TablePagination` | 表格主体（含 loading/empty 处理）与统一分页条 |
 | `ConfirmDialog` | 确认对话框；**全项目原生 `confirm()` 已清零，一律用它** |

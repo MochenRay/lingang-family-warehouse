@@ -64,27 +64,15 @@ if [[ -n "$(git -C "${SOURCE_ROOT}" status --porcelain)" ]]; then
 fi
 SYNCED_AT_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 
-cat > "${STAGING_DIR}/SYNC_SOURCE.json" <<EOF
-{
-  "target_project": "homedata-web",
-  "managed_by": "scripts/sync_homedata_web.sh",
-  "source_repo_name": "lingang-family-warehouse",
-  "source_repo_path": "${SOURCE_ROOT}",
-  "source_remote": "${SOURCE_REMOTE}",
-  "source_branch": "${SOURCE_BRANCH}",
-  "source_commit_sha": "${SOURCE_COMMIT_SHA}",
-  "source_dirty": ${SOURCE_DIRTY},
-  "synced_at_utc": "${SYNCED_AT_UTC}",
-  "sync_mode": "truth-to-projection-whitelist"
-}
-EOF
-
 # ==========================================
 # 投影产物门禁（P6）：同步前对暂存产物强制执行
 # npm ci → typecheck → Vitest → build，任一失败即中止，
 # 防止「源仓绿、投影红」带病发布（PR #68→#69 教训）。
-# 逃逸口：PROJECTION_SKIP_VERIFY=1（仅限紧急热修，须在 PR 说明）。
+# 逃逸口：PROJECTION_SKIP_VERIFY=1（仅限紧急热修；
+# 使用即写入 SYNC_SOURCE.json 的 projection_verification=skipped
+# 作为持久审计记录，并须在 PR body 说明）。
 # ==========================================
+PROJECTION_VERIFICATION="passed"
 if [[ "${PROJECTION_SKIP_VERIFY:-0}" != "1" ]]; then
   echo "== 投影产物门禁：在暂存目录执行 npm ci → typecheck → vitest → build =="
   (
@@ -96,9 +84,50 @@ if [[ "${PROJECTION_SKIP_VERIFY:-0}" != "1" ]]; then
   )
   echo "== 投影产物门禁：通过 =="
 else
-  echo "WARNING: PROJECTION_SKIP_VERIFY=1，跳过投影产物门禁。" >&2
+  PROJECTION_VERIFICATION="skipped"
+  echo "WARNING: PROJECTION_SKIP_VERIFY=1，跳过投影产物门禁；该跳过将记录进 SYNC_SOURCE.json 的 projection_verification 字段，并须在 PR body 说明。" >&2
 fi
 
-rsync -a --delete --exclude ".git" "${STAGING_DIR}/" "${TARGET_ROOT}/"
+cat > "${STAGING_DIR}/SYNC_SOURCE.json" <<EOF
+{
+  "target_project": "homedata-web",
+  "managed_by": "scripts/sync_homedata_web.sh",
+  "source_repo_name": "lingang-family-warehouse",
+  "source_repo_path": "${SOURCE_ROOT}",
+  "source_remote": "${SOURCE_REMOTE}",
+  "source_branch": "${SOURCE_BRANCH}",
+  "source_commit_sha": "${SOURCE_COMMIT_SHA}",
+  "source_dirty": ${SOURCE_DIRTY},
+  "synced_at_utc": "${SYNCED_AT_UTC}",
+  "sync_mode": "truth-to-projection-whitelist",
+  "projection_verification": "${PROJECTION_VERIFICATION}"
+}
+EOF
 
-echo "synced ${TARGET_ROOT}"
+# ==========================================
+# 同步产物白名单：门禁会在暂存目录生成 node_modules/dist 等
+# 可再生构建产物，禁止进入发布仓（此前曾把 218MB node_modules
+# rsync 进目标工作树，PR #70 评审教训）。先清理目标侧同类
+# 目录（均为可再生），再带排除同步，最后断言其不存在。
+# ==========================================
+ARTIFACT_DIRS=(node_modules dist coverage test-results playwright-report)
+for artifact_dir in "${ARTIFACT_DIRS[@]}"; do
+  rm -rf "${TARGET_ROOT:?}/${artifact_dir}"
+done
+
+RSYNC_EXCLUDES=()
+for artifact_dir in "${ARTIFACT_DIRS[@]}"; do
+  RSYNC_EXCLUDES+=(--exclude "${artifact_dir}/")
+done
+
+rsync -a --delete --exclude ".git" "${RSYNC_EXCLUDES[@]}" "${STAGING_DIR}/" "${TARGET_ROOT}/"
+
+# fresh target 断言：构建产物不得出现在发布仓工作树
+for artifact_dir in "${ARTIFACT_DIRS[@]}"; do
+  if [[ -e "${TARGET_ROOT}/${artifact_dir}" ]]; then
+    echo "ERROR: 同步后 ${TARGET_ROOT}/${artifact_dir} 仍存在，投影产物白名单被破坏。" >&2
+    exit 1
+  fi
+done
+
+echo "synced ${TARGET_ROOT}（projection_verification=${PROJECTION_VERIFICATION}）"

@@ -19,7 +19,7 @@
 | theme.css `!important` 浅色类补丁表 | ✅ 已解决 | 补丁表已整体删除，仅保留 h/p/a/input 基础样式、禁用态、table/dialog/menu/tooltip 适配与 `animate-pulse` |
 | 页面模式不统一（面板/弹窗/动画/遮罩/确认框） | ✅ 已解决 | P2 冻结 `src/app/components/patterns/`：`PANEL_CLASS`/`DIALOG_CLASS`、`ConfirmDialog`（原生 `confirm()` 清零）、`StatCard`、`EmptyState/ErrorState/LoadingState`、`DataTableBody/TablePagination`、`FilterBar/SearchInput`；页面进入动画统一 `page-enter`；遮罩统一 `bg-overlay rgba(0,0,0,0.6)` |
 
-**现行基线**：中性色板 #131623/#1d2336/#2c334d/#3d4663/#4e587a（背景）、#6b7599/#9ba8cc/#d0daf0/#ffffff（文字）；raw hex（theme.css/chartConfig.ts 语义映射之外）≈90（基线 993）。正式来源以 `src/styles/theme.css` 为准，速查见 `reference/QUICK_VALUES.md`。
+**现行基线**：中性色板 #131623/#1d2336/#2c334d/#3d4663/#4e587a（背景）、#6b7599/#9ba8cc/#d0daf0/#ffffff（文字）；raw hex（theme.css/chartConfig.ts 语义映射之外）**0**（基线 993，全 src 含语义映射层共 56）。正式来源以 `src/styles/theme.css` 为准，速查见 `reference/QUICK_VALUES.md`。
 
 > 以下为历史审计原文，保留备查。
 
