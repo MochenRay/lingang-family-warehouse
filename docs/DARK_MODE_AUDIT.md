@@ -5,6 +5,26 @@
 
 ---
 
+## ✅ 闭环状态（2026-07-20）
+
+**状态：已闭环。** 经 P1a-P4d UI 精修批次（全部合并上线），本文档记录的已知问题均已解决：
+
+| 已知问题 | 状态 | 解决方式 |
+|----------|------|----------|
+| 移动端组件浅色残留（§2.1） | ✅ 已解决 | 移动端组件全部 token 化；新增 `MobileDetailHeader` 统一详情页头部；全项目灰阶 utility（gray/slate 等）已清零 |
+| 图表配色不统一（§2.2、§8.2） | ✅ 已解决 | 统一收口至 `src/app/config/chartConfig.ts`（唯一图表主题源）：6 色系列、轴/网格/图例/Tooltip（`CHART_TOOLTIP`）全部对齐 theme.css neutral token，各页自定义 COLORS 数组已移除 |
+| 按钮/圆角未统一（§2.3） | ✅ 已解决 | `ui/` 基础组件全部 token 化，圆角收敛为 `@theme --radius-sm/md/lg/xl = 2/4/8/12px`（按钮/输入/Tag 2px、卡片/菜单/Tooltip 4px、对话框/工具栏 8px） |
+| Badge/Tag 颜色不统一（§2.4） | ✅ 已解决 | 统一为 `patterns/StatusBadge` / `RiskBadge`（tone: success/warning/error/info/neutral），深底文字与 soft 软衬底色板随 P1a 新增 |
+| 手机模拟器边框 border-gray-900（§8.1） | ✅ 已解决 | 已替换为中性色 token，灰阶 utility 全项目清零 |
+| theme.css `!important` 浅色类补丁表 | ✅ 已解决 | 补丁表已整体删除，仅保留 h/p/a/input 基础样式、禁用态、table/dialog/menu/tooltip 适配与 `animate-pulse` |
+| 页面模式不统一（面板/弹窗/动画/遮罩/确认框） | ✅ 已解决 | P2 冻结 `src/app/components/patterns/`：`PANEL_CLASS`/`DIALOG_CLASS`、`ConfirmDialog`（原生 `confirm()` 清零）、`StatCard`、`EmptyState/ErrorState/LoadingState`、`DataTableBody/TablePagination`、`FilterBar/SearchInput`；页面进入动画统一 `page-enter`；遮罩统一 `bg-overlay rgba(0,0,0,0.6)` |
+
+**现行基线**：中性色板 #131623/#1d2336/#2c334d/#3d4663/#4e587a（背景）、#6b7599/#9ba8cc/#d0daf0/#ffffff（文字）；raw hex（theme.css/chartConfig.ts 语义映射之外）≈90（基线 993）。正式来源以 `src/styles/theme.css` 为准，速查见 `reference/QUICK_VALUES.md`。
+
+> 以下为历史审计原文，保留备查。
+
+---
+
 ## 一、审计范围
 
 ### 1.1 组件类型检查
@@ -24,6 +44,8 @@
 ## 二、发现的问题
 
 ### 2.1 ❌ 移动端组件大量使用亮色（未适配暗色）
+
+> ✅ **已解决（2026-07-20，P1a-P4d）**：移动端组件已全部 token 化，灰阶 utility 全项目清零；`MobileDetailHeader` 统一详情页头部。
 
 **问题文件**：
 - `/src/app/components/mobile/MobileApp.tsx`
@@ -78,6 +100,8 @@
 
 ### 2.2 ❌ 图表组件使用非规范颜色
 
+> ✅ **已解决（2026-07-20，P1a-P4d）**：图表主题统一收口至 `src/app/config/chartConfig.ts`（唯一来源），硬编码 hex 与 `bg-white` 容器已清除。
+
 **问题文件**：
 - `/src/app/components/pages/DashboardPage.tsx`
 - `/src/app/components/pages/StatisticsOverview.tsx`
@@ -109,6 +133,8 @@
 
 ### 2.3 ❌ 按钮组件未统一使用规范
 
+> ✅ **已解决（2026-07-20，P1a-P4d）**：`ui/button.tsx` 已 token 化，圆角统一为 `@theme --radius-sm = 2px`（按钮/输入/Tag），Tailwind 默认蓝色类已清除。
+
 **问题文件**：
 - `/src/app/components/mobile/HouseCollect.tsx`
 - `/src/app/components/pages/*`
@@ -134,6 +160,8 @@
 ---
 
 ### 2.4 ❌ Badge/Tag 组件颜色不统一
+
+> ✅ **已解决（2026-07-20，P2 冻结）**：统一为 `patterns/StatusBadge` / `RiskBadge`（tone: success/warning/error/info/neutral），深底文字/soft 色随 P1a 色板扩展生效。
 
 **问题**：
 ```tsx
@@ -368,6 +396,9 @@ text-blue-600 → text-primary
 ## 八、已知问题记录
 
 ### 8.1 移动端模拟器容器
+
+> ✅ **已解决（2026-07-20，P1a-P4d）**：手机模拟器边框已改用中性色 token，灰阶 utility 全项目清零，暗色下不再过亮。
+
 **问题**：`MobileApp.tsx` 中的移动端模拟器边框使用 `border-gray-900`，在暗色模式下太亮。
 
 **位置**：`/src/app/components/mobile/MobileApp.tsx:153`
@@ -382,6 +413,9 @@ md:border-[var(--color-neutral-04)]
 ```
 
 ### 8.2 图表颜色数组
+
+> ✅ **已解决（2026-07-20，P1a-P4d）**：各页自定义 `COLORS` 数组已移除，统一从 `src/app/config/chartConfig.ts`（`CHART_COLORS` 等）取色。
+
 **问题**：多个页面定义了自己的 `COLORS` 数组，未使用规范色板。
 
 **位置**：
@@ -406,6 +440,6 @@ md:border-[var(--color-neutral-04)]
 
 ---
 
-**文档版本**：v1.0  
+**文档版本**：v1.1  
 **创建日期**：2026-01-14  
-**状态**：审计中 ⏳
+**状态**：已闭环 ✅（2026-07-20，P1a-P4d；详见文首闭环状态块）

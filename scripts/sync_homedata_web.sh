@@ -79,6 +79,26 @@ cat > "${STAGING_DIR}/SYNC_SOURCE.json" <<EOF
 }
 EOF
 
+# ==========================================
+# 投影产物门禁（P6）：同步前对暂存产物强制执行
+# npm ci → typecheck → Vitest → build，任一失败即中止，
+# 防止「源仓绿、投影红」带病发布（PR #68→#69 教训）。
+# 逃逸口：PROJECTION_SKIP_VERIFY=1（仅限紧急热修，须在 PR 说明）。
+# ==========================================
+if [[ "${PROJECTION_SKIP_VERIFY:-0}" != "1" ]]; then
+  echo "== 投影产物门禁：在暂存目录执行 npm ci → typecheck → vitest → build =="
+  (
+    cd "${STAGING_DIR}"
+    npm ci --no-audit --no-fund
+    npm run typecheck
+    npm test
+    npm run build
+  )
+  echo "== 投影产物门禁：通过 =="
+else
+  echo "WARNING: PROJECTION_SKIP_VERIFY=1，跳过投影产物门禁。" >&2
+fi
+
 rsync -a --delete --exclude ".git" "${STAGING_DIR}/" "${TARGET_ROOT}/"
 
 echo "synced ${TARGET_ROOT}"

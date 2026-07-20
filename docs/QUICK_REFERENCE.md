@@ -1,8 +1,10 @@
 # 快速参考手册
 
 > 创建时间：2025-01-13  
+> 最后更新：2026-07-20（P6 文档同步，对齐 P1a-P4d 精修后的实现）  
 > 用途：开发时的快速参考，涵盖最常用的代码片段和规范  
-> 目标：5分钟内找到你需要的任何信息
+> 目标：5分钟内找到你需要的任何信息  
+> **数值正式来源：`src/styles/theme.css`（图表为 `src/app/config/chartConfig.ts`）**
 
 ---
 
@@ -13,6 +15,7 @@
 - [动画效果](#动画效果)
 - [响应式布局](#响应式布局)
 - [常用组件](#常用组件)
+- [组件模式（patterns）](#组件模式patterns)
 - [代码片段](#代码片段)
 
 ---
@@ -20,30 +23,28 @@
 ## 📏 间距规范
 
 ### 快速查询表
-| 用途 | 像素值 | Tailwind | 常量 |
-|------|--------|----------|------|
-| 图标与文字 | 4px | `gap-1` | `SPACING.xs` |
-| 按钮间距 | 8px | `gap-2` | `SPACING.sm` |
-| 表单字段间距 | 16px | `gap-4` | `SPACING.lg` |
-| **页面边距** | **24px** | **`p-6`** | **`SPACING.xl`** |
-| **区块间距** | **24px** | **`space-y-6`** | **`SPACING.xl`** |
-| **卡片内边距** | **16px** | **`p-4`** | **`SPACING.lg`** |
+| 用途 | 像素值 | Tailwind |
+|------|--------|----------|
+| 图标与文字 | 4px | `gap-1` |
+| 按钮间距 | 8px | `gap-2` |
+| 表单字段间距 | 16px | `gap-4` |
+| **页面边距** | **24px** | **`p-6`** |
+| **区块间距** | **24px** | **`space-y-6`** |
+| **卡片内边距** | **16px** | **`p-4`** |
 
 ### 使用示例
 ```tsx
 import { SPACING_CLASSES } from '@/app/config/ui-constants';
 
-// 页面容器
+// 页面容器（ui-constants 现仅保留 page 一项，其余间距直接写 Tailwind 类）
 <main className={SPACING_CLASSES.page}> {/* 24px */}
-  
+
   {/* 区块间距 */}
-  <div className={SPACING_CLASSES.section}> {/* 24px */}
-    
-    {/* 卡片 */}
-    <Card className={SPACING_CLASSES.card}> {/* 16px */}
-      内容
-    </Card>
-    
+  <div className="space-y-6">
+
+    {/* 卡片：标准面板样式统一用 patterns 的 PANEL_CLASS */}
+    <div className={PANEL_CLASS}>内容</div>
+
   </div>
 </main>
 ```
@@ -54,74 +55,79 @@ import { SPACING_CLASSES } from '@/app/config/ui-constants';
 
 ### 主色调
 ```tsx
-// Tailwind 类名
-<Button className="bg-[#2761CB]">主按钮</Button> // Blue-06
+// Tailwind 语义类（首选）
+<Button className="bg-primary">主按钮</Button>
 
 // CSS 变量
 style={{ color: 'var(--color-brand-primary)' }}
 
-// Hex 值（仅供参考，优先使用 Tailwind 或 CSS 变量）
+// Hex 值（仅供查阅，代码中不要手写 hex）
 #2761CB  // Blue-06 主色
 #4E86DF  // Blue-07 Hover
-#2251A8  // Blue-05 Click
+#2251A8  // Blue-05 Click/Active
 ```
 
-### 功能色
+### 功能色（含 P1a 深底扩展）
 ```tsx
-成功: #19B172  // Green-06
-警告: #D6730D  // Orange-06
-错误: #D52132  // Red-06
-信息: #2AA3CF  // Light-blue-06
+成功: #19B172  深底文字 #4AD3A0  soft rgba(25,177,114,0.14)
+警告: #D6730D  深底文字 #F09640  soft rgba(214,115,13,0.16)
+错误: #D52132  深底文字 #EB636F  soft rgba(213,33,50,0.16)
+信息: #2AA3CF  深底文字 #62C4E8  soft rgba(42,163,207,0.16)
+
+// 深底文字/软衬底使用语义类，如：
+<span className="text-[var(--color-status-success-text)]">成功</span>
+<span className="bg-[var(--color-status-success-soft)]">…</span>
 ```
 
-### 中性色（暗色模式）
+### 强调紫（P4d 新增）
 ```tsx
-背景: #0D121B  // Neutral-00
-卡片: #1F293A  // Neutral-02
-边框: #293449  // Neutral-03
-文字: #AEC0DE  // Neutral-10
-标题: #F6F9FE  // Neutral-11
+#8B3BCC            // accent-purple
+#C9A5F2            // accent-purple-text（深底可读）
+rgba(139,59,204,0.16)  // accent-purple-soft
+```
+
+### 中性色（暗色模式，现行实现值）
+```tsx
+页面背景: #131623  // Neutral-00（侧边栏）
+内容背景: #1d2336  // Neutral-01
+卡片背景: #2c334d  // Neutral-02
+边框/三阶: #3d4663 // Neutral-03
+最亮层级: #4e587a  // Neutral-04
+辅助文字: #6b7599  // Neutral-06
+次要文字: #9ba8cc  // Neutral-08
+主要文字: #d0daf0  // Neutral-10
+标题文字: #ffffff  // Neutral-11
 ```
 
 ---
 
 ## ✨ 动画效果
 
-### 过渡类名
+> P1c 收敛后的现状：**全局 `transition-all` 与按钮 hover 位移已移除**（"hover 飘"观感来源），
+> 交互动效由各组件 class 受控声明；旧的 `.fade-in / .slide-in-* / .scale-in / .page-load / .card-hover` 全局动画类均已删除。
+
+### 页面进入动画（唯一统一入口）
+```tsx
+// tailwind.css 定义的 @utility page-enter（0.3s ease-out 淡入）
+<div className="page-enter">页面内容</div>
+```
+
+### 过渡常量
 ```tsx
 import { TRANSITION_CLASSES } from '@/app/config/ui-constants';
 
-<div className={TRANSITION_CLASSES.default}>      // 标准 200ms
-<div className={TRANSITION_CLASSES.fast}>         // 快速 150ms
-<div className={TRANSITION_CLASSES.slow}>         // 慢速 300ms
-<div className={TRANSITION_CLASSES.colors}>       // 仅颜色
-<div className={TRANSITION_CLASSES.transform}>    // 仅变换
+// 现仅保留 default 一项（App.tsx 在用）：
+TRANSITION_CLASSES.default  // 'transition-all duration-200 ease-in-out'
 ```
 
-### 动画类名
+### 其他
 ```tsx
-// 淡入淡出
-<div className="fade-in">淡入</div>
-<div className="fade-out">淡出</div>
+// 骨架屏：使用基础组件
+import { Skeleton } from '@/app/components/ui/skeleton';
+<Skeleton className="h-4 w-32" />
 
-// 滑入
-<div className="slide-in-top">从上滑入</div>
-<div className="slide-in-bottom">从下滑入</div>
-<div className="slide-in-left">从左滑入</div>
-<div className="slide-in-right">从右滑入</div>
-
-// 缩放
-<div className="scale-in">放大进入</div>
-<div className="scale-out">缩小退出</div>
-
-// 页面加载
-<div className="page-load">页面内容</div>
-
-// 卡片 Hover
-<Card className="card-hover">卡片</Card>
-
-// 骨架屏
-<div className="skeleton">加载中...</div>
+// 录音脉冲动画（MobileVisitForm 专用）：.visit-recording-bar / .visit-recording-dot
+// prefers-reduced-motion 已在 animations.css 全局兜底
 ```
 
 ---
@@ -137,32 +143,14 @@ import { TRANSITION_CLASSES } from '@/app/config/ui-constants';
 
 ### 响应式类名
 ```tsx
-// 响应式栅格（自动适应）
-<div className="responsive-grid">
-  <Card>1</Card>
-  <Card>2</Card>
-  <Card>3</Card>
-  <Card>4</Card>
-</div>
-
 // Tailwind 响应式
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
   {/* 移动端1列，平板端2列，桌面端4列 */}
 </div>
-
-// 条件显示
-<div className="mobile-only">仅移动端</div>
-<div className="tablet-up">平板及以上</div>
-<div className="desktop-only">仅桌面端</div>
 ```
 
 ### 响应式间距
 ```tsx
-// 自动适应的边距
-<div className="responsive-page-padding">
-  {/* 移动端16px，平板/桌面24px */}
-</div>
-
 // Tailwind 方式
 <div className="p-4 md:p-6">
   {/* 移动端16px，平板/桌面24px */}
@@ -243,9 +231,11 @@ import {
   DialogTitle, 
   DialogFooter 
 } from '@/app/components/ui/dialog';
+import { DIALOG_CLASS } from '@/app/components/patterns/surfaces';
 
 <Dialog open={isOpen} onOpenChange={setIsOpen}>
-  <DialogContent>
+  {/* 弹窗标准底色统一使用 DIALOG_CLASS，不要手写深色类 */}
+  <DialogContent className={DIALOG_CLASS}>
     <DialogHeader>
       <DialogTitle>标题</DialogTitle>
     </DialogHeader>
@@ -259,36 +249,45 @@ import {
 
 ---
 
+## 🧱 组件模式（patterns）
+
+> 位置：`src/app/components/patterns/`（P2 冻结，页面级重复模式统一收口于此）。
+> 旧的各页手写 `PANEL_CLASS` / `DARK_CARD_CLASS` / `DARK_DIALOG_CLASS` 常量已全部收敛到这里。
+
+| 组件/常量 | 一句话用法 |
+|-----------|-----------|
+| `StatCard` | 顶部指标卡：`<StatCard label value hint icon tone?>` |
+| `StatusBadge` / `RiskBadge` | 状态/风险徽标，tone: `success \| warning \| error \| info \| neutral` |
+| `EmptyState` / `ErrorState` / `LoadingState` | 空态/错误态/加载态占位，替代各页手写空列表提示 |
+| `DataTableBody` / `TablePagination` | 表格主体（含 loading/empty 处理）与统一分页条 |
+| `ConfirmDialog` | 确认对话框；**全项目原生 `confirm()` 已清零，一律用它** |
+| `FilterBar` / `SearchInput` | 筛选条容器与搜索输入，页面筛选区统一组合 |
+| `PANEL_CLASS` / `DIALOG_CLASS` | 标准卡片面板/弹窗底色 class，直接用，不要手写深色类 |
+| `MobileDetailHeader`（mobile/） | 移动端详情页统一头部（返回 + 标题 + 操作） |
+
+---
+
 ## 💻 代码片段
 
 ### 完整页面模板
 ```tsx
-import { SPACING_CLASSES, TRANSITION_CLASSES } from '@/app/config/ui-constants';
+import { SPACING_CLASSES } from '@/app/config/ui-constants';
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/card';
 import { Button } from '@/app/components/ui/button';
+import { StatCard } from '@/app/components/patterns/StatCard';
 
 export function PageTemplate() {
   return (
-    <div className={`page-load ${SPACING_CLASSES.section}`}>
-      {/* 页面标题 */}
+    <div className={`page-enter ${SPACING_CLASSES.page} space-y-6`}>
+      {/* 页面标题：使用语义文字色，不要写 text-gray-*（全项目灰阶 utility 已清零） */}
       <div>
-        <h1 className="text-2xl font-semibold text-gray-900">页面标题</h1>
-        <p className="text-sm text-gray-600 mt-1">页面描述</p>
+        <h1 className="text-2xl font-semibold text-foreground">页面标题</h1>
+        <p className="text-sm text-muted-foreground mt-1">页面描述</p>
       </div>
 
-      {/* 响应式栅格 */}
+      {/* 响应式指标卡 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className={`card-hover ${TRANSITION_CLASSES.default}`}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-700">
-              卡片标题
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-semibold">数据</p>
-            <p className="text-xs text-gray-500 mt-1">说明</p>
-          </CardContent>
-        </Card>
+        <StatCard label="卡片标题" value="1,234" hint="说明文字" />
       </div>
 
       {/* 操作按钮 */}
@@ -354,7 +353,7 @@ export function FormTemplate() {
 ### 数据列表模板
 ```tsx
 import { Card, CardHeader, CardTitle, CardContent } from '@/app/components/ui/card';
-import { Badge } from '@/app/components/ui/badge';
+import { StatusBadge } from '@/app/components/patterns/StatusBadge';
 
 const items = [
   { id: 1, name: '项目1', status: 'active' },
@@ -372,12 +371,12 @@ export function ListTemplate() {
           {items.map((item) => (
             <div
               key={item.id}
-              className="flex items-center justify-between p-3 rounded-md hover:bg-gray-50 transition-colors"
+              className="flex items-center justify-between p-3 rounded-md hover:bg-[var(--color-neutral-03)] transition-colors"
             >
               <span className="text-sm">{item.name}</span>
-              <Badge variant={item.status === 'active' ? 'default' : 'secondary'}>
+              <StatusBadge tone={item.status === 'active' ? 'success' : 'neutral'}>
                 {item.status === 'active' ? '活跃' : '非活跃'}
-              </Badge>
+              </StatusBadge>
             </div>
           ))}
         </div>
@@ -416,7 +415,7 @@ export function ListTemplate() {
 
 ---
 
-**文档版本**：v1.0  
+**文档版本**：v2.0  
 **创建日期**：2025-01-13  
-**最后更新**：2025-01-13  
+**最后更新**：2026-07-20  
 **维护人**：AI Assistant
