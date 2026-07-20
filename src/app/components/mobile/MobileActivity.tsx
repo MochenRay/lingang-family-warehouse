@@ -77,7 +77,7 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
   const getStatusConfig = (activity: Activity) => {
     if (activeTab === 'grid') {
       switch (activity.executionStatus) {
-        case 'in_progress': return { label: '进行中', icon: PlayCircle, bg: 'bg-emerald-500', dot: 'bg-emerald-400', pulse: true };
+        case 'in_progress': return { label: '进行中', icon: PlayCircle, bg: 'bg-[var(--color-status-success)]', dot: 'bg-[var(--color-status-success-text)]', pulse: true };
         case 'to_start': return { label: '待开始', icon: Clock, bg: 'bg-[var(--color-brand-primary)]', dot: 'bg-[var(--color-brand-primary-hover)]', pulse: false };
         case 'ended': return { label: '已结束', icon: CheckCircle2, bg: 'bg-[var(--color-neutral-05)]', dot: 'bg-[var(--color-neutral-07)]', pulse: false };
         case 'cancelled': return { label: '已取消', icon: XCircle, bg: 'bg-[var(--color-neutral-05)]', dot: 'bg-[var(--color-neutral-07)]', pulse: false };
@@ -85,10 +85,10 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
       }
     } else {
       switch (activity.approvalStatus) {
-        case 'pending': return { label: '审批中', icon: Clock3, bg: 'bg-amber-500', dot: 'bg-amber-400', pulse: true };
+        case 'pending': return { label: '审批中', icon: Clock3, bg: 'bg-[var(--color-status-warning)]', dot: 'bg-[var(--color-status-warning-text)]', pulse: true };
         case 'rejected': return { label: '未通过', icon: AlertCircle, bg: 'bg-[var(--color-status-error)]', dot: 'bg-[var(--color-status-error-text)]', pulse: false };
         case 'approved': {
-          if (activity.executionStatus === 'in_progress') return { label: '已通过·进行中', icon: PlayCircle, bg: 'bg-emerald-500', dot: 'bg-emerald-400', pulse: true };
+          if (activity.executionStatus === 'in_progress') return { label: '已通过·进行中', icon: PlayCircle, bg: 'bg-[var(--color-status-success)]', dot: 'bg-[var(--color-status-success-text)]', pulse: true };
           if (activity.executionStatus === 'ended') return { label: '已通过·已结束', icon: CheckCircle2, bg: 'bg-[var(--color-neutral-05)]', dot: 'bg-[var(--color-neutral-07)]', pulse: false };
           return { label: '已通过', icon: CheckCircle2, bg: 'bg-[var(--color-brand-primary)]', dot: 'bg-[var(--color-brand-primary-hover)]', pulse: false };
         }
@@ -99,14 +99,14 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
 
   const getCategoryStyle = (subcategory: string) => {
     switch (subcategory) {
-      case '环境整治': return { icon: Sprout, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' };
-      case '助老扶弱': return { icon: HeartHandshake, color: 'text-rose-500', bg: 'bg-rose-50', border: 'border-rose-100' };
+      case '环境整治': return { icon: Sprout, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]', border: 'border-[var(--color-status-success)]/35' };
+      case '助老扶弱': return { icon: HeartHandshake, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
       case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]' };
-      case '便民服务': return { icon: Wrench, color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100' };
+      case '便民服务': return { icon: Wrench, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]/35' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]' };
       case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
-      case '露天电影': return { icon: Film, color: 'text-indigo-600', bg: 'bg-indigo-50', border: 'border-indigo-100' };
-      case '手工制作': return { icon: Scissors, color: 'text-pink-500', bg: 'bg-pink-50', border: 'border-pink-100' };
+      case '露天电影': return { icon: Film, color: 'text-[var(--color-status-info-text)]', bg: 'bg-[var(--color-status-info-soft)]', border: 'border-[var(--color-status-info)]/35' };
+      case '手工制作': return { icon: Scissors, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
       default: return { icon: Calendar, color: 'text-[var(--color-neutral-08)]', bg: 'bg-[var(--color-neutral-01)]', border: 'border-[var(--color-neutral-03)]' };
     }
   };

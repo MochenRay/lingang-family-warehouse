@@ -197,8 +197,8 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
       <DialogContent className="sm:max-w-[720px] max-h-[90vh] overflow-y-auto bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-11)]">
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-blue-600/20 rounded-lg">
-              <Zap className="w-5 h-5 text-blue-400" />
+            <div className="p-2 bg-[var(--color-brand-primary)]/20 rounded-lg">
+              <Zap className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
             </div>
             <div>
               <DialogTitle className="text-[var(--color-neutral-11)]">新建待办规则</DialogTitle>
@@ -216,7 +216,7 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
                 placeholder="例如：独居老人季度走访"
                 value={ruleName}
                 onChange={(e) => setRuleName(e.target.value)}
-                className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-06)]"
+                className="bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)]"
               />
             </div>
             <div className="grid gap-2">
@@ -227,18 +227,18 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="critical">
-                    <span className="flex items-center gap-2 text-red-400">
-                      <div className="w-2 h-2 rounded-full bg-red-500" /> 极高
+                    <span className="flex items-center gap-2 text-[var(--color-status-error-text)]">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-status-error)]" /> 极高
                     </span>
                   </SelectItem>
                   <SelectItem value="high">
-                    <span className="flex items-center gap-2 text-orange-400">
-                      <div className="w-2 h-2 rounded-full bg-orange-500" /> 高
+                    <span className="flex items-center gap-2 text-[var(--color-status-warning-text)]">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-status-warning)]" /> 高
                     </span>
                   </SelectItem>
                   <SelectItem value="medium">
-                    <span className="flex items-center gap-2 text-blue-400">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" /> 中
+                    <span className="flex items-center gap-2 text-[var(--color-brand-primary-hover)]">
+                      <div className="w-2 h-2 rounded-full bg-[var(--color-brand-primary)]" /> 中
                     </span>
                   </SelectItem>
                   <SelectItem value="low">
@@ -308,7 +308,7 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
                     <Label className="text-xs text-[var(--color-neutral-07)] flex items-center gap-1">
                       <Filter className="w-3 h-3" /> 过滤条件（满足以下条件时触发）
                     </Label>
-                    <Button variant="ghost" size="sm" className="h-6 text-xs text-blue-400 hover:text-blue-300"
+                    <Button variant="ghost" size="sm" className="h-6 text-xs text-[var(--color-brand-primary-hover)] hover:text-[var(--color-neutral-11)]"
                        onClick={() => setConditions([...conditions, { field: '', op: 'eq', value: '' }])}
                     >
                       <Plus className="w-3 h-3 mr-1" /> 添加条件
@@ -357,7 +357,7 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
                       </Select>
 
                       <Input
-                        className="h-8 text-sm flex-1 bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-06)]"
+                        className="h-8 text-sm flex-1 bg-[var(--color-neutral-01)] border-[var(--color-neutral-04)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)]"
                         placeholder="值"
                         value={cond.value}
                         onChange={(e) => {
@@ -367,7 +367,7 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
                         }}
                       />
 
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-06)] hover:text-red-400"
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-[var(--color-neutral-06)] hover:text-[var(--color-status-error-text)]"
                         onClick={() => setConditions(conditions.filter((_, i) => i !== idx))}
                       >
                         <X className="w-3.5 h-3.5" />
@@ -379,8 +379,8 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
 
               {/* B. 周期触发 */}
               <TabsContent value="schedule" className="space-y-4 mt-0">
-                 <div className="flex gap-4 p-4 bg-orange-500/5 rounded-lg border border-orange-500/20">
-                    <Clock className="w-5 h-5 text-orange-400 flex-shrink-0 mt-1" />
+                 <div className="flex gap-4 p-4 bg-[var(--color-status-warning-soft)] rounded-lg border border-[var(--color-status-warning)]/20">
+                    <Clock className="w-5 h-5 text-[var(--color-status-warning-text)] flex-shrink-0 mt-1" />
                     <div className="space-y-4 flex-1">
                         <div className="grid gap-2">
                             <Label className="text-xs text-[var(--color-neutral-07)]">执行频率</Label>
@@ -483,7 +483,7 @@ export function RuleEditDialog({ open, onOpenChange, onSave }: RuleEditDialogPro
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} className="border-[var(--color-neutral-04)] text-[var(--color-neutral-09)] hover:bg-[var(--color-neutral-03)]">取消</Button>
-          <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white">保存规则</Button>
+          <Button onClick={handleSave} className="bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white">保存规则</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

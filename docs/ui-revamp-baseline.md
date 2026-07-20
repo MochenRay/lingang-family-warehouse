@@ -33,7 +33,7 @@
 | theme.css `!important` | `grep -c '!important' src/styles/theme.css` | 29 |
 | chartConfig 消费者 | `grep -rl 'chartConfig' src/app --include='*.tsx' --include='*.ts' \| grep -v 'config/chartConfig' \| wc -l` | 0 |
 
-**终态口径**：allowlist 之外 raw hex = 0；灰阶/浅色阶/白色 utility 清零（移动端补丁表随之删除）；原生 confirm() = 0；`!important` 补丁表删除。rounded 类以规范档（2/4/8px）落地后的实际口径在 P1a 补充。
+**终态口径（终验校正）**：allowlist 之外 raw hex = 0；灰阶/浅色阶 utility = 0（移动端补丁表随之删除）；原生 confirm() = 0；`!important` 补丁表删除。原“白色 utility 清零”口径有误：`text-white` 是有色底上的合法前景色，不得为追数盲改；`bg-white` 仅允许 `ui/slider.tsx` 与 `ui/switch.tsx` 的两个控制柄。rounded 类以规范档（2/4/8px）落地后的实际口径在 P1a 补充。
 
 ## 4. 移动端 smoke 回归网（P0 新增）
 
@@ -45,6 +45,8 @@
 4. `/mobile/conflict/new` 表单渲染
 
 基线结果：4/4 通过（专用端口）。**P4 各批必须保持全绿。**
+
+终验新增 2 条阻断回归：个人页不再暴露无实现的“系统设置”；退出登录仅有一层确认，取消保留身份，最终确认后才清除身份并返回桌面端。当前移动 smoke 共 6 条。
 
 ## 5. 截图基准
 
@@ -96,3 +98,33 @@
 - index.html FOUC 预设底色 `#0D121B` → `#131623`（与 neutral-00 一致）。
 - 冗余 `dark:` 前缀清理 36 → 0（App.tsx 3、Header.tsx 25、button.tsx 7、dropdown-menu.tsx 1，均保留原 .dark 渲染值，行为不变）。
 - 预期内的视觉变化：按钮/输入圆角 8→2px 档、卡片圆角 →4px 档、text-lg 18→20px、小字行高按规范变宽。
+
+## 8. P1–P4 终验结果（2026-07-20）
+
+### 回归网
+
+| 检查 | 终验结果 |
+| --- | --- |
+| `npm run typecheck` | 通过 |
+| `npm run build` | 通过 |
+| `npm run test` | 8 文件，13/13 通过 |
+| `npm run test:backend` | 20/20 通过；4 条已知依赖/模型 warning |
+| `BACKEND_PORT=18000 FRONTEND_PORT=15173 npm run test:e2e` | 34/34 通过（含 6 条移动 smoke + 18 张截图矩阵） |
+| `scripts/t44_random_click_check.py` | 7/7 通过，console error 0，page error 0 |
+| `git diff --check main` | 通过 |
+
+截图矩阵已由固定等待 1.5s 改为“`networkidle` + 页面 ready text + Skeleton 归零 + 字体 ready”，并禁用动画。终验抽查 `desktop-1440/population.png`，已稳定呈现 1917 总量与真实表格，不再截到 0 值/Skeleton 中间态。
+
+### 机械统计终值
+
+| 指标 | 终值 | 判定 |
+| --- | ---: | --- |
+| raw hex（allowlist 之外） | 0（0 文件） | 通过 |
+| 灰阶 utility | 0 | 通过 |
+| 浅色阶色 utility | 0 | 通过 |
+| `bg-white` | 2 | 通过；仅 Slider/Switch 控制柄 |
+| `text-white` | 105 | 合法有色底前景，非清零项 |
+| rounded-lg/xl/2xl | 148 | 信息项 |
+| 原生 `confirm()` | 0 | 通过 |
+| theme.css `!important` | 3 | 通过；补丁表已删除 |
+| chartConfig 消费者 | 12 | 通过 |

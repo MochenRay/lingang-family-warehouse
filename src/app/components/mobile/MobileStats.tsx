@@ -212,9 +212,9 @@ export function MobileStats({ onBack }: MobileStatsProps) {
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
-      case 1: return <Crown className="w-5 h-5 text-[#FFD700] fill-[#FFD700]" />;
-      case 2: return <Medal className="w-5 h-5 text-[#C0C0C0] fill-[var(--color-neutral-10)]" />;
-      case 3: return <Medal className="w-5 h-5 text-[#CD7F32] fill-[var(--color-status-warning)]" />;
+      case 1: return <Crown className="w-5 h-5 text-[var(--color-medal-gold)] fill-[var(--color-medal-gold)]" />;
+      case 2: return <Medal className="w-5 h-5 text-[var(--color-medal-silver)] fill-[var(--color-medal-silver)]" />;
+      case 3: return <Medal className="w-5 h-5 text-[var(--color-medal-bronze)] fill-[var(--color-medal-bronze)]" />;
       default: return <span className="text-muted-foreground font-bold w-5 text-center">{rank}</span>;
     }
   };

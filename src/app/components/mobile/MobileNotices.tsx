@@ -92,7 +92,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
               onClick={() => setActiveTab(tab.id)}
               className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
                 activeTab === tab.id 
-                  ? 'bg-[var(--color-brand-primary)] text-white shadow-sm' 
+                  ? 'bg-[var(--color-brand-primary)] text-white shadow-sm'
                   : 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)]'
               }`}
             >

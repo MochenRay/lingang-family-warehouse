@@ -38,9 +38,9 @@ function getTypeClassName(type: ConflictRecord['type']) {
     case '邻里纠纷':
       return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)]';
     case '家庭纠纷':
-      return 'bg-pink-100 text-pink-700';
+      return 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]';
     case '物业纠纷':
-      return 'bg-purple-100 text-purple-700';
+      return 'bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)]';
     default:
       return 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
   }

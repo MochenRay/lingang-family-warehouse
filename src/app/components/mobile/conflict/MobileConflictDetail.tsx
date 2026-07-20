@@ -374,7 +374,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                     <button
                       type="button"
                       onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs text-emerald-700 active:opacity-80"
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 py-1 text-xs text-[var(--color-status-success-text)] active:opacity-80"
                     >
                       <MapPin className="w-3 h-3" />
                       {context.relatedHouse.address}

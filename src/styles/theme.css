@@ -39,6 +39,11 @@
   --color-accent-purple: #8B3BCC;
   --color-accent-purple-text: #C9A5F2;  /* 深底可读 */
   --color-accent-purple-soft: rgba(139, 59, 204, 0.16);
+
+  /* 排名奖牌：仅用于金银铜名次图标 */
+  --color-medal-gold: #FFD700;
+  --color-medal-silver: #C0C0C0;
+  --color-medal-bronze: #CD7F32;
   
   /* 中性色 - 背景层级 */
   --color-neutral-00: #131623;  /* 侧边栏（极深蓝黑） */

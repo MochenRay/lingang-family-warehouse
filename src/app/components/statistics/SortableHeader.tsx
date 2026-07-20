@@ -42,9 +42,9 @@ export function SortableHeader<TKey extends string>({
         className={cn(
           'inline-flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs transition-colors',
           'hover:bg-[rgba(39,97,203,0.12)] hover:text-white',
-          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#4E86DF]',
+          'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]',
           alignClasses[align],
-          isActive ? 'text-[#4E86DF]' : 'text-[var(--color-neutral-08)]',
+          isActive ? 'text-[var(--color-brand-primary-hover)]' : 'text-[var(--color-neutral-08)]',
         )}
       >
         <span>{label}</span>

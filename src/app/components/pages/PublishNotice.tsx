@@ -343,7 +343,7 @@ export function PublishNotice() {
             </CardHeader>
             <CardContent className="space-y-3">
               <Button 
-                className="w-full" 
+                className="w-full"
                 onClick={handlePublish}
                 disabled={!formData.title || !formData.content || formData.scope.length === 0}
               >

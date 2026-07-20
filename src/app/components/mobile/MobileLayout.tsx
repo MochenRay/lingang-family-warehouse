@@ -64,7 +64,7 @@ export function MobileLayout({ children, currentRoute = 'home', onRouteChange, o
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.path === activePath;
-            
+
             return (
               <button
                 key={item.path}

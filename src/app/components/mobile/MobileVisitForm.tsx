@@ -838,7 +838,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Camera className="w-4 h-4 text-cyan-600" />
+              <Camera className="w-4 h-4 text-[var(--color-status-info-text)]" />
               现场照片
             </h3>
           </div>

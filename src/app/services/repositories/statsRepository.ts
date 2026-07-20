@@ -3,6 +3,7 @@ import { callWithFallback, fetchJson } from '../api';
 import { db } from '../db';
 import { taskRepository } from './taskRepository';
 import { getRegionForGrid } from '../../config/regions';
+import { CHART_COLORS, CHART_GENDER_COLORS } from '../../config/chartConfig';
 
 export interface StatsGenderItem {
   name: string;
@@ -571,15 +572,15 @@ function buildFallbackDashboard(): DashboardStatsResponse {
   const grids = db.getGrids();
 
   const genderData: StatsGenderItem[] = [
-    { name: '男性', value: people.filter((person) => person.gender === '男').length, color: '#3b82f6' },
-    { name: '女性', value: people.filter((person) => person.gender === '女').length, color: '#ec4899' },
+    { name: '男性', value: people.filter((person) => person.gender === '男').length, color: CHART_GENDER_COLORS.male },
+    { name: '女性', value: people.filter((person) => person.gender === '女').length, color: CHART_GENDER_COLORS.female },
   ];
 
   const ageData: StatsAgeItem[] = [
-    { name: '0-18岁', value: people.filter((person) => person.age <= 18).length, fill: '#8b5cf6' },
-    { name: '19-35岁', value: people.filter((person) => person.age >= 19 && person.age <= 35).length, fill: '#3b82f6' },
-    { name: '36-60岁', value: people.filter((person) => person.age >= 36 && person.age <= 60).length, fill: '#10b981' },
-    { name: '60岁以上', value: people.filter((person) => person.age > 60).length, fill: '#f59e0b' },
+    { name: '0-18岁', value: people.filter((person) => person.age <= 18).length, fill: CHART_COLORS[2] },
+    { name: '19-35岁', value: people.filter((person) => person.age >= 19 && person.age <= 35).length, fill: CHART_COLORS[0] },
+    { name: '36-60岁', value: people.filter((person) => person.age >= 36 && person.age <= 60).length, fill: CHART_COLORS[5] },
+    { name: '60岁以上', value: people.filter((person) => person.age > 60).length, fill: CHART_COLORS[4] },
   ];
 
   const visits = db.getVisits();

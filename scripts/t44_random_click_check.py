@@ -22,6 +22,9 @@ def wait_for_text(page: Page, text: str, timeout: int = 15000) -> None:
 
 
 def open_root(page: Page) -> None:
+    page.add_init_script(
+        "window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1')"
+    )
     page.goto(BASE_URL, wait_until="domcontentloaded")
     page.wait_for_load_state("networkidle")
     wait_for_text(page, "综合统计驾驶舱")
@@ -180,10 +183,12 @@ def main() -> None:
                 ],
             )
             wait_for_text(page, "首次体验建议")
-            page.get_by_text("人口台账", exact=True).first.click()
+            page.get_by_text("再点人口台账", exact=True).click()
             page.get_by_placeholder("搜索姓名/身份证/地址...").wait_for(state="visible", timeout=10000)
-            page.get_by_role("button", name="工作台").click()
-            wait_for_text(page, "首次体验建议")
+            page.get_by_role("button", name="工作台", exact=True).click()
+            wait_for_text(page, "治理总览")
+            if page.get_by_text("首次体验建议", exact=True).count():
+                raise AssertionError("移动端引导在选择路径后未持久化关闭")
 
         run_step(page, "mobile-home-browse", mobile_people_browse)
 

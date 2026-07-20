@@ -282,7 +282,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
                 {person.education && (
                   <div className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center shrink-0 text-indigo-600">
+                    <div className="w-8 h-8 rounded-full bg-[var(--color-accent-purple-soft)] flex items-center justify-center shrink-0 text-[var(--color-accent-purple-text)]">
                       <User className="w-4 h-4" />
                     </div>
                     <div className="flex-1 border-b border-[var(--color-neutral-03)] pb-3">
@@ -491,7 +491,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <Card className="border-none shadow-sm">
                 <div className="bg-[var(--color-neutral-01)] p-4">
                   <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-indigo-500" />
+                    <FileText className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
                     个人经历
                   </h3>
                   <div className="text-sm text-[var(--color-neutral-10)] leading-relaxed whitespace-pre-line">
@@ -536,7 +536,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <Card className="border-none shadow-sm">
                 <div className="bg-[var(--color-neutral-01)] p-4">
                   <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3 flex items-center gap-2">
-                    <Heart className="w-4 h-4 text-pink-500" />
+                    <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
                     健康档案
                   </h3>
                   <div className="space-y-3">

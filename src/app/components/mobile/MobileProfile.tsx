@@ -3,25 +3,21 @@ import {
   User,
   MapPin,
   BarChart3,
-  Settings,
   Bell,
-  HelpCircle,
   LogOut,
   ChevronRight,
   Award,
-  Calendar,
   TrendingUp
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MobileLayout } from './MobileLayout';
-import { ConfirmDialog } from '../patterns/ConfirmDialog';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobileProfileProps {
   onRouteChange: (route: string) => void;
-  onLogout?: () => void;
+  onLogout: () => void;
   onExitMobile?: () => void;
 }
 
@@ -31,8 +27,6 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     const saved = mobileContextRepository.getCurrentGridSelection();
     return { id: saved.id || 'g1', name: saved.name || '登州街道海梦苑社区第一网格' };
   });
-  const [logoutConfirmOpen, setLogoutConfirmOpen] = useState(false);
-
   // 模拟切换网格身份（开发调试用）
   const switchGrid = (gridId: string) => {
     const grids: Record<string, { id: string; name: string }> = {
@@ -68,21 +62,7 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     { icon: MapPin, label: '辖区概况', path: 'grid-overview', color: 'text-primary' },
     { icon: BarChart3, label: '绩效排名', path: 'stats', color: 'text-[var(--color-status-success)]' },
     { icon: Bell, label: '消息通知', path: 'notices', badge: '3', color: 'text-[var(--color-status-warning)]' },
-    { icon: Settings, label: '系统设置', path: 'settings', color: 'text-muted-foreground' },
   ];
-
-  const handleLogout = () => {
-    setLogoutConfirmOpen(true);
-  };
-
-  const executeLogout = () => {
-    mobileContextRepository.clearCurrentWorkerName();
-    if (onLogout) {
-      onLogout();
-    } else {
-      onRouteChange('/mobile');
-    }
-  };
 
   return (
     <MobileLayout currentRoute="profile" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
@@ -129,19 +109,19 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
               <div className="grid grid-cols-4 gap-3">
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[var(--color-brand-primary)] mb-1">{stats.monthCollected}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">采集数</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">采集数</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[var(--color-status-success)] mb-1">{stats.monthTasks}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成任务</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">完成任务</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[var(--color-status-warning)] mb-1">{stats.monthReports}</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">问题上报</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">问题上报</div>
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-bold text-[var(--color-accent-purple)] mb-1">{stats.completionRate}%</div>
-                  <div className="text-xs text-[var(--color-neutral-06)] font-medium">完成率</div>
+                  <div className="text-xs text-[var(--color-neutral-08)] font-medium">完成率</div>
                 </div>
               </div>
             </CardContent>
@@ -184,25 +164,14 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
           <Button
             variant="outline"
             className="w-full h-12 text-[var(--color-status-error-text)] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)]"
-            onClick={handleLogout}
+            onClick={onLogout}
           >
             <LogOut className="w-5 h-5 mr-2" />
             退出登录
           </Button>
 
-          {/* 退出确认弹窗（替代原生 confirm） */}
-          <ConfirmDialog
-            open={logoutConfirmOpen}
-            onOpenChange={setLogoutConfirmOpen}
-            title="退出登录"
-            description="确定要退出登录吗？"
-            confirmText="退出"
-            destructive
-            onConfirm={executeLogout}
-          />
-
           {/* 版本信息 */}
-          <div className="text-center text-xs text-[var(--color-neutral-06)] pb-4">
+          <div className="text-center text-xs text-[var(--color-neutral-08)] pb-4">
             <p>烟台家庭数仓移动采集端</p>
             <p className="mt-1">版本 v1.0.0</p>
           </div>

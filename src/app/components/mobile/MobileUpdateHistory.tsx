@@ -225,7 +225,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
             <Input 
               placeholder="搜索工作记录..." 
-              className="pl-9 bg-[var(--color-neutral-03)] border-transparent text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-06)] h-9 text-sm focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
+              className="pl-9 bg-[var(--color-neutral-03)] border-transparent text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)] h-9 text-sm focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
@@ -234,7 +234,7 @@ export function MobileUpdateHistory({ onBack }: MobileUpdateHistoryProps) {
             <DropdownMenuTrigger asChild>
               <button className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
                 activeFilter !== 'all' 
-                  ? 'bg-[var(--color-brand-primary)] text-white' 
+                  ? 'bg-[var(--color-brand-primary)] text-white'
                   : 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]'
               }`}>
                 <Filter className="w-4 h-4" />

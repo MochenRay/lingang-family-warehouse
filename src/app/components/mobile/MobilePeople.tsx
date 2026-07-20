@@ -155,7 +155,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
               <Input 
-                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]" 
+                className="pl-9 bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] h-9 text-sm text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-07)] focus-visible:ring-1 focus-visible:ring-[var(--color-brand-primary)]"
                 placeholder="搜索姓名/身份证/地址..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -246,7 +246,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('户籍') 
-                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('户籍')}
@@ -255,7 +255,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('流动') 
-                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('流动')}
@@ -264,7 +264,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('留守') 
-                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('留守')}
@@ -273,7 +273,7 @@ export function MobilePeople({ onRouteChange, onExitMobile }: MobilePeopleProps)
                       variant="outline" 
                       className={`py-1.5 px-3 font-normal cursor-pointer transition-colors ${
                         selectedTypes.includes('境外') 
-                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]' 
+                          ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
                           : 'hover:bg-[var(--color-neutral-02)]'
                       }`}
                       onClick={() => toggleType('境外')}

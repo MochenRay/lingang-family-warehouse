@@ -15,6 +15,7 @@ test.use({
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
     window.localStorage.setItem('homedata.mobile.onboarding.dismissed', 'true');
+    window.localStorage.setItem('mobile_user', '终验网格员');
   });
 });
 
@@ -47,4 +48,31 @@ test('mobile conflict form renders its fields', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: '上报矛盾纠纷' })).toBeVisible();
   await expect(page.getByText('纠纷描述').first()).toBeVisible();
+});
+
+test('mobile profile only exposes implemented menu destinations', async ({ page }) => {
+  await page.goto('/mobile/profile');
+
+  await expect(page.getByText('终验网格员', { exact: true })).toBeVisible();
+  await expect(page.getByText('系统设置', { exact: true })).toHaveCount(0);
+});
+
+test('mobile logout uses one confirmation and cancel preserves identity', async ({ page }) => {
+  await page.goto('/mobile/profile');
+
+  await page.getByRole('button', { name: '退出登录' }).click();
+
+  await expect(page.getByRole('dialog')).toHaveCount(1);
+  await expect(page.getByText('确定要退出登录并返回电脑端吗？', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '取消' }).click();
+
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByText('终验网格员', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => window.localStorage.getItem('mobile_user'))).toBe('终验网格员');
+
+  await page.getByRole('button', { name: '退出登录' }).click();
+  await page.getByRole('button', { name: '退出', exact: true }).click();
+
+  await expect(page).toHaveURL('/');
+  expect(await page.evaluate(() => window.localStorage.getItem('mobile_user'))).toBeNull();
 });

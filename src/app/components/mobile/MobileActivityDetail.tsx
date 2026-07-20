@@ -110,7 +110,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
     if (activity.approvalStatus === 'rejected') return { label: '未通过', bg: 'bg-[var(--color-status-error)]', textColor: 'text-white' };
     switch (activity.executionStatus) {
       case 'to_start': return { label: '待开始', bg: 'bg-[var(--color-brand-primary)]', textColor: 'text-white' };
-      case 'in_progress': return { label: '进行中', bg: 'bg-emerald-500', textColor: 'text-white' };
+      case 'in_progress': return { label: '进行中', bg: 'bg-[var(--color-status-success)]', textColor: 'text-white' };
       case 'ended': return { label: '已结束', bg: 'bg-[var(--color-neutral-06)]', textColor: 'text-white' };
       case 'cancelled': return { label: '已取消', bg: 'bg-[var(--color-neutral-06)]', textColor: 'text-white' };
       default: return { label: '未知', bg: 'bg-[var(--color-neutral-06)]', textColor: 'text-white' };
@@ -119,14 +119,14 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
 
   const getCategoryStyle = (subcategory: string) => {
     switch (subcategory) {
-      case '环境整治': return { icon: Sprout, color: 'text-emerald-600', bg: 'bg-emerald-50' };
-      case '助老扶弱': return { icon: HeartHandshake, color: 'text-rose-500', bg: 'bg-rose-50' };
+      case '环境整治': return { icon: Sprout, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]' };
+      case '助老扶弱': return { icon: HeartHandshake, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
       case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' };
       case '便民服务': return { icon: Wrench, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
       case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
-      case '露天电影': return { icon: Film, color: 'text-indigo-600', bg: 'bg-indigo-50' };
-      case '手工制作': return { icon: Scissors, color: 'text-pink-500', bg: 'bg-pink-50' };
+      case '露天电影': return { icon: Film, color: 'text-[var(--color-status-info-text)]', bg: 'bg-[var(--color-status-info-soft)]' };
+      case '手工制作': return { icon: Scissors, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
       default: return { icon: CalendarIcon, color: 'text-[var(--color-neutral-08)]', bg: 'bg-[var(--color-neutral-02)]' };
     }
   };
@@ -275,7 +275,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
             <div className="bg-[var(--color-neutral-01)] rounded-[4px] border border-[var(--color-neutral-03)] overflow-hidden">
               <div className="p-4 border-b border-[var(--color-neutral-03)]">
                 <h3 className="font-bold text-sm text-[var(--color-neutral-11)] flex items-center gap-2">
-                  <span className="w-1 h-3 bg-cyan-500 rounded-full"></span>
+                  <span className="w-1 h-3 bg-[var(--color-status-info)] rounded-full"></span>
                   现场记录 ({uploadedImages.length})
                 </h3>
               </div>
@@ -387,7 +387,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                     <div className={cn(
                       "w-3 h-3 rounded-full mt-1 shrink-0 z-10 ring-2 ring-[var(--color-neutral-01)]",
                       item.action === 'reject' ? "bg-[var(--color-status-error)]" :
-                      item.action === 'approve' ? "bg-emerald-500" :
+                      item.action === 'approve' ? "bg-[var(--color-status-success)]" :
                       item.action === 'create' || item.action === 'modify' ? "bg-[var(--color-brand-primary)]" : "bg-[var(--color-neutral-03)]"
                     )} />
                     <div className="flex-1 -mt-0.5">
@@ -452,7 +452,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
         )}
 
         {mode === 'application' && activity.approvalStatus === 'approved' && activity.executionStatus === 'in_progress' && (
-          <Button disabled className="w-full h-12 bg-emerald-50 text-emerald-600 rounded-xl font-bold">
+          <Button disabled className="w-full h-12 bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] rounded-xl font-bold">
             活动进行中
           </Button>
         )}

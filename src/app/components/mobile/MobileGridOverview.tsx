@@ -213,10 +213,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
   );
 
   const basicStats = [
-    { label: '实有人口', value: people.length, icon: Users, color: 'text-blue-600', bg: 'bg-blue-500/10' },
-    { label: '实有房屋', value: houses.length, icon: Home, color: 'text-indigo-600', bg: 'bg-indigo-500/10' },
-    { label: '走访记录', value: visits.length, icon: ClipboardList, color: 'text-green-600', bg: 'bg-green-500/10' },
-    { label: '重点关注', value: riskCount, icon: AlertTriangle, color: 'text-orange-600', bg: 'bg-orange-500/10' },
+    { label: '实有人口', value: people.length, icon: Users, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' },
+    { label: '实有房屋', value: houses.length, icon: Home, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' },
+    { label: '走访记录', value: visits.length, icon: ClipboardList, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]' },
+    { label: '重点关注', value: riskCount, icon: AlertTriangle, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' },
   ];
 
   return (
@@ -387,7 +387,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="font-bold text-foreground">{completenessRate}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                  <div className="h-full rounded-full bg-emerald-500" style={{ width: `${completenessRate}%` }} />
+                  <div className="h-full rounded-full bg-[var(--color-status-success)]" style={{ width: `${completenessRate}%` }} />
                 </div>
               </div>
               <div>
@@ -396,7 +396,7 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="font-bold text-foreground">{visitCoverage}%</span>
                 </div>
                 <div className="h-2 overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
-                  <div className="h-full rounded-full bg-blue-500" style={{ width: `${visitCoverage}%` }} />
+                  <div className="h-full rounded-full bg-[var(--color-brand-primary)]" style={{ width: `${visitCoverage}%` }} />
                 </div>
               </div>
               {conflictStats.total > 0 ? (
@@ -404,10 +404,10 @@ export function MobileGridOverview({ onBack }: MobileGridOverviewProps) {
                   <span className="text-sm text-muted-foreground">矛盾纠纷</span>
                   <div className="flex items-center gap-3 text-sm">
                     <span className="text-foreground">
-                      <span className="font-bold text-orange-500">{conflictStats.active}</span> 调解中
+                      <span className="font-bold text-[var(--color-status-warning-text)]">{conflictStats.active}</span> 调解中
                     </span>
                     <span className="text-foreground">
-                      <span className="font-bold text-green-500">{conflictStats.resolved}</span> 已化解
+                      <span className="font-bold text-[var(--color-status-success-text)]">{conflictStats.resolved}</span> 已化解
                     </span>
                   </div>
                 </div>

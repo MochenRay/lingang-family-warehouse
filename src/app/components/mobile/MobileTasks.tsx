@@ -231,7 +231,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                 placeholder="搜索任务或来源对象..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="pl-9 pr-9 h-9 text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-06)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-0 transition-all"
+                className="pl-9 pr-9 h-9 text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-0 transition-all"
               />
               {searchQuery && (
                 <button
@@ -334,7 +334,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                             </div>
 
                             <div className="flex items-center justify-between pt-3 border-t border-[var(--color-neutral-03)]">
-                              <div className="text-xs text-[var(--color-neutral-06)] font-medium flex items-center gap-1">
+                              <div className="text-xs text-[var(--color-neutral-08)] font-medium flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-neutral-04)]" />
                                 下发：{task.assignedBy}
                               </div>
@@ -353,7 +353,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                           <CheckCircle className="w-8 h-8 text-[var(--color-neutral-04)]" />
                         </div>
                         <p className="text-[var(--color-neutral-08)] text-sm">暂无待办任务</p>
-                        {viewMode === 'today' && <p className="text-[var(--color-neutral-06)] text-xs mt-1">今天的工作已全部完成</p>}
+                        {viewMode === 'today' && <p className="text-[var(--color-neutral-08)] text-xs mt-1">今天的工作已全部完成</p>}
                       </div>
                     )}
                   </TabsContent>
@@ -398,7 +398,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                           )}
 
                           <div className="flex items-center justify-between pt-2 border-t border-[var(--color-neutral-03)]">
-                            <div className="text-xs text-[var(--color-neutral-06)]">
+                            <div className="text-xs text-[var(--color-neutral-08)]">
                               完成时间：{task.completedAt}
                             </div>
                           </div>

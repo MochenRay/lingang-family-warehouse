@@ -32,6 +32,7 @@ import { MobilePolicyInterpretation } from './MobilePolicyInterpretation';
 import { MobileOfficialWriting } from './MobileOfficialWriting';
 import { MobileSmartQuery } from './MobileSmartQuery';
 import { ConfirmDialog } from '../patterns/ConfirmDialog';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { toast } from 'sonner';
 
 interface MobileAppProps {
@@ -217,11 +218,15 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   };
 
   const executePendingExit = () => {
+    if (pendingExitAction === 'logout') {
+      mobileContextRepository.clearCurrentWorkerName();
+    }
+
     if (onExitMobile) {
       onExitMobile();
     } else {
       setHistory(['home']);
-      toast.info('已返回移动端工作台首页');
+      toast.info(pendingExitAction === 'logout' ? '已退出登录' : '已返回移动端工作台首页');
     }
   };
 
@@ -308,7 +313,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'profile':
         return <MobileProfile 
           onRouteChange={handleRouteChange} 
-          onLogout={() => setPendingExitAction('logout')} 
+          onLogout={() => setPendingExitAction('logout')}
           onExitMobile={handleExitMobile}
         />;
       case 'collect-house':
