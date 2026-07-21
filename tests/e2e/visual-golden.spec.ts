@@ -67,7 +67,8 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '综合统计驾驶舱');
       await expect(page).toHaveScreenshot('statistics-overview.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 阻断修复后 strict 0 复测；两跑零差后恢复 0.002
+        maxDiffPixelRatio: 0.002, // 量测：首轮 3 跑 + 阻断修复后 strict 0 两跑均零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
       });
     });
 
@@ -77,7 +78,8 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '公告列表');
       await expect(page).toHaveScreenshot('notice-management.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 阻断修复后 strict 0 复测；两跑零差后恢复 0.002
+        maxDiffPixelRatio: 0.002, // 量测：首轮 3 跑 + 阻断修复后 strict 0 两跑均零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
       });
     });
   });
@@ -94,7 +96,8 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '治理总览');
       await expect(page).toHaveScreenshot('mobile-home.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 阻断修复后 strict 0 复测；两跑零差后恢复 0.002
+        maxDiffPixelRatio: 0.002, // 量测：首轮 3 跑 + 阻断修复后 strict 0 两跑均零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
         mask: [page.getByText(/最近同步/)],
       });
     });
