@@ -16,6 +16,8 @@ process.env.PLAYWRIGHT_DB_PATH = playwrightDbPath;
 export default defineConfig({
   testDir: './tests/e2e',
   globalTeardown: './tests/e2e/global-teardown.ts',
+  // golden diff 基线 PNG 入仓路径（P5-T2）：canonical 环境为 GitHub Actions ubuntu-latest + chromium
+  snapshotPathTemplate: '{testDir}/__screenshots__/{projectName}/{testFilePath}/{arg}{ext}',
   fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,

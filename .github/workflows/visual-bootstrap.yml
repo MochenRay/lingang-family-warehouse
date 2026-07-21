@@ -1,0 +1,46 @@
+name: Visual baseline bootstrap (TEMP)
+
+# 【临时文件，P5-T2 PR 内专用，基线入仓后即删】
+# 背景：workflow_dispatch 要求 workflow 已存在于默认分支，visual-update.yml 随本 PR 才进 main，
+# 故本 PR 的首批基线由本临时 workflow 在 PR CI 产出（与 visual-update.yml 同环境、同命令）。
+# 仅对 kimi/p5-t2-visual-regression 分支的 PR 生效，合并前删除。
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  bootstrap:
+    name: Bootstrap @visual baselines (one-shot)
+    if: github.head_ref == 'kimi/p5-t2-visual-regression'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - run: npm ci
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:visual:update
+        env:
+          CI: 'true'
+          PYTHON_BIN: python
+      - uses: actions/upload-artifact@v4
+        with:
+          name: visual-baselines-bootstrap
+          path: tests/e2e/__screenshots__/
+          if-no-files-found: error
+          retention-days: 7
