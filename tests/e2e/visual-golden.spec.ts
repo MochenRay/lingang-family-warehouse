@@ -36,7 +36,9 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '综合统计驾驶舱');
       await expect(page).toHaveScreenshot('statistics-overview.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 量测期严格值；试点量测后按实测定
+        // 试点量测：CI ubuntu-latest 连续 3 跑（maxDiffPixelRatio:0）零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
+        maxDiffPixelRatio: 0.002,
       });
     });
 
@@ -45,7 +47,9 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '公告列表');
       await expect(page).toHaveScreenshot('notice-management.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 量测期严格值；试点量测后按实测定
+        // 试点量测：CI ubuntu-latest 连续 3 跑（maxDiffPixelRatio:0）零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
+        maxDiffPixelRatio: 0.002,
       });
     });
   });
@@ -61,7 +65,9 @@ test.describe('golden diff 视觉基线 @visual', () => {
       await waitUntilScreenshotReady(page, '治理总览');
       await expect(page).toHaveScreenshot('mobile-home.png', {
         animations: 'disabled',
-        maxDiffPixelRatio: 0, // 量测期严格值；试点量测后按实测定
+        // 试点量测：CI ubuntu-latest 连续 3 跑（maxDiffPixelRatio:0）零像素差；
+        // 按冻结稿估计带（0.002–0.005）取下限作 runner 镜像字体光栅化漂移余量
+        maxDiffPixelRatio: 0.002,
         mask: [page.getByText(/最近同步/)],
       });
     });
