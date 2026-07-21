@@ -151,11 +151,11 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">总数</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[var(--color-status-success)]">{stats.selfOccupied}</div>
+              <div className="text-lg font-bold text-[var(--color-status-success-text)]">{stats.selfOccupied}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">自住</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-              <div className="text-lg font-bold text-[var(--color-status-warning)]">{stats.rental}</div>
+              <div className="text-lg font-bold text-[var(--color-status-warning-text)]">{stats.rental}</div>
               <div className="text-xs text-[var(--color-neutral-08)] mt-0.5">出租</div>
             </div>
             <div className="text-center p-2 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
@@ -309,7 +309,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2 flex-1">
-                    <div className="w-8 h-8 rounded bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center text-[var(--color-brand-primary-hover)] shrink-0">
+                    <div className="w-8 h-8 rounded bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center text-[var(--color-brand-text)] shrink-0">
                       <Home className="w-4 h-4" />
                     </div>
                     <div>
@@ -342,7 +342,7 @@ export function MobileHousing({ onRouteChange, onExitMobile }: MobileHousingProp
                   <div className="flex gap-2 flex-wrap">
                     <Badge
                       variant="outline"
-                      className="text-xs bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-primary-hover)] border-[rgba(78,134,223,0.3)]"
+                      className="text-xs bg-[rgba(78,134,223,0.15)] text-[var(--color-brand-text)] border-[rgba(78,134,223,0.3)]"
                     >
                       {house.type}
                     </Badge>

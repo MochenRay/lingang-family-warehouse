@@ -332,7 +332,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
     return (
       <div className="h-full bg-[var(--color-bg-primary)] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[var(--color-brand-primary-hover)] animate-spin mx-auto mb-2" />
+          <Loader2 className="w-12 h-12 text-[var(--color-brand-text)] animate-spin mx-auto mb-2" />
           <p className="text-[var(--color-text-tertiary)]">正在加载走访对象信息...</p>
         </div>
       </div>
@@ -361,13 +361,13 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <User className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <User className="w-4 h-4 text-[var(--color-brand-text)]" />
               走访对象
             </h3>
           </div>
           <div className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)] text-lg font-bold">
+              <div className="w-12 h-12 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-text)] text-lg font-bold">
                 {person.name[0]}
               </div>
               <div>
@@ -537,7 +537,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)]">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Clock className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <Clock className="w-4 h-4 text-[var(--color-brand-text)]" />
               近期走访摘要
             </h3>
           </div>

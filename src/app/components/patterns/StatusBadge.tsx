@@ -13,7 +13,7 @@ const toneClasses: Record<StatusTone, string> = {
   warning: 'border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]',
   error: 'border-[var(--color-status-error)]/35 bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]',
   info: 'border-[var(--color-status-info)]/35 bg-[var(--color-status-info-soft)] text-[var(--color-status-info-text)]',
-  neutral: 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)]',
+  neutral: 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]',
 };
 
 export function StatusBadge({

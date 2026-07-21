@@ -1058,7 +1058,7 @@ export function PopulationManagement() {
                   </Button>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="outline" size="icon">
+                      <Button variant="outline" size="icon" aria-label="列展示设置">
                         <Settings2 className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -1319,14 +1319,14 @@ export function PopulationManagement() {
                       )}
                       <TableCell className="text-right sticky right-0 z-10 bg-[var(--color-neutral-01)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.85)]">
                         <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="sm" onClick={() => handleView(pop)}>
+                          <Button variant="ghost" size="sm" aria-label="查看人员" onClick={() => handleView(pop)}>
                             <Eye className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleEdit(pop)} disabled={isSaving}>
+                          <Button variant="ghost" size="sm" aria-label="编辑人员" onClick={() => handleEdit(pop)} disabled={isSaving}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(pop.id)} disabled={isSaving}>
-                            <Trash2 className="w-4 h-4 text-[var(--color-status-error)]" />
+                          <Button variant="ghost" size="sm" aria-label="删除人员" onClick={() => handleDelete(pop.id)} disabled={isSaving}>
+                            <Trash2 className="w-4 h-4 text-[var(--color-status-error-text)]" />
                           </Button>
                         </div>
                       </TableCell>
@@ -1441,7 +1441,7 @@ export function PopulationManagement() {
                     <Card className={PANEL_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-[var(--color-status-warning)]" />
+                          <Shield className="w-4 h-4 text-[var(--color-status-warning-text)]" />
                           风险摘要
                         </CardTitle>
                         <CardDescription>基于当前对象字段、标签和历史走访生成</CardDescription>
@@ -1462,7 +1462,7 @@ export function PopulationManagement() {
                     <Card className={PANEL_CLASS}>
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                          <Calendar className="w-4 h-4 text-[var(--color-brand-text)]" />
                           推荐动作
                         </CardTitle>
                         <CardDescription>为数据画像智能体预留的业务嵌入位</CardDescription>
@@ -1720,7 +1720,7 @@ export function PopulationManagement() {
                         <Card className={PANEL_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Home className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                              <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
                               同住关系
                               <Badge variant="secondary" className="ml-1">{selectedHousemates.length}</Badge>
                             </CardTitle>
@@ -1733,7 +1733,7 @@ export function PopulationManagement() {
                                   <div key={person.id} className="flex items-center justify-between p-3 bg-[var(--color-neutral-02)] rounded-[4px]">
                                     <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary-hover)]/16 flex items-center justify-center">
-                                        <Users className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
+                                        <Users className="w-5 h-5 text-[var(--color-brand-text)]" />
                                       </div>
                                       <div>
                                         <p className="font-medium">{person.name}</p>
@@ -1759,7 +1759,7 @@ export function PopulationManagement() {
                         <Card className={PANEL_CLASS}>
                           <CardHeader className="pb-3">
                             <CardTitle className="text-base flex items-center gap-2">
-                              <Heart className="w-4 h-4 text-[var(--color-status-error)]" />
+                              <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
                               血缘关系
                               <Badge variant="secondary" className="ml-1">{selectedFamilyMembers.length}</Badge>
                             </CardTitle>
@@ -1772,7 +1772,7 @@ export function PopulationManagement() {
                                   <div key={idx} className="flex items-center justify-between p-3 bg-[var(--color-status-error)]/10 rounded-[4px]">
                                     <div className="flex items-center gap-3">
                                       <div className="w-10 h-10 rounded-full bg-[var(--color-status-error-soft)] flex items-center justify-center">
-                                        <Heart className="w-5 h-5 text-[var(--color-status-error)]" />
+                                        <Heart className="w-5 h-5 text-[var(--color-status-error-text)]" />
                                       </div>
                                       <div>
                                         <div className="flex items-center gap-2">
@@ -1781,7 +1781,7 @@ export function PopulationManagement() {
                                             {item.relationType}
                                           </Badge>
                                         </div>
-                                        <p className="text-sm text-[var(--color-neutral-08)]">{item.person.gender} · {item.person.age}岁 · {item.person.address}</p>
+                                        <p className="text-sm text-[var(--color-neutral-10)]">{item.person.gender} · {item.person.age}岁 · {item.person.address}</p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
@@ -2086,6 +2086,7 @@ export function PopulationManagement() {
                      type="button" 
                      variant="outline" 
                      size="icon"
+                     aria-label="清除网格选择"
                      onClick={() => setFormData({ ...formData, gridId: undefined, gridDistrict: undefined, gridStreet: undefined, gridCommunity: undefined })}
                    >
                      <Trash2 className="w-4 h-4" />
@@ -2108,6 +2109,7 @@ export function PopulationManagement() {
                      type="button" 
                      variant="outline" 
                      size="icon"
+                     aria-label="清除房屋选择"
                      onClick={() => setFormData({ ...formData, houseId: undefined, houseCommunity: undefined, houseBuilding: undefined, houseUnit: undefined, houseRoom: undefined })}
                    >
                      <Trash2 className="w-4 h-4" />
@@ -2376,7 +2378,7 @@ export function PopulationManagement() {
                <div className="mt-2 p-3 bg-[var(--color-brand-primary-hover)]/12 rounded-[4px] border border-[var(--color-brand-primary-hover)]/40">
                  <div className="flex items-center justify-between mb-2">
                    <span className="text-xs font-medium text-[var(--color-status-info-text)]">推荐标签</span>
-                   <span className="text-xs text-[var(--color-brand-primary-hover)]">
+                   <span className="text-xs text-[var(--color-brand-text)]">
                      {recommendedTags.length > 0 ? '点击可取消选中' : '暂无推荐'}
                    </span>
                  </div>

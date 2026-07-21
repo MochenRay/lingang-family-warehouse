@@ -73,7 +73,7 @@ function aggregate(workers: StatsPerformanceItem[], groupBy: (w: StatsPerformanc
 
 const scoreColor = (score: number) => {
   if (score >= 85) return 'text-[var(--color-status-success-text)]';
-  if (score >= 70) return 'text-[var(--color-brand-primary-hover)]';
+  if (score >= 70) return 'text-[var(--color-brand-text)]';
   if (score >= 55) return 'text-[var(--color-status-warning-text)]';
   return 'text-[var(--color-status-error-text)]';
 };
@@ -227,6 +227,7 @@ export function MobileStats({ onBack }: MobileStatsProps) {
         <div className="px-4 h-[44px] flex items-center justify-between">
           <button
             onClick={onBack}
+            aria-label="返回"
             className="w-10 h-10 flex items-center justify-center -ml-2 hover:bg-[var(--color-neutral-03)] rounded-full active:scale-95 transition-all"
           >
             <ChevronLeft className="w-6 h-6 text-foreground" />

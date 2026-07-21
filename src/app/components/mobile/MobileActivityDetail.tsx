@@ -121,7 +121,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
     switch (subcategory) {
       case '环境整治': return { icon: Sprout, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]' };
       case '助老扶弱': return { icon: HeartHandshake, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
-      case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10' };
+      case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-text)]', bg: 'bg-[var(--color-brand-primary)]/10' };
       case '便民服务': return { icon: Wrench, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]' };
       case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]' };
@@ -225,7 +225,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                 </h3>
                 {activity.executionStatus === 'in_progress' && (
                   <button
-                    className="text-xs text-[var(--color-brand-primary-hover)] font-medium flex items-center gap-1 active:scale-95"
+                    className="text-xs text-[var(--color-brand-text)] font-medium flex items-center gap-1 active:scale-95"
                     onClick={() => setIsResidentDrawerOpen(true)}
                   >
                     <Plus className="w-3.5 h-3.5" /> 添加
@@ -252,6 +252,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                           {activity.executionStatus === 'in_progress' && (
                             <button
                               onClick={() => handleDeleteResident(rid)}
+                              aria-label="移除居民"
                               className="p-1.5 text-[var(--color-neutral-06)] hover:text-[var(--color-status-error-text)] rounded-full transition-colors"
                             >
                               <X className="w-4 h-4" />
@@ -295,6 +296,7 @@ export function MobileActivityDetail({ id, mode = 'execution', onBack, onRouteCh
                       {activity.executionStatus === 'in_progress' && (
                         <button
                           onClick={() => handleDeleteImage(idx)}
+                          aria-label="删除照片"
                           className="absolute top-1.5 right-1.5 p-1 bg-black/50 rounded-full text-white hover:bg-[var(--color-status-error)] transition-colors"
                         >
                           <X className="w-3 h-3" />

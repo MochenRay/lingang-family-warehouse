@@ -220,7 +220,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
             </button>
             <div className="grid grid-cols-1 lg:grid-cols-[0.95fr,1.3fr]">
               <div className="border-r border-[var(--color-neutral-03)] bg-[var(--color-brand-primary)]/10 p-8">
-                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-primary-hover)]">
+                <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-brand-text)]">
                   <Sparkles className="h-4 w-4" />
                   首次使用建议
                 </div>
@@ -256,14 +256,14 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                       index % 2 === 0 ? 'sm:border-r border-[var(--color-neutral-03)]' : ''
                     } ${index < 2 ? 'border-b border-[var(--color-neutral-03)]' : ''}`}
                   >
-                    <div className="inline-flex items-center rounded-full border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/15 px-2.5 py-1 text-xs font-semibold text-[var(--color-brand-primary-hover)]">
+                    <div className="inline-flex items-center rounded-full border border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/15 px-2.5 py-1 text-xs font-semibold text-[var(--color-brand-text)]">
                       {item.step}
                     </div>
                     <div>
                       <div className="text-base font-semibold text-[var(--color-neutral-11)]">{item.title}</div>
                       <div className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">{item.detail}</div>
                     </div>
-                    <div className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-[var(--color-brand-primary-hover)]">
+                    <div className="mt-auto inline-flex items-center gap-1 text-sm font-medium text-[var(--color-brand-text)]">
                       {item.action}
                       <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                     </div>
@@ -299,7 +299,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
       <section className="rounded-[4px] border border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)]/10 px-6 py-5">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="min-w-0">
-            <div className="mb-2 text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-primary-hover)]">AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}</div>
+            <div className="mb-2 text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-text)]">AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}</div>
             <div className="text-sm leading-7 text-[var(--color-neutral-10)]">
               {actionItems.length > 0 ? (
                 actionItems.slice(0, 3).map((item, index) => (
@@ -324,11 +324,11 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">总人口</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[var(--color-status-success)]">{formatNumber(totalVisits)}</div>
+              <div className="text-3xl font-bold text-[var(--color-status-success-text)]">{formatNumber(totalVisits)}</div>
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{RANGE_LABELS[selectedRange]}走访</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-[var(--color-status-warning)]">{districtRows.length}</div>
+              <div className="text-3xl font-bold text-[var(--color-status-warning-text)]">{districtRows.length}</div>
               <div className="mt-1 text-xs text-[var(--color-neutral-08)]">区县样本</div>
             </div>
           </div>
@@ -415,12 +415,12 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                 const scoreTone = getScoreTone(row.score);
                 return (
                   <tr key={row.id} className="border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[var(--color-brand-primary)]/10">
-                    <td className={`px-4 py-3 text-sm font-semibold ${index < 3 ? 'text-[var(--color-status-warning)]' : 'text-[var(--color-neutral-08)]'}`}>#{index + 1}</td>
+                    <td className={`px-4 py-3 text-sm font-semibold ${index < 3 ? 'text-[var(--color-status-warning-text)]' : 'text-[var(--color-neutral-08)]'}`}>#{index + 1}</td>
                     <td className="px-4 py-3 text-sm font-semibold text-[var(--color-neutral-11)]">{row.name}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.peopleCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.houseCount)}</td>
-                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-success)]">{formatNumber(row.visitCount)}</td>
-                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-warning)]">{formatNumber(row.activeConflictCount)}</td>
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-success-text)]">{formatNumber(row.visitCount)}</td>
+                    <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-warning-text)]">{formatNumber(row.activeConflictCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.floatingCount)}</td>
                     <td className="px-4 py-3 text-right">
                       <div className="ml-auto grid w-[236px] grid-cols-[148px_64px] items-center justify-end gap-4">

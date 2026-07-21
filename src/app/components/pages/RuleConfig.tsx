@@ -322,6 +322,7 @@ export function RuleConfig() {
                         checked={rule.enabled}
                         onCheckedChange={(checked) => void handleToggleRule(rule, checked)}
                         disabled={savingId === rule.id}
+                        aria-label={`${rule.name} 启用开关`}
                       />
                       <span className="text-sm text-[var(--color-neutral-08)]">{rule.enabled ? '已启用' : '已停用'}</span>
                     </div>
@@ -378,7 +379,7 @@ export function RuleConfig() {
                   </Select>
                 </div>
                 <div className="flex items-end gap-3 pb-2">
-                  <Switch checked={draft.enabled} onCheckedChange={(checked) => setDraft({ ...draft, enabled: checked })} />
+                  <Switch checked={draft.enabled} onCheckedChange={(checked) => setDraft({ ...draft, enabled: checked })} aria-label="启用这条规则" />
                   <span className="text-sm text-[var(--color-neutral-08)]">启用这条规则</span>
                 </div>
               </div>

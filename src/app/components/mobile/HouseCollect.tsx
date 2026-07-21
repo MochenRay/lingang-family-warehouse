@@ -379,6 +379,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
                   <img src={photo} alt="" className="w-full h-full object-cover" />
                   <button
                     onClick={() => setPhotos(photos.filter((_, i) => i !== index))}
+                    aria-label="删除照片"
                     className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center"
                   >
                     ×

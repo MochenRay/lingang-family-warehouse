@@ -31,6 +31,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
         <div className="h-11 flex items-center justify-between px-4 mt-2">
           <button 
             onClick={onBack}
+            aria-label="返回"
             className="w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/40"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -40,6 +41,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
           </div>
           <button 
             onClick={() => toast.info('当前入口以现场扫码核验为主，相册导入暂未开放。')}
+            aria-label="从相册导入"
             className="w-8 h-8 flex items-center justify-center rounded-full bg-black/20 text-white backdrop-blur-md active:bg-black/40"
           >
             <ImageIcon className="w-5 h-5" />
@@ -130,7 +132,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
         <div className="flex items-center justify-center gap-12">
           <button 
             onClick={() => setMode('scan')}
-            className={`flex flex-col items-center gap-1 transition-colors ${mode === 'scan' ? 'text-[var(--color-brand-primary-hover)]' : 'text-white/50'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${mode === 'scan' ? 'text-[var(--color-brand-text)]' : 'text-white/50'}`}
           >
             <Scan className="w-6 h-6" />
             <span className="text-xs font-medium">扫码</span>
@@ -138,7 +140,7 @@ export function MobileScan({ onBack, onResult }: MobileScanProps) {
           
           <button 
             onClick={() => setMode('ocr')}
-            className={`flex flex-col items-center gap-1 transition-colors ${mode === 'ocr' ? 'text-[var(--color-brand-primary-hover)]' : 'text-white/50'}`}
+            className={`flex flex-col items-center gap-1 transition-colors ${mode === 'ocr' ? 'text-[var(--color-brand-text)]' : 'text-white/50'}`}
           >
             <Text className="w-6 h-6" />
             <span className="text-xs font-medium">OCR识别</span>

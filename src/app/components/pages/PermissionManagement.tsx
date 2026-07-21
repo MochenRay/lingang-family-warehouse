@@ -12,13 +12,13 @@ import { PageHeader } from './PageHeader';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
-const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-primary-hover)]';
+const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-text)]';
 
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
 
-  // 功能权限矩阵
-  const functionPermissions = [
+  // 功能权限矩阵（种子数据，各角色独立拷贝，见 permsByRole）
+  const functionPermissionsSeed = [
     {
       module: '数据管理',
       icon: Database,
@@ -80,8 +80,8 @@ export function PermissionManagement() {
     }
   ];
 
-  // 数据权限配置
-  const dataPermissions = [
+  // 数据权限配置（种子数据，各角色独立拷贝）
+  const dataPermissionsSeed = [
     {
       area: '全辖区',
       level: 'city',
@@ -119,6 +119,8 @@ export function PermissionManagement() {
     }
   ];
 
+  type FunctionPermField = 'view' | 'create' | 'edit' | 'delete' | 'export';
+
   // 角色列表
   const roles = [
     { code: 'admin', name: '系统管理员', color: 'var(--color-status-error)' },
@@ -128,16 +130,60 @@ export function PermissionManagement() {
     { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
-  // 权限操作统计
+  // 各角色独立的权限矩阵（修改互不影响——此前全局单一状态会跨角色串联）。
+  // 注意：手工深拷贝纯数据并保留 icon 引用——structuredClone 会因
+  // Lucide forwardRef 对象含 Symbol(react.forward_ref) 抛 DataCloneError（整页白屏的教训）。
+  const clonePerms = () => ({
+    function: functionPermissionsSeed.map((mod) => ({
+      ...mod,
+      permissions: mod.permissions.map((perm) => ({ ...perm })),
+    })),
+    data: dataPermissionsSeed.map((area) => ({ ...area })),
+  });
+
+  const [permsByRole, setPermsByRole] = useState<
+    Record<string, { function: typeof functionPermissionsSeed; data: typeof dataPermissionsSeed }>
+  >(() => Object.fromEntries(roles.map((role) => [role.code, clonePerms()])));
+
+  const currentPerms = permsByRole[selectedRole];
+
+  // 权限矩阵勾选（演示数据，本地状态按角色可操作；admin 角色保持只读）
+  const toggleFunctionPermission = (moduleIndex: number, permIndex: number, field: FunctionPermField, checked: boolean) => {
+    setPermsByRole((prev) => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        function: prev[selectedRole].function.map((mod, mi) =>
+          mi === moduleIndex
+            ? { ...mod, permissions: mod.permissions.map((perm, pi) => (pi === permIndex ? { ...perm, [field]: checked } : perm)) }
+            : mod,
+        ),
+      },
+    }));
+  };
+
+  const toggleDataPermission = (areaIndex: number, field: 'canView' | 'canEdit', checked: boolean) => {
+    setPermsByRole((prev) => ({
+      ...prev,
+      [selectedRole]: {
+        ...prev[selectedRole],
+        data: prev[selectedRole].data.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)),
+      },
+    }));
+  };
+
+  // 权限操作统计（按当前角色视图）
   const permissionStats = {
-    totalModules: functionPermissions.length,
-    totalFunctions: functionPermissions.reduce((sum, m) => sum + m.permissions.length, 0),
-    enabledFunctions: functionPermissions.reduce(
+    totalModules: currentPerms.function.length,
+    totalFunctions: currentPerms.function.reduce((sum, m) => sum + m.permissions.length, 0),
+    enabledFunctions: currentPerms.function.reduce(
       (sum, m) => sum + m.permissions.filter(p => p.view).length,
       0
     ),
-    dataAreas: dataPermissions.filter(d => d.canView).length
+    dataAreas: currentPerms.data.filter(d => d.canView).length
   };
+
+  const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -205,13 +251,13 @@ export function PermissionManagement() {
 
             {/* 功能权限 */}
             <TabsContent value="function" className="space-y-4">
-              {functionPermissions.map((module) => {
+              {currentPerms.function.map((module, moduleIndex) => {
                 const ModuleIcon = module.icon;
                 return (
                   <Card key={module.module} className={PANEL_CLASS}>
                     <CardHeader className="pb-3">
                       <div className="flex items-center gap-2">
-                        <ModuleIcon className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
+                        <ModuleIcon className="w-5 h-5 text-[var(--color-brand-text)]" />
                         <CardTitle className="text-lg text-[var(--color-neutral-11)]">{module.module}</CardTitle>
                         <Badge variant="outline" className={INFO_BADGE_CLASS}>
                           {module.permissions.length} 个功能
@@ -254,31 +300,41 @@ export function PermissionManagement() {
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.view}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'view', checked === true)}
                                   disabled={selectedRole === 'admin'}
+                                  aria-label={`${selectedRoleName}-${perm.name}-查看`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.create}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'create', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-新建`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.edit}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'edit', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-编辑`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.delete}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'delete', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-删除`}
                                 />
                               </TableCell>
                               <TableCell className="text-center">
                                 <Checkbox
                                   checked={perm.export}
+                                  onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'export', checked === true)}
                                   disabled={selectedRole === 'admin' || !perm.view}
+                                  aria-label={`${selectedRoleName}-${perm.name}-导出`}
                                 />
                               </TableCell>
                             </TableRow>
@@ -326,7 +382,7 @@ export function PermissionManagement() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {dataPermissions.map((area, index) => (
+                      {currentPerms.data.map((area, index) => (
                         <TableRow key={index}>
                           <TableCell className="font-medium text-[var(--color-neutral-11)]">{area.area}</TableCell>
                           <TableCell>
@@ -337,13 +393,17 @@ export function PermissionManagement() {
                           <TableCell className="text-center">
                             <Checkbox
                               checked={area.canView}
+                              onCheckedChange={(checked) => toggleDataPermission(index, 'canView', checked === true)}
                               disabled={selectedRole === 'admin'}
+                              aria-label={`${selectedRoleName}-${area.area}-可查看`}
                             />
                           </TableCell>
                           <TableCell className="text-center">
                             <Checkbox
                               checked={area.canEdit}
+                              onCheckedChange={(checked) => toggleDataPermission(index, 'canEdit', checked === true)}
                               disabled={selectedRole === 'admin' || !area.canView}
+                              aria-label={`${selectedRoleName}-${area.area}-可编辑`}
                             />
                           </TableCell>
                           <TableCell className={MUTED_TEXT_CLASS}>

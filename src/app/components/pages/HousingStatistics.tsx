@@ -187,7 +187,7 @@ export function HousingStatistics() {
         <Card className={PANEL_CLASS}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-              <MapPinned className="h-5 w-5 text-[var(--color-brand-primary-hover)]" />
+              <MapPinned className="h-5 w-5 text-[var(--color-brand-text)]" />
               区县房屋治理对比
             </CardTitle>
           </CardHeader>
@@ -216,12 +216,12 @@ export function HousingStatistics() {
           <CardHeader className="gap-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-                <AlertTriangle className="h-5 w-5 text-[var(--color-status-warning)]" />
+                <AlertTriangle className="h-5 w-5 text-[var(--color-status-warning-text)]" />
                 重点区县清单
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <button type="button" className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                      <button type="button" aria-label="指标说明" className="inline-flex h-7 w-7 items-center justify-center rounded text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
                         <HelpCircle className="h-4 w-4" />
                       </button>
                     </TooltipTrigger>
@@ -324,7 +324,7 @@ export function HousingStatistics() {
         <Card className={PANEL_CLASS}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-              <Hotel className="h-5 w-5 text-[var(--color-status-warning)]" />
+              <Hotel className="h-5 w-5 text-[var(--color-status-warning-text)]" />
               出租房治理预警
             </CardTitle>
           </CardHeader>

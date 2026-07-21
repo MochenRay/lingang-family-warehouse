@@ -232,7 +232,7 @@ export function ContributionRanking() {
                   <p className={`text-sm ${MUTED_TEXT}`}>{item.description}</p>
                 </div>
                 <div className="text-right min-w-[110px]">
-                  <div className="text-2xl font-semibold text-[var(--color-status-success)]">{item.contribution}%</div>
+                  <div className="text-2xl font-semibold text-[var(--color-status-success-text)]">{item.contribution}%</div>
                   <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                 </div>
               </div>

@@ -44,7 +44,7 @@ export function SortableHeader<TKey extends string>({
           'hover:bg-[rgba(39,97,203,0.12)] hover:text-white',
           'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]',
           alignClasses[align],
-          isActive ? 'text-[var(--color-brand-primary-hover)]' : 'text-[var(--color-neutral-08)]',
+          isActive ? 'text-[var(--color-brand-text)]' : 'text-[var(--color-neutral-08)]',
         )}
       >
         <span>{label}</span>

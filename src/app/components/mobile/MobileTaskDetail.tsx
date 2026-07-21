@@ -26,9 +26,9 @@ interface MobileTaskDetailProps {
 
 function getTaskBadgeClass(type: string) {
   const colors: Record<string, string> = {
-    重点走访: 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-primary-hover)]',
-    走访反馈: 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success)]',
-    矛盾调解: 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning)]',
+    重点走访: 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-text)]',
+    走访反馈: 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]',
+    矛盾调解: 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]',
   };
   return colors[type] || 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]';
 }
@@ -114,7 +114,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
   if (loading) {
     return (
       <div className="min-h-screen bg-[var(--color-neutral-01)] flex items-center justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-brand-primary-hover)] mr-2" />
+        <Loader2 className="w-5 h-5 animate-spin text-[var(--color-brand-text)] mr-2" />
         <span className="text-[var(--color-neutral-08)]">正在同步任务详情...</span>
       </div>
     );
@@ -189,7 +189,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
           <Card className="border-none shadow-sm">
             <CardContent className="p-4">
               <div className="flex items-center gap-2 mb-2 font-semibold text-[var(--color-neutral-11)]">
-                <FileText className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                <FileText className="w-4 h-4 text-[var(--color-brand-text)]" />
                 任务摘要
               </div>
               <p className="text-sm text-[var(--color-neutral-10)] leading-relaxed">{detail.description}</p>
@@ -235,7 +235,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     type="button"
                     onClick={() => handleOpenSource(`house-detail/${detail.context.house!.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-primary-hover)] disabled:cursor-default"
+                    className="px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-text)] disabled:cursor-default"
                   >
                     房屋 · {detail.context.house.address}
                   </button>

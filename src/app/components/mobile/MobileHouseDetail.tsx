@@ -85,7 +85,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
 
   const getTypeColor = (type: string) => {
     if (type === '自住') return 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)] border-[var(--color-status-success)]/35';
-    if (type === '出租') return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]';
+    if (type === '出租') return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] border-[var(--color-brand-primary)]';
     if (type === '空置') return 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]';
     if (type === '经营') return 'bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)] border-[var(--color-accent-purple)]/35';
     return 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)]';
@@ -183,7 +183,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
         <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
           <div className="p-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
             <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Users className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <Users className="w-4 h-4 text-[var(--color-brand-text)]" />
               居住人员
             </h3>
             <span className="text-xs text-[var(--color-text-tertiary)]">{residents.length}人</span>
@@ -198,7 +198,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
                     onClick={() => onRouteChange?.(`person-detail/${resident.id}`)}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)] text-sm font-bold">
+                      <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-text)] text-sm font-bold">
                         {resident.name[0]}
                       </div>
                       <div>
@@ -218,7 +218,7 @@ export function MobileHouseDetail({ id, onBack, onRouteChange }: MobileHouseDeta
                 ))}
               </div>
               <div className="p-3 border-t border-[var(--color-border-primary)]">
-                <Button variant="ghost" className="w-full text-[var(--color-brand-primary-hover)] h-9 text-sm hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/10">
+                <Button variant="ghost" className="w-full text-[var(--color-brand-text)] h-9 text-sm hover:text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/10">
                   + 添加居住人员
                 </Button>
               </div>

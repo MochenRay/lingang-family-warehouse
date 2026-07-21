@@ -274,10 +274,10 @@ export function BehaviorSupervision() {
 
   // 得分颜色
   const scoreColor = (score: number) => {
-    if (score >= 85) return 'text-[var(--color-status-success)]';
-    if (score >= 70) return 'text-[var(--color-brand-primary-hover)]';
-    if (score >= 55) return 'text-[var(--color-status-warning)]';
-    return 'text-[var(--color-status-error)]';
+    if (score >= 85) return 'text-[var(--color-status-success-text)]';
+    if (score >= 70) return 'text-[var(--color-brand-text)]';
+    if (score >= 55) return 'text-[var(--color-status-warning-text)]';
+    return 'text-[var(--color-status-error-text)]';
   };
 
   return (
@@ -363,7 +363,7 @@ export function BehaviorSupervision() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="rounded-lg border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/15 p-3">
-                <RefreshCw className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
+                <RefreshCw className="w-6 h-6 text-[var(--color-brand-text)]" />
               </div>
               <div>
                 <h3 className="font-bold text-lg text-[var(--color-neutral-11)]">治理数据主链已联通</h3>
@@ -425,7 +425,7 @@ export function BehaviorSupervision() {
               onClick={() => setShowFormula(!showFormula)}
             >
               <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                <Info className="w-4 h-4 text-[var(--color-brand-text)]" />
                 <span className="font-semibold text-[var(--color-neutral-11)]">评分规则说明</span>
                 <Badge variant="secondary" className={DARK_BADGE_CLASS}>
                   综合得分 = 走访频次×25% + 走访质量×25% + 信息完善度×20% + 任务完成量×15% + 响应速度×15%
@@ -447,7 +447,7 @@ export function BehaviorSupervision() {
                       </div>
                     ))}
                   </div>
-                  <div className="mt-3 rounded-lg border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-3 text-xs text-[var(--color-brand-primary-hover)]">
+                  <div className="mt-3 rounded-lg border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-3 text-xs text-[var(--color-brand-text)]">
                     <strong>聚合规则：</strong>上级单位得分 = 下辖单位得分的算术平均。区县视角排名街道/镇，街道视角排名社区，社区视角排名网格员。不越级考核。
                   </div>
                 </div>
@@ -489,7 +489,7 @@ export function BehaviorSupervision() {
                   {selectedDistrict && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedDistrict}</Badge>}
                   {selectedStreet && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedStreet}</Badge>}
                   {selectedCommunity && <Badge variant="secondary" className={DARK_BADGE_CLASS}>{selectedCommunity}</Badge>}
-                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-[var(--color-brand-primary-hover)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-brand-primary-hover)]" onClick={() => {
+                  <Button variant="ghost" size="sm" className="h-5 px-2 text-xs text-[var(--color-brand-text)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-brand-primary-hover)]" onClick={() => {
                     setSelectedDistrict(null); setSelectedStreet(null); setSelectedCommunity(null);
                   }}>
                     清除筛选
@@ -521,10 +521,10 @@ export function BehaviorSupervision() {
                     {/* 排名 */}
                     <div className="flex justify-center">
                       <div className={`w-9 h-9 flex items-center justify-center rounded-full font-bold text-sm ${
-                        item.rank === 1 ? 'bg-[var(--color-status-warning)]/20 text-[var(--color-status-warning)] border border-[var(--color-status-warning)]/35' :
+                        item.rank === 1 ? 'bg-[var(--color-status-warning)]/20 text-[var(--color-status-warning-text)] border border-[var(--color-status-warning)]/35' :
                         item.rank === 2 ? 'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-08)]/30' :
-                        item.rank === 3 ? 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-primary-hover)] border border-[var(--color-brand-primary-hover)]/30' :
-                        'bg-[var(--color-neutral-03)] text-[var(--color-neutral-08)] border border-[var(--color-neutral-04)]'
+                        item.rank === 3 ? 'bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-brand-text)] border border-[var(--color-brand-primary-hover)]/30' :
+                        'bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)] border border-[var(--color-neutral-04)]'
                       }`}>
                         {item.rank}
                       </div>
@@ -575,15 +575,15 @@ export function BehaviorSupervision() {
                 <CardContent className="p-5">
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-[var(--color-status-error)]" />
+                      <AlertCircle className="w-5 h-5 text-[var(--color-status-error-text)]" />
                       <span className="font-bold text-[var(--color-neutral-11)]">{alert.type}</span>
                     </div>
                     <Badge variant="destructive">{alert.count} 条待修正</Badge>
                   </div>
                   <p className="mb-4 text-[var(--color-neutral-08)]">{alert.desc}</p>
                   <div className="flex items-center justify-between mt-4 text-sm">
-                    <span className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] px-2 py-1 text-[var(--color-neutral-08)]">高发区域: {alert.area}</span>
-                    <Button variant="link" className="h-auto p-0 text-[var(--color-brand-primary-hover)]">查看详情 &gt;</Button>
+                    <span className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] px-2 py-1 text-[var(--color-neutral-10)]">高发区域: {alert.area}</span>
+                    <Button variant="link" className="h-auto p-0 text-[var(--color-brand-text)]">查看详情 &gt;</Button>
                   </div>
                 </CardContent>
               </Card>

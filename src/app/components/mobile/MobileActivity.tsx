@@ -101,7 +101,7 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
     switch (subcategory) {
       case '环境整治': return { icon: Sprout, color: 'text-[var(--color-status-success-text)]', bg: 'bg-[var(--color-status-success-soft)]', border: 'border-[var(--color-status-success)]/35' };
       case '助老扶弱': return { icon: HeartHandshake, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
-      case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-primary-hover)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]' };
+      case '政策宣传': return { icon: Megaphone, color: 'text-[var(--color-brand-text)]', bg: 'bg-[var(--color-brand-primary)]/10', border: 'border-[var(--color-brand-primary)]' };
       case '便民服务': return { icon: Wrench, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]/35' };
       case '趣味运动会': return { icon: Trophy, color: 'text-[var(--color-status-warning-text)]', bg: 'bg-[var(--color-status-warning-soft)]', border: 'border-[var(--color-status-warning)]' };
       case '社区音乐会': return { icon: Music, color: 'text-[var(--color-accent-purple-text)]', bg: 'bg-[var(--color-accent-purple-soft)]', border: 'border-[var(--color-accent-purple)]/35' };
@@ -133,6 +133,7 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
               />
             </div>
             <button
+              aria-label="新建活动"
               className="w-9 h-9 rounded-xl bg-[var(--color-brand-primary)] flex items-center justify-center shadow-md shadow-[var(--color-brand-primary)]/25 active:scale-90 transition-transform shrink-0"
               onClick={() => onRouteChange('activity-form')}
             >
@@ -145,13 +146,13 @@ export function MobileActivity({ onRouteChange, onExitMobile }: MobileActivityPr
             <TabsList className="w-full flex h-10 bg-transparent p-0 border-b border-[var(--color-neutral-03)]">
               <TabsTrigger
                 value="grid"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-primary-hover)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
               >
                 本网格活动
               </TabsTrigger>
               <TabsTrigger
                 value="my"
-                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-primary-hover)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
+                className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none text-[var(--color-neutral-08)] font-medium text-sm transition-colors bg-transparent"
               >
                 我的申请
               </TabsTrigger>

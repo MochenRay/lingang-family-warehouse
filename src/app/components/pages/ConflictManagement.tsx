@@ -727,7 +727,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
 
                     <div className="space-y-2">
                       <div className="text-sm font-medium text-[var(--color-neutral-11)] flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                        <MessageSquare className="w-4 h-4 text-[var(--color-brand-text)]" />
                         建议动作
                       </div>
                       {selectedContext?.suggestedActions.length ? (
@@ -809,7 +809,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                     {selectedContext?.relatedHouse ? (
                       <div className={`${PANEL_CLASS} p-4 space-y-3`}>
                         <div className="flex items-center gap-2 text-[var(--color-neutral-11)]">
-                          <Home className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                          <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
                           <p className="font-medium">{selectedContext.relatedHouse.address}</p>
                         </div>
                         <div className="grid grid-cols-2 gap-3 text-sm">

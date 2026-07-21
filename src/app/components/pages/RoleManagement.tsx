@@ -273,7 +273,7 @@ export function RoleManagement() {
               <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                 <div className="flex items-start gap-4">
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10">
-                    <Shield className="w-6 h-6 text-[var(--color-brand-primary-hover)]" />
+                    <Shield className="w-6 h-6 text-[var(--color-brand-text)]" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">
@@ -341,7 +341,7 @@ export function RoleManagement() {
                 <p className={`text-sm font-medium ${MUTED_TEXT_CLASS}`}>权限列表：</p>
                 <div className="flex flex-wrap gap-2">
                   {role.permissions.map((perm, index) => (
-                    <Badge key={index} variant="outline" className="border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 text-[var(--color-brand-primary-hover)]">
+                    <Badge key={index} variant="outline" className="border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 text-[var(--color-brand-text)]">
                       {getPermissionName(perm)}
                     </Badge>
                   ))}
@@ -367,7 +367,7 @@ export function RoleManagement() {
             {permissionTree.map((module) => (
               <div key={module.code} className={`${DARK_PANEL_CLASS} p-4`}>
                 <h3 className="font-semibold mb-2 flex items-center gap-2 text-[var(--color-neutral-11)]">
-                  <Shield className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+                  <Shield className="w-4 h-4 text-[var(--color-brand-text)]" />
                   {module.module}
                 </h3>
                 <ul className="space-y-1">

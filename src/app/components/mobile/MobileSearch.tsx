@@ -59,7 +59,7 @@ function getRiskColor(risk: string) {
 function getTagColor(category: SearchTagOption['category']) {
   switch (category) {
     case 'identity':
-      return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-[var(--color-brand-primary)]/30';
+      return 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] border-[var(--color-brand-primary)]/30';
     case 'risk':
       return 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)] border-[var(--color-status-error)]/30';
     case 'health':
@@ -229,7 +229,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               value="people"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-text)]">
                 人员信息
               </span>
               <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
@@ -238,7 +238,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               value="house"
               className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
             >
-              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-primary-hover)]">
+              <span className="text-[15px] font-medium text-[var(--color-neutral-08)] transition-colors group-data-[state=active]:text-[var(--color-brand-text)]">
                 房屋信息
               </span>
               <div className="absolute bottom-0 left-1/2 h-[3px] w-12 -translate-x-1/2 rounded-t-full bg-[var(--color-brand-primary)] opacity-0 transition-all duration-300 group-data-[state=active]:opacity-100" />
@@ -271,7 +271,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                 riskLevel !== 'all' ||
                 houseStatus !== 'all' ||
                 selectedGrid !== 'all'
-                  ? 'text-[var(--color-brand-primary-hover)] font-bold bg-[var(--color-brand-primary)]/10'
+                  ? 'text-[var(--color-brand-text)] font-bold bg-[var(--color-brand-primary)]/10'
                   : 'text-[var(--color-neutral-10)]'
               } hover:bg-[var(--color-neutral-03)]`}
             >
@@ -335,7 +335,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                   <div>
                     <div className="flex justify-between mb-2">
                       <Label className="text-sm font-medium">年龄范围</Label>
-                      <span className="text-xs text-[var(--color-brand-primary-hover)] font-bold">{ageRange[0]}岁 - {ageRange[1]}岁</span>
+                      <span className="text-xs text-[var(--color-brand-text)] font-bold">{ageRange[0]}岁 - {ageRange[1]}岁</span>
                     </div>
                     <Slider value={ageRange} max={100} step={1} onValueChange={setAgeRange} className="py-4" />
                   </div>
@@ -465,7 +465,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
               <CardContent className="p-4">
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)]">
+                    <div className="w-8 h-8 rounded bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-text)]">
                       <Home className="w-4 h-4" />
                     </div>
                     <div className="font-bold text-[var(--color-neutral-11)] line-clamp-1 flex-1">

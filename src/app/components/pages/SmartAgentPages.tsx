@@ -150,7 +150,7 @@ function BaseSmartChat({
                 <div key={msg.id} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                   <Avatar className={`h-8 w-8 shrink-0 border border-[var(--color-neutral-03)] ${msg.role === 'ai' ? 'bg-[var(--color-brand-primary)]/18' : 'bg-[var(--color-neutral-03)]'}`}>
                     {msg.role === 'ai' ? (
-                      <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-[var(--color-brand-primary-hover)]" /></AvatarFallback>
+                      <AvatarFallback className="bg-transparent"><Bot className="h-5 w-5 text-[var(--color-brand-text)]" /></AvatarFallback>
                     ) : (
                       <AvatarFallback className="bg-transparent text-[var(--color-neutral-10)]"><span className="text-xs">我</span></AvatarFallback>
                     )}
@@ -256,7 +256,7 @@ export function PolicyInterpretation() {
       apiKind="policy"
       topic={{
         title: '热门政策领域',
-        icon: <BookOpen className="h-4 w-4 text-[var(--color-brand-primary-hover)]" />,
+        icon: <BookOpen className="h-4 w-4 text-[var(--color-brand-text)]" />,
         items: ['民政救助', '养老服务', '退役军人', '医疗保障', '残联助残'],
         badgeClassName: 'hover:border-[var(--color-brand-primary-hover)] hover:bg-[var(--color-brand-primary)]/12 hover:text-[var(--color-brand-primary-hover)]',
       }}
@@ -285,7 +285,7 @@ export function OfficialDocumentWriting() {
       apiKind="writing"
       topic={{
         title: '常用文体模板',
-        icon: <PenTool className="h-4 w-4 text-[var(--color-status-success)]" />,
+        icon: <PenTool className="h-4 w-4 text-[var(--color-status-success-text)]" />,
         items: ['工作总结', '会议纪要', '活动方案', '通知公告', '情况汇报'],
         badgeClassName: 'hover:border-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/12 hover:text-[var(--color-status-success-text)]',
       }}

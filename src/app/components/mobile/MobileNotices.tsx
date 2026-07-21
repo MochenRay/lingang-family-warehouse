@@ -36,7 +36,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
   const getTypeLabel = (type: string) => {
     switch(type) {
       case 'urgent': return { text: '紧急', color: 'bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]' };
-      case 'system': return { text: '系统', color: 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)]' };
+      case 'system': return { text: '系统', color: 'bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)]' };
       case 'guide': return { text: '指南', color: 'bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]' };
       case 'task': return { text: '任务', color: 'bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]' };
       default: return { text: '通知', color: 'bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]' };
@@ -55,8 +55,9 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
       <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10 border-b border-[var(--color-neutral-03)]">
         <MobileStatusBar />
         <div className="h-11 flex items-center justify-between px-4">
-          <button 
+          <button
             onClick={onBack}
+            aria-label="返回"
             className="w-8 h-8 flex items-center justify-center -ml-2 text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-02)] rounded-full"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -130,7 +131,7 @@ export function MobileNotices({ onBack, onNoticeClick }: MobileNoticesProps) {
                 </p>
                 <div className="mt-3 pt-3 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
                   <span className="text-[10px] text-[var(--color-neutral-08)]">{notice.department}</span>
-                  <div className="flex items-center text-xs text-[var(--color-brand-primary-hover)] font-medium">
+                  <div className="flex items-center text-xs text-[var(--color-brand-text)] font-medium">
                     查看详情
                     <ChevronRight className="w-3 h-3 ml-0.5" />
                   </div>

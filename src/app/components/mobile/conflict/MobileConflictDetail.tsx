@@ -291,7 +291,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]">
-        <Loader2 className="w-8 h-8 text-[var(--color-brand-primary-hover)] animate-spin" />
+        <Loader2 className="w-8 h-8 text-[var(--color-brand-text)] animate-spin" />
       </div>
     );
   }
@@ -343,7 +343,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 <Users className="w-4 h-4 text-[var(--color-neutral-08)] mt-0.5" />
                 <div className="flex flex-wrap gap-1.5">
                   {conflict.involvedParties.map((party) => (
-                    <span key={`${party.type}-${party.id}`} className="text-sm text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary)]/10 px-1.5 rounded">
+                    <span key={`${party.type}-${party.id}`} className="text-sm text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 px-1.5 rounded">
                       {party.name}
                     </span>
                   ))}
@@ -363,7 +363,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                       key={person.id}
                       type="button"
                       onClick={() => onRouteChange?.(`person-detail/${person.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs text-[var(--color-brand-primary-hover)] active:opacity-80"
+                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs text-[var(--color-brand-text)] active:opacity-80"
                     >
                       <Users className="w-3 h-3" />
                       {person.name}
@@ -401,9 +401,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <Card className="border-none shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-3">
-              <BookOpen className="w-4 h-4 text-[var(--color-brand-primary-hover)]" />
+              <BookOpen className="w-4 h-4 text-[var(--color-brand-text)]" />
               <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">案件推导</h3>
-              <Badge className="ml-auto bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] border-0 text-[10px]">
+              <Badge className="ml-auto bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] border-0 text-[10px]">
                 {context.followUpStatus.label}
               </Badge>
             </div>
@@ -413,7 +413,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 onClick={() => setAiTab('policy')}
                 className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
                   aiTab === 'policy'
-                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm'
+                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
                 }`}
               >
@@ -423,7 +423,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 onClick={() => setAiTab('script')}
                 className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
                   aiTab === 'script'
-                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-primary-hover)] shadow-sm'
+                    ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
                 }`}
               >
@@ -444,7 +444,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                           {policy.title}
                         </h4>
                         <div className="flex items-center gap-1.5 text-[10px] text-[var(--color-neutral-08)]">
-                          <span className="bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-primary-hover)] px-2 py-0.5 rounded font-medium">
+                          <span className="bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)] px-2 py-0.5 rounded font-medium">
                             {policy.source}
                           </span>
                         </div>
@@ -459,7 +459,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
                     <div className="flex items-start gap-1.5">
                       <div className="w-1 h-1 rounded-full bg-[var(--color-brand-primary)] shrink-0 mt-1.5" />
-                      <p className="text-xs text-[var(--color-brand-primary-hover)] leading-relaxed flex-1">
+                      <p className="text-xs text-[var(--color-brand-text)] leading-relaxed flex-1">
                         <span className="font-medium">适用场景：</span>{policy.relevance}
                       </p>
                     </div>
@@ -548,7 +548,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20">
+              <Button variant="outline" className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20">
                 <MessageSquarePlus className="w-4 h-4" /> 添加进展
               </Button>
             </DialogTrigger>

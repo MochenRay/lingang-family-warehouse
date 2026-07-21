@@ -233,7 +233,7 @@ export function AnomalyAnalysis() {
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
                 <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                 <Bar dataKey="热度" fill={CHART_WARNING} radius={[4, 4, 0, 0]} />
                 <Bar dataKey="超期" fill={CHART_ERROR} radius={[4, 4, 0, 0]} />
                 <Bar dataKey="纠纷" fill={CHART_PRIMARY} radius={[4, 4, 0, 0]} />
@@ -251,7 +251,7 @@ export function AnomalyAnalysis() {
               <XAxis dataKey="month" axisLine={false} tickLine={false} tick={CHART_TICK} />
               <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} />
               <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-              <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+              <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
               <Line type="monotone" dataKey="走访" stroke={CHART_SUCCESS} strokeWidth={2} />
               <Line type="monotone" dataKey="纠纷" stroke={CHART_ERROR} strokeWidth={2} />
               <Line type="monotone" dataKey="迁出" stroke={CHART_WARNING} strokeWidth={2} />

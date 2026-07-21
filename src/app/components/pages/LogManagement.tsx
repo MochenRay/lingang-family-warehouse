@@ -399,12 +399,12 @@ export function LogManagement() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className={`${DARK_PANEL_CLASS} p-4`}>
               <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>操作日志</p>
-              <p className="mb-1 text-2xl font-bold text-[var(--color-brand-primary-hover)]">90天</p>
+              <p className="mb-1 text-2xl font-bold text-[var(--color-brand-text)]">90天</p>
               <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过90天的日志将自动归档</p>
             </div>
             <div className={`${DARK_PANEL_CLASS} p-4`}>
               <p className={`mb-2 text-sm font-medium ${MUTED_TEXT_CLASS}`}>登录日志</p>
-              <p className="mb-1 text-2xl font-bold text-[var(--color-status-success)]">180天</p>
+              <p className="mb-1 text-2xl font-bold text-[var(--color-status-success-text)]">180天</p>
               <p className={`text-sm ${MUTED_TEXT_CLASS}`}>超过180天的日志将自动归档</p>
             </div>
             <div className={`${DARK_PANEL_CLASS} p-4`}>

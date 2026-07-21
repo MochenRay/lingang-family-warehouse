@@ -169,7 +169,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
       <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10 border-b border-[var(--color-neutral-03)]">
         <MobileStatusBar />
         <div className="px-4 py-3 flex items-center gap-3">
-          <button onClick={onBack}>
+          <button onClick={onBack} aria-label="返回">
             <ArrowLeft className="w-6 h-6 text-[var(--color-neutral-10)]" />
           </button>
           <div className="flex-1">
@@ -193,6 +193,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
                 <img src={photo} alt="" className="w-full h-full object-cover" />
                 <button
                   onClick={() => setPhoto('')}
+                  aria-label="删除照片"
                   className="absolute top-1 right-1 w-6 h-6 bg-[var(--color-status-error)] rounded-full text-white text-xs flex items-center justify-center"
                 >
                   ×

@@ -140,6 +140,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         action={
           <button
             onClick={() => onRouteChange?.('quick-note-history')}
+            aria-label="查看历史记录"
             className="p-2 -mr-2 text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)] active:bg-[var(--color-neutral-03)] rounded-full active:scale-95 transition-transform"
           >
             <History className="w-5 h-5" />
@@ -151,7 +152,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         {/* 输入区域 */}
         <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-[var(--color-brand-primary-hover)]">
+            <CardTitle className="text-base flex items-center gap-2 text-[var(--color-brand-text)]">
               <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
               情况描述
             </CardTitle>
@@ -181,7 +182,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         {/* 关联对象区域 */}
         <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-primary-hover)]">
+            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-text)]">
               <div className="flex items-center gap-2">
                 <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
                 关联对象
@@ -193,12 +194,13 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
               <div className="bg-[var(--color-brand-primary)]/10 rounded-lg border border-[var(--color-brand-primary)]/30 p-3 relative">
                  <button 
                    onClick={() => setAssociatedPerson(null)}
+                   aria-label="移除关联居民"
                    className="absolute top-2 right-2 text-[var(--color-neutral-08)] hover:text-[var(--color-status-error-text)]"
                  >
                    <X className="w-4 h-4" />
                  </button>
                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-primary-hover)] font-bold">
+                    <div className="w-10 h-10 rounded-full bg-[var(--color-brand-primary)]/10 flex items-center justify-center text-[var(--color-brand-text)] font-bold">
                       {associatedPerson.name.charAt(0)}
                     </div>
                     <div>
@@ -286,7 +288,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         {/* 佐证材料上传 */}
         <Card className="border-[var(--color-brand-primary)]/30 shadow-sm">
           <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-primary-hover)]">
+            <CardTitle className="text-base flex items-center justify-between text-[var(--color-brand-text)]">
               <div className="flex items-center gap-2">
                 <span className="w-1 h-4 bg-[var(--color-brand-primary)] rounded-full"></span>
                 佐证材料

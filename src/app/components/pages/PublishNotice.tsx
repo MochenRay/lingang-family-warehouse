@@ -182,7 +182,7 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bell className="w-5 h-5 text-[var(--color-brand-primary-hover)]" />
+                <Bell className="w-5 h-5 text-[var(--color-brand-text)]" />
                 基本信息
               </CardTitle>
               <CardDescription>填写公告标题、类型和内容</CardDescription>
@@ -241,7 +241,7 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-[var(--color-status-info)]" />
+                <Users className="w-5 h-5 text-[var(--color-status-info-text)]" />
                 通知范围
               </CardTitle>
               <CardDescription>选择公告的接收对象</CardDescription>
@@ -299,7 +299,7 @@ export function PublishNotice() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[var(--color-status-success)]" />
+                <Calendar className="w-5 h-5 text-[var(--color-status-success-text)]" />
                 发布设置
               </CardTitle>
               <CardDescription>选择立即发布或定时发布</CardDescription>
@@ -394,7 +394,7 @@ export function PublishNotice() {
                   </p>
                   <div className="pt-2 border-t border-[var(--color-neutral-03)] flex items-center justify-between">
                     <span className="text-[10px] text-[var(--color-neutral-08)]">烟台市社会治理中心</span>
-                    <span className="text-xs text-[var(--color-brand-primary-hover)]">查看详情</span>
+                    <span className="text-xs text-[var(--color-brand-text)]">查看详情</span>
                   </div>
                 </div>
               </CardContent>

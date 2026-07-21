@@ -317,7 +317,7 @@ export function FactorIdentification() {
                     <p className={`text-sm ${MUTED_TEXT}`}>{factor.description}</p>
                   </div>
                   <div className="text-right min-w-[92px]">
-                    <div className="text-2xl font-semibold text-[var(--color-status-success)]">{factor.contribution}%</div>
+                    <div className="text-2xl font-semibold text-[var(--color-status-success-text)]">{factor.contribution}%</div>
                     <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
                   </div>
                 </div>
@@ -352,7 +352,7 @@ export function FactorIdentification() {
                   <YAxis type="number" dataKey="y" name="热度" axisLine={false} tickLine={false} tick={CHART_TICK} />
                   <ZAxis type="number" dataKey="z" range={[80, 420]} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Legend wrapperStyle={{ color: CHART_LEGEND }} />
+                  <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
                   <Scatter name="网格样本" data={scatterData} fill={CHART_PRIMARY} />
                 </ScatterChart>
               </ResponsiveContainer>
