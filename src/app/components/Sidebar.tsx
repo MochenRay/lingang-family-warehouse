@@ -196,7 +196,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
     <aside
       className={cn(
         "bg-[var(--color-neutral-00)] border-r border-[var(--color-neutral-03)] transition-all duration-300 flex flex-col h-screen",
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Logo区域 */}
