@@ -67,7 +67,7 @@ jobs:
       - run: npm ci
       - run: python -m pip install -r backend/requirements-dev.txt
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+      - run: npm run test:e2e:ci
         env:
           CI: 'true'
           PYTHON_BIN: python
