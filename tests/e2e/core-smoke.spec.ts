@@ -42,7 +42,7 @@ test('legacy publish-notice URL is replaced by the dashboard', async ({ page }) 
   });
   await page.goto('/grid/notices/publish');
 
-  await expect(page).toHaveURL(/\/$/);
+  await expect(page).toHaveURL('/');
   await expect(page.getByRole('heading', { name: '综合统计驾驶舱' })).toBeVisible();
 });
 
