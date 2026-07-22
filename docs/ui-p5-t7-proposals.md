@@ -1,8 +1,13 @@
 # P5-T7 · C 组设计类方案稿（先评审后立项）
 
-> 状态：2026-07-22 **V2 修订稿**（按 Codex 评审 CHANGES_REQUESTED 定点修订）提交复审。本稿只产方案、不含实现；通过项另立实施 PR（各带 e2e/截图验收，实施环境 T2 golden 已就位）。
+> 状态：2026-07-22 **V3 修订稿**（二轮：方案二、方案三已 APPROVE；方案一按唯一剩余阻断修订）提交方案一单点终审。本稿只产方案、不含实现；通过项另立实施 PR（各带 e2e/截图验收，实施环境 T2 golden 已就位）。
 > 事实依据：main `10195ff` 代码实读，关键事实附文件:行号。
-> V2 修订记录（对应 Codex 五项阻断 + 三项非阻断）：
+> V3 修订记录（对应 Codex 二轮一项阻断 + 三项非阻断）：
+> ⓪ 方案一清单排序第三键「更新时间」无真实数据来源（AnalysisAnomalyItem 仅有构建时统一写入的 date，analysisRepository.ts:43/356），改为四级确定性排序：severityRank 降序 → grid.heatScore 降序 → gridName zh-CN 升序 → warning.id 升序，排序后 `.slice(0, 12)`。
+> ⓪ 方案二验收口径明确为「30 个桌面叶子 route ID」（不含 7 个分组 ID 与 mobile），并建议叶子按钮加 `data-route-id` 由 e2e 展开全部分组后读真实 DOM。
+> ⓪ 方案一板数断言改为「= `snapshot.grids.length`（当前种子=12）」兼顾合同与扩展。
+> ⓪ 方案三行号订正：StatCard 老龄化 `age >= 60` 位于 `DemographicsAnalysis.tsx:235`。
+> V2 修订记录（对应 Codex 一轮五项阻断 + 三项非阻断，已全部落稿并获通过）：
 > ① 方案一权限映射纠错——本页只对应 `RoleManagement.tsx:132`（code `warning_map`）与 `PermissionManagement.tsx:68`（「预警地图」）；`RoleManagement.tsx:113`（「热力图分析」）与 `PermissionManagement.tsx:49`（「全域人口热力图」）是统计分析域另一套人口热力图权限概念，**不属于本页、不动**。eyebrow 原值更正为 `WARNING MAP`。
 > ② 方案一矩阵冻结数据单位与覆盖范围（网格级板 + 全部网格 + 清单平铺排序规则）。
 > ③ 方案二目标与 e2e 防假绿改写。
@@ -49,8 +54,9 @@
 │  覆盖**全部 12 个网格**（取代现 Top 8 截断），组内 heatScore   │
 │  降序；板面其余元素=现状（信号数/等级 Badge/热度分/待处理/     │
 │  已闭环/主信号），点击选中行为保持                             │
-├ 预警清单（保持平铺；排序冻结：severity 等级降序 →             │
-│  heatScore 降序 → 更新时间降序）───────────────────────────┤
+├ 预警清单（保持平铺；排序冻结为四级确定性键：severityRank    │
+│  降序 → grid.heatScore 降序 → gridName zh-CN 升序 →           │
+│  warning.id 升序，排序后 .slice(0, 12)）─────────────────────┤
 ├ 详情 Dialog（保持现状）──────────────────────────────────┤
 ```
 
@@ -59,13 +65,13 @@
 - 定名「预警热区」：**通过**（eyebrow 同步 `WARNING ZONES`；页面标题、`RoleManagement.tsx:132`、`PermissionManagement.tsx:68` 三处统一，另一套人口热力图权限不动）
 - 补导航入口（落「统计分析」组，与方案二联动）：**通过**
 - 区/街道分组：**通过**，但板必须明确为网格级（已冻结如上）
-- 覆盖范围与清单形态：按本稿冻结执行（全部 12 网格；清单平铺 + 三级排序）
+- 覆盖范围与清单形态：按本稿冻结执行（全部网格板；清单平铺 + 四级确定性排序后 `.slice(0, 12)`）
 
 ### 验收标准（实施 PR）
 
 - 称谓统一：页面标题/eyebrow、`RoleManagement.tsx:132`、`PermissionManagement.tsx:68` 同名「预警热区」；人口热力图两处权限配置原样保留；a11y 扫描该路由 readyText 同步更新且「阻断为零」硬断言通过
 - 热区矩阵：区/街道分组渲染，组内网格级板，覆盖全部 12 网格、组内 heatScore 降序；筛选/点击/Dialog 行为与现状一致
-- e2e 锁定：网格板数量（=12）、组内顺序、同名社区（海梦苑第一/第二网格）下 gridLabel 可区分；清单三级排序
+- e2e 锁定：网格板数量 = `snapshot.grids.length`（当前种子=12，兼顾合同与未来扩展）、组内 heatScore 降序、同名社区（海梦苑第一/第二网格）下 gridLabel 可区分；清单四级排序——用同 severity、同 heatScore 的 fixture 验证 gridName zh-CN 升序与 warning.id 升序两个稳定 tie-break
 - 1024×768 与 1440×900 截图无溢出；golden 机制不在试点页，无需基线
 
 ### 工作量估计
@@ -112,7 +118,7 @@
 ### 验收标准（V2 防假绿改写，实施 PR）
 
 - 对照表逐组落地；路由 path 零改动（grep 证明）；移动端零改动
-- e2e（替代原「每组首项点击」的弱口径）：**断言完整父子树**——7 个分组 label 与各自 children 全量比对、30 个页面 ID 无缺失无重复；并至少点击验证「标签分析画像」「待办规则」「预警热区」三项的所在分组及最终 URL
+- e2e（替代原「每组首项点击」的弱口径）：**断言完整父子树**——7 个分组 label 与各自 children 全量比对、**30 个桌面叶子 route ID**（口径：不含 7 个分组 ID 与 mobile）无缺失无重复；建议为叶子按钮加 `data-route-id`，e2e 展开全部分组后读取真实 DOM（不只看 `ROUTE_DEFINITIONS`）；并至少点击验证「标签分析画像」「待办规则」「预警热区」三项的所在分组及最终 URL
 - 菜单 label 程序化测量零溢出零换行（复用 T6 测量方法）；1024×768/1440×900/折叠态截图
 - a11y 扫描「阻断为零」
 
@@ -131,7 +137,7 @@
 - **数据失真（最重）**：数据源 `personRepository.getPeople({ limit: 500 })`（`:172`）——显式 limit 走单页拉取（`personRepository.ts:94-96`），全库 1917 人金字塔只统计前 500 条，比例结构失真。
 - **主题不一致**：男用 `brand-primary-hover`、女用 `status-warning`（语义为「警告橙」），未用 chartConfig 的性别专用色 `CHART_GENDER_COLORS`（`chartConfig.ts:91-94`）。
 - **交互不一致**：hover 仅原生 `title` 属性，无 `DarkChartTooltip`/cursor；无空数据态（空数据渲染全 0 条而非 EmptyState）。
-- **口径分裂**：前端桶边界 60岁以上 min=60（`:27-28`），后端 `_build_age_data` 为 61（`stats.py:48-53`）；且同页 StatCard 老龄化比例基于同一 500 截断列表 `people.filter(age >= 60)`（`:230-234`），与金字塔共用失真数据。
+- **口径分裂**：前端桶边界 60岁以上 min=60（`:27-28`），后端 `_build_age_data` 为 61（`stats.py:48-53`）；且同页 StatCard 老龄化比例基于同一 500 截断列表 `people.filter(age >= 60)`（`:235`），与金字塔共用失真数据。
 - 技术缺口：双向/负值条形全站无 Recharts 先例（grep `stackId` 零命中），本项为首例。
 
 ### 目标用户与阅读效率目标
