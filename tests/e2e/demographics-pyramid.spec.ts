@@ -1,12 +1,15 @@
 import { expect, test, type Page } from '@playwright/test';
 
+const backendPort = Number(process.env.BACKEND_PORT ?? '8000');
+
 /**
  * P5-T7c 人口金字塔 div → Recharts 验收。
  *
  * mock 用例：page.route() 拦截 `/api/people` 注入确定性 12 人 fixture
  * （各桶男女分布已知，含 1 名 60 岁——验证其归入 36-60岁 桶且不计入老龄化比例）。
- * getPeople() 无参调用内部走 fetchAllListPages 分页拉取（limit/offset query），
- * 拦截按 offset/limit 切片，覆盖分页语义。
+ * mock 服务端硬限单页 5 条（不论请求 limit）：12 人须经 offsets [0,5,10] 三页取全，
+ * 并断言该 offset 序列——组件若退回显式 { limit: 500 } 单页调用只能取到 5 人，必红
+ * （Codex 复审指出的 false-green 修复：锁「全量分页」核心修复）。
  *
  * 真实种子用例：非 mock，验证全量 1917 人下金字塔渲染不崩。
  *
@@ -81,9 +84,16 @@ function buildPersonFixtures(): PersonFixture[] {
   });
 }
 
-/** 人口列表 GET 注入 fixture；按 limit/offset 分页切片（覆盖 fetchAllListPages 分页 query），其他请求放行。 */
-async function mockPeopleList(page: Page) {
+/** mock 服务端硬限单页条数（不论请求 limit） */
+const MOCK_PAGE_SIZE = 5;
+
+/**
+ * 人口列表 GET 注入 fixture；服务端硬限单页 5 条，按 offset 切片，
+ * 返回本次请求命中的 offset 序列（供断言 [0,5,10]）。其他请求放行。
+ */
+async function mockPeopleList(page: Page): Promise<number[]> {
   const fixtures = buildPersonFixtures();
+  const requestedOffsets: number[] = [];
   await page.route('**/api/people**', async (route) => {
     const request = route.request();
     const url = new URL(request.url());
@@ -91,9 +101,10 @@ async function mockPeopleList(page: Page) {
       return route.continue();
     }
     const offset = Number(url.searchParams.get('offset') ?? '0');
-    const limit = Number(url.searchParams.get('limit') ?? '500');
-    return route.fulfill({ json: { items: fixtures.slice(offset, offset + limit), total: fixtures.length } });
+    requestedOffsets.push(offset);
+    return route.fulfill({ json: { items: fixtures.slice(offset, offset + MOCK_PAGE_SIZE), total: fixtures.length } });
   });
+  return requestedOffsets;
 }
 
 function dismissJourneyOverlay(page: Page) {
@@ -120,13 +131,23 @@ function femaleBars(page: Page) {
 }
 
 test.describe('P5-T7c 人口金字塔 Recharts（mock fixture）', () => {
+  let requestedOffsets: number[];
+
   test.beforeEach(async ({ page }) => {
     await dismissJourneyOverlay(page);
-    await mockPeopleList(page);
+    requestedOffsets = await mockPeopleList(page);
     await page.goto('/analysis/demographics');
     await expect(page.getByTestId('population-pyramid')).toBeVisible();
     await expect(maleBars(page)).toHaveCount(4);
     await expect(femaleBars(page)).toHaveCount(4);
+  });
+
+  test('全量分页被锁定：请求 offsets 为 [0,5,10]（退回显式 limit 必红）', async () => {
+    // mock 硬限单页 5 条：无参 getPeople() 经 fetchAllListPages 须三页取全 12 人；
+    // 若组件退回 { limit: 500 } 单页调用，只能取到首 5 人，此处与桶断言双红。
+    // dev 下 React StrictMode 双挂载会多发一轮请求（实测前缀 [0] 或 [0,5,10]），
+    // 故锁定**末尾**三次 offset——完整全量拉取必然以 [0,5,10] 收尾
+    expect(requestedOffsets.slice(-3)).toEqual([0, 5, 10]);
   });
 
   test('各桶男/女人数与 fixture 推算一致；60 岁归入 36-60岁 且不计入老龄化比例', async ({ page }) => {
@@ -154,11 +175,12 @@ test.describe('P5-T7c 人口金字塔 Recharts（mock fixture）', () => {
     const males = maleBars(page);
     const females = femaleBars(page);
     for (let index = 0; index < 4; index += 1) {
-      const maleBox = await males.nth(index).boundingBox();
-      const femaleBox = await females.nth(index).boundingBox();
-      expect(maleBox, `第 ${index} 段男条无渲染框`).not.toBeNull();
-      expect(femaleBox, `第 ${index} 段女条无渲染框`).not.toBeNull();
-      expect(maleBox!.y, `第 ${index} 段男/女条 y 不一致`).toBe(femaleBox!.y);
+      // 比较 SVG y 属性（同一类别行必然完全相等）；不用 boundingBox——
+      // 渲染层 bounding box 有亚像素噪声（实测差 0.09px 的假性失败）
+      const maleY = await males.nth(index).getAttribute('y');
+      const femaleY = await females.nth(index).getAttribute('y');
+      expect(maleY, `第 ${index} 段男条无 y 属性`).not.toBeNull();
+      expect(maleY, `第 ${index} 段男/女条 y 不一致`).toBe(femaleY);
     }
     const tickTexts = (await page
       .getByTestId('population-pyramid')
@@ -194,7 +216,15 @@ test.describe('P5-T7c 人口金字塔 Recharts（真实种子库）', () => {
     await expect(maleBars(page)).toHaveCount(4);
     await expect(femaleBars(page)).toHaveCount(4);
     // 隐藏数据表覆盖全部 4 个年龄段
-    await expect(page.getByRole('table', { name: '年龄性别人口金字塔数据（单位：人）' }).locator('tbody tr')).toHaveCount(4);
+    const table = page.getByRole('table', { name: '年龄性别人口金字塔数据（单位：人）' });
+    await expect(table.locator('tbody tr')).toHaveCount(4);
+    // sr-only 表八数求和 = 后端 /api/people total（锁全量拉取，防 500 截断回退）
+    const cells = await table.locator('tbody td').allTextContents();
+    const sum = cells.map((text) => Number(text.trim())).reduce((acc, value) => acc + value, 0);
+    const peopleResponse = await page.request.get(`http://127.0.0.1:${backendPort}/api/people?limit=1`);
+    expect(peopleResponse.ok()).toBe(true);
+    const { total } = (await peopleResponse.json()) as { total: number };
+    expect(sum).toBe(total);
     await expect(page.getByText('61 岁及以上人口占比')).toBeVisible();
     expect(pageErrors).toHaveLength(0);
   });
