@@ -145,7 +145,7 @@ test.describe('P5-T7c 人口金字塔 Recharts（mock fixture）', () => {
   test('全量分页被锁定：请求 offsets 为 [0,5,10]（退回显式 limit 必红）', async () => {
     // mock 硬限单页 5 条：无参 getPeople() 经 fetchAllListPages 须三页取全 12 人；
     // 若组件退回 { limit: 500 } 单页调用，只能取到首 5 人，此处与桶断言双红。
-    // dev 下 React StrictMode 双挂载会多发一轮请求（实测前缀 [0] 或 [0,5,10]），
+    // 容忍额外前缀请求（实测 dev 下页面可能存在重复加载，前缀为 [0] 或 [0,5,10]），
     // 故锁定**末尾**三次 offset——完整全量拉取必然以 [0,5,10] 收尾
     expect(requestedOffsets.slice(-3)).toEqual([0, 5, 10]);
   });
