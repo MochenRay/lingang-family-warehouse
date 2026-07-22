@@ -29,7 +29,6 @@ const SmartQuery = lazy(() => import('./pages/SmartAgentPages').then((module) =>
 const BehaviorSupervision = lazy(() => import('./pages/BehaviorSupervision').then((module) => ({ default: module.BehaviorSupervision })));
 const ConflictManagement = lazy(() => import('./pages/ConflictManagement').then((module) => ({ default: module.ConflictManagement })));
 const RuleConfig = lazy(() => import('./pages/RuleConfig').then((module) => ({ default: module.RuleConfig })));
-const PublishNotice = lazy(() => import('./pages/PublishNotice').then((module) => ({ default: module.PublishNotice })));
 const NoticeManagement = lazy(() => import('./pages/NoticeManagement').then((module) => ({ default: module.NoticeManagement })));
 const ActivityManagement = lazy(() => import('./pages/ActivityManagement').then((module) => ({ default: module.ActivityManagement })));
 const MobileApp = lazy(() => import('./mobile/MobileApp').then((module) => ({ default: module.MobileApp })));
@@ -140,11 +139,7 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
     case 'log-management':
       content = <LogManagement />;
       break;
-    
-    // 发布通知
-    case 'publish-notice':
-      content = <PublishNotice />;
-      break;
+
     case 'notice-management':
       content = <NoticeManagement />;
       break;
