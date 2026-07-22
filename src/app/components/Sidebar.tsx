@@ -53,7 +53,7 @@ const menuItems: MenuItem[] = [
       { id: 'demographics-analysis', label: '人口特征分析', icon: Users },
       { id: 'housing-statistics', label: '房屋网格画像', icon: Building2 },
       { id: 'migration-trends', label: '人口流动趋势', icon: TrendingUp },
-      { id: 'population-tags', label: '标签分析画像', icon: Tags },
+      { id: 'heatmap', label: '预警热区', icon: Map },
       { id: 'data-comparison', label: '数据对比分析', icon: GitCompare },
       { id: 'data-reports', label: '数据报表中心', icon: FileText },
     ],
@@ -70,9 +70,13 @@ const menuItems: MenuItem[] = [
     ],
   },
   {
-    id: 'tag-overview',
-    label: '标签管理',
+    id: 'tags',
+    label: '标签',
     icon: Tags,
+    children: [
+      { id: 'tag-overview', label: '标签管理', icon: Tags },
+      { id: 'population-tags', label: '标签分析画像', icon: Tags },
+    ],
   },
   {
     id: 'data-warehouse-agent',
@@ -94,12 +98,11 @@ const menuItems: MenuItem[] = [
       { id: 'activity-management', label: '活动管理', icon: Calendar },
       { id: 'conflict-management', label: '矛盾调解', icon: Shield },
       { id: 'notice-management', label: '公告管理', icon: Megaphone },
-      { id: 'rule-config', label: '待办规则', icon: Workflow },
     ],
   },
   {
     id: 'attribution',
-    label: '归因分析（示例）',
+    label: '归因分析',
     icon: TrendingUp,
     children: [
       { id: 'anomaly-analysis', label: '异常结果分析', icon: TriangleAlert },
@@ -117,6 +120,7 @@ const menuItems: MenuItem[] = [
       { id: 'role-management', label: '角色管理', icon: Shield },
       { id: 'permission-management', label: '权限管理', icon: Shield },
       { id: 'log-management', label: '日志管理', icon: FileText },
+      { id: 'rule-config', label: '待办规则', icon: Workflow },
     ],
   },
 ];
@@ -157,6 +161,7 @@ export function Sidebar({ collapsed, currentRoute, onRouteChange }: SidebarProps
     return (
       <div key={item.id}>
         <button
+          data-route-id={hasChildren ? undefined : item.id}
           onClick={() => {
             if (hasChildren) {
               toggleMenu(item.id);

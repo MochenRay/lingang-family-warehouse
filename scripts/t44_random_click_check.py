@@ -163,7 +163,7 @@ def main() -> None:
 
         def anomaly_export() -> None:
             open_root(page)
-            ensure_sidebar_item_visible(page, "归因分析（示例）", "异常结果分析")
+            ensure_sidebar_item_visible(page, "归因分析", "异常结果分析")
             page.get_by_role("button", name="异常结果分析").click()
             wait_for_text(page, "异常结果分析")
             with page.expect_download(timeout=10000) as download_info:
