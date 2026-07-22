@@ -92,9 +92,12 @@ export function WarningMap() {
     if (!snapshot) {
       return [];
     }
-    return snapshot.grids.slice(0, 8).map((grid) => ({
+    return snapshot.grids.map((grid) => ({
       id: grid.id,
       area: grid.communityName,
+      gridLabel: grid.gridLabel,
+      districtName: grid.districtName,
+      streetName: grid.streetName,
       count: snapshot.anomalies.filter((item) => item.gridId === grid.id).length,
       resolved: grid.resolvedConflictCount + grid.completedTaskCount,
       pending: grid.pendingTaskCount,
@@ -103,6 +106,39 @@ export function WarningMap() {
       signals: grid.primarySignals,
     }));
   }, [snapshot]);
+
+  type ZoneBoard = (typeof areaWarnings)[number];
+
+  const zoneGroups = useMemo(() => {
+    const groups = new Map<string, { key: string; districtName: string; streetName: string; maxHeatScore: number; areas: ZoneBoard[] }>();
+    for (const area of areaWarnings) {
+      const key = `${area.districtName}/${area.streetName}`;
+      const group = groups.get(key);
+      if (group) {
+        group.areas.push(area);
+        group.maxHeatScore = Math.max(group.maxHeatScore, area.heatScore);
+      } else {
+        groups.set(key, {
+          key,
+          districtName: area.districtName,
+          streetName: area.streetName,
+          maxHeatScore: area.heatScore,
+          areas: [area],
+        });
+      }
+    }
+    return Array.from(groups.values())
+      .map((group) => ({
+        ...group,
+        areas: [...group.areas].sort(
+          (left, right) =>
+            right.heatScore - left.heatScore
+            || left.area.localeCompare(right.area, 'zh-CN')
+            || left.gridLabel.localeCompare(right.gridLabel, 'zh-CN'),
+        ),
+      }))
+      .sort((left, right) => right.maxHeatScore - left.maxHeatScore || left.key.localeCompare(right.key, 'zh-CN'));
+  }, [areaWarnings]);
 
   const handleExport = () => {
     downloadJson(`warning-map-${new Date().toISOString().slice(0, 10)}.json`, {
@@ -119,8 +155,8 @@ export function WarningMap() {
     return (
       <div className="space-y-6">
         <PageHeader
-          eyebrow="WARNING MAP"
-          title="预警地图"
+          eyebrow="WARNING ZONES"
+          title="预警热区"
           description="按区域和风险等级定位异常热点，支撑网格巡查与处置优先级。"
         />
         <LoadingState />
@@ -131,8 +167,8 @@ export function WarningMap() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="WARNING MAP"
-        title="预警地图"
+        eyebrow="WARNING ZONES"
+        title="预警热区"
         description="按区域和风险等级定位异常热点，支撑网格巡查与处置优先级。"
         actions={
           <div className="flex flex-wrap gap-3">
@@ -188,49 +224,60 @@ export function WarningMap() {
 
       <Card className={PANEL_CLASS}>
         <CardHeader>
-          <CardTitle>网格热区视图</CardTitle>
-          <CardDescription>用网格热区板替代空地图视图，直接展示随机点击最关心的热点区域。</CardDescription>
+          <CardTitle>热区矩阵</CardTitle>
+          <CardDescription>按区—街道分组展示全部 {areaWarnings.length} 个网格的热区板，组内按热度分降序。</CardDescription>
         </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {areaWarnings.map((area) => (
-            <button
-              key={area.id}
-              type="button"
-              onClick={() => {
-                const firstWarning = filteredWarnings.find((item) => item.gridId === area.id);
-                if (firstWarning) {
-                  setSelectedWarningId(firstWarning.id);
-                } else {
-                  toast.info(`${area.area} 当前没有命中筛选条件下的预警明细`);
-                }
-              }}
-              className="rounded-[4px] border p-4 text-left transition hover:shadow-md hover:border-[var(--color-brand-primary)]/50"
-            >
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div>
-                  <div className="font-semibold">{area.area}</div>
-                  <div className="text-xs text-[var(--color-neutral-08)] mt-1">{area.count} 条预警信号</div>
-                </div>
-                <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
+        <CardContent className="space-y-6">
+          {zoneGroups.map((group) => (
+            <section key={group.key} data-testid="zone-group" aria-label={`${group.districtName} ${group.streetName}`}>
+              <div className="mb-3 flex items-baseline justify-between gap-3">
+                <h3 className="text-sm font-semibold">{group.districtName} · {group.streetName}</h3>
+                <span className="text-xs text-[var(--color-neutral-08)]">{group.areas.length} 个网格</span>
               </div>
-              <div className="space-y-2 text-sm text-[var(--color-neutral-08)]">
-                <div className="flex items-center justify-between">
-                  <span>热度分</span>
-                  <span className="font-medium text-[var(--color-neutral-10)]">{area.heatScore}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>待处理</span>
-                  <span className="font-medium text-[var(--color-neutral-10)]">{area.pending}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span>已闭环</span>
-                  <span className="font-medium text-[var(--color-neutral-10)]">{area.resolved}</span>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {group.areas.map((area) => (
+                  <button
+                    key={area.id}
+                    type="button"
+                    data-testid="zone-board"
+                    onClick={() => {
+                      const firstWarning = filteredWarnings.find((item) => item.gridId === area.id);
+                      if (firstWarning) {
+                        setSelectedWarningId(firstWarning.id);
+                      } else {
+                        toast.info(`${area.area}${area.gridLabel} 当前没有命中筛选条件下的预警明细`);
+                      }
+                    }}
+                    className="rounded-[4px] border p-4 text-left transition hover:shadow-md hover:border-[var(--color-brand-primary)]/50"
+                  >
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div>
+                        <div className="font-semibold">{area.area}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] mt-1">{area.gridLabel} · {area.count} 条预警信号</div>
+                      </div>
+                      <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
+                    </div>
+                    <div className="space-y-2 text-sm text-[var(--color-neutral-08)]">
+                      <div className="flex items-center justify-between">
+                        <span>热度分</span>
+                        <span className="font-medium text-[var(--color-neutral-10)]">{area.heatScore}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>待处理</span>
+                        <span className="font-medium text-[var(--color-neutral-10)]">{area.pending}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>已闭环</span>
+                        <span className="font-medium text-[var(--color-neutral-10)]">{area.resolved}</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 text-xs text-[var(--color-neutral-08)]">
+                      {area.signals.length ? area.signals.join('；') : '当前没有额外重点信号'}
+                    </div>
+                  </button>
+                ))}
               </div>
-              <div className="mt-3 text-xs text-[var(--color-neutral-08)]">
-                {area.signals.length ? area.signals.join('；') : '当前没有额外重点信号'}
-              </div>
-            </button>
+            </section>
           ))}
         </CardContent>
       </Card>
@@ -242,7 +289,7 @@ export function WarningMap() {
         </CardHeader>
         <CardContent className="space-y-3">
           {filteredWarnings.map((warning) => (
-            <div key={warning.id} className="flex flex-col gap-3 rounded-[4px] border p-4 md:flex-row md:items-center md:justify-between">
+            <div key={warning.id} data-testid="warning-list-item" data-warning-id={warning.id} className="flex flex-col gap-3 rounded-[4px] border p-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <MapPin className="w-4 h-4 text-[var(--color-neutral-08)]" />

@@ -420,13 +420,22 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
     }
   }
 
+  const heatScoreByGrid = new Map(grids.map((grid) => [grid.id, grid.heatScore]));
   return items
     .sort((left, right) => {
       const severityDiff = severityRank(right.severity) - severityRank(left.severity);
       if (severityDiff !== 0) {
         return severityDiff;
       }
-      return left.gridName.localeCompare(right.gridName, 'zh-CN');
+      const heatDiff = (heatScoreByGrid.get(right.gridId) ?? 0) - (heatScoreByGrid.get(left.gridId) ?? 0);
+      if (heatDiff !== 0) {
+        return heatDiff;
+      }
+      const nameDiff = left.gridName.localeCompare(right.gridName, 'zh-CN');
+      if (nameDiff !== 0) {
+        return nameDiff;
+      }
+      return left.id.localeCompare(right.id);
     })
     .slice(0, 12);
 }
