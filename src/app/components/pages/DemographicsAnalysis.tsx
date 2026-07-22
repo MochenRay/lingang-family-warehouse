@@ -11,28 +11,31 @@ import {
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { StatCard } from '../patterns/StatCard';
-import { ErrorState, LoadingState } from '../patterns/states';
+import { EmptyState, ErrorState, LoadingState } from '../patterns/states';
 import { PANEL_CLASS } from '../patterns/surfaces';
 import { personRepository } from '../../services/repositories/personRepository';
 import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
 import type { Person } from '../../types/core';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
-import { CHART_COLORS, CHART_GRID, CHART_GRID_PROPS, CHART_TICK } from '../../config/chartConfig';
+import { CHART_COLORS, CHART_GENDER_COLORS, CHART_GRID, CHART_GRID_PROPS, CHART_TICK } from '../../config/chartConfig';
 import { PageHeader } from './PageHeader';
 
 const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
 const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
+// 桶边界与标签对齐后端 stats.py AGE_BUCKETS（60岁以上 = 61 起，36-60岁 含 60 岁）
 const AGE_BUCKETS = [
-  { name: '60岁以上', min: 60, max: 200 },
-  { name: '36-59岁', min: 36, max: 59 },
+  { name: '60岁以上', min: 61, max: 200 },
+  { name: '36-60岁', min: 36, max: 60 },
   { name: '19-35岁', min: 19, max: 35 },
   { name: '0-18岁', min: 0, max: 18 },
 ];
 
 interface PyramidRow {
   name: string;
+  /** 负值（镜像布局用，不对用户展示） */
   male: number;
+  /** 正值 */
   female: number;
 }
 
@@ -87,68 +90,72 @@ function buildEducationDistribution(people: Person[]) {
   }));
 }
 
-function PopulationPyramid({ rows, max }: { rows: PyramidRow[]; max: number }) {
-  const gridLinePositions = [0, 25, 50, 75, 100];
+/**
+ * 金字塔 tooltip：本地包装 DarkChartTooltip，展示值取绝对值。
+ * 负值仅用于镜像布局（male 存负），不对用户展示。
+ */
+function PyramidTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name?: string; value?: number | string; color?: string; fill?: string; dataKey?: string }>;
+  label?: string | number;
+}) {
+  const absPayload = payload?.map((item) => ({ ...item, value: Math.abs(Number(item.value ?? 0)) }));
+  return <DarkChartTooltip active={active} payload={absPayload} label={label} />;
+}
+
+/**
+ * 人口金字塔（Recharts 镜像条形，全站首例负值法）：
+ * male 负值 / female 正值 + 相同 stackId + stackOffset="sign" + 对称 domain，
+ * 两性同一年龄行分别向左右延伸；X 轴刻度经 tickFormatter 取绝对值。
+ */
+function PopulationPyramid({ rows, axisMax }: { rows: PyramidRow[]; axisMax: number }) {
+  const ticks = [-axisMax, -axisMax / 2, 0, axisMax / 2, axisMax];
   return (
-    <div className="h-[260px]">
-      <div className="grid h-full grid-rows-[1fr_auto] gap-2">
-        <div className="grid min-h-0 grid-cols-[72px_minmax(0,1fr)]">
-          <div className="grid grid-rows-4">
-            {rows.map((row) => (
-              <div key={row.name} className="flex items-center justify-end pr-3 text-xs font-semibold text-[var(--color-neutral-08)]">
-                {row.name}
-              </div>
-            ))}
-          </div>
-          <div className="relative min-w-0">
-            {gridLinePositions.map((position) => (
-              <span
-                key={position}
-                className="absolute inset-y-0 border-l border-dashed border-[var(--color-neutral-03)]"
-                style={{ left: `${position}%` }}
-                aria-hidden="true"
-              />
-            ))}
-            <span className="absolute inset-y-0 left-1/2 border-l border-[var(--color-neutral-06)]" aria-hidden="true" />
-            <div className="relative grid h-full grid-rows-4">
-              {rows.map((row) => {
-                const maleWidth = max > 0 ? `${Math.min(100, (row.male / max) * 100)}%` : '0%';
-                const femaleWidth = max > 0 ? `${Math.min(100, (row.female / max) * 100)}%` : '0%';
-                return (
-                  <div key={row.name} className="grid grid-cols-2 items-center">
-                    <div className="flex justify-end">
-                      <div
-                        className="h-6 rounded-l-[4px] bg-[var(--color-brand-primary-hover)]"
-                        style={{ width: maleWidth }}
-                        title={`${row.name} 男 ${row.male} 人`}
-                        aria-label={`${row.name} 男 ${row.male} 人`}
-                      />
-                    </div>
-                    <div className="flex justify-start">
-                      <div
-                        className="h-6 rounded-r-[4px] bg-[var(--color-status-warning)]"
-                        style={{ width: femaleWidth }}
-                        title={`${row.name} 女 ${row.female} 人`}
-                        aria-label={`${row.name} 女 ${row.female} 人`}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-        <div className="grid grid-cols-[72px_minmax(0,1fr)] text-xs text-[var(--color-neutral-08)]">
-          <div />
-          <div className="grid grid-cols-5 text-center">
-            <span>{max}</span>
-            <span>{Math.round(max / 2)}</span>
-            <span>0</span>
-            <span>{Math.round(max / 2)}</span>
-            <span>{max}</span>
-          </div>
-        </div>
-      </div>
+    <div className="h-[260px]" data-testid="population-pyramid">
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart data={rows} layout="vertical" stackOffset="sign" margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+          {/* 网格取向对齐同页 vertical chart（教育程度）既有约定 */}
+          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={CHART_GRID} />
+          <XAxis
+            type="number"
+            domain={[-axisMax, axisMax]}
+            ticks={ticks}
+            tickFormatter={(value: number) => String(Math.abs(value))}
+            axisLine={false}
+            tickLine={false}
+            tick={CHART_TICK}
+            allowDecimals={false}
+          />
+          <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
+          <Tooltip content={<PyramidTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+          <Bar dataKey="male" name="男" stackId="gender" fill={CHART_GENDER_COLORS.male} radius={[6, 0, 0, 6]} barSize={18} />
+          <Bar dataKey="female" name="女" stackId="gender" fill={CHART_GENDER_COLORS.female} radius={[0, 6, 6, 0]} barSize={18} />
+        </BarChart>
+      </ResponsiveContainer>
+      {/* 视觉隐藏数据表：金字塔数据的辅助技术可读副本 */}
+      <table className="sr-only">
+        <caption>年龄性别人口金字塔数据（单位：人）</caption>
+        <thead>
+          <tr>
+            <th scope="col">年龄段</th>
+            <th scope="col">男</th>
+            <th scope="col">女</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.name}>
+              <th scope="row">{row.name}</th>
+              <td>{Math.abs(row.male)}</td>
+              <td>{row.female}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -169,7 +176,8 @@ export function DemographicsAnalysis() {
         setError('');
         const [nextDashboard, nextPeople, nextTagSnapshot] = await Promise.all([
           statsRepository.getDashboard(),
-          personRepository.getPeople({ limit: 500 }),
+          // 无参调用走 fetchAllListPages 全量拉取（金字塔与老龄化比例共用同一全量列表）
+          personRepository.getPeople(),
           tagRepository.getSnapshot(),
         ]);
         if (!cancelled) {
@@ -204,15 +212,15 @@ export function DemographicsAnalysis() {
       const female = bucketPeople.filter((person) => person.gender === '女').length;
       return {
         name: bucket.name,
-        male,
+        male: -male,
         female,
       };
     });
-    const max = Math.max(1, ...rows.flatMap((row) => [row.male, row.female]));
-    const axisMax = Math.ceil(max / 10) * 10;
+    const max = Math.max(1, ...rows.flatMap((row) => [-row.male, row.female]));
+    const axisMax = Math.max(10, Math.ceil(max / 10) * 10);
     return {
       rows,
-      max: axisMax,
+      axisMax,
     };
   }, [people]);
   const topTags = useMemo(
@@ -232,7 +240,8 @@ export function DemographicsAnalysis() {
     if (people.length === 0) {
       return '0.0';
     }
-    const elderly = people.filter((person) => person.age >= 60).length;
+    // 与金字塔统一口径：61 岁及以上（对齐后端 stats.py AGE_BUCKETS）
+    const elderly = people.filter((person) => person.age > 60).length;
     return ((elderly / people.length) * 100).toFixed(1);
   }, [people]);
 
@@ -254,7 +263,7 @@ export function DemographicsAnalysis() {
 
       <div className="grid gap-4 md:grid-cols-4">
         <StatCard label="总人口" value={dashboard?.totalPopulation ?? '--'} tone="brand" />
-        <StatCard label="老龄化比例" value={`${elderlyRate}%`} tone="info" />
+        <StatCard label="老龄化比例" value={`${elderlyRate}%`} tone="info" hint="61 岁及以上人口占比" />
         <StatCard
           label="户籍 / 流动"
           value={dashboard ? `${dashboard.mobilePeopleStats.registered} / ${dashboard.mobilePeopleStats.floating}` : '--'}
@@ -270,11 +279,11 @@ export function DemographicsAnalysis() {
           <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">年龄性别人口金字塔</CardTitle>
           <div className="flex items-center gap-4 text-xs text-[var(--color-neutral-08)]">
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-[var(--color-brand-primary-hover)]" />
+              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: CHART_GENDER_COLORS.male }} />
               男
             </span>
             <span className="inline-flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-[var(--color-status-warning)]" />
+              <span className="h-2 w-2 rounded-sm" style={{ backgroundColor: CHART_GENDER_COLORS.female }} />
               女
             </span>
           </div>
@@ -282,8 +291,10 @@ export function DemographicsAnalysis() {
         <CardContent>
           {loading ? (
             <LoadingState title="正在汇总年龄性别结构..." />
+          ) : people.length === 0 ? (
+            <EmptyState title="暂无人口数据" description="未获取到人口记录，无法汇总年龄性别结构。" />
           ) : (
-            <PopulationPyramid rows={pyramid.rows} max={pyramid.max} />
+            <PopulationPyramid rows={pyramid.rows} axisMax={pyramid.axisMax} />
           )}
         </CardContent>
       </Card>
