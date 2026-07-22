@@ -9,8 +9,8 @@ import { ROUTE_DEFINITIONS } from '../../src/app/navigation/routes';
  *    不只看 ROUTE_DEFINITIONS），7 个分组 label 与各自 children 全量比对、
  *    30 个桌面叶子 route ID（不含 7 个分组 ID 与 mobile）无缺失无重复。
  *  - 点击验证：标签分析画像（标签组）、待办规则（系统配置组）、预警热区
- *    （统计分析组）的所在分组及最终 URL；预警热区页标题尚未改名（方案一），
- *    只断言 URL。
+ *    （统计分析组）的所在分组及最终 URL（页面标题改名已由方案一落地，
+ *    此处仍只断言 URL）。
  *  - 菜单 label 程序化测量（复用 T6 方法）：span.scrollWidth ≤ clientWidth
  *    零横向溢出、按钮高 40px 零换行，覆盖全部 30 项（含默认折叠分组展开后）。
  */
@@ -179,7 +179,7 @@ test.describe('P5-T7b 桌面 Sidebar 导航重组', () => {
     await expect.poll(() => groupLabelOfLeaf(page, 'heatmap')).toBe('统计分析');
 
     await page.locator('aside [data-route-id="heatmap"]').click();
-    // 页面标题「预警地图」尚未改名（属方案一范围），此处只断言最终 URL
+    // 页面标题「预警热区」已由方案一改名，此处仍只断言最终 URL
     await expect(page).toHaveURL(/\/analysis\/warning-map$/);
   });
 

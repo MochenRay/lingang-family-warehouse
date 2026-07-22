@@ -32,7 +32,7 @@ const DESKTOP_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
   { id: 'population-tags', path: '/analysis/tags', readyText: '标签分析画像' },
   { id: 'data-comparison', path: '/analysis/comparison', readyText: '数据对比分析' },
   { id: 'data-reports', path: '/analysis/reports', readyText: '报表中心' },
-  { id: 'heatmap', path: '/analysis/warning-map', readyText: '预警地图' },
+  { id: 'heatmap', path: '/analysis/warning-map', readyText: '预警热区' },
   { id: 'population', path: '/population', readyText: '人口管理' },
   { id: 'housing', path: '/housing', readyText: '房屋管理' },
   { id: 'relationship', path: '/relationship', readyText: '人房关系管理' },

@@ -65,7 +65,7 @@ export function PermissionManagement() {
       permissions: [
         { name: '辖区总览（仪表盘）', view: true, create: false, edit: false, delete: false, export: true },
         { name: '数据下钻', view: true, create: false, edit: false, delete: false, export: true },
-        { name: '预警地图', view: true, create: false, edit: false, delete: false, export: true }
+        { name: '预警热区', view: true, create: false, edit: false, delete: false, export: true }
       ]
     },
     {

@@ -129,7 +129,7 @@ export function RoleManagement() {
       children: [
         { name: '仪表盘', code: 'dashboard' },
         { name: '数据下钻', code: 'drilldown' },
-        { name: '预警地图', code: 'warning_map' }
+        { name: '预警热区', code: 'warning_map' }
       ]
     },
     {
