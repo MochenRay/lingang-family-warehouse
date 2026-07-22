@@ -33,10 +33,13 @@ import {
 import { PageHeader } from './PageHeader';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
+import { TablePagination } from '../patterns/DataTableShell';
 import { SearchInput } from '../patterns/FilterBar';
 import { EmptyState } from '../patterns/states';
 import { ConfirmDialog } from '../patterns/ConfirmDialog';
 import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+
+const PAGE_SIZE = 20;
 
 // 公告类型配置：label + StatusBadge tone（替代原散落 pastel 色值）
 const noticeTypes: Array<{ value: string; label: string; tone: StatusTone }> = [
@@ -54,6 +57,7 @@ export function NoticeManagement() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // 加载公告列表
   useEffect(() => {
@@ -104,6 +108,16 @@ export function NoticeManagement() {
     const matchesType = filterType === 'all' || notice.type === filterType;
     return matchesSearch && matchesType;
   });
+
+  // 筛选/搜索变化时回到第 1 页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterType]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredNotices.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStart = (safeCurrentPage - 1) * PAGE_SIZE;
+  const paginatedNotices = filteredNotices.slice(pageStart, pageStart + PAGE_SIZE);
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -199,7 +213,7 @@ export function NoticeManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredNotices.map((notice) => {
+                {paginatedNotices.map((notice) => {
                   const typeConfig = getTypeConfig(notice.type);
                   return (
                     <TableRow key={notice.id}>
@@ -268,6 +282,14 @@ export function NoticeManagement() {
               }
             />
           )}
+          <TablePagination
+            currentPage={safeCurrentPage}
+            totalPages={totalPages}
+            totalItems={filteredNotices.length}
+            pageStart={pageStart}
+            pageEnd={Math.min(pageStart + PAGE_SIZE, filteredNotices.length)}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 

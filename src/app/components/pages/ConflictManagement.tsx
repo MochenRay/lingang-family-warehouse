@@ -54,7 +54,7 @@ import { toast } from "sonner";
 import { PageHeader } from "./PageHeader";
 import { StatCard } from "../patterns/StatCard";
 import { StatusBadge, type StatusTone } from "../patterns/StatusBadge";
-import { DataTableBody } from "../patterns/DataTableShell";
+import { DataTableBody, TablePagination } from "../patterns/DataTableShell";
 import { SearchInput } from "../patterns/FilterBar";
 import { ConfirmDialog } from "../patterns/ConfirmDialog";
 import { DIALOG_CLASS, PANEL_CLASS } from "../patterns/surfaces";
@@ -66,6 +66,7 @@ interface ConflictManagementProps {
 const DARK_INPUT_CLASS =
   "border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]";
 const DARK_MUTED_TEXT = "text-[var(--color-neutral-08)]";
+const PAGE_SIZE = 20;
 
 function formatNow() {
   const now = new Date();
@@ -139,6 +140,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [gridFilter, setGridFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [isDispatchDialogOpen, setIsDispatchDialogOpen] = useState(false);
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
@@ -165,6 +167,16 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
   useEffect(() => {
     void loadConflicts();
   }, [searchQuery, statusFilter, typeFilter, gridFilter]);
+
+  // 筛选/搜索变化时回到第 1 页
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter, typeFilter, gridFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(conflicts.length / PAGE_SIZE));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const pageStart = (safeCurrentPage - 1) * PAGE_SIZE;
+  const paginatedConflicts = conflicts.slice(pageStart, pageStart + PAGE_SIZE);
 
   const stats = useMemo(() => {
     const total = allConflicts.length;
@@ -466,7 +478,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                 emptyText="暂无相关纠纷记录"
                 columnCount={8}
               >
-                {conflicts.map((conflict) => (
+                {paginatedConflicts.map((conflict) => (
                   <TableRow
                     key={conflict.id}
                     className="cursor-pointer border-b border-[var(--color-neutral-03)] transition-colors hover:bg-[var(--color-brand-primary)]/8"
@@ -514,6 +526,14 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
               </DataTableBody>
             </Table>
           </div>
+          <TablePagination
+            currentPage={safeCurrentPage}
+            totalPages={totalPages}
+            totalItems={conflicts.length}
+            pageStart={pageStart}
+            pageEnd={Math.min(pageStart + PAGE_SIZE, conflicts.length)}
+            onPageChange={setCurrentPage}
+          />
         </CardContent>
       </Card>
 
