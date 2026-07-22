@@ -1,12 +1,12 @@
 # P5-T7 · C 组设计类方案稿（先评审后立项）
 
-> 状态：2026-07-22 **V3 修订稿**（二轮：方案二、方案三已 APPROVE；方案一按唯一剩余阻断修订）提交方案一单点终审。本稿只产方案、不含实现；通过项另立实施 PR（各带 e2e/截图验收，实施环境 T2 golden 已就位）。
+> 状态：2026-07-22 **V3 终审稿（APPROVE）**。本稿只产方案、不含实现；通过项另立实施 PR（各带 e2e/截图验收，实施环境 T2 golden 已就位）。
 > 事实依据：main `10195ff` 代码实读，关键事实附文件:行号。
 > V3 修订记录（对应 Codex 二轮一项阻断 + 三项非阻断）：
-> ⓪ 方案一清单排序第三键「更新时间」无真实数据来源（AnalysisAnomalyItem 仅有构建时统一写入的 date，analysisRepository.ts:43/356），改为四级确定性排序：severityRank 降序 → grid.heatScore 降序 → gridName zh-CN 升序 → warning.id 升序，排序后 `.slice(0, 12)`。
-> ⓪ 方案二验收口径明确为「30 个桌面叶子 route ID」（不含 7 个分组 ID 与 mobile），并建议叶子按钮加 `data-route-id` 由 e2e 展开全部分组后读真实 DOM。
-> ⓪ 方案一板数断言改为「= `snapshot.grids.length`（当前种子=12）」兼顾合同与扩展。
-> ⓪ 方案三行号订正：StatCard 老龄化 `age >= 60` 位于 `DemographicsAnalysis.tsx:235`。
+> ① 方案一清单排序第三键「更新时间」无真实数据来源（AnalysisAnomalyItem 仅有构建时统一写入的 date，analysisRepository.ts:43/356），改为四级确定性排序：severityRank 降序 → grid.heatScore 降序 → gridName zh-CN 升序 → warning.id 升序，排序后 `.slice(0, 12)`。
+> ② 方案二验收口径明确为「30 个桌面叶子 route ID」（不含 7 个分组 ID 与 mobile），并建议叶子按钮加 `data-route-id` 由 e2e 展开全部分组后读真实 DOM。
+> ③ 方案一板数断言改为「= `snapshot.grids.length`（当前种子=12）」兼顾合同与扩展。
+> ④ 方案三行号订正：StatCard 老龄化 `age >= 60` 位于 `DemographicsAnalysis.tsx:235`。
 > V2 修订记录（对应 Codex 一轮五项阻断 + 三项非阻断，已全部落稿并获通过）：
 > ① 方案一权限映射纠错——本页只对应 `RoleManagement.tsx:132`（code `warning_map`）与 `PermissionManagement.tsx:68`（「预警地图」）；`RoleManagement.tsx:113`（「热力图分析」）与 `PermissionManagement.tsx:49`（「全域人口热力图」）是统计分析域另一套人口热力图权限概念，**不属于本页、不动**。eyebrow 原值更正为 `WARNING MAP`。
 > ② 方案一矩阵冻结数据单位与覆盖范围（网格级板 + 全部网格 + 清单平铺排序规则）。
