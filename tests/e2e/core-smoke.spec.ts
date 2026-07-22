@@ -34,6 +34,18 @@ test('dashboard renders canonical totals from the API', async ({ page, request }
   await expect(page.getByText(dashboard.totalHouses.toLocaleString('zh-CN'), { exact: true }).first()).toBeVisible();
 });
 
+test('legacy publish-notice URL is replaced by the dashboard', async ({ page }) => {
+  // P5-T5：PublishNotice 整页下线后，旧 URL 不再是已知路径，
+  // App 挂载时 replaceState 回落到默认路由（驾驶舱），而非白屏或 404。
+  await page.addInitScript(() => {
+    window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1');
+  });
+  await page.goto('/grid/notices/publish');
+
+  await expect(page).toHaveURL('/');
+  await expect(page.getByRole('heading', { name: '综合统计驾驶舱' })).toBeVisible();
+});
+
 test('relationship ledger loads the full read model within ten business requests', async ({ page }) => {
   const businessRequests: string[] = [];
   page.on('request', (request) => {

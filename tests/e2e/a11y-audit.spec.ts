@@ -2,7 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { writeFileSync, mkdirSync } from 'node:fs';
 
 /**
- * T1a a11y 审计扫描器：对 31 个桌面路由 + 4 条移动 smoke 路径执行自动检查。
+ * T1a a11y 审计扫描器：对 30 个桌面路由 + 4 条移动 smoke 路径执行自动检查。
  * 输出 test-results/a11y-audit/findings.json，供 triage 分级。
  * 检查项（对应冻结的严重度规则）：
  *  - icon-only 按钮无可访问名称（阻断）
@@ -46,7 +46,6 @@ const DESKTOP_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
   { id: 'activity-management', path: '/grid/activities', readyText: '活动综合管理' },
   { id: 'conflict-management', path: '/grid/conflicts', readyText: '矛盾调解' },
   { id: 'notice-management', path: '/grid/notices', readyText: '公告管理' },
-  { id: 'publish-notice', path: '/grid/notices/publish', readyText: '发布公告' },
   { id: 'rule-config', path: '/grid/rules', readyText: '待办规则配置' },
   { id: 'anomaly-analysis', path: '/attribution/anomaly', readyText: '异常结果分析' },
   { id: 'time-series', path: '/attribution/time-series', readyText: '时序分析' },

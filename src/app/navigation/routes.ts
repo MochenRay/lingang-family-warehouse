@@ -28,7 +28,6 @@ export const ROUTE_DEFINITIONS: RouteDefinition[] = [
   { id: 'activity-management', path: '/grid/activities', aliases: ['/activity-management'] },
   { id: 'conflict-management', path: '/grid/conflicts', aliases: ['/conflict-management'] },
   { id: 'notice-management', path: '/grid/notices', aliases: ['/notice-management', '/notices'] },
-  { id: 'publish-notice', path: '/grid/notices/publish', aliases: ['/publish-notice'] },
   { id: 'rule-config', path: '/grid/rules', aliases: ['/rule-config'] },
   { id: 'anomaly-analysis', path: '/attribution/anomaly', aliases: ['/anomaly-analysis'] },
   { id: 'time-series', path: '/attribution/time-series', aliases: ['/time-series'] },
