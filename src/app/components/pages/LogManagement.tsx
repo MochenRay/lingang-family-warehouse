@@ -231,10 +231,13 @@ export function LogManagement() {
         title="日志管理"
         description="追踪关键操作、登录和数据变更，为演示审计链路留痕。"
         actions={
-          <Button variant="outline" className={ACTION_BUTTON_CLASS}>
-            <Download className="w-4 h-4 mr-2" />
-            导出日志
-          </Button>
+          <div className="flex items-center gap-2">
+            <StatusBadge tone="info">演示数据</StatusBadge>
+            <Button variant="outline" className={ACTION_BUTTON_CLASS}>
+              <Download className="w-4 h-4 mr-2" />
+              导出日志
+            </Button>
+          </div>
         }
       />
 
