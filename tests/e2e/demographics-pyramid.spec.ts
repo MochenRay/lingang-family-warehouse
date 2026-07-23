@@ -204,4 +204,16 @@ test.describe('P5-T7c 人口金字塔 Recharts（真实种子库）', () => {
     await expect(page.getByText('61 岁及以上人口占比')).toBeVisible();
     expect(pageErrors).toHaveLength(0);
   });
+
+  test('民族分布六个柱形及其轴标签完整显示', async ({ page }) => {
+    await dismissJourneyOverlay(page);
+    await page.goto('/analysis/demographics');
+    const chart = page.getByTestId('nation-distribution');
+    await expect(chart.locator('path.recharts-rectangle')).toHaveCount(6);
+    const tickTexts = (await chart
+      .locator('.recharts-xAxis .recharts-cartesian-axis-tick text')
+      .allTextContents())
+      .map((text) => text.trim());
+    expect(tickTexts).toEqual(['汉族', '朝鲜族', '满族', '回族', '其他民族', '未记录']);
+  });
 });
