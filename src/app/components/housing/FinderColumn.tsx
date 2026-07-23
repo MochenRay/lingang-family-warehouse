@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { AlertCircle, ChevronRight, Inbox, Loader2, RefreshCw } from 'lucide-react';
-import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 
@@ -32,9 +31,6 @@ export interface FinderColumnProps {
   onRetry?: () => void;
   className?: string;
 }
-
-const neutralBadgeClass =
-  'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]';
 
 function ColumnState({
   icon: Icon,
@@ -83,16 +79,13 @@ export function FinderColumn({
 }: FinderColumnProps) {
   const hasItems = items.length > 0;
   const headerContent = (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center gap-3">
       <div className="min-w-0">
         <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{title}</h3>
         {description ? (
           <p className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{description}</p>
         ) : null}
       </div>
-      <Badge variant="outline" className={cn('shrink-0', neutralBadgeClass)}>
-        {items.length}
-      </Badge>
     </div>
   );
 
@@ -182,11 +175,6 @@ export function FinderColumn({
                   </span>
                   <span className="flex shrink-0 items-center gap-1.5">
                     {item.trailing}
-                    {item.count !== undefined && item.count !== null ? (
-                      <Badge variant="outline" className={neutralBadgeClass}>
-                        {item.count}
-                      </Badge>
-                    ) : null}
                     <ChevronRight className={cn('h-3.5 w-3.5 text-[var(--color-neutral-08)] group-hover:text-[var(--color-brand-primary)]', isActive && 'text-[var(--color-brand-primary)]')} />
                   </span>
                 </button>

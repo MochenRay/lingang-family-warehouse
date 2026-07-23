@@ -3,6 +3,7 @@ import {
   AlertCircle,
   Calendar,
   Edit,
+  Eye,
   History,
   Home,
   Loader2,
@@ -29,6 +30,7 @@ export interface HouseDetailPanelProps {
   onEdit?: (house: House) => void;
   onDelete?: (house: House) => void;
   onRefresh: () => void;
+  onViewPerson?: (person: Person) => void;
   isDeleting?: boolean;
   className?: string;
 }
@@ -147,6 +149,7 @@ export function HouseDetailPanel({
   onEdit,
   onDelete,
   onRefresh,
+  onViewPerson,
   isDeleting = false,
   className,
 }: HouseDetailPanelProps) {
@@ -306,7 +309,7 @@ export function HouseDetailPanel({
             {residents.length > 0 ? (
               <div className="divide-y divide-[var(--color-neutral-03)] rounded border border-[var(--color-neutral-03)]">
                 {residents.map((person) => (
-                  <div key={person.id} className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)_auto]">
+                  <div key={person.id} className="grid gap-3 px-3 py-3 md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.9fr)_minmax(0,0.75fr)_auto] md:items-center">
                     <div className="flex min-w-0 items-center gap-3">
                       <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[var(--color-status-info-soft)] text-sm font-semibold text-[var(--color-status-info-text)] ring-1 ring-[var(--color-status-info)]/30">
                         {getInitial(person.name)}
@@ -346,6 +349,13 @@ export function HouseDetailPanel({
                         </Badge>
                       ) : null}
                     </div>
+
+                    {onViewPerson ? (
+                      <Button variant="outline" size="sm" className="shrink-0" onClick={() => onViewPerson(person)}>
+                        <Eye className="h-3.5 w-3.5" />
+                        查看人员
+                      </Button>
+                    ) : null}
                   </div>
                 ))}
               </div>

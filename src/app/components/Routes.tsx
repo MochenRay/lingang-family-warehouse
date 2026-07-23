@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { Skeleton } from './ui/skeleton';
+import { Loader2 } from 'lucide-react';
 
 const PopulationManagement = lazy(() => import('./pages/PopulationManagement').then((module) => ({ default: module.PopulationManagement })));
 const HousingManagement = lazy(() => import('./pages/HousingManagement').then((module) => ({ default: module.HousingManagement })));
@@ -160,10 +160,18 @@ export function Routes({ currentRoute, onRouteChange }: RoutesProps) {
 
   return (
     <Suspense fallback={
-      <div className="space-y-4 p-6" aria-label="页面加载中">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-64 w-full" />
+      <div
+        className="flex min-h-[360px] items-center justify-center rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] px-6 py-10"
+        aria-label="页面加载中"
+        aria-live="polite"
+      >
+        <div className="max-w-sm text-center">
+          <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-[var(--color-neutral-01)] text-[var(--color-brand-primary)] ring-1 ring-[var(--color-neutral-03)]">
+            <Loader2 className="h-5 w-5 animate-spin" />
+          </div>
+          <p className="text-sm font-medium text-[var(--color-neutral-11)]">正在加载页面</p>
+          <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">正在准备页面资源，完成后将显示真实台账数据。</p>
+        </div>
       </div>
     }>
       {content}

@@ -51,6 +51,19 @@ const RISK_BADGE_TONE: Record<string, StatusTone> = {
   Low: 'success',
 };
 
+const RELATION_TYPE_TONE: Record<RelationType, StatusTone> = {
+  现居: 'info',
+  历史: 'neutral',
+};
+
+const HOUSE_TYPE_TONE: Record<House['type'], StatusTone> = {
+  自住: 'info',
+  出租: 'warning',
+  空置: 'neutral',
+  经营: 'success',
+  其他: 'neutral',
+};
+
 function parseHistoryPeriod(period: string): { moveInDate: string; moveOutDate?: string } {
   const [rawMoveIn, rawMoveOut] = period.split('~').map((item) => item.trim());
   return {
@@ -243,16 +256,13 @@ export function RelationshipManagement() {
 
       <Card className={PANEL_CLASS}>
         <CardContent className="py-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center">
             <SearchInput
               value={searchKeyword}
               onChange={setSearchKeyword}
               placeholder="搜索人员姓名、身份证号、房屋地址..."
               className="flex-1"
             />
-            <Badge variant="outline" className="h-9 border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/12 px-4 text-sm text-[var(--color-status-info-text)]">
-              真实读侧视图
-            </Badge>
           </div>
         </CardContent>
       </Card>
@@ -408,7 +418,7 @@ export function RelationshipManagement() {
                     <div>
                       <p className="text-[var(--color-neutral-08)]">关系类型</p>
                       <div className="mt-1 flex gap-2">
-                        <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{selectedRelationship.relationType}</Badge>
+                        <StatusBadge tone={RELATION_TYPE_TONE[selectedRelationship.relationType]}>{selectedRelationship.relationType}</StatusBadge>
                         <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
                           {selectedRelationship.relationship}
                         </StatusBadge>
@@ -418,7 +428,11 @@ export function RelationshipManagement() {
                       <>
                         <div>
                           <p className="text-[var(--color-neutral-08)]">风险等级</p>
-                          <p className="text-[var(--color-neutral-10)]">{selectedRelationship.person.risk}</p>
+                          <div className="mt-1">
+                            <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.person.risk] ?? 'neutral'}>
+                              {selectedRelationship.person.risk}
+                            </StatusBadge>
+                          </div>
                         </div>
                         <div>
                           <p className="text-[var(--color-neutral-08)]">人员标签</p>
@@ -453,12 +467,12 @@ export function RelationshipManagement() {
                     <div>
                       <p className="text-[var(--color-neutral-08)]">房屋状态</p>
                       <div className="mt-1 flex flex-wrap gap-2">
-                        <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{selectedRelationship.house.type}</Badge>
+                        <StatusBadge tone={HOUSE_TYPE_TONE[selectedRelationship.house.type]}>{selectedRelationship.house.type}</StatusBadge>
                         {selectedRelationship.house.occupancyStatus && (
-                          <Badge variant="secondary" className="bg-[var(--color-brand-primary-hover)]/15 text-[var(--color-status-info-text)]">{selectedRelationship.house.occupancyStatus}</Badge>
+                          <StatusBadge tone="info">{selectedRelationship.house.occupancyStatus}</StatusBadge>
                         )}
                         {selectedRelationship.house.residenceType && (
-                          <Badge variant="secondary" className="bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]">{selectedRelationship.house.residenceType}</Badge>
+                          <StatusBadge tone="success">{selectedRelationship.house.residenceType}</StatusBadge>
                         )}
                       </div>
                     </div>
