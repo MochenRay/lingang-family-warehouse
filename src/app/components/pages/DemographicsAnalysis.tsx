@@ -283,7 +283,7 @@ export function DemographicsAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className={PANEL_CLASS}>
+        <Card className={PANEL_CLASS} data-testid="nation-distribution">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">民族分布</CardTitle>
           </CardHeader>
@@ -294,7 +294,7 @@ export function DemographicsAnalysis() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={nationData}>
                   <CartesianGrid {...CHART_GRID_PROPS} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
                   <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
