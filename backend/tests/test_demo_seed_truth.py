@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import datetime
+from datetime import date, datetime
 
 from app.api.stats import (
     DEMOGRAPHICS_EDUCATION_ORDER,
@@ -9,7 +9,10 @@ from app.api.stats import (
     _normalize_demographics_nation,
     _risk_tag_delta,
 )
-from app.demo_data.background_generator import RECENT_MIGRATION_MONTHS
+from app.demo_data.background_generator import (
+    MIGRATION_REFERENCE_DATE,
+    RECENT_MIGRATION_MONTHS,
+)
 from seed import build_demo_seed_bundle
 
 
@@ -52,6 +55,16 @@ def test_demo_recent_migration_records_drive_monthly_totals_and_hotspots() -> No
     assert {history.period[:7] for history in recent_starts} == recent_months
     assert {history.period.split("~", maxsplit=1)[1].strip()[:7] for history in recent_ends} == recent_months
     assert all(history.houseId in houses for history in [*recent_starts, *recent_ends])
+    assert all(
+        date.fromisoformat(history.period.split("~", maxsplit=1)[0].strip())
+        <= MIGRATION_REFERENCE_DATE
+        for history in recent_starts
+    )
+    assert all(
+        date.fromisoformat(history.period.split("~", maxsplit=1)[1].strip())
+        <= MIGRATION_REFERENCE_DATE
+        for history in recent_ends
+    )
 
 
 def test_demo_priority_labels_are_derived_and_other_is_last() -> None:
@@ -66,3 +79,13 @@ def test_demo_priority_labels_are_derived_and_other_is_last() -> None:
 
     assert list(counts)[-1] == "其他重点标签"
     assert all(count > 0 for count in counts.values())
+
+
+def test_demo_house_member_counts_match_bound_people() -> None:
+    bundle = build_demo_seed_bundle()
+    bound_people = Counter(person.houseId for person in bundle.people if person.houseId)
+
+    assert all(
+        house.memberCount == bound_people[house.id]
+        for house in bundle.houses
+    )
