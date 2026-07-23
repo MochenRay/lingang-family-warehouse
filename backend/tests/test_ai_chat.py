@@ -6,6 +6,7 @@ from io import BytesIO
 from types import SimpleNamespace
 from urllib import error
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine
@@ -15,7 +16,7 @@ from app.main import app
 from app.models.grid import Grid
 from app.models.person import Person
 from app.models.visit import VisitRecord
-from app.services.ai.llm_gateway import LLMGateway
+from app.services.ai.llm_gateway import LLMGateway, LLMRequestError
 from app.services.ai.rate_limit import ProcessRateLimiter
 
 
@@ -42,7 +43,14 @@ def test_llm_provider_request_enforces_the_configured_output_token_limit(monkeyp
 
         def read(self) -> bytes:
             return json.dumps(
-                {"choices": [{"message": {"content": "已生成走访提纲"}}]}
+                {
+                    "choices": [
+                        {
+                            "finish_reason": "stop",
+                            "message": {"content": "已生成走访提纲"},
+                        }
+                    ]
+                }
             ).encode("utf-8")
 
     def fake_urlopen(http_request, timeout):
@@ -58,6 +66,7 @@ def test_llm_provider_request_enforces_the_configured_output_token_limit(monkeyp
         llm_api_key="test-only-key",
         llm_timeout_seconds=3.0,
         llm_configured=True,
+        ai_reasoning_effort="low",
         ai_max_output_tokens=640,
     )
     monkeypatch.setattr("app.services.ai.llm_gateway.get_settings", lambda: fake_settings)
@@ -67,6 +76,52 @@ def test_llm_provider_request_enforces_the_configured_output_token_limit(monkeyp
 
     assert result.content == "已生成走访提纲"
     assert captured["payload"]["max_tokens"] == 640
+    assert captured["payload"]["reasoning_effort"] == "low"
+    assert "temperature" not in captured["payload"]
+
+
+def test_llm_provider_rejects_a_token_limited_partial_response(monkeypatch) -> None:
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args) -> None:
+            return None
+
+        def read(self) -> bytes:
+            return json.dumps(
+                {
+                    "choices": [
+                        {
+                            "finish_reason": "length",
+                            "message": {"content": "答复仅返回了一半"},
+                        }
+                    ]
+                }
+            ).encode("utf-8")
+
+    fake_settings = SimpleNamespace(
+        ai_enabled=True,
+        llm_model="gemini-primary",
+        llm_fallback_model="gemini-fallback",
+        llm_base_url="https://provider.invalid/v1beta/openai/",
+        llm_api_key="test-only-key",
+        llm_timeout_seconds=3.0,
+        llm_configured=True,
+        ai_reasoning_effort="low",
+        ai_max_output_tokens=640,
+    )
+    monkeypatch.setattr("app.services.ai.llm_gateway.get_settings", lambda: fake_settings)
+    monkeypatch.setattr(
+        "app.services.ai.llm_gateway.request.urlopen",
+        lambda *_args, **_kwargs: FakeResponse(),
+    )
+
+    with pytest.raises(LLMRequestError) as exc_info:
+        LLMGateway().generate(kind="policy", prompt="大病救助比例是多少？")
+
+    assert exc_info.value.error_code == "AI_RESPONSE_TRUNCATED"
+    assert "output limit" in exc_info.value.public_message
 
 
 def test_ai_chat_rate_limit_rejects_requests_over_the_process_window(tmp_path) -> None:
@@ -204,6 +259,7 @@ def test_ai_chat_applies_a_real_person_context_without_forwarding_direct_pii(mon
         llm_api_key="test-only-key",
         llm_timeout_seconds=3.0,
         llm_configured=True,
+        ai_reasoning_effort="low",
         ai_max_output_tokens=640,
     )
     monkeypatch.setattr("app.services.ai.llm_gateway.get_settings", lambda: fake_settings)
@@ -276,6 +332,7 @@ def test_ai_chat_rejects_an_unknown_person_context_before_calling_the_provider(m
         llm_api_key="test-only-key",
         llm_timeout_seconds=3.0,
         llm_configured=True,
+        ai_reasoning_effort="low",
         ai_max_output_tokens=640,
     )
     monkeypatch.setattr("app.services.ai.llm_gateway.get_settings", lambda: fake_settings)
@@ -324,6 +381,7 @@ def test_ai_chat_sanitizes_provider_quota_errors_for_response_and_logs(
         llm_api_key="test-only-key",
         llm_timeout_seconds=3.0,
         llm_configured=True,
+        ai_reasoning_effort="low",
         ai_max_output_tokens=640,
     )
     monkeypatch.setattr("app.services.ai.llm_gateway.get_settings", lambda: fake_settings)

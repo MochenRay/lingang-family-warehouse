@@ -22,6 +22,11 @@ class LLMRequestError(RuntimeError):
 def _public_provider_error(status_code: int | None, message: str) -> tuple[str, str]:
     """Map provider details to stable, non-sensitive client and log messages."""
     lowered = message.lower()
+    if "finish_reason=length" in lowered or "output token limit" in lowered:
+        return (
+            "AI_RESPONSE_TRUNCATED",
+            "Gemini response reached the output limit; a safe fallback is shown.",
+        )
     if status_code == 429 or "resource_exhausted" in lowered or "quota" in lowered:
         return (
             "AI_PROVIDER_QUOTA_EXCEEDED",
@@ -63,6 +68,7 @@ class LLMGateway:
         self.base_url = settings.llm_base_url.strip()
         self.api_key = settings.llm_api_key.strip()
         self.timeout_seconds = settings.llm_timeout_seconds
+        self.reasoning_effort = settings.ai_reasoning_effort
         self.max_output_tokens = settings.ai_max_output_tokens
         self.configured = settings.llm_configured
 
@@ -81,6 +87,7 @@ class LLMGateway:
             "fallback_model": self.fallback_model or None,
             "base_url": self.base_url or None,
             "timeout_seconds": self.timeout_seconds,
+            "reasoning_effort": self.reasoning_effort,
             "max_output_tokens": self.max_output_tokens,
         }
 
@@ -113,7 +120,7 @@ class LLMGateway:
         payload = {
             "model": model,
             "messages": self._build_messages(kind=kind, prompt=prompt),
-            "temperature": 0.35 if kind == "policy" else 0.55,
+            "reasoning_effort": self.reasoning_effort,
             "max_tokens": self.max_output_tokens,
         }
         encoded = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -143,9 +150,21 @@ class LLMGateway:
             raise LLMRequestError(message="LLM upstream returned invalid JSON.", status_code=None) from exc
 
         try:
-            message_content = data["choices"][0]["message"]["content"]
+            choice = data["choices"][0]
+            message_content = choice["message"]["content"]
         except (KeyError, IndexError, TypeError) as exc:
             raise LLMRequestError(message="LLM upstream returned no message content.", status_code=None) from exc
+
+        finish_reason = choice.get("finish_reason")
+        if isinstance(finish_reason, str) and finish_reason.strip().lower() in {
+            "length",
+            "max_tokens",
+            "max_output_tokens",
+        }:
+            raise LLMRequestError(
+                message=f"LLM upstream returned finish_reason={finish_reason} at the output token limit.",
+                status_code=None,
+            )
 
         content = self._normalize_content(message_content)
         if not content:

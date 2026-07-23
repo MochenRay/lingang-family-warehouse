@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     ai_enabled: bool = Field(default=True, alias="AI_ENABLED")
-    llm_model: str = Field(default="gemini-3.5-flash", alias="LLM_MODEL")
+    llm_model: str = Field(default="gemini-3.6-flash", alias="LLM_MODEL")
     llm_fallback_model: str = Field(default="gemini-2.5-flash-lite", alias="LLM_FALLBACK_MODEL")
     llm_base_url: str = Field(
         default="https://generativelanguage.googleapis.com/v1beta/openai/",
@@ -37,7 +37,11 @@ class Settings(BaseSettings):
     llm_api_key: str = Field(default="", alias="LLM_API_KEY")
     llm_timeout_seconds: float = Field(default=25.0, alias="LLM_TIMEOUT_SECONDS")
     ai_max_prompt_chars: int = Field(default=4_000, ge=1, alias="AI_MAX_PROMPT_CHARS")
-    ai_max_output_tokens: int = Field(default=800, ge=1, le=8_192, alias="AI_MAX_OUTPUT_TOKENS")
+    ai_reasoning_effort: Literal["minimal", "low", "medium", "high"] = Field(
+        default="low",
+        alias="AI_REASONING_EFFORT",
+    )
+    ai_max_output_tokens: int = Field(default=4_096, ge=1, le=8_192, alias="AI_MAX_OUTPUT_TOKENS")
     ai_rate_limit_requests: int = Field(default=12, ge=1, alias="AI_RATE_LIMIT_REQUESTS")
     ai_rate_limit_window_seconds: int = Field(
         default=60,
