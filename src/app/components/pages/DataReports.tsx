@@ -189,16 +189,16 @@ export function DataReports() {
         description="基于当前治理快照快速生成可留痕导出包，减少手工整理和重复汇总。"
       />
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
-        <Card className={`lg:col-span-1 ${PANEL_CLASS}`}>
-          <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-4 pt-5">
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
+        <Card className={`gap-0 self-start lg:col-span-1 ${PANEL_CLASS}`}>
+          <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-3 pt-4">
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
               <FileText className="h-5 w-5 text-[var(--color-brand-text)]" />
               生成导出包
             </CardTitle>
             <CardDescription className={MUTED_TEXT}>根据真实治理快照生成一个新的导出文件。</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4 px-5 pt-5">
+          <CardContent className="space-y-3 px-5 pt-4">
             <div className="space-y-2">
               <Label className="flex items-center gap-2 text-sm font-semibold text-[var(--color-neutral-10)]">
                 <FileText className="h-4 w-4 text-[var(--color-brand-text)]" />
@@ -248,7 +248,7 @@ export function DataReports() {
               </div>
             </div>
           </CardContent>
-          <CardFooter className="px-5 pb-5 pt-2">
+          <CardFooter className="px-5 pb-4 pt-3">
             <Button className="w-full" onClick={() => void handleGenerate()} disabled={isGenerating || !snapshot}>
               {isGenerating ? (
                 <>
@@ -265,7 +265,7 @@ export function DataReports() {
           </CardFooter>
         </Card>
 
-        <div className="space-y-4">
+        <div className="self-start space-y-4">
           <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {quickExports.map((item) => (
               <button
@@ -286,27 +286,27 @@ export function DataReports() {
             ))}
           </div>
 
-          <Card className={PANEL_CLASS}>
-            <CardHeader className="px-5 pb-3 pt-5">
+          <Card className={`${PANEL_CLASS} gap-0`}>
+            <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-3">
               <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">本次导出记录</CardTitle>
-              <CardDescription className={MUTED_TEXT}>只记录当前会话里真实生成过的导出包，不伪装成历史归档。</CardDescription>
             </CardHeader>
-            <CardContent className="px-5 pb-5">
+            <CardContent className="px-5 py-4">
               <div className="space-y-2">
                 {generatedReports.length === 0 ? (
                   <EmptyState
                     icon={FileText}
                     title="还没有生成新的导出包"
-                    description="点击左侧“立即导出”或上方快捷入口，会在这里留下本次会话的真实记录。"
+                    description="选择报表类型和统计范围后，点击“立即导出”生成文件。"
+                    className="min-h-0 py-4"
                   />
                 ) : (
                   generatedReports.map((file) => (
-                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex items-center justify-between gap-4 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}>
-                      <div className="flex items-center gap-4">
+                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex flex-col gap-3 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)] sm:flex-row sm:items-center sm:justify-between`}>
+                      <div className="flex min-w-0 items-center gap-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/15 text-sm font-bold text-[var(--color-brand-text)]">
                           {file.type}
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <div className="mb-1 font-semibold text-[var(--color-neutral-11)]">{file.name}</div>
                           <div className={`flex flex-wrap items-center gap-3 text-xs ${MUTED_TEXT}`}>
                             <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {file.date}</span>
@@ -320,7 +320,7 @@ export function DataReports() {
                           <div className={`mt-1 text-xs ${MUTED_TEXT}`}>{file.summary}</div>
                         </div>
                       </div>
-                      <Badge variant="outline">本次生成</Badge>
+                      <Badge variant="outline" className="self-start sm:self-auto">本次生成</Badge>
                     </div>
                   ))
                 )}

@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, RefreshCw, ShieldAlert, Sparkles, Tag, Users } from 'lucide-react';
+import { AlertCircle, Eye, RefreshCw, ShieldAlert, Sparkles, Tag, Users } from 'lucide-react';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { tagRepository, type ManagedTagSummary, type TagSnapshot } from '../../services/repositories/tagRepository';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { DataTableBody } from '../patterns/DataTableShell';
-import { PANEL_CLASS } from '../patterns/surfaces';
+import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
@@ -45,7 +46,6 @@ export function TagOverview() {
           return;
         }
         setSnapshot(nextSnapshot);
-        setSelectedTagId((current) => current || nextSnapshot.tags[0]?.id || '');
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : '标签数据加载失败');
@@ -110,7 +110,7 @@ export function TagOverview() {
       <PageHeader
         eyebrow="TAG LEDGER"
         title="标签管理"
-        description="当前只保留首批 5 类固定标签规则，全部基于人物、房屋、走访、矛盾对象实时派生，不再维护独立标签目录。"
+        description="统一查看重点标签的覆盖范围、风险等级和命中对象，便于快速定位需要跟进的人群。"
         actions={
           <Button
             variant="outline"
@@ -121,7 +121,6 @@ export function TagOverview() {
               setError('');
               void tagRepository.getSnapshot().then((nextSnapshot) => {
                 setSnapshot(nextSnapshot);
-                setSelectedTagId(nextSnapshot.tags[0]?.id ?? '');
                 setLoading(false);
               }).catch((loadError) => {
                 setError(loadError instanceof Error ? loadError.message : '标签数据加载失败');
@@ -137,7 +136,7 @@ export function TagOverview() {
       />
 
       <div className="grid gap-3 md:grid-cols-4">
-        <StatCard label="标签总数" value={snapshot?.tags.length ?? '--'} hint="当前阶段固定首批规则，不扩写引擎" icon={Tag} />
+        <StatCard label="标签总数" value={snapshot?.tags.length ?? '--'} hint="按当前标签规则汇总" icon={Tag} />
         <StatCard label="规则标签" value={ruleTags.length} hint="基于明确阈值和对象字段判定" icon={ShieldAlert} />
         <StatCard label="智能标签" value={smartTags.length} hint="基于走访/矛盾/时效推导" icon={Sparkles} />
         <StatCard label="覆盖率" value={`${coverageRate}%`} hint={`总命中 ${totalAssignments} 次`} icon={Users} />
@@ -155,14 +154,13 @@ export function TagOverview() {
         </Card>
       ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-        <Card className={PANEL_CLASS}>
+      <Card className={`${PANEL_CLASS} gap-0`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">标签目录</CardTitle>
-            <CardDescription className={`text-xs ${MUTED_TEXT_CLASS}`}>覆盖人数是派生值，不再由页面各自维护。</CardDescription>
+            <CardDescription className={`text-xs ${MUTED_TEXT_CLASS}`}>查看各标签的覆盖范围、分类和风险等级。</CardDescription>
           </CardHeader>
           <CardContent className="p-0">
-            <Table className="min-w-[780px]">
+            <Table className="min-w-[860px]">
               <TableHeader>
                 <TableRow className="bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
                   <TableHead className="min-w-[260px] whitespace-nowrap">标签</TableHead>
@@ -170,15 +168,12 @@ export function TagOverview() {
                   <TableHead className="whitespace-nowrap">分类</TableHead>
                   <TableHead className="whitespace-nowrap text-right">覆盖人数</TableHead>
                   <TableHead className="whitespace-nowrap">风险</TableHead>
+                  <TableHead className="w-[72px] whitespace-nowrap text-center">操作</TableHead>
                 </TableRow>
               </TableHeader>
-              <DataTableBody loading={loading || !snapshot} loadingText="正在同步标签视图..." columnCount={5}>
+              <DataTableBody loading={loading || !snapshot} loadingText="正在同步标签视图..." columnCount={6}>
                 {snapshot?.tags.map((tag) => (
-                  <TableRow
-                    key={tag.id}
-                    className={`cursor-pointer ${tag.id === selectedTagId ? 'bg-[var(--color-brand-primary)]/12 hover:bg-[var(--color-brand-primary)]/16' : 'hover:bg-[var(--color-brand-primary)]/8'}`}
-                    onClick={() => setSelectedTagId(tag.id)}
-                  >
+                  <TableRow key={tag.id} className="hover:bg-[var(--color-brand-primary)]/8">
                     <TableCell>
                       <div className="space-y-1">
                         <div className="font-medium text-[var(--color-neutral-11)]">{tag.name}</div>
@@ -193,25 +188,35 @@ export function TagOverview() {
                     <TableCell>
                       <StatusBadge tone={RISK_BADGE_TONE[tag.riskLevel] ?? 'neutral'}>{tag.riskLevel}</StatusBadge>
                     </TableCell>
+                    <TableCell className="text-center">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`查看${tag.name}详情`}
+                        className="h-8 w-8 text-[var(--color-neutral-08)] hover:bg-[var(--color-brand-primary)]/15 hover:text-[var(--color-brand-text)]"
+                        onClick={() => setSelectedTagId(tag.id)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </DataTableBody>
             </Table>
           </CardContent>
-        </Card>
+      </Card>
 
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
-            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">{selectedTag?.name ?? '标签详情'}</CardTitle>
-            <CardDescription className={`text-xs ${MUTED_TEXT_CLASS}`}>
-              {selectedTag?.type ?? '请选择一个标签'} {selectedTag ? `· ${selectedTag.category}` : ''}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4 p-4">
-            {!selectedTag ? (
-              <div className={`py-10 text-sm ${MUTED_TEXT_CLASS}`}>请选择左侧标签查看覆盖对象。</div>
-            ) : (
-              <>
+      <Dialog open={Boolean(selectedTag)} onOpenChange={(open) => !open && setSelectedTagId('')}>
+        <DialogContent className={`${DIALOG_CLASS} max-h-[86vh] max-w-4xl overflow-y-auto shadow-2xl`}>
+          <DialogHeader>
+            <DialogTitle className="text-[var(--color-neutral-11)]">{selectedTag?.name ?? '标签详情'}</DialogTitle>
+            <DialogDescription className={MUTED_TEXT_CLASS}>
+              {selectedTag ? `${selectedTag.type} · ${selectedTag.category} · 覆盖 ${selectedTag.coverageCount} 人` : '查看标签规则与覆盖对象。'}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTag ? (
+            <div className="space-y-4">
                 <div className="space-y-3 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <Badge variant="outline" className={getTagTypeClass(selectedTag.type)}>{selectedTag.type}</Badge>
@@ -283,11 +288,10 @@ export function TagOverview() {
                     )}
                   </div>
                 </div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -222,19 +222,27 @@ export function WarningMap() {
         />
       </div>
 
-      <Card className={PANEL_CLASS}>
-        <CardHeader>
+      <Card className={`${PANEL_CLASS} gap-0`}>
+        <CardHeader className="border-b border-[var(--color-neutral-03)] px-4 py-3">
           <CardTitle>热区矩阵</CardTitle>
           <CardDescription>按区—街道分组展示全部 {areaWarnings.length} 个网格的热区板，组内按热度分降序。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className="grid gap-3 p-4 lg:grid-cols-2 xl:grid-cols-3">
           {zoneGroups.map((group) => (
-            <section key={group.key} data-testid="zone-group" aria-label={`${group.districtName} ${group.streetName}`}>
-              <div className="mb-3 flex items-baseline justify-between gap-3">
-                <h3 className="text-sm font-semibold">{group.districtName} · {group.streetName}</h3>
-                <span className="text-xs text-[var(--color-neutral-08)]">{group.areas.length} 个网格</span>
+            <section
+              key={group.key}
+              data-testid="zone-group"
+              aria-label={`${group.districtName} ${group.streetName}`}
+              className="min-w-0 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3"
+            >
+              <div className="mb-2 flex items-center justify-between gap-3 border-b border-[var(--color-neutral-03)] pb-2">
+                <div className="min-w-0">
+                  <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{group.districtName} · {group.streetName}</h3>
+                  <p className="mt-0.5 text-xs text-[var(--color-neutral-08)]">最高热度 {group.maxHeatScore}</p>
+                </div>
+                <span className="shrink-0 text-xs text-[var(--color-neutral-08)]">{group.areas.length} 个网格</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+              <div className="space-y-2">
                 {group.areas.map((area) => (
                   <button
                     key={area.id}
@@ -248,30 +256,30 @@ export function WarningMap() {
                         toast.info(`${area.area}${area.gridLabel} 当前没有命中筛选条件下的预警明细`);
                       }
                     }}
-                    className="rounded-[4px] border p-4 text-left transition hover:shadow-md hover:border-[var(--color-brand-primary)]/50"
+                    className="w-full rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-3 text-left transition-colors hover:border-[var(--color-brand-primary)]/50 hover:bg-[var(--color-neutral-03)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]"
                   >
-                    <div className="flex items-start justify-between gap-3 mb-3">
-                      <div>
-                        <div className="font-semibold">{area.area}</div>
-                        <div className="text-xs text-[var(--color-neutral-08)] mt-1">{area.gridLabel} · {area.count} 条预警信号</div>
+                    <div className="mb-2 flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="truncate font-semibold text-[var(--color-neutral-11)]">{area.area}</div>
+                        <div className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{area.gridLabel} · {area.count} 条预警信号</div>
                       </div>
                       <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
                     </div>
-                    <div className="space-y-2 text-sm text-[var(--color-neutral-08)]">
-                      <div className="flex items-center justify-between">
+                    <div className="grid grid-cols-3 gap-2 text-xs text-[var(--color-neutral-08)]">
+                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
                         <span>热度分</span>
-                        <span className="font-medium text-[var(--color-neutral-10)]">{area.heatScore}</span>
+                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.heatScore}</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
                         <span>待处理</span>
-                        <span className="font-medium text-[var(--color-neutral-10)]">{area.pending}</span>
+                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.pending}</span>
                       </div>
-                      <div className="flex items-center justify-between">
+                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
                         <span>已闭环</span>
-                        <span className="font-medium text-[var(--color-neutral-10)]">{area.resolved}</span>
+                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.resolved}</span>
                       </div>
                     </div>
-                    <div className="mt-3 text-xs text-[var(--color-neutral-08)]">
+                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--color-neutral-08)]">
                       {area.signals.length ? area.signals.join('；') : '当前没有额外重点信号'}
                     </div>
                   </button>

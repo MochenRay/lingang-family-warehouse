@@ -6,16 +6,18 @@ import {
   Trophy,
   RefreshCw,
   ChevronRight,
-  ChevronDown,
   FileText,
   Download,
-  Info
+  Info,
+  ArrowDown,
+  ArrowUp,
+  ArrowUpDown,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader } from '../ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '../ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '../ui/dialog';
 import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
@@ -32,6 +34,8 @@ import { SearchInput } from '../patterns/FilterBar';
 import { DIALOG_CLASS } from '../patterns/surfaces';
 
 type ViewLevel = 'district' | 'street' | 'community' | 'grid';
+type SortDirection = 'asc' | 'desc';
+type PerformanceSortKey = PerformanceScoreKey | 'totalScore';
 
 interface AggregatedItem {
   name: string;
@@ -96,11 +100,14 @@ function avgScores(items: { scores: AggregatedItem['scores']; totalScore: number
 }
 
 export function BehaviorSupervision() {
-  const [activeTab, setActiveTab] = useState('performance');
   const [isBriefingOpen, setIsBriefingOpen] = useState(false);
   const [briefingType, setBriefingType] = useState('weekly');
-  const [showFormula, setShowFormula] = useState(false);
+  const [isRulesOpen, setIsRulesOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortState, setSortState] = useState<{ key: PerformanceSortKey; direction: SortDirection }>({
+    key: 'totalScore',
+    direction: 'desc',
+  });
 
   // Navigation
   const [viewLevel, setViewLevel] = useState<ViewLevel>('district');
@@ -207,11 +214,19 @@ export function BehaviorSupervision() {
       items = items.filter(i => i.name.includes(searchQuery.trim()));
     }
 
-    // 排序
-    items.sort((a, b) => b.totalScore - a.totalScore);
-    items.forEach((item, idx) => item.rank = idx + 1);
+    const rankedByTotal = [...items].sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name, 'zh-CN'));
+    const rankByName = new Map(rankedByTotal.map((item, index) => [item.name, index + 1]));
+    items.forEach((item) => {
+      item.rank = rankByName.get(item.name) ?? 0;
+    });
+    items.sort((left, right) => {
+      const leftValue = sortState.key === 'totalScore' ? left.totalScore : left.scores[sortState.key];
+      const rightValue = sortState.key === 'totalScore' ? right.totalScore : right.scores[sortState.key];
+      const delta = sortState.direction === 'desc' ? rightValue - leftValue : leftValue - rightValue;
+      return delta || left.rank - right.rank || left.name.localeCompare(right.name, 'zh-CN');
+    });
     return items;
-  }, [viewLevel, selectedDistrict, selectedStreet, selectedCommunity, searchQuery, allWorkers]);
+  }, [viewLevel, selectedDistrict, selectedStreet, selectedCommunity, searchQuery, allWorkers, sortState]);
 
   // 概览数据
   const overviewStats = useMemo(() => {
@@ -270,6 +285,13 @@ export function BehaviorSupervision() {
     } else if (level === 'community') {
       setSelectedCommunity(null);
     }
+  };
+
+  const handleSort = (key: PerformanceSortKey) => {
+    setSortState((current) => ({
+      key,
+      direction: current.key === key && current.direction === 'desc' ? 'asc' : 'desc',
+    }));
   };
 
   // 得分颜色
@@ -405,59 +427,25 @@ export function BehaviorSupervision() {
         <StatCard label="待改进网格员" value={overviewStats.needImproveCount} icon={AlertCircle} tone="warning" />
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)]">
-          <TabsTrigger value="performance" className="gap-2">
-            <Trophy className="w-4 h-4" />
-            绩效排名
-          </TabsTrigger>
-          <TabsTrigger value="quality" className="gap-2">
-            <AlertCircle className="w-4 h-4" />
-            数据质量监控
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="performance" className="space-y-4">
-          {/* 评分公式说明 */}
-          <Card className={DARK_CARD_CLASS}>
+      <Card className={`${DARK_CARD_CLASS} gap-0`}>
+        <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-3">
+          <div className="flex items-center justify-between gap-4">
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
+              <Trophy className="h-4 w-4 text-[var(--color-brand-text)]" />
+              绩效排名
+            </CardTitle>
             <button
-              className="flex w-full items-center justify-between px-5 py-3 text-left transition-colors hover:bg-[var(--color-neutral-03)]"
-              onClick={() => setShowFormula(!showFormula)}
+              type="button"
+              onClick={() => setIsRulesOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium text-[var(--color-brand-text)] transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]"
             >
-              <div className="flex items-center gap-2">
-                <Info className="w-4 h-4 text-[var(--color-brand-text)]" />
-                <span className="font-semibold text-[var(--color-neutral-11)]">评分规则说明</span>
-                <Badge variant="secondary" className={DARK_BADGE_CLASS}>
-                  综合得分 = 走访频次×25% + 走访质量×25% + 信息完善度×20% + 任务完成量×15% + 响应速度×15%
-                </Badge>
-              </div>
-              <ChevronDown className={`w-4 h-4 text-[var(--color-neutral-08)] transition-transform ${showFormula ? 'rotate-180' : ''}`} />
+              <span>评分规则说明</span>
+              <Info className="h-4 w-4" aria-hidden="true" />
             </button>
-            {showFormula && (
-              <CardContent className="pt-0 pb-4 px-6">
-                <div className="border-t border-[var(--color-neutral-03)] pt-4">
-                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                    {(Object.entries(SCORE_LABELS) as [PerformanceScoreKey, typeof SCORE_LABELS[PerformanceScoreKey]][]).map(([key, meta]) => (
-                      <div key={key} className="p-3 rounded-lg bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)]">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-semibold text-sm text-[var(--color-neutral-11)]">{meta.label}</span>
-                          <Badge variant="outline" className={DARK_BADGE_CLASS}>{(PERFORMANCE_SCORE_WEIGHTS[key] * 100)}%</Badge>
-                        </div>
-                        <p className="text-xs text-[var(--color-neutral-08)]">{meta.desc}</p>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="mt-3 rounded-lg border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-3 text-xs text-[var(--color-brand-text)]">
-                    <strong>聚合规则：</strong>上级单位得分 = 下辖单位得分的算术平均。区县视角排名街道/镇，街道视角排名社区，社区视角排名网格员。不越级考核。
-                  </div>
-                </div>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* 排名列表 */}
-          <Card className={DARK_CARD_CLASS}>
-            <CardHeader className="pb-2">
+          </div>
+        </CardHeader>
+        <CardContent className="p-4">
+            <div className="mb-3">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <Tabs value={viewLevel} onValueChange={(v) => handleLevelChange(v as ViewLevel)} className="w-auto">
                   <TabsList className="bg-transparent h-auto p-0 gap-3 justify-start">
@@ -496,16 +484,52 @@ export function BehaviorSupervision() {
                   </Button>
                 </div>
               )}
-            </CardHeader>
-            <CardContent>
+            </div>
+
               {/* 表头 */}
-              <div className="hidden md:grid grid-cols-[56px_1fr_repeat(6,80px)] gap-2 px-4 py-2 text-xs text-[var(--color-neutral-08)] font-medium border-b border-[var(--color-neutral-03)] mb-2">
-                <div className="text-center">排名</div>
+              <div className="mb-2 hidden grid-cols-[72px_1fr_repeat(6,80px)] gap-2 border-b border-[var(--color-neutral-03)] px-4 py-2 text-xs font-medium text-[var(--color-neutral-08)] md:grid">
+                <div className="text-center">综合排名</div>
                 <div>{VIEW_LABELS[viewLevel]}</div>
-                {Object.values(SCORE_LABELS).map(meta => (
-                  <div key={meta.short} className="text-center">{meta.short}</div>
-                ))}
-                <div className="text-center font-bold">综合</div>
+                {(Object.entries(SCORE_LABELS) as [PerformanceScoreKey, typeof SCORE_LABELS[PerformanceScoreKey]][]).map(([key, meta]) => {
+                  const active = sortState.key === key;
+                  const SortIcon = !active ? ArrowUpDown : sortState.direction === 'asc' ? ArrowUp : ArrowDown;
+                  return (
+                    <div key={key}>
+                      <button
+                        type="button"
+                        data-testid={`performance-sort-${key}`}
+                        data-sort-direction={active ? sortState.direction : 'none'}
+                        aria-pressed={active}
+                        aria-label={`按${meta.label}${active && sortState.direction === 'desc' ? '升序' : '降序'}排列`}
+                        onClick={() => handleSort(key)}
+                        className={`inline-flex w-full items-center justify-center gap-1 rounded px-1 py-1 transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-brand-primary-hover)] ${active ? 'text-[var(--color-brand-text)]' : ''}`}
+                      >
+                        <span>{meta.short}</span>
+                        <SortIcon className={`h-3.5 w-3.5 ${active ? '' : 'opacity-55'}`} aria-hidden="true" />
+                      </button>
+                    </div>
+                  );
+                })}
+                {(() => {
+                  const active = sortState.key === 'totalScore';
+                  const SortIcon = !active ? ArrowUpDown : sortState.direction === 'asc' ? ArrowUp : ArrowDown;
+                  return (
+                    <div>
+                      <button
+                        type="button"
+                        data-testid="performance-sort-totalScore"
+                        data-sort-direction={active ? sortState.direction : 'none'}
+                        aria-pressed={active}
+                        aria-label={`按综合得分${active && sortState.direction === 'desc' ? '升序' : '降序'}排列`}
+                        onClick={() => handleSort('totalScore')}
+                        className={`inline-flex w-full items-center justify-center gap-1 rounded px-1 py-1 font-bold transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-brand-primary-hover)] ${active ? 'text-[var(--color-brand-text)]' : ''}`}
+                      >
+                        <span>综合</span>
+                        <SortIcon className={`h-3.5 w-3.5 ${active ? '' : 'opacity-55'}`} aria-hidden="true" />
+                      </button>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="space-y-2">
@@ -515,7 +539,14 @@ export function BehaviorSupervision() {
                 {statsData.map((item) => (
                   <div
                     key={item.name}
-                    className={`grid grid-cols-1 md:grid-cols-[56px_1fr_repeat(6,80px)] gap-2 items-center p-4 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] transition-colors group ${viewLevel !== 'grid' ? 'cursor-pointer' : ''}`}
+                    data-testid="performance-ranking-row"
+                    data-total-score={item.totalScore}
+                    data-visit-freq={item.scores.visitFreq}
+                    data-visit-quality={item.scores.visitQuality}
+                    data-info-complete={item.scores.infoComplete}
+                    data-task-count={item.scores.taskCount}
+                    data-task-speed={item.scores.taskSpeed}
+                    className={`group grid grid-cols-1 items-center gap-2 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4 transition-colors hover:bg-[var(--color-neutral-03)] md:grid-cols-[72px_1fr_repeat(6,80px)] ${viewLevel !== 'grid' ? 'cursor-pointer' : ''}`}
                     onClick={() => viewLevel !== 'grid' && handleItemClick(item)}
                   >
                     {/* 排名 */}
@@ -564,33 +595,33 @@ export function BehaviorSupervision() {
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        </CardContent>
+      </Card>
 
-        <TabsContent value="quality" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {qualityAlerts.map((alert) => (
-              <Card key={alert.id} className={`${DARK_CARD_CLASS} border-l-4 border-l-[var(--color-status-error)]`}>
-                <CardContent className="p-5">
-                  <div className="flex justify-between items-start mb-2">
-                    <div className="flex items-center gap-2">
-                      <AlertCircle className="w-5 h-5 text-[var(--color-status-error-text)]" />
-                      <span className="font-bold text-[var(--color-neutral-11)]">{alert.type}</span>
-                    </div>
-                    <Badge variant="destructive">{alert.count} 条待修正</Badge>
-                  </div>
-                  <p className="mb-4 text-[var(--color-neutral-08)]">{alert.desc}</p>
-                  <div className="flex items-center justify-between mt-4 text-sm">
-                    <span className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] px-2 py-1 text-[var(--color-neutral-10)]">高发区域: {alert.area}</span>
-                    <Button variant="link" className="h-auto p-0 text-[var(--color-brand-text)]">查看详情 &gt;</Button>
-                  </div>
-                </CardContent>
-              </Card>
+      <Dialog open={isRulesOpen} onOpenChange={setIsRulesOpen}>
+        <DialogContent className={`max-w-4xl ${DIALOG_CLASS}`}>
+          <DialogHeader>
+            <DialogTitle>评分规则说明</DialogTitle>
+            <DialogDescription className="text-[var(--color-neutral-08)]">
+              综合得分 = 走访频次×25% + 走访质量×25% + 信息完善度×20% + 任务完成量×15% + 响应速度×15%
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-5">
+            {(Object.entries(SCORE_LABELS) as [PerformanceScoreKey, typeof SCORE_LABELS[PerformanceScoreKey]][]).map(([key, meta]) => (
+              <div key={key} className="rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-3">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-[var(--color-neutral-11)]">{meta.label}</span>
+                  <Badge variant="outline" className={DARK_BADGE_CLASS}>{PERFORMANCE_SCORE_WEIGHTS[key] * 100}%</Badge>
+                </div>
+                <p className="text-xs leading-5 text-[var(--color-neutral-08)]">{meta.desc}</p>
+              </div>
             ))}
           </div>
-        </TabsContent>
-      </Tabs>
+          <div className="rounded-lg border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-3 text-xs leading-5 text-[var(--color-brand-text)]">
+            <strong>聚合规则：</strong>上级单位得分 = 下辖单位得分的算术平均。区县视角排名街道/镇，街道视角排名社区，社区视角排名网格员。不越级考核。
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

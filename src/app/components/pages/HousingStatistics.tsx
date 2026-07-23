@@ -183,7 +183,7 @@ export function HousingStatistics() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.4fr,0.9fr]">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
         <Card className={PANEL_CLASS}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
@@ -212,8 +212,8 @@ export function HousingStatistics() {
           </CardContent>
         </Card>
 
-        <Card className={PANEL_CLASS}>
-          <CardHeader className="gap-3">
+        <Card className={`${PANEL_CLASS} gap-0`}>
+          <CardHeader className="gap-3 border-b border-[var(--color-neutral-03)] px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
                 <AlertTriangle className="h-5 w-5 text-[var(--color-status-warning-text)]" />
@@ -249,39 +249,30 @@ export function HousingStatistics() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
             {districtHousingRows.slice(0, 6).map((row, index) => (
-              <div key={row.name} className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-[var(--color-brand-primary)] text-sm font-semibold text-[var(--color-neutral-11)]">{index + 1}</span>
-                    <div>
-                      <div className="font-semibold text-[var(--color-neutral-11)]">{row.name}</div>
-                      <div className="text-xs text-[var(--color-neutral-08)]">
+              <article key={row.name} data-testid="district-priority-card" className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] bg-[var(--color-brand-primary)] text-xs font-semibold text-[var(--color-neutral-11)]">{index + 1}</span>
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{row.name}</div>
+                      <div className="mt-0.5 whitespace-nowrap text-[11px] text-[var(--color-neutral-08)]">
                         {formatNumber(row.houseCount)} 套房屋 · {formatNumber(row.peopleCount)} 人
                       </div>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className={`text-xl font-semibold ${row.score >= 80 ? 'text-[var(--color-status-error-text)]' : row.score >= 55 ? 'text-[var(--color-status-warning-text)]' : 'text-[var(--color-neutral-11)]'}`}>{row.score}</div>
-                    <div className="text-xs text-[var(--color-neutral-07)]">压力系数</div>
+                  <div className="shrink-0 text-right">
+                    <div className={`text-lg font-semibold leading-none ${row.score >= 80 ? 'text-[var(--color-status-error-text)]' : row.score >= 55 ? 'text-[var(--color-status-warning-text)]' : 'text-[var(--color-neutral-11)]'}`}>{row.score}</div>
+                    <div className="mt-1 text-[10px] text-[var(--color-neutral-07)]">压力</div>
                   </div>
                 </div>
-                <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
-                  <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)]/40 px-2 py-2">
-                    <div className="text-[var(--color-neutral-07)]">出租</div>
-                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.rentalCount}</div>
-                  </div>
-                  <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)]/40 px-2 py-2">
-                    <div className="text-[var(--color-neutral-07)]">预警</div>
-                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.warningCount}</div>
-                  </div>
-                  <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)]/40 px-2 py-2">
-                    <div className="text-[var(--color-neutral-07)]">流动</div>
-                    <div className="mt-1 text-base font-semibold text-[var(--color-neutral-11)]">{row.floatingCount}</div>
-                  </div>
+                <div className="mt-3 grid grid-cols-3 divide-x divide-[var(--color-neutral-03)] border-t border-[var(--color-neutral-03)] pt-2 text-center text-xs">
+                  <div><span className="text-[var(--color-neutral-07)]">出租</span><strong className="ml-1 text-[var(--color-neutral-11)]">{row.rentalCount}</strong></div>
+                  <div><span className="text-[var(--color-neutral-07)]">预警</span><strong className="ml-1 text-[var(--color-neutral-11)]">{row.warningCount}</strong></div>
+                  <div><span className="text-[var(--color-neutral-07)]">流动</span><strong className="ml-1 text-[var(--color-neutral-11)]">{row.floatingCount}</strong></div>
                 </div>
-              </div>
+              </article>
             ))}
           </CardContent>
         </Card>

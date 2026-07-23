@@ -318,7 +318,7 @@ export function PopulationTags() {
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">风险层级分布</CardTitle>
