@@ -38,6 +38,7 @@ type SortDirection = 'asc' | 'desc';
 type PerformanceSortKey = PerformanceScoreKey | 'totalScore';
 
 interface AggregatedItem {
+  id: string;
   name: string;
   type: ViewLevel;
   workerCount: number;
@@ -163,7 +164,7 @@ export function BehaviorSupervision() {
       });
       items = Array.from(groups.entries()).map(([name, workers]) => {
         const agg = avgScores(workers);
-        return { name, type: 'district' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
+        return { id: `district:${name}`, name, type: 'district' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
       });
     } else if (viewLevel === 'street') {
       const filtered = selectedDistrict ? allWorkers.filter(w => w.districtName === selectedDistrict) : allWorkers;
@@ -175,7 +176,7 @@ export function BehaviorSupervision() {
       });
       items = Array.from(groups.entries()).map(([name, workers]) => {
         const agg = avgScores(workers);
-        return { name, type: 'street' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
+        return { id: `street:${selectedDistrict ?? 'all'}:${name}`, name, type: 'street' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
       });
     } else if (viewLevel === 'community') {
       const filtered = allWorkers.filter(w =>
@@ -190,7 +191,7 @@ export function BehaviorSupervision() {
       });
       items = Array.from(groups.entries()).map(([name, workers]) => {
         const agg = avgScores(workers);
-        return { name, type: 'community' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
+        return { id: `community:${selectedDistrict ?? 'all'}:${selectedStreet ?? 'all'}:${name}`, name, type: 'community' as ViewLevel, workerCount: workers.length, ...agg, rank: 0 };
       });
     } else {
       // grid level — individual workers
@@ -200,6 +201,7 @@ export function BehaviorSupervision() {
         (!selectedCommunity || w.communityName === selectedCommunity)
       );
       items = filtered.map(w => ({
+        id: w.id,
         name: w.name,
         type: 'grid' as ViewLevel,
         workerCount: 1,
@@ -215,9 +217,9 @@ export function BehaviorSupervision() {
     }
 
     const rankedByTotal = [...items].sort((a, b) => b.totalScore - a.totalScore || a.name.localeCompare(b.name, 'zh-CN'));
-    const rankByName = new Map(rankedByTotal.map((item, index) => [item.name, index + 1]));
+    const rankById = new Map(rankedByTotal.map((item, index) => [item.id, index + 1]));
     items.forEach((item) => {
-      item.rank = rankByName.get(item.name) ?? 0;
+      item.rank = rankById.get(item.id) ?? 0;
     });
     items.sort((left, right) => {
       const leftValue = sortState.key === 'totalScore' ? left.totalScore : left.scores[sortState.key];
@@ -382,7 +384,7 @@ export function BehaviorSupervision() {
       {/* 数据主链状态 */}
       <Card className={DARK_CARD_CLASS}>
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col items-center justify-between gap-6 lg:flex-row">
             <div className="flex items-center gap-4">
               <div className="rounded-lg border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/15 p-3">
                 <RefreshCw className="w-6 h-6 text-[var(--color-brand-text)]" />
@@ -420,7 +422,7 @@ export function BehaviorSupervision() {
       </Card>
 
       {/* 概览卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="活跃网格员" value={overviewStats.workerCount} icon={Users} tone="brand" />
         <StatCard label="平均综合得分" value={overviewStats.avgScore} icon={Trophy} tone="success" />
         <StatCard label="最优社区" value={overviewStats.bestCommunity} icon={CheckCircle2} tone="brand" />
@@ -437,6 +439,9 @@ export function BehaviorSupervision() {
             <button
               type="button"
               onClick={() => setIsRulesOpen(true)}
+              aria-haspopup="dialog"
+              aria-expanded={isRulesOpen}
+              aria-controls="performance-rules-dialog"
               className="inline-flex items-center gap-1.5 rounded px-2 py-1 text-sm font-medium text-[var(--color-brand-text)] transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]"
             >
               <span>评分规则说明</span>
@@ -446,9 +451,9 @@ export function BehaviorSupervision() {
         </CardHeader>
         <CardContent className="p-4">
             <div className="mb-3">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
                 <Tabs value={viewLevel} onValueChange={(v) => handleLevelChange(v as ViewLevel)} className="w-auto">
-                  <TabsList className="bg-transparent h-auto p-0 gap-3 justify-start">
+                  <TabsList className="h-auto flex-wrap justify-start gap-3 bg-transparent p-0">
                     {(['district', 'street', 'community', 'grid'] as ViewLevel[]).map(level => (
                       <TabsTrigger
                         key={level}
@@ -461,9 +466,9 @@ export function BehaviorSupervision() {
                   </TabsList>
                 </Tabs>
 
-                <div className="flex gap-2 w-full md:w-auto">
+                <div className="flex w-full gap-2 lg:w-auto">
                   <SearchInput
-                    className="w-full md:w-64"
+                    className="w-full lg:w-64"
                     placeholder={`搜索${VIEW_LABELS[viewLevel]}...`}
                     value={searchQuery}
                     onChange={setSearchQuery}
@@ -487,20 +492,27 @@ export function BehaviorSupervision() {
             </div>
 
               {/* 表头 */}
-              <div className="mb-2 hidden grid-cols-[72px_1fr_repeat(6,80px)] gap-2 border-b border-[var(--color-neutral-03)] px-4 py-2 text-xs font-medium text-[var(--color-neutral-08)] md:grid">
+              <div className="mb-2 hidden grid-cols-[72px_1fr_repeat(6,80px)] gap-2 border-b border-[var(--color-neutral-03)] px-4 py-2 text-xs font-medium text-[var(--color-neutral-08)] lg:grid">
                 <div className="text-center">综合排名</div>
                 <div>{VIEW_LABELS[viewLevel]}</div>
                 {(Object.entries(SCORE_LABELS) as [PerformanceScoreKey, typeof SCORE_LABELS[PerformanceScoreKey]][]).map(([key, meta]) => {
                   const active = sortState.key === key;
                   const SortIcon = !active ? ArrowUpDown : sortState.direction === 'asc' ? ArrowUp : ArrowDown;
                   return (
-                    <div key={key}>
+                    <div
+                      key={key}
+                      role="columnheader"
+                      aria-sort={active ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      data-testid={`performance-header-sort-${key}`}
+                    >
                       <button
                         type="button"
                         data-testid={`performance-sort-${key}`}
                         data-sort-direction={active ? sortState.direction : 'none'}
                         aria-pressed={active}
-                        aria-label={`按${meta.label}${active && sortState.direction === 'desc' ? '升序' : '降序'}排列`}
+                        aria-label={active
+                          ? `${meta.label}当前${sortState.direction === 'asc' ? '升序' : '降序'}，点击切换为${sortState.direction === 'asc' ? '降序' : '升序'}`
+                          : `点击按${meta.label}降序排列`}
                         onClick={() => handleSort(key)}
                         className={`inline-flex w-full items-center justify-center gap-1 rounded px-1 py-1 transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-brand-primary-hover)] ${active ? 'text-[var(--color-brand-text)]' : ''}`}
                       >
@@ -514,13 +526,19 @@ export function BehaviorSupervision() {
                   const active = sortState.key === 'totalScore';
                   const SortIcon = !active ? ArrowUpDown : sortState.direction === 'asc' ? ArrowUp : ArrowDown;
                   return (
-                    <div>
+                    <div
+                      role="columnheader"
+                      aria-sort={active ? (sortState.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      data-testid="performance-header-sort-totalScore"
+                    >
                       <button
                         type="button"
                         data-testid="performance-sort-totalScore"
                         data-sort-direction={active ? sortState.direction : 'none'}
                         aria-pressed={active}
-                        aria-label={`按综合得分${active && sortState.direction === 'desc' ? '升序' : '降序'}排列`}
+                        aria-label={active
+                          ? `综合得分当前${sortState.direction === 'asc' ? '升序' : '降序'}，点击切换为${sortState.direction === 'asc' ? '降序' : '升序'}`
+                          : '点击按综合得分降序排列'}
                         onClick={() => handleSort('totalScore')}
                         className={`inline-flex w-full items-center justify-center gap-1 rounded px-1 py-1 font-bold transition-colors hover:bg-[var(--color-brand-primary)]/15 focus-visible:outline focus-visible:outline-2 focus-visible:outline-[var(--color-brand-primary-hover)] ${active ? 'text-[var(--color-brand-text)]' : ''}`}
                       >
@@ -538,15 +556,18 @@ export function BehaviorSupervision() {
                 )}
                 {statsData.map((item) => (
                   <div
-                    key={item.name}
+                    key={item.id}
                     data-testid="performance-ranking-row"
+                    data-item-id={item.id}
+                    data-item-name={item.name}
+                    data-rank={item.rank}
                     data-total-score={item.totalScore}
                     data-visit-freq={item.scores.visitFreq}
                     data-visit-quality={item.scores.visitQuality}
                     data-info-complete={item.scores.infoComplete}
                     data-task-count={item.scores.taskCount}
                     data-task-speed={item.scores.taskSpeed}
-                    className={`group grid grid-cols-1 items-center gap-2 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4 transition-colors hover:bg-[var(--color-neutral-03)] md:grid-cols-[72px_1fr_repeat(6,80px)] ${viewLevel !== 'grid' ? 'cursor-pointer' : ''}`}
+                    className={`group grid grid-cols-1 items-center gap-2 rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4 transition-colors hover:bg-[var(--color-neutral-03)] lg:grid-cols-[72px_1fr_repeat(6,80px)] ${viewLevel !== 'grid' ? 'cursor-pointer' : ''}`}
                     onClick={() => viewLevel !== 'grid' && handleItemClick(item)}
                   >
                     {/* 排名 */}
@@ -577,7 +598,7 @@ export function BehaviorSupervision() {
                         <span className={`font-semibold text-sm ${scoreColor(item.scores[key])}`}>
                           {item.scores[key]}
                         </span>
-                        <div className="md:hidden text-xs text-[var(--color-neutral-08)]">{SCORE_LABELS[key].short}</div>
+                        <div className="text-xs text-[var(--color-neutral-08)] lg:hidden">{SCORE_LABELS[key].short}</div>
                       </div>
                     ))}
 
@@ -586,11 +607,11 @@ export function BehaviorSupervision() {
                       <span className={`font-bold text-lg ${scoreColor(item.totalScore)}`}>
                         {item.totalScore}
                       </span>
-                      <div className="md:hidden text-xs text-[var(--color-neutral-08)]">综合</div>
+                      <div className="text-xs text-[var(--color-neutral-08)] lg:hidden">综合</div>
                     </div>
 
                     {viewLevel !== 'grid' && (
-                      <ChevronRight className="w-4 h-4 text-[var(--color-neutral-06)] opacity-0 group-hover:opacity-100 transition-opacity hidden md:block absolute right-4" />
+                      <ChevronRight className="absolute right-4 hidden h-4 w-4 text-[var(--color-neutral-06)] opacity-0 transition-opacity group-hover:opacity-100 lg:block" />
                     )}
                   </div>
                 ))}
@@ -599,7 +620,7 @@ export function BehaviorSupervision() {
       </Card>
 
       <Dialog open={isRulesOpen} onOpenChange={setIsRulesOpen}>
-        <DialogContent className={`max-w-4xl ${DIALOG_CLASS}`}>
+        <DialogContent id="performance-rules-dialog" className={`max-w-4xl ${DIALOG_CLASS}`}>
           <DialogHeader>
             <DialogTitle>评分规则说明</DialogTitle>
             <DialogDescription className="text-[var(--color-neutral-08)]">

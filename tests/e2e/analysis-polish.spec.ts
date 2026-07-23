@@ -70,6 +70,7 @@ test.describe('analysis page polish', () => {
   test('标签分析下方两卡等宽', async ({ page }) => {
     await goto(page, '/analysis/tags', '标签分析画像');
 
+    await expect(page.getByText(/第一批固定标签规则|本地标签缓存|页面级快照|真对象来源/)).toHaveCount(0);
     const riskCard = page.getByRole('heading', { name: '风险层级分布' }).locator('xpath=ancestor::*[@data-slot="card"][1]');
     const crossCard = page.getByRole('heading', { name: '交叉分析' }).locator('xpath=ancestor::*[@data-slot="card"][1]');
     const riskBox = await riskCard.boundingBox();
@@ -85,16 +86,33 @@ test.describe('analysis page polish', () => {
     await expect(page.getByRole('tab', { name: '数据质量监控' })).toHaveCount(0);
     await expect(page.getByRole('heading', { name: '绩效排名' })).toBeVisible();
 
-    const rulesButton = page.getByRole('button', { name: '评分规则说明' });
+    const rulesButton = page.locator('button[aria-controls="performance-rules-dialog"]');
+    await expect(rulesButton).toHaveAccessibleName('评分规则说明');
+    await expect(rulesButton).toHaveAttribute('aria-haspopup', 'dialog');
+    await expect(rulesButton).toHaveAttribute('aria-expanded', 'false');
     await rulesButton.focus();
     await rulesButton.press('Enter');
+    await expect(rulesButton).toHaveAttribute('aria-expanded', 'true');
     const rulesDialog = page.getByRole('dialog');
     await expect(rulesDialog.getByRole('heading', { name: '评分规则说明' })).toBeVisible();
     await expect(rulesDialog).toContainText('走访频次×25%');
     await page.keyboard.press('Escape');
+    await expect(rulesButton).toHaveAttribute('aria-expanded', 'false');
 
     const sortButtons = page.locator('[data-testid^="performance-sort-"]');
     await expect(sortButtons).toHaveCount(6);
+    const totalHeader = page.getByTestId('performance-header-sort-totalScore');
+    await expect(totalHeader).toHaveAttribute('aria-sort', 'descending');
+    const keyboardSortButton = page.getByTestId('performance-sort-visitFreq');
+    const keyboardSortHeader = page.getByTestId('performance-header-sort-visitFreq');
+    await keyboardSortButton.focus();
+    await keyboardSortButton.press('Enter');
+    await expect(keyboardSortButton).toBeFocused();
+    await expect(keyboardSortButton).toHaveAttribute('data-sort-direction', 'desc');
+    await expect(keyboardSortHeader).toHaveAttribute('aria-sort', 'descending');
+    await keyboardSortButton.press('Space');
+    await expect(keyboardSortButton).toHaveAttribute('data-sort-direction', 'asc');
+    await expect(keyboardSortHeader).toHaveAttribute('aria-sort', 'ascending');
     const sortableFields = [
       ['visitFreq', 'data-visit-freq'],
       ['visitQuality', 'data-visit-quality'],
@@ -119,6 +137,51 @@ test.describe('analysis page polish', () => {
       expect(ascending, `${sortKey} 应按升序排列`).toEqual([...ascending].sort((left, right) => left - right));
     }
   });
+
+  test('同名网格员仍使用稳定身份保留独立综合排名', async ({ page }) => {
+    await page.route('**/api/stats/performance', async (route) => {
+      if (route.request().method() !== 'GET') {
+        await route.continue();
+        return;
+      }
+      const response = await route.fetch();
+      const payload = await response.json();
+      payload.workers[0].name = '同名网格员';
+      payload.workers[1].name = '同名网格员';
+      await route.fulfill({ response, json: payload });
+    });
+
+    await goto(page, '/grid/behavior', '行为督导中心');
+    await page.getByRole('tab', { name: '网格员排名' }).click();
+    const rows = page.getByTestId('performance-ranking-row');
+    await expect(rows).toHaveCount(12);
+    const duplicateRows = await rows.evaluateAll((elements) =>
+      elements
+        .filter((element) => element.getAttribute('data-item-name') === '同名网格员')
+        .map((element) => ({
+          id: element.getAttribute('data-item-id'),
+          rank: element.getAttribute('data-rank'),
+        })),
+    );
+    expect(duplicateRows).toHaveLength(2);
+    expect(new Set(duplicateRows.map((row) => row.id)).size).toBe(2);
+    expect(new Set(duplicateRows.map((row) => row.rank)).size).toBe(2);
+  });
+});
+
+test.describe('analysis page intermediate viewport guard', () => {
+  for (const width of [768, 900]) {
+    test(`行为督导中心 ${width}px 主内容区无横向溢出`, async ({ page }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await goto(page, '/grid/behavior', '行为督导中心');
+      await expect(page.getByTestId('performance-ranking-row').first()).toBeVisible();
+      const mainSize = await page.locator('main').evaluate((element) => ({
+        clientWidth: element.clientWidth,
+        scrollWidth: element.scrollWidth,
+      }));
+      expect(mainSize.scrollWidth).toBeLessThanOrEqual(mainSize.clientWidth + 1);
+    });
+  }
 });
 
 test.describe('analysis page responsive guard', () => {
