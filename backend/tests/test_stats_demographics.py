@@ -179,3 +179,23 @@ def test_person_write_contract_rejects_values_the_demographics_chart_cannot_clas
         app.dependency_overrides.clear()
 
     assert [response.status_code for response in invalid_responses] == [422, 422, 422]
+
+
+def test_demographics_age_buckets_keep_every_ten_year_boundary_disjoint() -> None:
+    client, _engine = _build_client()
+    boundary_ages = [10, 11, 20, 21, 80, 81, 10, 11, 20, 21, 80, 81, 81]
+
+    try:
+        for index, age in enumerate(boundary_ages, start=1):
+            response = client.patch(f"/api/people/person-{index}", json={"age": age})
+            assert response.status_code == 200
+        payload = client.get("/api/stats/demographics").json()
+    finally:
+        app.dependency_overrides.clear()
+
+    buckets = {item["name"]: item for item in payload["ageGenderData"]}
+    assert buckets["0-10"] == {"name": "0-10", "male": 2, "female": 0}
+    assert buckets["11-20"] == {"name": "11-20", "male": 2, "female": 2}
+    assert buckets["21-30"] == {"name": "21-30", "male": 0, "female": 2}
+    assert buckets["71-80"] == {"name": "71-80", "male": 1, "female": 1}
+    assert buckets["81岁及以上"] == {"name": "81岁及以上", "male": 0, "female": 3}

@@ -307,8 +307,8 @@ export const SEED_PEOPLE: Person[] = [
       if (age >= 18) {
         const tagsHighAdult = ['刑满释放', '严重精神障碍', '重点上访', '社区矫正'];
         if (age >= 14) tagsHighAdult.unshift('吸毒人员'); // 14岁以上可能涉毒
-        const randomTag = tagsHighAdult[Math.floor(Math.random() * tagsHighAdult.length)];
-        tags.push(randomTag);
+        const selectedTag = tagsHighAdult[(i * 7 + 3) % tagsHighAdult.length];
+        tags.push(selectedTag);
       } else {
         // 未成年高风险：改为中等风险标签
         if (age >= 6 && age <= 14) tags.push('学龄儿童');
@@ -317,10 +317,10 @@ export const SEED_PEOPLE: Person[] = [
       // 中等风险标签 - 根据年龄分配
       if (age >= 60) {
         const tagsElderly = ['空巢老人', '独居老人'];
-        tags.push(tagsElderly[Math.floor(Math.random() * tagsElderly.length)]);
+        tags.push(tagsElderly[(i * 5 + 1) % tagsElderly.length]);
       } else if (age >= 16) {
         const tagsMediumAdult = ['残疾人', '低保户', '失业人员', '群租人员'];
-        tags.push(tagsMediumAdult[Math.floor(Math.random() * tagsMediumAdult.length)]);
+        tags.push(tagsMediumAdult[(i * 5 + 1) % tagsMediumAdult.length]);
       } else {
         // 未成年中风险
         if (age >= 6 && age <= 14) tags.push('学龄儿童');
@@ -332,9 +332,9 @@ export const SEED_PEOPLE: Person[] = [
       if (age >= 18 && gender === '男') tagsLowPool.push('退役军人');
       if (type === "流动") tagsLowPool.push('流动人口');
       
-      if (tagsLowPool.length > 0 && Math.random() > 0.3) {
-        const randomTag = tagsLowPool[Math.floor(Math.random() * tagsLowPool.length)];
-        tags.push(randomTag);
+      if (tagsLowPool.length > 0 && (i * 11 + 5) % 10 >= 3) {
+        const selectedTag = tagsLowPool[(i * 7 + 1) % tagsLowPool.length];
+        tags.push(selectedTag);
       }
     }
     
@@ -379,17 +379,19 @@ export const SEED_PEOPLE: Person[] = [
     if (age >= 18) familyTags.push('家有病患', '单亲家庭');
     if (age >= 55) familyTags.push('隔代抚养');
 
-    // 从各池中随机选 0-2 个
-    const pickRandom = (pool: string[], max: number) => {
-      const count = Math.floor(Math.random() * (max + 1));
-      const shuffled = [...pool].sort(() => Math.random() - 0.5);
-      return shuffled.slice(0, count);
+    // 从各池中按稳定索引选 0-2 个，确保 fresh context 生成结果一致。
+    const pickDeterministic = (pool: string[], max: number, salt: number) => {
+      if (pool.length === 0) return [];
+      const count = (i + salt) % (max + 1);
+      return Array.from(
+        new Set(Array.from({ length: count }, (_item, offset) => pool[(i * 7 + salt + offset * 3) % pool.length])),
+      );
     };
 
-    smartTagPool.push(...pickRandom(personalityTags, 2));
-    smartTagPool.push(...pickRandom(habitTags, 2));
-    smartTagPool.push(...pickRandom(socialTags, 1));
-    smartTagPool.push(...pickRandom(familyTags, 1));
+    smartTagPool.push(...pickDeterministic(personalityTags, 2, 1));
+    smartTagPool.push(...pickDeterministic(habitTags, 2, 2));
+    smartTagPool.push(...pickDeterministic(socialTags, 1, 3));
+    smartTagPool.push(...pickDeterministic(familyTags, 1, 4));
 
     // 避免矛盾标签共存
     if (smartTagPool.includes('暴躁易怒') && smartTagPool.includes('脾气温和')) {
@@ -456,12 +458,12 @@ export const SEED_PEOPLE: Person[] = [
       id,
       gridId: "g1", // 都在 g1
       name,
-      idCard: `371002${1950 + (100 - age)}${String(Math.floor(Math.random()*12)+1).padStart(2, '0')}${String(Math.floor(Math.random()*28)+1).padStart(2, '0')}00${i%10}X`,
+      idCard: `371002${1950 + (100 - age)}${String((i * 5) % 12 + 1).padStart(2, '0')}${String((i * 11) % 28 + 1).padStart(2, '0')}00${i % 10}X`,
       gender: gender as any,
       age,
       nation,
       education,
-      phone: `13${Math.floor(Math.random()*10)}0000${String(i).padStart(4, '0')}`,
+      phone: `13${(i * 7 + 3) % 10}0000${String(i).padStart(4, '0')}`,
       address: house ? house.address : "海梦苑",
       houseId: house ? house.id : undefined,
       tags: uniqueTags,

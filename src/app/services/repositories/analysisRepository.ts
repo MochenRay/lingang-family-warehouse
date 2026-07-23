@@ -185,10 +185,9 @@ function getMonthKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function getMonthRange(months = 6): AnalysisMonthlyPoint[] {
-  const now = new Date();
+function getMonthRange(months = 6, anchor = new Date()): AnalysisMonthlyPoint[] {
   const values: AnalysisMonthlyPoint[] = [];
-  const cursor = new Date(now.getFullYear(), now.getMonth(), 1);
+  const cursor = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
   cursor.setMonth(cursor.getMonth() - (months - 1));
 
   for (let index = 0; index < months; index += 1) {
@@ -204,6 +203,19 @@ function getMonthRange(months = 6): AnalysisMonthlyPoint[] {
   }
 
   return values;
+}
+
+function getLatestMigrationDate(histories: HousingHistory[]): Date | null {
+  let latest: Date | null = null;
+  for (const history of histories) {
+    const { start, end } = getHistoryPeriod(history);
+    for (const candidate of [start, end]) {
+      if (candidate && (!latest || candidate.getTime() > latest.getTime())) {
+        latest = candidate;
+      }
+    }
+  }
+  return latest;
 }
 
 function groupTasksByGrid(tasks: MobileTaskItem[]): Map<string, MobileTaskItem[]> {
@@ -506,7 +518,8 @@ export const analysisRepository = {
       )
       .sort((left, right) => right.heatScore - left.heatScore || left.name.localeCompare(right.name, 'zh-CN'));
 
-    const monthMap = new Map(getMonthRange().map((item) => [item.key, item]));
+    const migrationAnchor = getLatestMigrationDate(histories) ?? new Date();
+    const monthMap = new Map(getMonthRange(6, migrationAnchor).map((item) => [item.key, item]));
     for (const visit of visits) {
       const parsed = parseDate(visit.date);
       if (!parsed) {

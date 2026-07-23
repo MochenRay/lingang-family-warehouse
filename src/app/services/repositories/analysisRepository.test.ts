@@ -13,9 +13,9 @@ describe('analysisRepository migration aggregation', () => {
     vi.restoreAllMocks();
   });
 
-  it('keeps monthly totals and district hotspots on the same rolling six-month window', async () => {
+  it('anchors the six-month window to the latest migration record and ignores old data even under a 2027 wall clock', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-07-23T12:00:00+08:00'));
+    vi.setSystemTime(new Date('2027-11-23T12:00:00+08:00'));
 
     vi.spyOn(personRepository, 'getGrids').mockResolvedValue([
       { id: 'g1', name: '登州街道海梦苑社区第一网格', managerName: '网格员' },

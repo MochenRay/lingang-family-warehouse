@@ -150,4 +150,42 @@ describe('statsRepository demographics', () => {
     ]);
     expect(result.educationData.slice(-2).map((item) => item.name)).toEqual(['\uE000学历', '𠀀学历']);
   });
+
+  it('keeps 10/11, 20/21, and 80/81 in disjoint fallback buckets', async () => {
+    const people = [10, 11, 20, 21, 80, 81].map((age, index) => ({
+      id: `boundary-${age}`,
+      gridId: 'g-1',
+      name: `边界${age}`,
+      idCard: String(index),
+      gender: '男',
+      age,
+      address: 'A',
+      type: '户籍',
+      tags: [],
+      risk: 'Low',
+      updatedAt: '2026-07-01',
+    }));
+    const storage = createMemoryStorage({ app_data_people: JSON.stringify(people) });
+    vi.stubEnv('VITE_DATA_MODE', 'fallback');
+    vi.stubGlobal('localStorage', storage);
+    vi.stubGlobal('window', {
+      localStorage: storage,
+      location: { hostname: 'localhost' },
+      dispatchEvent: vi.fn(),
+    });
+
+    const result = await statsRepository.getDemographics();
+
+    expect(result.ageGenderData).toEqual([
+      { name: '81岁及以上', male: 1, female: 0 },
+      { name: '71-80', male: 1, female: 0 },
+      { name: '61-70', male: 0, female: 0 },
+      { name: '51-60', male: 0, female: 0 },
+      { name: '41-50', male: 0, female: 0 },
+      { name: '31-40', male: 0, female: 0 },
+      { name: '21-30', male: 1, female: 0 },
+      { name: '11-20', male: 2, female: 0 },
+      { name: '0-10', male: 1, female: 0 },
+    ]);
+  });
 });

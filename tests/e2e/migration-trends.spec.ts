@@ -11,10 +11,13 @@ function statCardValue(page: Page, label: string) {
     .locator('xpath=following-sibling::div[1]');
 }
 
-function recentMonthKeys(): Set<string> {
-  const now = new Date();
+function recentMonthKeys(histories: Array<{ period: string }>): Set<string> {
+  const dates = histories.flatMap((history) => history.period.split('~', 2))
+    .map((value) => new Date(value.trim().replace(/\//g, '-')))
+    .filter((value) => Number.isFinite(value.getTime()));
+  const anchor = new Date(Math.max(...dates.map((value) => value.getTime())));
   return new Set(Array.from({ length: 6 }, (_item, index) => {
-    const current = new Date(now.getFullYear(), now.getMonth() - (5 - index), 1);
+    const current = new Date(anchor.getFullYear(), anchor.getMonth() - (5 - index), 1);
     return `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
   }));
 }
@@ -23,7 +26,7 @@ test('人口流动页由近六月住房历史驱动，卡片与原始记录守�
   const response = await request.get(`${apiBaseUrl}/houses/history-records?limit=2000`);
   expect(response.ok()).toBe(true);
   const histories = await response.json() as Array<{ period: string }>;
-  const monthKeys = recentMonthKeys();
+  const monthKeys = recentMonthKeys(histories);
   const totalIn = histories.filter((history) => monthKeys.has(history.period.split('~', 1)[0].trim().slice(0, 7))).length;
   const totalOut = histories.filter((history) => {
     const end = history.period.split('~', 2)[1]?.trim();
