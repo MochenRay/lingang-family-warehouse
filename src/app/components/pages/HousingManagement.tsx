@@ -6,7 +6,6 @@ import {
   Home,
   Layers,
   Loader2,
-  RefreshCw,
   Warehouse,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -191,7 +190,6 @@ function toFinderItems(
   return items.map((item) => ({
     id: item.id,
     label: item.label,
-    count: item.count,
     subtitle: item.subtitle,
     active: item.active,
     icon,
@@ -242,9 +240,13 @@ export function HousingManagement() {
     void loadData();
   }, [loadData]);
 
-  // 消费从其他页面跳转带来的房屋焦点上下文
+  // 消费 URL 深链；保留 sessionStorage 兼容既有页面跳转。
   useEffect(() => {
-    const focusHouseId = typeof window !== 'undefined' ? window.sessionStorage.getItem('app_focus_house_id') : null;
+    const queryHouseId = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('houseId')
+      : null;
+    const legacyHouseId = typeof window !== 'undefined' ? window.sessionStorage.getItem('app_focus_house_id') : null;
+    const focusHouseId = queryHouseId ?? legacyHouseId;
     if (!focusHouseId || houses.length === 0) {
       return;
     }
@@ -253,6 +255,12 @@ export function HousingManagement() {
     window.sessionStorage.removeItem('app_focus_house_id');
 
     if (!targetHouse) {
+      if (queryHouseId) {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('houseId');
+        window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+        toast.error('未找到返回房屋，已保留房屋台账列表');
+      }
       return;
     }
 
@@ -485,7 +493,11 @@ export function HousingManagement() {
     id: item.house.id,
     label: `${item.house.room}`,
     subtitle: item.subtitle,
-    count: item.house.type,
+    trailing: (
+      <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)]">
+        {item.house.type}
+      </Badge>
+    ),
     active: item.active,
     icon: Home,
   }));
@@ -501,6 +513,18 @@ export function HousingManagement() {
     { label: selection.floor, reset: () => applySelection({ community: selection.community, building: selection.building, unit: selection.unit, floor: selection.floor }) },
     { label: selectedHouse?.room, reset: () => {} },
   ].filter((item): item is { label: string; reset: () => void } => Boolean(item.label));
+
+  const openPersonDetail = (person: Person) => {
+    if (selection.houseId) {
+      const returnUrl = new URL(window.location.href);
+      returnUrl.searchParams.set('houseId', selection.houseId);
+      window.history.replaceState(window.history.state, '', `${returnUrl.pathname}${returnUrl.search}${returnUrl.hash}`);
+    }
+    const target = new URL('/population', window.location.origin);
+    target.searchParams.set('personId', person.id);
+    window.history.pushState({ route: 'population', from: 'housing' }, '', `${target.pathname}${target.search}`);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
@@ -548,15 +572,6 @@ export function HousingManagement() {
               placeholder="搜索地址、产权人、楼栋、单元、房号、标签"
               className="min-w-[280px]"
             />
-            <Button
-              variant="outline"
-              onClick={() => void loadData()}
-              disabled={isLoading}
-              className={outlineButtonClassName}
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-              刷新
-            </Button>
           </div>
         </div>
       </div>
@@ -656,6 +671,11 @@ export function HousingManagement() {
       <Dialog open={Boolean(selection.houseId)} onOpenChange={(open) => {
         if (!open) {
           setSelection((current) => ({ ...current, houseId: undefined }));
+          const url = new URL(window.location.href);
+          if (url.searchParams.has('houseId')) {
+            url.searchParams.delete('houseId');
+            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+          }
         }
       }}>
         <DialogContent className={`max-h-[90vh] max-w-4xl overflow-y-auto shadow-2xl ${DIALOG_CLASS}`}>
@@ -676,6 +696,7 @@ export function HousingManagement() {
             onEdit={openEditDialog}
             onDelete={handleDelete}
             onRefresh={refreshSelectedHouse}
+            onViewPerson={openPersonDetail}
             isDeleting={isSaving}
             className="border-0 min-h-0"
           />

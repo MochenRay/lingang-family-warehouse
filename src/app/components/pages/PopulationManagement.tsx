@@ -20,7 +20,10 @@ import {
   Shield,
   ChevronDown,
   ChevronUp,
+  AlertCircle,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Tooltip,
   TooltipContent,
@@ -274,7 +277,10 @@ export function PopulationManagement() {
   const [houses, setHouses] = useState<House[]>([]);
   const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [selectedPopulationVisits, setSelectedPopulationVisits] = useState<VisitRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [isVisitSummaryLoading, setIsVisitSummaryLoading] = useState(true);
+  const [visitSummaryError, setVisitSummaryError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -473,12 +479,13 @@ export function PopulationManagement() {
 
   const loadData = async () => {
     setIsLoading(true);
+    setLoadError(null);
+
     try {
-      const [peopleResult, nextGrids, nextHouses, nextVisits] = await Promise.all([
+      const [peopleResult, nextGrids, nextHouses] = await Promise.all([
         personRepository.getPeopleList(),
         personRepository.getGrids(),
         houseRepository.getHouses(),
-        visitRepository.getVisits({ targetType: "person", order: "desc" }),
       ]);
       const people = peopleResult.items;
       const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
@@ -487,7 +494,6 @@ export function PopulationManagement() {
       setPopulationTotal(peopleResult.total);
       setGrids(nextGrids);
       setHouses(nextHouses);
-      setVisits(nextVisits);
       setPopulations(mappedPopulations);
       setSelectedPopulation((prev) => {
         if (!prev) {
@@ -495,9 +501,20 @@ export function PopulationManagement() {
         }
         return mappedPopulations.find((person) => person.id === prev.id) ?? null;
       });
+
+      setIsVisitSummaryLoading(true);
+      setVisitSummaryError(null);
+      void visitRepository.getVisits({ targetType: "person", order: "desc" })
+        .then(setVisits)
+        .catch((error) => {
+          console.error("Failed to load population visit summaries", error);
+          setVisitSummaryError(error instanceof Error ? error.message : "走访摘要读取失败");
+        })
+        .finally(() => setIsVisitSummaryLoading(false));
     } catch (error) {
       console.error("Failed to load population management data", error);
-      alert("人口数据加载失败，请稍后重试。");
+      setLoadError(error instanceof Error ? error.message : "人口台账读取失败");
+      toast.error("人口数据加载失败，请稍后重试");
     } finally {
       setIsLoading(false);
     }
@@ -507,19 +524,52 @@ export function PopulationManagement() {
     void loadData();
   }, []);
 
-  // 消费从其他页面（如冲突管理）跳转带来的上下文焦点
-  useEffect(() => {
-    const focusPersonId = typeof window !== 'undefined' ? window.sessionStorage.getItem('app_focus_person_id') : null;
-    if (focusPersonId && populations.length > 0) {
-      const targetPerson = populations.find(p => p.id === focusPersonId);
-      if (targetPerson) {
-        setSelectedPopulation(targetPerson);
-        setIsViewDialogOpen(true);
-        // 消费完毕后立即清除，避免刷新页面再次触发弹窗
-        window.sessionStorage.removeItem('app_focus_person_id');
-      }
+  const clearPersonFocusQuery = () => {
+    if (typeof window === 'undefined') {
+      return;
     }
-  }, [populations]);
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has('personId')) {
+      return;
+    }
+    url.searchParams.delete('personId');
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  const setPersonFocusQuery = (personId: string) => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const url = new URL(window.location.href);
+    url.searchParams.set('personId', personId);
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+  };
+
+  // 消费 URL 深链；保留 sessionStorage 兼容既有冲突管理跳转。
+  useEffect(() => {
+    if (typeof window === 'undefined' || isLoading) {
+      return;
+    }
+
+    const queryPersonId = new URLSearchParams(window.location.search).get('personId');
+    const legacyPersonId = window.sessionStorage.getItem('app_focus_person_id');
+    const focusPersonId = queryPersonId ?? legacyPersonId;
+    if (!focusPersonId) {
+      return;
+    }
+
+    const targetPerson = populations.find((person) => person.id === focusPersonId);
+    window.sessionStorage.removeItem('app_focus_person_id');
+
+    if (!targetPerson) {
+      toast.error('未找到指定人员，已返回人口台账');
+      clearPersonFocusQuery();
+      return;
+    }
+
+    setSelectedPopulation(targetPerson);
+    setIsViewDialogOpen(true);
+  }, [isLoading, populations]);
 
   useEffect(() => {
     if (!isViewDialogOpen || !selectedPopulation) {
@@ -657,6 +707,12 @@ export function PopulationManagement() {
   };
 
   const getVisitDisplay = (person: Population, visitsByPersonId: Map<string, VisitRecord[]>) => {
+    if (isVisitSummaryLoading) {
+      return { title: "正在读取", detail: "走访摘要加载中" };
+    }
+    if (visitSummaryError) {
+      return { title: "暂不可用", detail: "走访摘要读取失败" };
+    }
     const personVisits = visitsByPersonId.get(person.id) ?? [];
     if (personVisits.length === 0) {
       return { title: "暂无走访", detail: "建议补一次基础核验" };
@@ -669,7 +725,15 @@ export function PopulationManagement() {
 
   const handleView = (pop: Population) => {
     setSelectedPopulation(pop);
+    setPersonFocusQuery(pop.id);
     setIsViewDialogOpen(true);
+  };
+
+  const handleViewDialogOpenChange = (open: boolean) => {
+    setIsViewDialogOpen(open);
+    if (!open) {
+      clearPersonFocusQuery();
+    }
   };
 
   const handleEdit = (pop: Population) => {
@@ -701,6 +765,7 @@ export function PopulationManagement() {
       await personRepository.deletePerson(id);
       if (selectedPopulation?.id === id) {
         setIsViewDialogOpen(false);
+        clearPersonFocusQuery();
         setSelectedPopulation(null);
       }
       await loadData();
@@ -904,6 +969,49 @@ export function PopulationManagement() {
     resident: populations.filter((p) => p.type === "户籍").length, // Mapping '常住' -> '户籍' approx
     floating: populations.filter((p) => p.type === "流动").length,
   };
+
+  if (isLoading && populations.length === 0) {
+    return (
+      <div className="space-y-4 text-[var(--color-neutral-10)]">
+        <PageHeader
+          eyebrow="POPULATION LEDGER"
+          title="人口管理"
+          description="维护人口台账、走访状态和重点标签，保证一线工作台数据可查可追踪。"
+        />
+        <div className={`${PANEL_CLASS} flex min-h-[360px] items-center justify-center px-6 py-10`} aria-live="polite">
+          <div className="max-w-sm text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-[var(--color-neutral-01)] text-[var(--color-brand-primary)] ring-1 ring-[var(--color-neutral-03)]">
+              <Loader2 className="h-5 w-5 animate-spin" />
+            </div>
+            <p className="text-sm font-medium text-[var(--color-neutral-11)]">正在加载人口台账</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">正在读取真实人员、区域与房屋数据，完成前不会展示零值或空列表。</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && populations.length === 0) {
+    return (
+      <div className="space-y-4 text-[var(--color-neutral-10)]">
+        <PageHeader
+          eyebrow="POPULATION LEDGER"
+          title="人口管理"
+          description="维护人口台账、走访状态和重点标签，保证一线工作台数据可查可追踪。"
+        />
+        <div className={`${PANEL_CLASS} flex min-h-[360px] items-center justify-center px-6 py-10`} role="alert">
+          <div className="max-w-sm text-center">
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)] ring-1 ring-[var(--color-status-error)]/35">
+              <AlertCircle className="h-5 w-5" />
+            </div>
+            <p className="text-sm font-medium text-[var(--color-neutral-11)]">人口台账读取失败</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">{loadError}</p>
+            <Button variant="outline" size="sm" className="mt-3" onClick={() => void loadData()}>重新加载</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 text-[var(--color-neutral-10)]">
@@ -1184,7 +1292,7 @@ export function PopulationManagement() {
                   <TableHead className="w-12 sticky left-0 z-20 bg-[var(--color-neutral-02)]">
                     <input type="checkbox" checked={isCurrentPageFullySelected} onChange={toggleAllSelection} className="rounded" />
                   </TableHead>
-                  <TableHead className="sticky left-12 z-20 bg-[var(--color-neutral-02)] min-w-[120px] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.85)]">姓名</TableHead>
+                  <TableHead className="sticky left-12 z-20 bg-[var(--color-neutral-02)] min-w-[120px] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.45)]">姓名</TableHead>
                   {visibleColumns.gender && <TableHead>性别</TableHead>}
                   {visibleColumns.nation && <TableHead>民族</TableHead>}
                   {visibleColumns.age && <TableHead>年龄</TableHead>}
@@ -1199,7 +1307,7 @@ export function PopulationManagement() {
                   {visibleColumns.tags && <TableHead>标签</TableHead>}
                   {visibleColumns.type && <TableHead>居住类型</TableHead>}
                   {visibleColumns.status && <TableHead>状态</TableHead>}
-                  <TableHead className="text-right sticky right-0 z-20 bg-[var(--color-neutral-02)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.85)]">操作</TableHead>
+                  <TableHead className="text-right sticky right-0 z-20 bg-[var(--color-neutral-02)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.45)]">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <DataTableBody
@@ -1213,10 +1321,10 @@ export function PopulationManagement() {
                   const visitDisplay = getVisitDisplay(pop, visitsByPersonId);
                   return (
                     <TableRow key={pop.id}>
-                      <TableCell className="sticky left-0 z-10 bg-[var(--color-neutral-01)]">
+                      <TableCell className="sticky left-0 z-10 bg-[var(--color-neutral-02)]">
                         <input type="checkbox" checked={selectedRows.includes(pop.id)} onChange={() => toggleRowSelection(pop.id)} className="rounded" />
                       </TableCell>
-                      <TableCell className="sticky left-12 z-10 bg-[var(--color-neutral-01)] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.85)]">
+                      <TableCell className="sticky left-12 z-10 bg-[var(--color-neutral-02)] shadow-[8px_0_16px_-14px_rgba(0,0,0,0.45)]">
                         <div className="flex items-center gap-2">
                           <div className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${
                             pop.risk === 'High' ? 'bg-[var(--color-status-error)] shadow-[0_0_0_3px_var(--color-status-error-soft)]' :
@@ -1317,7 +1425,7 @@ export function PopulationManagement() {
                           <StatusBadge tone={STATUS_BADGE_TONE[pop.status] ?? 'neutral'}>{pop.status}</StatusBadge>
                         </TableCell>
                       )}
-                      <TableCell className="text-right sticky right-0 z-10 bg-[var(--color-neutral-01)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.85)]">
+                      <TableCell className="text-right sticky right-0 z-10 bg-[var(--color-neutral-02)] shadow-[-8px_0_16px_-14px_rgba(0,0,0,0.45)]">
                         <div className="flex justify-end gap-2">
                           <Button variant="ghost" size="sm" aria-label="查看人员" onClick={() => handleView(pop)}>
                             <Eye className="w-4 h-4" />
@@ -1348,8 +1456,8 @@ export function PopulationManagement() {
       </Card>
 
       {/* 查看详情对话框 */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className={`max-w-5xl max-h-[90vh] overflow-hidden flex flex-col ${DIALOG_CLASS} shadow-2xl`}>
+      <Dialog open={isViewDialogOpen} onOpenChange={handleViewDialogOpenChange}>
+        <DialogContent className={`h-[90vh] max-w-5xl overflow-hidden flex flex-col ${DIALOG_CLASS} shadow-2xl`}>
           <DialogHeader>
             <DialogTitle>人口详情</DialogTitle>
             <DialogDescription>
@@ -1357,7 +1465,7 @@ export function PopulationManagement() {
             </DialogDescription>
           </DialogHeader>
           {selectedPopulation && (
-            <ScrollArea className="flex-1 pr-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+            <ScrollArea className="min-h-0 flex-1 pr-4 overflow-y-auto">
               <div className="pb-6">
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">

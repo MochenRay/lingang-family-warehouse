@@ -54,6 +54,17 @@ AGE_BUCKETS = (
     ("36-60岁", 36, 60, "#10b981"),
     ("60岁以上", 61, float("inf"), "#f59e0b"),
 )
+DEMOGRAPHICS_AGE_BUCKETS = (
+    ("0-10", 0, 10),
+    ("11-20", 11, 20),
+    ("21-30", 21, 30),
+    ("31-40", 31, 40),
+    ("41-50", 41, 50),
+    ("51-60", 51, 60),
+    ("61-70", 61, 70),
+    ("71-80", 71, 80),
+    ("81岁及以上", 81, float("inf")),
+)
 DEMOGRAPHICS_TYPE_ORDER = ("户籍", "流动", "留守", "境外")
 DEMOGRAPHICS_EDUCATION_ORDER = (
     "学龄前",
@@ -69,12 +80,22 @@ DEMOGRAPHICS_EDUCATION_ORDER = (
     "其他",
     "未记录",
 )
+DEMOGRAPHICS_NATION_ORDER = (
+    "汉族",
+    "朝鲜族",
+    "满族",
+    "回族",
+    "其他民族",
+    "未记录",
+)
 RISK_TAGS = (
     ("独居老人", "高", ["独居老人"]),
     ("严重精神障碍", "高", ["严重精神障碍", "精神障碍"]),
     ("社区矫正", "中", ["社区矫正"]),
     ("群租", "中", ["群租", "群租风险", "群租线索"]),
     ("信访", "低", ["信访", "信访人员"]),
+    ("低保困难", "中", ["低保家庭", "低保户", "困境帮扶", "困难"]),
+    ("其他重点标签", "中", ["重点关注", "长期未走访", "刑满释放", "吸毒人员", "安置帮教"]),
 )
 PERFORMANCE_SCORE_WEIGHTS = StatsPerformanceScoreRead(
     visitFreq=0.25,
@@ -348,13 +369,22 @@ def _normalize_demographics_education(raw: str | None) -> str:
     return value
 
 
+def _normalize_demographics_nation(raw: str | None) -> str:
+    value = raw.strip() if raw else ""
+    if not value:
+        return "未记录"
+    if value in DEMOGRAPHICS_NATION_ORDER[:4]:
+        return value
+    return "其他民族"
+
+
 def _build_demographics(session: Session) -> StatsDemographicsRead:
     people = list(session.exec(select(Person)).all())
     total_population = len(people)
     elderly_count = sum(1 for person in people if person.age > 60)
 
     age_gender_data: list[StatsAgeGenderItemRead] = []
-    for name, lower, upper, _color in reversed(AGE_BUCKETS):
+    for name, lower, upper in reversed(DEMOGRAPHICS_AGE_BUCKETS):
         bucket = [person for person in people if lower <= person.age <= upper]
         age_gender_data.append(
             StatsAgeGenderItemRead(
@@ -383,16 +413,10 @@ def _build_demographics(session: Session) -> StatsDemographicsRead:
         for name in education_names
     ]
 
-    nation_counts = Counter(
-        person.nation.strip() if person.nation and person.nation.strip() else "未记录"
-        for person in people
-    )
+    nation_counts = Counter(_normalize_demographics_nation(person.nation) for person in people)
     nation_data = [
-        StatsCountItemRead(name=name, value=value)
-        for name, value in sorted(
-            nation_counts.items(),
-            key=lambda item: (-item[1], item[0]),
-        )[:6]
+        StatsCountItemRead(name=name, value=nation_counts[name])
+        for name in DEMOGRAPHICS_NATION_ORDER
     ]
 
     return StatsDemographicsRead(

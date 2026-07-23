@@ -15,6 +15,21 @@ const SURNAMES = ['赵', '钱', '孙', '李', '周', '吴', '郑', '王', '冯',
 const GIVEN = ['晨', '宁', '琳', '涛', '洁', '明', '悦', '峰', '然', '琪', '楠', '远'];
 const EDUCATION = ['小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士'];
 const NATIONS = ['汉族', '满族', '回族'];
+const RECENT_MIGRATION_PERIODS: Array<{ period: string; moveOutReason?: string }> = [
+  { period: '2026-02-03 ~ 至今' },
+  { period: '2026-03-06 ~ 至今' },
+  { period: '2026-04-09 ~ 至今' },
+  { period: '2026-05-12 ~ 至今' },
+  { period: '2026-06-15 ~ 至今' },
+  { period: '2026-07-04 ~ 至今' },
+  { period: '2026-07-18 ~ 至今' },
+  { period: '2025-03-01 ~ 2026-02-08', moveOutReason: '工作调动。' },
+  { period: '2025-04-01 ~ 2026-03-11', moveOutReason: '家庭迁居。' },
+  { period: '2025-05-01 ~ 2026-04-14', moveOutReason: '租约到期。' },
+  { period: '2025-06-01 ~ 2026-05-17', moveOutReason: '工作调动。' },
+  { period: '2025-07-01 ~ 2026-06-20', moveOutReason: '家庭迁居。' },
+  { period: '2025-08-01 ~ 2026-07-23', moveOutReason: '租约到期。' },
+];
 
 function personName(seed: number) {
   return `${SURNAMES[seed % SURNAMES.length]}${GIVEN[(seed * 3) % GIVEN.length]}${seed % 2 === 0 ? '' : '华'}`;
@@ -141,14 +156,44 @@ function makeRegionalConflicts(grid: Grid, houses: House[]): ConflictRecord[] {
 }
 
 function makeRegionalHistory(houses: House[]): HousingHistory[] {
-  return houses.slice(0, 4).map((house, index): HousingHistory => ({
-    id: `hh_${house.id}`,
-    houseId: house.id,
-    personName: house.ownerName,
-    type: house.type === '出租' ? '租客' : '业主',
-    period: index % 2 === 0 ? '2025-10 ~ 至今' : '2024-03 ~ 2026-03',
-    moveOutReason: index % 2 === 0 ? undefined : '租约调整或家庭迁居。',
-  }));
+  return RECENT_MIGRATION_PERIODS.map((definition, index): HousingHistory => {
+    const house = houses[index % houses.length];
+    return {
+      id: `hh_${house.id}_${index + 1}`,
+      houseId: house.id,
+      personName: house.ownerName,
+      type: house.type === '出租' ? '租客' : '业主',
+      period: definition.period,
+      moveOutReason: definition.moveOutReason,
+    };
+  });
+}
+
+function selectSpread(people: Person[], count: number): Person[] {
+  const sampleSize = Math.min(count, people.length);
+  return Array.from({ length: sampleSize }, (_item, index) => people[Math.floor(index * people.length / sampleSize)]);
+}
+
+function ensurePriorityTagCoverage(source: Person[]): Person[] {
+  const people = source.map((person) => ({ ...person, tags: [...person.tags] }));
+  const assigned = new Set<string>();
+  const assign = (candidates: Person[], label: string, count: number, risk?: Person['risk']) => {
+    for (const person of selectSpread(candidates.filter((item) => !assigned.has(item.id)), count)) {
+      person.tags = Array.from(new Set([...person.tags, label]));
+      if (risk) person.risk = risk;
+      assigned.add(person.id);
+    }
+  };
+
+  assign(people.filter((person) => person.age >= 65), '独居老人', 8, 'Medium');
+  assign(people.filter((person) => person.type === '流动'), '群租人员', 10, 'Medium');
+  const adults = people.filter((person) => person.age >= 25 && person.age <= 70);
+  assign(adults, '社区矫正', 4, 'High');
+  assign(adults, '严重精神障碍', 4, 'High');
+  assign(adults, '信访人员', 6, 'Medium');
+  assign(adults, '低保家庭', 8, 'Medium');
+  assign(adults, '重点关注', 12, 'Medium');
+  return people;
 }
 
 export function buildPhase10SeedBundle(input: SeedBundleInput): SeedBundleInput {
@@ -168,10 +213,15 @@ export function buildPhase10SeedBundle(input: SeedBundleInput): SeedBundleInput 
       };
     });
 
+  const people = ensurePriorityTagCoverage([
+    ...input.people,
+    ...generated.flatMap((item) => item.people),
+  ]);
+
   return {
     grids: input.grids,
     houses: [...input.houses, ...generated.flatMap((item) => item.houses)],
-    people: [...input.people, ...generated.flatMap((item) => item.people)],
+    people,
     visits: [...input.visits, ...generated.flatMap((item) => item.visits)],
     notifications: input.notifications,
     housingHistory: [...input.housingHistory, ...generated.flatMap((item) => item.housingHistory)],

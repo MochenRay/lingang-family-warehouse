@@ -183,7 +183,7 @@ export function deriveHousingFinderModel(
       getSubtitle: (items) => {
         const gridCount = new Set(items.map((house) => house.gridId)).size;
         const buildingCount = new Set(items.map((house) => house.building)).size;
-        return `${gridCount}个网格 · ${buildingCount}栋楼`;
+        return `${gridCount}个网格 · ${buildingCount}栋楼 · ${items.length}套房屋`;
       },
     }),
     buildings: buildOptions(communityHouses, {
@@ -193,7 +193,7 @@ export function deriveHousingFinderModel(
       getSubtitle: (items) => {
         const unitCount = new Set(items.map((house) => house.unit)).size;
         const floorCount = new Set(items.map((house) => extractHouseFloor(house.room))).size;
-        return `${unitCount}个单元 · ${floorCount}层`;
+        return `${unitCount}个单元 · ${floorCount}层楼 · ${items.length}套房屋`;
       },
     }),
     units: buildOptions(buildingHouses, {
@@ -202,7 +202,7 @@ export function deriveHousingFinderModel(
       isActive: (value) => selection.unit === value,
       getSubtitle: (items) => {
         const floorCount = new Set(items.map((house) => extractHouseFloor(house.room))).size;
-        return `${floorCount}层 · ${items.length}套房`;
+        return `${floorCount}层楼 · ${items.length}套房屋`;
       },
     }),
     floors: buildOptions(unitHouses, {
@@ -210,7 +210,7 @@ export function deriveHousingFinderModel(
       getId: (value) =>
         `floor:${selection.community ?? 'all'}:${selection.building ?? 'all'}:${selection.unit ?? 'all'}:${value}`,
       isActive: (value) => selection.floor === value,
-      getSubtitle: (items) => `${items.map((house) => house.room).sort(compareMixedLabel).join('、')}`,
+      getSubtitle: (items) => `${items.length}套房屋`,
       compare: compareFloorLabel,
     }),
     houses: floorHouses
@@ -262,12 +262,11 @@ function buildOptions(
     }));
 }
 
-function buildHouseSubtitle(house: House, grid?: Grid): string {
+function buildHouseSubtitle(house: House, _grid?: Grid): string {
   return [
     house.ownerName || '未登记产权人',
     house.type,
     house.area,
-    grid?.name,
   ].filter(Boolean).join(' · ');
 }
 

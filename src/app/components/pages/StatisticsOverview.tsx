@@ -158,9 +158,15 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
   }, [dashboard, districtSort]);
 
   const actionItems = dashboard?.actionItems ?? [];
-  const topRiskTags = [...(dashboard?.riskTagsSummary ?? [])]
+  const riskTags = dashboard?.riskTagsSummary ?? [];
+  const topRiskTags = riskTags
+    .filter((item) => item.name !== '其他重点标签')
     .sort((left, right) => right.count - left.count)
     .slice(0, 6);
+  const otherPriorityTag = riskTags.find((item) => item.name === '其他重点标签');
+  if (otherPriorityTag) {
+    topRiskTags.push(otherPriorityTag);
+  }
   const totalPopulation = dashboard?.totalPopulation ?? 0;
   const totalHouses = dashboard?.totalHouses ?? 0;
   const totalVisits = dashboard?.metadata.totalVisits ?? 0;

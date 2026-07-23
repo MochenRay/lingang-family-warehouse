@@ -237,7 +237,7 @@ export function PopulationTags() {
       <PageHeader
         eyebrow="TAGS ANALYTICS"
         title="标签分析画像"
-        description="只分析当前第一批固定标签规则的真实命中结果，不再混用本地标签缓存和页面级快照。"
+        description="汇总重点标签的覆盖情况、风险分布和共同命中人群，辅助识别优先走访与持续关注对象。"
       />
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -271,7 +271,7 @@ export function PopulationTags() {
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">标签热度</CardTitle>
-            <CardDescription className={MUTED_TEXT}>按真实命中人数排序。</CardDescription>
+            <CardDescription className={MUTED_TEXT}>按标签覆盖人数排序。</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] px-5 pb-5">
             {loading ? (
@@ -297,7 +297,7 @@ export function PopulationTags() {
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">标签类型命中</CardTitle>
-            <CardDescription className={MUTED_TEXT}>规则标签和智能标签共用同一套真对象来源。</CardDescription>
+            <CardDescription className={MUTED_TEXT}>对比规则标签与智能标签的覆盖规模。</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] px-5 pb-5">
             {loading ? (
@@ -318,7 +318,7 @@ export function PopulationTags() {
         </Card>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+      <div className="grid gap-4 xl:grid-cols-2">
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">风险层级分布</CardTitle>

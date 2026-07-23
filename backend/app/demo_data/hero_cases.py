@@ -125,7 +125,7 @@ def build_hero_bundle() -> DemoSeedBundle:
                 ownerName="许静",
                 area="118㎡",
                 type="自住",
-                memberCount=3,
+                memberCount=2,
                 tags=["邻里纠纷关联户", "夜间装修"],
                 updatedAt="2026-04-15",
                 houseType="普通住宅",
