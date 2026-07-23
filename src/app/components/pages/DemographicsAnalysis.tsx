@@ -69,7 +69,8 @@ function PopulationPyramid({ rows, axisMax }: { rows: PyramidRow[]; axisMax: num
           />
           <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
           <Tooltip content={<PyramidTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-          <Bar dataKey="male" name="男" stackId="gender" fill={CHART_GENDER_COLORS.male} radius={[6, 0, 0, 6]} barSize={18} />
+          {/* Recharts 会按负值方向翻转圆角位置；此处配置使男性柱外侧（左端）为圆角。 */}
+          <Bar dataKey="male" name="男" stackId="gender" fill={CHART_GENDER_COLORS.male} radius={[0, 6, 6, 0]} barSize={18} />
           <Bar dataKey="female" name="女" stackId="gender" fill={CHART_GENDER_COLORS.female} radius={[0, 6, 6, 0]} barSize={18} />
         </BarChart>
       </ResponsiveContainer>

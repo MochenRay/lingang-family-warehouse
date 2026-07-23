@@ -133,7 +133,16 @@ export interface GridStatsResponse {
   grids: StatsGridItem[];
 }
 
-export type StatsAgeBucketName = '60岁以上' | '36-60岁' | '19-35岁' | '0-18岁';
+export type StatsAgeBucketName =
+  | '81岁及以上'
+  | '71-80'
+  | '61-70'
+  | '51-60'
+  | '41-50'
+  | '31-40'
+  | '21-30'
+  | '11-20'
+  | '0-10';
 
 export interface StatsCountItem {
   name: string;
@@ -157,13 +166,28 @@ export interface DemographicsStatsResponse {
 }
 
 const DEMOGRAPHICS_AGE_BUCKETS: Array<{ name: StatsAgeBucketName; min: number; max: number }> = [
-  { name: '60岁以上', min: 61, max: Number.POSITIVE_INFINITY },
-  { name: '36-60岁', min: 36, max: 60 },
-  { name: '19-35岁', min: 19, max: 35 },
-  { name: '0-18岁', min: 0, max: 18 },
+  { name: '81岁及以上', min: 81, max: Number.POSITIVE_INFINITY },
+  { name: '71-80', min: 71, max: 80 },
+  { name: '61-70', min: 61, max: 70 },
+  { name: '51-60', min: 51, max: 60 },
+  { name: '41-50', min: 41, max: 50 },
+  { name: '31-40', min: 31, max: 40 },
+  { name: '21-30', min: 21, max: 30 },
+  { name: '11-20', min: 11, max: 20 },
+  { name: '0-10', min: 0, max: 10 },
 ];
 const DEMOGRAPHICS_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
 const DEMOGRAPHICS_EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
+const DEMOGRAPHICS_NATION_ORDER = ['汉族', '朝鲜族', '满族', '回族', '其他民族', '未记录'];
+const FALLBACK_RISK_TAGS: Array<{ name: string; level: string; terms: string[] }> = [
+  { name: '独居老人', level: '高', terms: ['独居老人'] },
+  { name: '严重精神障碍', level: '高', terms: ['严重精神障碍', '精神障碍'] },
+  { name: '社区矫正', level: '中', terms: ['社区矫正'] },
+  { name: '群租', level: '中', terms: ['群租', '群租风险', '群租线索'] },
+  { name: '信访', level: '低', terms: ['信访', '信访人员'] },
+  { name: '低保困难', level: '中', terms: ['低保家庭', '低保户', '困境帮扶', '困难'] },
+  { name: '其他重点标签', level: '中', terms: ['重点关注', '长期未走访', '刑满释放', '吸毒人员', '安置帮教'] },
+];
 
 export const PERFORMANCE_SCORE_WEIGHTS = {
   visitFreq: 0.25,
@@ -635,6 +659,23 @@ function buildFallbackDashboard(): DashboardStatsResponse {
     };
   });
   const regionSummaries = buildFallbackRegionSummaries(gridItems, people, houses, conflicts);
+  const housesById = new Map(houses.map((house) => [house.id, house]));
+  const riskTagsSummary = FALLBACK_RISK_TAGS.map((definition): StatsRiskTagItem => ({
+    name: definition.name,
+    level: definition.level,
+    delta: '0',
+    count: people.filter((person) => {
+      const houseTags = person.houseId ? housesById.get(person.houseId)?.tags ?? [] : [];
+      const focusTypes = person.categoryLabels?.focusType ?? [];
+      const values = [
+        ...(person.tags ?? []),
+        ...(person.careLabels ?? []),
+        ...focusTypes,
+        ...houseTags,
+      ];
+      return definition.terms.some((term) => values.some((value) => value.includes(term)));
+    }).length,
+  }));
   const housingStats: StatsHousingStats = {
     total: houses.length,
     selfOccupied: houses.filter((house) => house.type === '自住').length,
@@ -664,7 +705,7 @@ function buildFallbackDashboard(): DashboardStatsResponse {
     totalHouses: houses.length,
     genderData,
     ageData,
-    riskTagsSummary: [],
+    riskTagsSummary,
     trendData: [],
     housingStats,
     conflictStats: {
@@ -695,6 +736,13 @@ function normalizeDemographicsEducation(raw?: string): string {
   if (value === '研究生') return '硕士';
   if (value === '博士后') return '博士';
   return value;
+}
+
+function normalizeDemographicsNation(raw?: string): string {
+  const value = raw?.trim();
+  if (!value) return '未记录';
+  if (DEMOGRAPHICS_NATION_ORDER.slice(0, 4).includes(value)) return value;
+  return '其他民族';
 }
 
 function compareCodePoints(left: string, right: string): number {
@@ -739,13 +787,13 @@ function buildFallbackDemographics(): DemographicsStatsResponse {
 
   const nationCounts = new Map<string, number>();
   for (const person of people) {
-    const name = person.nation?.trim() || '未记录';
+    const name = normalizeDemographicsNation(person.nation);
     nationCounts.set(name, (nationCounts.get(name) ?? 0) + 1);
   }
-  const nationData = Array.from(nationCounts.entries())
-    .sort((left, right) => right[1] - left[1] || compareCodePoints(left[0], right[0]))
-    .slice(0, 6)
-    .map(([name, value]) => ({ name, value }));
+  const nationData = DEMOGRAPHICS_NATION_ORDER.map((name) => ({
+    name,
+    value: nationCounts.get(name) ?? 0,
+  }));
   const elderlyCount = people.filter((person) => person.age > 60).length;
 
   return {

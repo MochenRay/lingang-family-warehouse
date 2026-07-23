@@ -286,7 +286,7 @@ export const SEED_PEOPLE: Person[] = [
     const givenNames = ["铁柱", "淑芬", "志刚", "秀英", "建国", "桂兰", "伟", "丽", "军", "红", "明", "芳", "杰", "敏", "强", "刚"];
     const name = `${familyNames[i % familyNames.length]}${givenNames[i % givenNames.length]}`;
     const gender = i % 2 === 0 ? "男" : "女";
-    const age = Math.floor(Math.random() * 70) + 5; 
+    const age = ((i * 17 + 5) % 86) + 3;
     
     // 关联到新增的房屋 (h9-h56)
     // 我们有 48 个新房子 (h9 - h56)
@@ -295,7 +295,7 @@ export const SEED_PEOPLE: Person[] = [
     const houseId = `h${houseIndex + 9}`;
     const house = SEED_HOUSES.find(h => h.id === houseId) || SEED_HOUSES[SEED_HOUSES.length - 1]; 
     
-    const type = i % 5 === 0 ? "流动" : "户籍";
+    const type = i % 50 === 1 ? "境外" : i % 25 === 4 ? "留守" : i % 5 === 0 ? "流动" : "户籍";
     const risk = i % 20 === 0 ? "High" : (i % 10 === 0 ? "Medium" : "Low");
     
     // 标签池 - 根据年龄和性别动态调整
@@ -343,6 +343,8 @@ export const SEED_PEOPLE: Person[] = [
     if (age >= 6 && age <= 14 && !tags.includes('学龄儿童')) tags.push("学龄儿童");
     if (gender === '女' && age >= 15 && age <= 49 && !tags.includes('育龄妇女')) tags.push("育龄妇女");
     if (type === "流动" && !tags.includes('流动人口')) tags.push("流动人口");
+    if (type === "留守" && !tags.includes('留守人员')) tags.push("留守人员");
+    if (type === "境外" && !tags.includes('境外人员')) tags.push("境外人员");
     
     // 智能标签 - 根据年龄、性别合理分配
     const smartTagPool: string[] = [];
@@ -408,12 +410,13 @@ export const SEED_PEOPLE: Person[] = [
     // 去重
     const uniqueTags = [...new Set(tags)];
     
-    // 烟台人口统计模拟：汉族占绝大多数(>99%)，少数民族主要为朝鲜族、满族、回族
-    let nation = '汉族';
-    const rand = Math.random();
-    if (rand > 0.99) nation = '朝鲜族'; // 靠近韩国，有一定比例
-    else if (rand > 0.985) nation = '满族';
-    else if (rand > 0.98) nation = '回族';
+    // 固定索引保证 fallback 每次得到同一份人口结构，且少数民族占比较低。
+    let nation: string | undefined = '汉族';
+    if (i === 0) nation = '朝鲜族';
+    else if (i === 1) nation = '满族';
+    else if (i === 2) nation = '回族';
+    else if (i === 3) nation = '蒙古族';
+    else if (i === 4) nation = undefined;
 
     // 教育程度与年龄逻辑强相关
     let education = '其他';
@@ -426,32 +429,27 @@ export const SEED_PEOPLE: Person[] = [
     } else if (age >= 16 && age <= 18) {
       education = '高中'; // 包含中专
     } else {
-      // 19岁以上，根据年龄段分布学历
-      // 烟台作为沿海开放城市，受教育程度较高
-      const eduRand = Math.random();
-      if (age <= 35) {
-         // 年轻一代：本科/大专比例高
-         if (eduRand > 0.97) education = '博士';
-         else if (eduRand > 0.92) education = '硕士';
-         else if (eduRand > 0.50) education = '本科';
-         else if (eduRand > 0.25) education = '大专';
-         else education = '高中';
+      const educationBand = (i * 13) % 100;
+      if (age >= 22 && age <= 60 && i % 71 === 2) education = '博士';
+      else if (age >= 22 && age <= 65 && i % 37 === 1) education = '硕士';
+      else if (age >= 60 && i % 17 === 4) education = '未上学';
+      else if (i % 29 === 3) education = '其他';
+      else if (age <= 35) {
+        if (educationBand < 42) education = '本科';
+        else if (educationBand < 72) education = '大专';
+        else if (educationBand < 90) education = '高中';
+        else education = '中专';
       } else if (age <= 55) {
-         // 中年：高中/大专/本科均衡
-         if (eduRand > 0.98) education = '博士';
-         else if (eduRand > 0.95) education = '硕士';
-         else if (eduRand > 0.70) education = '本科';
-         else if (eduRand > 0.40) education = '大专';
-         else if (eduRand > 0.15) education = '高中';
-         else education = '初中';
-      } else {
-         // 老年：初中/小学为主
-         if (eduRand > 0.90) education = '本科'; // 极少数高知
-         else if (eduRand > 0.75) education = '大专';
-         else if (eduRand > 0.50) education = '高中';
-         else if (eduRand > 0.20) education = '初中';
-         else education = '小学';
-      }
+        if (educationBand < 25) education = '本科';
+        else if (educationBand < 52) education = '大专';
+        else if (educationBand < 75) education = '高中';
+        else if (educationBand < 88) education = '中专';
+        else education = '初中';
+      } else if (educationBand < 30) education = '小学';
+      else if (educationBand < 60) education = '初中';
+      else if (educationBand < 80) education = '高中';
+      else if (educationBand < 90) education = '中专';
+      else education = '大专';
     }
 
     return {

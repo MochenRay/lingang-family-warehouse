@@ -538,15 +538,15 @@ export const analysisRepository = {
         const point = monthMap.get(getMonthKey(start));
         if (point) {
           point.moveIns += 1;
+          inboundCounts.set(areaName, (inboundCounts.get(areaName) ?? 0) + 1);
         }
-        inboundCounts.set(areaName, (inboundCounts.get(areaName) ?? 0) + 1);
       }
       if (end) {
         const point = monthMap.get(getMonthKey(end));
         if (point) {
           point.moveOuts += 1;
+          outboundCounts.set(areaName, (outboundCounts.get(areaName) ?? 0) + 1);
         }
-        outboundCounts.set(areaName, (outboundCounts.get(areaName) ?? 0) + 1);
       }
     }
 

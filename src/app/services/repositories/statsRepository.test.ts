@@ -21,10 +21,15 @@ const DEMOGRAPHICS_RESPONSE = {
   elderlyCount: 3,
   elderlyRate: 25,
   ageGenderData: [
-    { name: '60岁以上', male: 1, female: 2 },
-    { name: '36-60岁', male: 2, female: 1 },
-    { name: '19-35岁', male: 1, female: 2 },
-    { name: '0-18岁', male: 2, female: 1 },
+    { name: '81岁及以上', male: 0, female: 1 },
+    { name: '71-80', male: 1, female: 0 },
+    { name: '61-70', male: 1, female: 1 },
+    { name: '51-60', male: 1, female: 0 },
+    { name: '41-50', male: 0, female: 1 },
+    { name: '31-40', male: 1, female: 1 },
+    { name: '21-30', male: 1, female: 1 },
+    { name: '11-20', male: 0, female: 1 },
+    { name: '0-10', male: 1, female: 0 },
   ],
   typeData: [
     { name: '户籍', value: 6 },
@@ -85,17 +90,22 @@ describe('statsRepository demographics', () => {
     expect(result.elderlyCount).toBe(1);
     expect(result.elderlyRate).toBe(33.3);
     expect(result.ageGenderData).toEqual([
-      { name: '60岁以上', male: 0, female: 1 },
-      { name: '36-60岁', male: 1, female: 0 },
-      { name: '19-35岁', male: 0, female: 0 },
-      { name: '0-18岁', male: 0, female: 1 },
+      { name: '81岁及以上', male: 0, female: 0 },
+      { name: '71-80', male: 0, female: 0 },
+      { name: '61-70', male: 0, female: 1 },
+      { name: '51-60', male: 1, female: 0 },
+      { name: '41-50', male: 0, female: 0 },
+      { name: '31-40', male: 0, female: 0 },
+      { name: '21-30', male: 0, female: 0 },
+      { name: '11-20', male: 0, female: 1 },
+      { name: '0-10', male: 0, female: 0 },
     ]);
     expect(result.educationData.find((item) => item.name === '硕士')?.value).toBe(1);
     expect(result.educationData.find((item) => item.name === '博士')?.value).toBe(1);
     expect(result.educationData.find((item) => item.name === '未记录')?.value).toBe(1);
   });
 
-  it('keeps the 60+ bucket unbounded and uses the backend tie-break for nation top six', async () => {
+  it('keeps the 81+ bucket unbounded and folds uncommon nations into the fixed six categories', async () => {
     const nations = ['藏族', '朝鲜族', '汉族', '回族', '满族', '蒙古族', '壮族'];
     const people = nations.map((nation, index) => ({
       id: `p-${index}`,
@@ -129,14 +139,14 @@ describe('statsRepository demographics', () => {
 
     const result = await statsRepository.getDemographics();
 
-    expect(result.ageGenderData[0]).toEqual({ name: '60岁以上', male: 0, female: 1 });
-    expect(result.nationData.map((item) => item.name)).toEqual([
-      '回族',
-      '壮族',
-      '朝鲜族',
-      '汉族',
-      '满族',
-      '蒙古族',
+    expect(result.ageGenderData[0]).toEqual({ name: '81岁及以上', male: 0, female: 1 });
+    expect(result.nationData).toEqual([
+      { name: '汉族', value: 1 },
+      { name: '朝鲜族', value: 1 },
+      { name: '满族', value: 1 },
+      { name: '回族', value: 1 },
+      { name: '其他民族', value: 3 },
+      { name: '未记录', value: 0 },
     ]);
     expect(result.educationData.slice(-2).map((item) => item.name)).toEqual(['\uE000学历', '𠀀学历']);
   });

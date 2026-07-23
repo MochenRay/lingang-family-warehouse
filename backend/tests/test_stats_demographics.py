@@ -10,21 +10,22 @@ from app.models.person import Person
 
 AGES = [
     ("男", 5),
-    ("男", 12),
     ("女", 9),
-    ("男", 30),
+    ("男", 12),
+    ("女", 19),
     ("女", 25),
     ("女", 33),
     ("男", 45),
-    ("男", 60),
     ("女", 50),
-    ("男", 70),
+    ("男", 60),
     ("女", 66),
+    ("男", 70),
     ("女", 80),
+    ("女", 85),
 ]
-PERSON_TYPES = ["户籍"] * 6 + ["流动"] * 3 + ["留守"] * 2 + ["境外"]
-EDUCATION = ["本科"] * 4 + ["研究生"] * 2 + ["博士后", "高中", "高中", "初中", None, None]
-NATIONS = ["汉族"] * 8 + ["满族"] * 2 + ["朝鲜族", None]
+PERSON_TYPES = ["户籍"] * 7 + ["流动"] * 3 + ["留守"] * 2 + ["境外"]
+EDUCATION = ["学龄前", "未上学", "小学", "初中", "高中", "中专", "大专", "本科", "本科", "研究生", "博士后", "其他", None]
+NATIONS = ["汉族"] * 8 + ["朝鲜族", "满族", "回族", "蒙古族", None]
 
 
 def _build_client() -> tuple[TestClient, object]:
@@ -87,39 +88,46 @@ def test_demographics_stats_returns_full_aggregate_with_boundary_and_normalizati
         "educationData",
         "nationData",
     }
-    assert payload["totalPopulation"] == 12
-    assert payload["elderlyCount"] == 3
-    assert payload["elderlyRate"] == 25.0
+    assert payload["totalPopulation"] == 13
+    assert payload["elderlyCount"] == 4
+    assert payload["elderlyRate"] == 30.8
     assert payload["ageGenderData"] == [
-        {"name": "60岁以上", "male": 1, "female": 2},
-        {"name": "36-60岁", "male": 2, "female": 1},
-        {"name": "19-35岁", "male": 1, "female": 2},
-        {"name": "0-18岁", "male": 2, "female": 1},
+        {"name": "81岁及以上", "male": 0, "female": 1},
+        {"name": "71-80", "male": 0, "female": 1},
+        {"name": "61-70", "male": 1, "female": 1},
+        {"name": "51-60", "male": 1, "female": 0},
+        {"name": "41-50", "male": 1, "female": 1},
+        {"name": "31-40", "male": 0, "female": 1},
+        {"name": "21-30", "male": 0, "female": 1},
+        {"name": "11-20", "male": 1, "female": 1},
+        {"name": "0-10", "male": 1, "female": 1},
     ]
     assert payload["typeData"] == [
-        {"name": "户籍", "value": 6},
+        {"name": "户籍", "value": 7},
         {"name": "流动", "value": 3},
         {"name": "留守", "value": 2},
         {"name": "境外", "value": 1},
     ]
     assert payload["educationData"] == [
-        {"name": "学龄前", "value": 0},
-        {"name": "未上学", "value": 0},
-        {"name": "小学", "value": 0},
+        {"name": "学龄前", "value": 1},
+        {"name": "未上学", "value": 1},
+        {"name": "小学", "value": 1},
         {"name": "初中", "value": 1},
-        {"name": "高中", "value": 2},
-        {"name": "中专", "value": 0},
-        {"name": "大专", "value": 0},
-        {"name": "本科", "value": 4},
-        {"name": "硕士", "value": 2},
+        {"name": "高中", "value": 1},
+        {"name": "中专", "value": 1},
+        {"name": "大专", "value": 1},
+        {"name": "本科", "value": 2},
+        {"name": "硕士", "value": 1},
         {"name": "博士", "value": 1},
-        {"name": "其他", "value": 0},
-        {"name": "未记录", "value": 2},
+        {"name": "其他", "value": 1},
+        {"name": "未记录", "value": 1},
     ]
     assert payload["nationData"] == [
         {"name": "汉族", "value": 8},
-        {"name": "满族", "value": 2},
         {"name": "朝鲜族", "value": 1},
+        {"name": "满族", "value": 1},
+        {"name": "回族", "value": 1},
+        {"name": "其他民族", "value": 1},
         {"name": "未记录", "value": 1},
     ]
 
@@ -137,12 +145,12 @@ def test_demographics_stats_are_fresh_immediately_after_person_update() -> None:
     assert before.status_code == 200
     assert update.status_code == 200
     assert after.status_code == 200
-    assert before.json()["elderlyCount"] == 3
-    assert after.json()["elderlyCount"] == 4
-    assert after.json()["ageGenderData"][0] == {
-        "name": "60岁以上",
-        "male": 2,
-        "female": 2,
+    assert before.json()["elderlyCount"] == 4
+    assert after.json()["elderlyCount"] == 5
+    assert after.json()["ageGenderData"][1] == {
+        "name": "71-80",
+        "male": 1,
+        "female": 1,
     }
 
 

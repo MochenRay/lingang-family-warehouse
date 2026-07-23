@@ -24,6 +24,22 @@ COMMUNITIES = {
     item.id: {"community": item.short_community, "buildings": list(item.buildings)}
     for item in REGION_GRID_CATALOG
 }
+RECENT_MIGRATION_MONTHS = (
+    ("2026-02", 8, 5),
+    ("2026-03", 10, 7),
+    ("2026-04", 12, 6),
+    ("2026-05", 11, 8),
+    ("2026-06", 13, 9),
+    ("2026-07", 9, 6),
+)
+INBOUND_GRID_CYCLE = (
+    "g1", "g2", "g1", "g_zf_1", "g2", "g_fs_1", "g_mp_1",
+    "g_ls_1", "g_lk_1", "g_ly_1", "g_lz_1", "g_zy_1", "g_qx_1", "g_hy_1",
+)
+OUTBOUND_GRID_CYCLE = (
+    "g1", "g2", "g_zf_1", "g_fs_1", "g1", "g_mp_1", "g_ls_1",
+    "g_lk_1", "g_ly_1", "g_zf_1", "g_lz_1", "g_zy_1", "g_qx_1", "g_hy_1",
+)
 
 
 @dataclass
@@ -99,6 +115,10 @@ def build_background_bundle(hero_bundle: DemoSeedBundle, seed: int = 20260415) -
 
     bundle.visits.extend(_build_visits(state, generated_houses, house_people))
     bundle.conflicts.extend(_build_conflicts(state, generated_houses, house_people))
+    _apply_population_variants(bundle.people)
+    bundle.housing_histories.extend(
+        _build_recent_migration_histories(state, generated_houses, house_people)
+    )
     return bundle
 
 
@@ -468,6 +488,115 @@ def _build_histories_for_empty_house(state: SeedState, house: House) -> list[Hou
     return []
 
 
+def _spread_sample(items: list[Person], count: int) -> list[Person]:
+    if not items or count <= 0:
+        return []
+    sample_size = min(count, len(items))
+    return [items[index * len(items) // sample_size] for index in range(sample_size)]
+
+
+def _apply_population_variants(people: list[Person]) -> None:
+    stay_behind_candidates = [
+        person
+        for person in people
+        if person.type == "户籍" and (person.age <= 15 or person.age >= 65)
+    ]
+    for person in _spread_sample(stay_behind_candidates, 24):
+        person.type = "留守"
+        person.tags = _merge_tags(person.tags, ["留守人员"])
+        person.careLabels = _merge_tags(person.careLabels or [], ["留守人员"])
+
+    overseas_candidates = [
+        person
+        for person in people
+        if person.type == "流动" and 22 <= person.age <= 55
+    ]
+    for person in _spread_sample(overseas_candidates, 8):
+        person.type = "境外"
+        person.tags = _merge_tags(person.tags, ["境外人员"])
+
+    adult_candidates = [
+        person
+        for person in people
+        if person.type in {"户籍", "流动"} and 25 <= person.age <= 70
+    ]
+    priority_people = _spread_sample(adult_candidates, 25)
+    cursor = 0
+    for label, count, risk in (
+        ("社区矫正", 3, "High"),
+        ("严重精神障碍", 4, "High"),
+        ("信访人员", 6, "Medium"),
+        ("重点关注", 12, "Medium"),
+    ):
+        selected = priority_people[cursor:cursor + count]
+        cursor += count
+        for person in selected:
+            person.tags = _merge_tags(person.tags, [label])
+            person.risk = risk
+
+
+def _build_recent_migration_histories(
+    state: SeedState,
+    houses: list[House],
+    house_people: dict[str, list[Person]],
+) -> list[HousingHistory]:
+    occupied_by_grid: dict[str, list[House]] = {}
+    all_by_grid: dict[str, list[House]] = {}
+    for house in houses:
+        all_by_grid.setdefault(house.gridId, []).append(house)
+        if house_people.get(house.id):
+            occupied_by_grid.setdefault(house.gridId, []).append(house)
+
+    inbound_offsets = {grid_id: 0 for grid_id in occupied_by_grid}
+    outbound_offsets = {grid_id: 0 for grid_id in all_by_grid}
+    histories: list[HousingHistory] = []
+    inbound_cursor = 0
+    outbound_cursor = 0
+
+    for month_index, (month, inbound_count, outbound_count) in enumerate(RECENT_MIGRATION_MONTHS):
+        for event_index in range(inbound_count):
+            grid_id = INBOUND_GRID_CYCLE[inbound_cursor % len(INBOUND_GRID_CYCLE)]
+            inbound_cursor += 1
+            candidates = occupied_by_grid[grid_id]
+            offset = inbound_offsets[grid_id]
+            house = candidates[offset % len(candidates)]
+            inbound_offsets[grid_id] = offset + 1
+            residents = house_people[house.id]
+            resident = residents[(offset + event_index) % len(residents)]
+            day = 2 + ((month_index * 5 + event_index * 3) % 24)
+            histories.append(
+                HousingHistory(
+                    id=state.next_history_id(),
+                    houseId=house.id,
+                    personName=resident.name,
+                    type="租客" if house.type == "出租" else "业主",
+                    period=f"{month}-{day:02d} ~ 至今",
+                    moveOutReason=None,
+                )
+            )
+
+        for event_index in range(outbound_count):
+            grid_id = OUTBOUND_GRID_CYCLE[outbound_cursor % len(OUTBOUND_GRID_CYCLE)]
+            outbound_cursor += 1
+            candidates = all_by_grid[grid_id]
+            offset = outbound_offsets[grid_id]
+            house = candidates[offset % len(candidates)]
+            outbound_offsets[grid_id] = offset + 1
+            day = 3 + ((month_index * 7 + event_index * 4) % 23)
+            histories.append(
+                HousingHistory(
+                    id=state.next_history_id(),
+                    houseId=house.id,
+                    personName=_random_name(state.rng),
+                    type=state.rng.choice(["租客", "家属", "其他"]),
+                    period=f"2025-{(offset % 9) + 1:02d}-01 ~ {month}-{day:02d}",
+                    moveOutReason=state.rng.choice(["工作调动", "租约到期", "家庭迁居"]),
+                )
+            )
+
+    return histories
+
+
 def _build_visits(
     state: SeedState,
     houses: list[House],
@@ -647,6 +776,7 @@ def _make_person(
 ) -> Person:
     person_id = state.next_person_id()
     birth = _birth_date(age, state.rng)
+    resolved_education = "学龄前" if age <= 5 else education
     return Person(
         id=person_id,
         gridId=grid_id,
@@ -661,13 +791,84 @@ def _make_person(
         tags=tags.copy(),
         risk=risk,
         updatedAt=_date_str(state.rng.randint(0, 14)),
-        nation=state.rng.choice(["汉族", "汉族", "汉族", "满族", "朝鲜族"]),
-        education=education or state.rng.choice(["初中", "高中", "中专", "大专", "本科"]),
+        nation=_nation_for_person(state.rng, person_id),
+        education=resolved_education or _education_for_age(state.rng, age, person_id),
         careLabels=care_labels,
         categoryLabels=None,
         healthRecord=health_record,
         workplace=workplace,
     )
+
+
+def _person_sequence(person_id: str) -> int:
+    return int(person_id.rsplit("_", maxsplit=1)[1])
+
+
+def _nation_for_person(rng: random.Random, person_id: str) -> str | None:
+    # 保留旧 seed 的一次 RNG 消耗，使新增字段分布不扰动家庭数量等既有全局口径。
+    rng.choice(["汉族", "汉族", "汉族", "满族", "朝鲜族"])
+    selector = (_person_sequence(person_id) * 37) % 1000
+    if selector < 962:
+        return "汉族"
+    if selector < 974:
+        return "满族"
+    if selector < 982:
+        return "朝鲜族"
+    if selector < 988:
+        return "回族"
+    if selector < 995:
+        return ("蒙古族", "土家族", "苗族")[_person_sequence(person_id) % 3]
+    return None
+
+
+def _education_for_age(rng: random.Random, age: int, person_id: str) -> str:
+    # 同上：先保留旧实现的一次 choice，再以人员序号稳定派生教育分布。
+    rng.choice(["初中", "高中", "中专", "大专", "本科"])
+    if age <= 5:
+        return "学龄前"
+    if age <= 11:
+        return "小学"
+    if age <= 15:
+        return "初中"
+    if age <= 18:
+        return "中专" if _person_sequence(person_id) % 3 == 0 else "高中"
+
+    roll = ((_person_sequence(person_id) * 53) % 1000) / 1000
+    if age <= 35:
+        distribution = (
+            (0.01, "博士"),
+            (0.08, "硕士"),
+            (0.43, "本科"),
+            (0.72, "大专"),
+            (0.88, "高中"),
+            (0.96, "中专"),
+            (1.00, "其他"),
+        )
+    elif age <= 55:
+        distribution = (
+            (0.008, "博士"),
+            (0.045, "硕士"),
+            (0.29, "本科"),
+            (0.56, "大专"),
+            (0.78, "高中"),
+            (0.90, "中专"),
+            (0.97, "初中"),
+            (1.00, "其他"),
+        )
+    else:
+        distribution = (
+            (0.05, "未上学"),
+            (0.35, "小学"),
+            (0.63, "初中"),
+            (0.79, "高中"),
+            (0.87, "中专"),
+            (0.93, "大专"),
+            (0.975, "本科"),
+            (0.985, "硕士"),
+            (1.00, "其他"),
+        )
+
+    return next(label for threshold, label in distribution if roll < threshold)
 
 
 def _choose_house_type(rng: random.Random, prefer_business: bool) -> str:
