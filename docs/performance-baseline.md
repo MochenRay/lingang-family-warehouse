@@ -55,9 +55,9 @@ GitHub Actions 的 `Performance baseline candidate` 手动 workflow 可按需重
 
 ## 首轮 Ubuntu bootstrap
 
-当前入仓候选由本机 macOS 生成，provenance 明标 `local/darwin`，仅作 provisional 基线：本地同环境会执行 ready 预算；Ubuntu CI 在首次 canonical 候选入仓前进入 bootstrap，不拿不同宿主 CPU 的时间硬比而制造假红。候选生成本身仍强制三十路由成功、无错误态、无失败请求、profile 固定且单路由三次 API call 合同一致。
+首轮 bootstrap 已由 PR #84 的 GitHub Actions run `29990772916` 生成并审查。当前入仓基线 provenance 为 clean `github-actions/linux/x64`；`sourceRevision=b81c65e15caec4507ef88d2376ae742bebb98ffd` 是 GitHub 合成合并提交，父提交分别为当时的 `main=f2183773c2e9d6b16410c8e952434fe8953059cd` 与 PR head `48b3e8e28d27181fb3454a03436c5fe23dfcdf88`。候选与 current SHA-256 相同，30 路由、三次 raw samples、API 状态/字节/调用多重集均已核验。
 
-分支首轮 CI 即会上传 `baseline-candidate.json`；亦可在 workflow 已进入默认分支后手动运行 `Performance baseline candidate`。下载并审查 artifact；确认 run URL/ID、source revision、30 路由、profile、seed fingerprint、raw samples 与 API 明细无异常后，以该 Ubuntu candidate 原样替换仓内基线，再普通复跑。此后 CI 的 `readyMs +20% 且 +250ms` 门禁方为 canonical；不得把本机候选改名冒充 Ubuntu 证据。
+后续若 provenance 不再满足 canonical cohort，CI 会重新进入 bootstrap、上传 `baseline-candidate.json` 并主动失败。亦可手动运行 `Performance baseline candidate`。必须确认 run URL/ID、source revision、30 路由、profile、seed fingerprint、raw samples 与 API 明细无异常后，方可原样替换仓内基线再普通复跑；不得用本机候选冒充 Ubuntu 证据。
 
 ## 当前已知边界
 
