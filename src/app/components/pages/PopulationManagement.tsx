@@ -280,6 +280,7 @@ export function PopulationManagement() {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isVisitSummaryLoading, setIsVisitSummaryLoading] = useState(true);
+  const [visitSummaryError, setVisitSummaryError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
@@ -502,11 +503,12 @@ export function PopulationManagement() {
       });
 
       setIsVisitSummaryLoading(true);
+      setVisitSummaryError(null);
       void visitRepository.getVisits({ targetType: "person", order: "desc" })
         .then(setVisits)
         .catch((error) => {
           console.error("Failed to load population visit summaries", error);
-          setVisits([]);
+          setVisitSummaryError(error instanceof Error ? error.message : "走访摘要读取失败");
         })
         .finally(() => setIsVisitSummaryLoading(false));
     } catch (error) {
@@ -707,6 +709,9 @@ export function PopulationManagement() {
   const getVisitDisplay = (person: Population, visitsByPersonId: Map<string, VisitRecord[]>) => {
     if (isVisitSummaryLoading) {
       return { title: "正在读取", detail: "走访摘要加载中" };
+    }
+    if (visitSummaryError) {
+      return { title: "暂不可用", detail: "走访摘要读取失败" };
     }
     const personVisits = visitsByPersonId.get(person.id) ?? [];
     if (personVisits.length === 0) {

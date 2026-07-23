@@ -23,6 +23,24 @@ test.describe('台账页体验回归', () => {
     await expect(page.getByRole('columnheader', { name: '姓名' })).toBeVisible();
   });
 
+  test('走访摘要 503 不阻塞人口台账，且不伪装成暂无走访', async ({ page }) => {
+    await dismissJourneyOverlay(page);
+    await page.route('**/api/visits?**', async (route) => {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'visit summary unavailable' }),
+      });
+    });
+
+    await page.goto('/population');
+
+    await expect(page.getByRole('columnheader', { name: '姓名' })).toBeVisible({ timeout: 20_000 });
+    await expect(page.getByText('走访摘要读取失败').first()).toBeVisible();
+    await expect(page.getByText('暂不可用').first()).toBeVisible();
+    await expect(page.getByText('暂无走访')).toHaveCount(0);
+  });
+
   test('房屋层级移除数字胶囊，并以 URL 深链打开人员且返回原房屋', async ({ page }) => {
     await dismissJourneyOverlay(page);
     await page.goto('/housing');
