@@ -6,7 +6,7 @@ RUNTIME_DIR="${RUNTIME_DIR:-$ROOT_DIR/.runtime}"
 DB_PATH="${PREVIEW_DB_PATH:-$RUNTIME_DIR/lingang-preview-gemini.db}"
 LOCAL_DATABASE_URL="sqlite:///$DB_PATH"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
-PREVIEW_LLM_MODEL="${PREVIEW_LLM_MODEL:-gemini-3.5-flash}"
+PREVIEW_LLM_MODEL="${PREVIEW_LLM_MODEL:-gemini-3.6-flash}"
 
 if ! command -v railway >/dev/null 2>&1; then
   echo "未找到 Railway CLI。可先用 npm run preview:local；Gemini 模式需安装并登录 Railway CLI。" >&2

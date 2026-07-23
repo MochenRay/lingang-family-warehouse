@@ -19,6 +19,8 @@ def get_ai_capabilities() -> dict[str, object]:
         "default_model": description["model"],
         "fallback_model": description["fallback_model"],
         "base_url": description["base_url"],
+        "reasoning_effort": description["reasoning_effort"],
+        "max_output_tokens": description["max_output_tokens"],
         "supported_agents": SUPPORTED_AGENT_TYPES,
         "trial_kinds": TRIAL_AI_KINDS,
         "phase": "phase13-resume-hardening",

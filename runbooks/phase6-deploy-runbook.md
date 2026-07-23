@@ -104,11 +104,13 @@ ALLOW_DIRTY_SOURCE=1 bash scripts/check_homedata_web_stale.sh /Users/rayli/Deskt
 - `DATABASE_URL=${{Postgres.DATABASE_URL}}`
 - `PORT=8000`
 - `AI_ENABLED=true`
-- `LLM_MODEL=gemini-3.5-flash`
+- `LLM_MODEL=gemini-3.6-flash`
 - `LLM_FALLBACK_MODEL=gemini-2.5-flash-lite`
 - `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`
 - `LLM_API_KEY=<Gemini key>`
 - `LLM_TIMEOUT_SECONDS=25`
+- `AI_REASONING_EFFORT=low`
+- `AI_MAX_OUTPUT_TOKENS=4096`
 
 当前仓库代码会在启动时自动把 Railway 提供的 `postgresql://...` 转成 `postgresql+psycopg://...`，不需要手工改 secret 值。
 

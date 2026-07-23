@@ -54,7 +54,7 @@ RESET_PREVIEW_DB=1 npm run preview:local
 
 ## 本地真实 Gemini 调用
 
-当前主模型固定为 Google 官方 stable ID [`gemini-3.5-flash`](https://ai.google.dev/gemini-api/docs/models/gemini-3.5-flash)；可用 `PREVIEW_LLM_MODEL` 临时覆盖本地预览，不改 Railway 云端变量。
+当前主模型固定为 Google 官方 stable ID [`gemini-3.6-flash`](https://ai.google.dev/gemini-api/docs/models/gemini-3.6-flash)，并以 `reasoning_effort=low`、`max_tokens=4096` 避免 hidden thinking 挤占可见答复；可用 `PREVIEW_LLM_MODEL` 临时覆盖本地预览，不改 Railway 云端变量。
 
 ### 已有 Railway 凭据
 
