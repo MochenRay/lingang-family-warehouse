@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { writeFileSync, mkdirSync } from 'node:fs';
+import { DESKTOP_ROUTES } from './support/desktop-routes';
 
 /**
  * T1a a11y 审计扫描器：对 30 个桌面路由 + 4 条移动 smoke 路径执行自动检查。
@@ -23,39 +24,6 @@ type Finding = {
 };
 
 const findings: Finding[] = [];
-
-const DESKTOP_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
-  { id: 'statistics-overview', path: '/', readyText: '综合统计驾驶舱' },
-  { id: 'demographics-analysis', path: '/analysis/demographics', readyText: '人口特征分析' },
-  { id: 'housing-statistics', path: '/analysis/housing', readyText: '房屋网格画像' },
-  { id: 'migration-trends', path: '/analysis/migration-trends', readyText: '人口流动趋势' },
-  { id: 'population-tags', path: '/analysis/tags', readyText: '标签分析画像' },
-  { id: 'data-comparison', path: '/analysis/comparison', readyText: '数据对比分析' },
-  { id: 'data-reports', path: '/analysis/reports', readyText: '报表中心' },
-  { id: 'heatmap', path: '/analysis/warning-map', readyText: '预警热区' },
-  { id: 'population', path: '/population', readyText: '人口管理' },
-  { id: 'housing', path: '/housing', readyText: '房屋管理' },
-  { id: 'relationship', path: '/relationship', readyText: '人房关系管理' },
-  { id: 'batch-import', path: '/batch-import', readyText: '批量导入' },
-  { id: 'tag-overview', path: '/tags', readyText: '标签管理' },
-  { id: 'knowledge-accumulation', path: '/knowledge', readyText: '知识沉淀' },
-  { id: 'policy-interpretation', path: '/ai/policy', readyText: '政策解读' },
-  { id: 'document-writing', path: '/ai/document-writing', readyText: '公文写作' },
-  { id: 'smart-query', path: '/ai/smart-query', readyText: '智能问数' },
-  { id: 'behavior-supervision', path: '/grid/behavior', readyText: '行为督导中心' },
-  { id: 'activity-management', path: '/grid/activities', readyText: '活动综合管理' },
-  { id: 'conflict-management', path: '/grid/conflicts', readyText: '矛盾调解' },
-  { id: 'notice-management', path: '/grid/notices', readyText: '公告管理' },
-  { id: 'rule-config', path: '/grid/rules', readyText: '待办规则配置' },
-  { id: 'anomaly-analysis', path: '/attribution/anomaly', readyText: '异常结果分析' },
-  { id: 'time-series', path: '/attribution/time-series', readyText: '时序分析' },
-  { id: 'factor-identification', path: '/attribution/factors', readyText: '影响因子识别' },
-  { id: 'contribution-ranking', path: '/attribution/contribution', readyText: '贡献程度排名' },
-  { id: 'user-management', path: '/settings/users', readyText: '用户管理' },
-  { id: 'role-management', path: '/settings/roles', readyText: '角色管理' },
-  { id: 'permission-management', path: '/settings/permissions', readyText: '权限管理' },
-  { id: 'log-management', path: '/settings/logs', readyText: '日志管理' },
-];
 
 const MOBILE_ROUTES: Array<{ id: string; path: string; readyText: string }> = [
   { id: 'mobile-home', path: '/mobile', readyText: '快捷功能' },
@@ -273,7 +241,17 @@ async function auditPage(page: Page, routeId: string, path: string, viewportName
     await page.waitForTimeout(800);
     // ready 断言（route 专属文本 + 无 pageerror + 无导航异常）：
     // 白屏/崩溃/导航失败均不得被当成审计成功（权限页崩溃、导航吞异常两轮教训）
-    const ready = navigationError === '' && (await page.getByText(readyText, { exact: false }).first().isVisible().catch(() => false));
+    const actualPath = new URL(page.url()).pathname;
+    const isDesktopRoute = viewportName.startsWith('desktop');
+    const contentReady = isDesktopRoute
+      ? await page.locator('main [data-page-title]').evaluateAll(
+          (nodes, expected) => nodes.some(
+            (node) => node.textContent?.trim() === expected && (node as HTMLElement).offsetParent !== null,
+          ),
+          readyText,
+        ).catch(() => false)
+      : await page.getByText(readyText, { exact: false }).first().isVisible().catch(() => false);
+    const ready = navigationError === '' && actualPath === path && contentReady;
     if (!ready || pageErrors.length > 0) {
       findings.push({
         page: routeId,
@@ -281,7 +259,7 @@ async function auditPage(page: Page, routeId: string, path: string, viewportName
         rule: 'page-ready',
         severity: 'blocker',
         selector: 'body',
-        evidence: `页面未正常渲染（readyText="${readyText}" 不可见）${navigationError ? `，navigationError=${navigationError.slice(0, 120)}` : ''}${pageErrors.length > 0 ? `，pageerror=${pageErrors[0].slice(0, 160)}` : ''}`,
+        evidence: `页面未正常渲染（path="${actualPath}" expected="${path}"，${isDesktopRoute ? 'pageTitle' : 'readyText'}="${readyText}"）${navigationError ? `，navigationError=${navigationError.slice(0, 120)}` : ''}${pageErrors.length > 0 ? `，pageerror=${pageErrors[0].slice(0, 160)}` : ''}`,
       });
       return; // 崩溃页不做后续检查（数据无意义）
     }
@@ -306,7 +284,7 @@ test.describe('a11y audit @audit', () => {
       window.sessionStorage.setItem('homedata_journey_overlay_dismissed', '1');
     });
     for (const route of DESKTOP_ROUTES) {
-      await auditPage(page, route.id, route.path, 'desktop-1440', route.readyText);
+      await auditPage(page, route.id, route.path, 'desktop-1440', route.readyTitle);
     }
   });
 

@@ -144,7 +144,7 @@ export function TagOverview() {
       </div>
 
       {error ? (
-        <Card className="rounded-[4px] border border-[var(--color-status-error)]/50 bg-[var(--color-status-error)]/10 shadow-none">
+        <Card data-page-state="error" className="rounded-[4px] border border-[var(--color-status-error)]/50 bg-[var(--color-status-error)]/10 shadow-none">
           <CardContent className="flex items-center gap-3 p-4 text-[var(--color-status-error-text)]">
             <AlertCircle className="h-5 w-5" />
             <div>

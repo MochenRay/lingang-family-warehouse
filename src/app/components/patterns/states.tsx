@@ -16,11 +16,12 @@ interface StateBlockProps {
   action?: ReactNode;
   iconClassName?: string;
   className?: string;
+  pageState: 'empty' | 'error' | 'loading';
 }
 
-function StateBlock({ icon: Icon, title, description, action, iconClassName, className }: StateBlockProps) {
+function StateBlock({ icon: Icon, title, description, action, iconClassName, className, pageState }: StateBlockProps) {
   return (
-    <div className={cn('flex min-h-[220px] flex-1 items-center justify-center px-4 py-8', className)}>
+    <div data-page-state={pageState} className={cn('flex min-h-[220px] flex-1 items-center justify-center px-4 py-8', className)}>
       <div className="max-w-[240px] text-center">
         <div className="mx-auto mb-3 flex h-9 w-9 items-center justify-center rounded bg-[var(--color-neutral-01)] text-[var(--color-neutral-08)] ring-1 ring-[var(--color-neutral-03)]">
           <Icon className={cn('h-4 w-4', iconClassName)} />
@@ -48,7 +49,7 @@ export function EmptyState({
   icon?: LucideIcon;
   className?: string;
 }) {
-  return <StateBlock icon={icon} title={title} description={description} action={action} className={className} />;
+  return <StateBlock pageState="empty" icon={icon} title={title} description={description} action={action} className={className} />;
 }
 
 export function ErrorState({
@@ -64,6 +65,7 @@ export function ErrorState({
 }) {
   return (
     <StateBlock
+      pageState="error"
       icon={AlertCircle}
       title={title}
       description={description}
@@ -89,5 +91,5 @@ export function LoadingState({
   description?: string;
   className?: string;
 }) {
-  return <StateBlock icon={Loader2} title={title} description={description} iconClassName="animate-spin" className={className} />;
+  return <StateBlock pageState="loading" icon={Loader2} title={title} description={description} iconClassName="animate-spin" className={className} />;
 }

@@ -1,0 +1,43 @@
+name: Performance baseline candidate
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  update:
+    name: Generate canonical route performance candidate
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+      - run: npm ci
+      - run: python -m pip install -r backend/requirements-dev.txt
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:perf:update
+        env:
+          CI: 'true'
+          PYTHON_BIN: python
+          TZ: Asia/Shanghai
+      - uses: actions/upload-artifact@v4
+        with:
+          name: route-performance-baseline-candidate
+          path: |
+            test-results/performance/baseline-candidate.json
+            test-results/performance/current.json
+            test-results/performance/summary.md
+          if-no-files-found: error
+          retention-days: 14

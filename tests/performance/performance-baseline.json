@@ -1,0 +1,3343 @@
+{
+  "schemaVersion": 2,
+  "profile": {
+    "build": "production-preview",
+    "dataMode": "api",
+    "browser": "chromium",
+    "samples": 3,
+    "warmups": 1,
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "network": {
+      "downloadMbps": 5,
+      "uploadMbps": 3,
+      "latencyMs": 80
+    },
+    "cpuSlowdown": 4,
+    "fixedTime": "2026-07-15T04:00:00.000Z",
+    "reducedMotion": "reduce",
+    "serviceWorkers": "block",
+    "cacheDisabled": true,
+    "networkQuietMs": 200,
+    "waitForFonts": true
+  },
+  "provenance": {
+    "runner": "local",
+    "platform": "darwin",
+    "arch": "arm64",
+    "nodeVersion": "v24.12.0",
+    "browserVersion": "149.0.7827.55",
+    "playwrightVersion": "1.61.1",
+    "sourceRevision": "f2183773c2e9d6b16410c8e952434fe8953059cd",
+    "dirty": true,
+    "seedFingerprint": "0bf7ae40117a73d7e2a0e0687efdf56fa061c92def4529b407395f052ae0829e",
+    "generatedAt": "2026-07-23T07:38:51.275Z"
+  },
+  "routes": {
+    "statistics-overview": {
+      "path": "/",
+      "readyMs": 1994.7,
+      "apiRequestCount": 1,
+      "apiResponseBytes": 19061,
+      "apiCalls": [
+        "GET /api/stats/dashboard?range=month"
+      ],
+      "samples": [
+        {
+          "readyMs": 1994.7,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        },
+        {
+          "readyMs": 1994.3,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        },
+        {
+          "readyMs": 2005.7,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        }
+      ]
+    },
+    "demographics-analysis": {
+      "path": "/analysis/demographics",
+      "readyMs": 2621.3,
+      "apiRequestCount": 5,
+      "apiResponseBytes": 738928,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/stats/demographics",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 2621.3,
+          "apiRequestCount": 5,
+          "apiResponseBytes": 738928,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/stats/demographics",
+              "status": 200,
+              "bytes": 901
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2622.3,
+          "apiRequestCount": 5,
+          "apiResponseBytes": 738928,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/stats/demographics",
+              "status": 200,
+              "bytes": 901
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2594.2,
+          "apiRequestCount": 5,
+          "apiResponseBytes": 738928,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/stats/demographics",
+              "status": 200,
+              "bytes": 901
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        }
+      ]
+    },
+    "housing-statistics": {
+      "path": "/analysis/housing",
+      "readyMs": 1562.2,
+      "apiRequestCount": 1,
+      "apiResponseBytes": 19061,
+      "apiCalls": [
+        "GET /api/stats/dashboard?range=month"
+      ],
+      "samples": [
+        {
+          "readyMs": 1562.2,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        },
+        {
+          "readyMs": 1594.1,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        },
+        {
+          "readyMs": 1487.7,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 19061,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/dashboard?range=month",
+              "status": 200,
+              "bytes": 19061
+            }
+          ]
+        }
+      ]
+    },
+    "migration-trends": {
+      "path": "/analysis/migration-trends",
+      "readyMs": 4891.8,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4891.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4892.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4867.5,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "population-tags": {
+      "path": "/analysis/tags",
+      "readyMs": 2576.9,
+      "apiRequestCount": 4,
+      "apiResponseBytes": 738027,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 2578.4,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2547.8,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2576.9,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        }
+      ]
+    },
+    "data-comparison": {
+      "path": "/analysis/comparison",
+      "readyMs": 5031.1,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 5017.3,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 5051.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 5031.1,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "data-reports": {
+      "path": "/analysis/reports",
+      "readyMs": 4887.7,
+      "apiRequestCount": 14,
+      "apiResponseBytes": 2035577,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/knowledge?limit=20&offset=0",
+        "GET /api/notices?limit=20&offset=0",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4887.7,
+          "apiRequestCount": 14,
+          "apiResponseBytes": 2035577,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3318
+            },
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3898
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4940.2,
+          "apiRequestCount": 14,
+          "apiResponseBytes": 2035577,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3318
+            },
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3898
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4867.6,
+          "apiRequestCount": 14,
+          "apiResponseBytes": 2035577,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3318
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=20&offset=0",
+              "status": 200,
+              "bytes": 3898
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "heatmap": {
+      "path": "/analysis/warning-map",
+      "readyMs": 4833.9,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4800.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4833.9,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4865.4,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "population": {
+      "path": "/population",
+      "readyMs": 5551.7,
+      "apiRequestCount": 13,
+      "apiResponseBytes": 2440110,
+      "apiCalls": [
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/visits?limit=500&offset=0&order=desc&targetType=person",
+        "GET /api/visits?limit=500&offset=1000&order=desc&targetType=person",
+        "GET /api/visits?limit=500&offset=1500&order=desc&targetType=person",
+        "GET /api/visits?limit=500&offset=2000&order=desc&targetType=person",
+        "GET /api/visits?limit=500&offset=2500&order=desc&targetType=person",
+        "GET /api/visits?limit=500&offset=500&order=desc&targetType=person"
+      ],
+      "samples": [
+        {
+          "readyMs": 5546.5,
+          "apiRequestCount": 13,
+          "apiResponseBytes": 2440110,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128291
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128646
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128986
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128752
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128768
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 5110
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 5569.3,
+          "apiRequestCount": 13,
+          "apiResponseBytes": 2440110,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128291
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128646
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128986
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128752
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128768
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 5110
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 5551.7,
+          "apiRequestCount": 13,
+          "apiResponseBytes": 2440110,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128291
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128646
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128986
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=1500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128752
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2000&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 128768
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=2500&order=desc&targetType=person",
+              "status": 200,
+              "bytes": 5110
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "housing": {
+      "path": "/housing",
+      "readyMs": 2065.3,
+      "apiRequestCount": 3,
+      "apiResponseBytes": 350801,
+      "apiCalls": [
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/stats/grids"
+      ],
+      "samples": [
+        {
+          "readyMs": 2094.6,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 350801,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            }
+          ]
+        },
+        {
+          "readyMs": 2012.2,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 350801,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            }
+          ]
+        },
+        {
+          "readyMs": 2065.3,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 350801,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            }
+          ]
+        }
+      ]
+    },
+    "relationship": {
+      "path": "/relationship",
+      "readyMs": 7745.4,
+      "apiRequestCount": 7,
+      "apiResponseBytes": 1849114,
+      "apiCalls": [
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500"
+      ],
+      "samples": [
+        {
+          "readyMs": 7745.4,
+          "apiRequestCount": 7,
+          "apiResponseBytes": 1849114,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 7814,
+          "apiRequestCount": 7,
+          "apiResponseBytes": 1849114,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 7711.8,
+          "apiRequestCount": 7,
+          "apiResponseBytes": 1849114,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "batch-import": {
+      "path": "/batch-import",
+      "readyMs": 1205.9,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1195.4,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1206.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1205.9,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "tag-overview": {
+      "path": "/tags",
+      "readyMs": 2586.2,
+      "apiRequestCount": 4,
+      "apiResponseBytes": 738027,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 2586.6,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2586.2,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        },
+        {
+          "readyMs": 2570.6,
+          "apiRequestCount": 4,
+          "apiResponseBytes": 738027,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            }
+          ]
+        }
+      ]
+    },
+    "knowledge-accumulation": {
+      "path": "/knowledge",
+      "readyMs": 1510.9,
+      "apiRequestCount": 1,
+      "apiResponseBytes": 3898,
+      "apiCalls": [
+        "GET /api/knowledge?limit=200&offset=0"
+      ],
+      "samples": [
+        {
+          "readyMs": 1485.9,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 3898,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3898
+            }
+          ]
+        },
+        {
+          "readyMs": 1519.8,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 3898,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3898
+            }
+          ]
+        },
+        {
+          "readyMs": 1510.9,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 3898,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/knowledge?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3898
+            }
+          ]
+        }
+      ]
+    },
+    "policy-interpretation": {
+      "path": "/ai/policy",
+      "readyMs": 1188.1,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1188.1,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1195.8,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1188,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "document-writing": {
+      "path": "/ai/document-writing",
+      "readyMs": 1195.5,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1195.5,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1195.7,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1189.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "smart-query": {
+      "path": "/ai/smart-query",
+      "readyMs": 1186.3,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1186.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1184.5,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1190.2,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "behavior-supervision": {
+      "path": "/grid/behavior",
+      "readyMs": 1589.4,
+      "apiRequestCount": 1,
+      "apiResponseBytes": 6198,
+      "apiCalls": [
+        "GET /api/stats/performance"
+      ],
+      "samples": [
+        {
+          "readyMs": 1580.3,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 6198,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/performance",
+              "status": 200,
+              "bytes": 6198
+            }
+          ]
+        },
+        {
+          "readyMs": 1589.4,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 6198,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/performance",
+              "status": 200,
+              "bytes": 6198
+            }
+          ]
+        },
+        {
+          "readyMs": 1599,
+          "apiRequestCount": 1,
+          "apiResponseBytes": 6198,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/performance",
+              "status": 200,
+              "bytes": 6198
+            }
+          ]
+        }
+      ]
+    },
+    "activity-management": {
+      "path": "/grid/activities",
+      "readyMs": 1310.3,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1310.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1304.5,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1312.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "conflict-management": {
+      "path": "/grid/conflicts",
+      "readyMs": 1552.7,
+      "apiRequestCount": 3,
+      "apiResponseBytes": 26986,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/conflicts?limit=500",
+        "GET /api/stats/grids"
+      ],
+      "samples": [
+        {
+          "readyMs": 1562.8,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 26986,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            }
+          ]
+        },
+        {
+          "readyMs": 1552.7,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 26986,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            }
+          ]
+        },
+        {
+          "readyMs": 1552.2,
+          "apiRequestCount": 3,
+          "apiResponseBytes": 26986,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            }
+          ]
+        }
+      ]
+    },
+    "notice-management": {
+      "path": "/grid/notices",
+      "readyMs": 1953.2,
+      "apiRequestCount": 2,
+      "apiResponseBytes": 6922,
+      "apiCalls": [
+        "GET /api/notices?limit=200&offset=0",
+        "GET /api/stats/grids"
+      ],
+      "samples": [
+        {
+          "readyMs": 1957.9,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 6922,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3318
+            }
+          ]
+        },
+        {
+          "readyMs": 1953.2,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 6922,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3318
+            }
+          ]
+        },
+        {
+          "readyMs": 1946.2,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 6922,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/notices?limit=200&offset=0",
+              "status": 200,
+              "bytes": 3318
+            }
+          ]
+        }
+      ]
+    },
+    "rule-config": {
+      "path": "/grid/rules",
+      "readyMs": 1710.1,
+      "apiRequestCount": 2,
+      "apiResponseBytes": 34504,
+      "apiCalls": [
+        "GET /api/task-rules",
+        "GET /api/task-rules/projection"
+      ],
+      "samples": [
+        {
+          "readyMs": 1730.9,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 34504,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            }
+          ]
+        },
+        {
+          "readyMs": 1663.8,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 34504,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            }
+          ]
+        },
+        {
+          "readyMs": 1710.1,
+          "apiRequestCount": 2,
+          "apiResponseBytes": 34504,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules",
+              "status": 200,
+              "bytes": 1590
+            }
+          ]
+        }
+      ]
+    },
+    "anomaly-analysis": {
+      "path": "/attribution/anomaly",
+      "readyMs": 4968.1,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4873.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4968.1,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4979.9,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "time-series": {
+      "path": "/attribution/time-series",
+      "readyMs": 1309.4,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1309.4,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1294.7,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1319,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "factor-identification": {
+      "path": "/attribution/factors",
+      "readyMs": 4974.7,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4974.7,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4966.3,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4982.7,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "contribution-ranking": {
+      "path": "/attribution/contribution",
+      "readyMs": 4830.4,
+      "apiRequestCount": 11,
+      "apiResponseBytes": 2026771,
+      "apiCalls": [
+        "GET /api/conflicts?limit=500",
+        "GET /api/houses/history-records?limit=2000",
+        "GET /api/houses?limit=500&offset=0",
+        "GET /api/houses?limit=500&offset=500",
+        "GET /api/people?limit=500&offset=0",
+        "GET /api/people?limit=500&offset=1000",
+        "GET /api/people?limit=500&offset=1500",
+        "GET /api/people?limit=500&offset=500",
+        "GET /api/stats/grids",
+        "GET /api/task-rules/projection",
+        "GET /api/visits?limit=500&offset=0&order=desc"
+      ],
+      "samples": [
+        {
+          "readyMs": 4849.8,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4823.3,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        },
+        {
+          "readyMs": 4830.4,
+          "apiRequestCount": 11,
+          "apiResponseBytes": 2026771,
+          "apiResponses": [
+            {
+              "method": "GET",
+              "path": "/api/stats/grids",
+              "status": 200,
+              "bytes": 3604
+            },
+            {
+              "method": "GET",
+              "path": "/api/conflicts?limit=500",
+              "status": 200,
+              "bytes": 11691
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=0",
+              "status": 200,
+              "bytes": 220796
+            },
+            {
+              "method": "GET",
+              "path": "/api/visits?limit=500&offset=0&order=desc",
+              "status": 200,
+              "bytes": 129448
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses/history-records?limit=2000",
+              "status": 200,
+              "bytes": 61161
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=0",
+              "status": 200,
+              "bytes": 376092
+            },
+            {
+              "method": "GET",
+              "path": "/api/task-rules/projection",
+              "status": 200,
+              "bytes": 32914
+            },
+            {
+              "method": "GET",
+              "path": "/api/houses?limit=500&offset=500",
+              "status": 200,
+              "bytes": 126401
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=500",
+              "status": 200,
+              "bytes": 376889
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1000",
+              "status": 200,
+              "bytes": 373862
+            },
+            {
+              "method": "GET",
+              "path": "/api/people?limit=500&offset=1500",
+              "status": 200,
+              "bytes": 313913
+            }
+          ]
+        }
+      ]
+    },
+    "user-management": {
+      "path": "/settings/users",
+      "readyMs": 1336.3,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1339.6,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1336.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1329.9,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "role-management": {
+      "path": "/settings/roles",
+      "readyMs": 1245.5,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1250.8,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1240.2,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1245.5,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "permission-management": {
+      "path": "/settings/permissions",
+      "readyMs": 1363.4,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1363.4,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1365.1,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1337.4,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    },
+    "log-management": {
+      "path": "/settings/logs",
+      "readyMs": 1279.3,
+      "apiRequestCount": 0,
+      "apiResponseBytes": 0,
+      "apiCalls": [],
+      "samples": [
+        {
+          "readyMs": 1275.7,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1286.1,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        },
+        {
+          "readyMs": 1279.3,
+          "apiRequestCount": 0,
+          "apiResponseBytes": 0,
+          "apiResponses": []
+        }
+      ]
+    }
+  }
+}

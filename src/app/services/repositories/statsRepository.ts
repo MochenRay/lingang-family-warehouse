@@ -1,4 +1,4 @@
-import type { Grid, House } from '../../types/core';
+import type { Grid, House, Person } from '../../types/core';
 import { callWithFallback, fetchJson } from '../api';
 import { db } from '../db';
 import { taskRepository } from './taskRepository';
@@ -132,6 +132,38 @@ export interface GridStatsResponse {
   metadata: StatsMetadata;
   grids: StatsGridItem[];
 }
+
+export type StatsAgeBucketName = '60岁以上' | '36-60岁' | '19-35岁' | '0-18岁';
+
+export interface StatsCountItem {
+  name: string;
+  value: number;
+}
+
+export interface StatsAgeGenderItem {
+  name: StatsAgeBucketName;
+  male: number;
+  female: number;
+}
+
+export interface DemographicsStatsResponse {
+  totalPopulation: number;
+  elderlyCount: number;
+  elderlyRate: number;
+  ageGenderData: StatsAgeGenderItem[];
+  typeData: StatsCountItem[];
+  educationData: StatsCountItem[];
+  nationData: StatsCountItem[];
+}
+
+const DEMOGRAPHICS_AGE_BUCKETS: Array<{ name: StatsAgeBucketName; min: number; max: number }> = [
+  { name: '60岁以上', min: 61, max: Number.POSITIVE_INFINITY },
+  { name: '36-60岁', min: 36, max: 60 },
+  { name: '19-35岁', min: 19, max: 35 },
+  { name: '0-18岁', min: 0, max: 18 },
+];
+const DEMOGRAPHICS_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
+const DEMOGRAPHICS_EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
 
 export const PERFORMANCE_SCORE_WEIGHTS = {
   visitFreq: 0.25,
@@ -658,6 +690,75 @@ function buildFallbackDashboard(): DashboardStatsResponse {
   };
 }
 
+function normalizeDemographicsEducation(raw?: string): string {
+  const value = raw?.trim() || '未记录';
+  if (value === '研究生') return '硕士';
+  if (value === '博士后') return '博士';
+  return value;
+}
+
+function compareCodePoints(left: string, right: string): number {
+  const leftPoints = Array.from(left, (character) => character.codePointAt(0) ?? 0);
+  const rightPoints = Array.from(right, (character) => character.codePointAt(0) ?? 0);
+  const sharedLength = Math.min(leftPoints.length, rightPoints.length);
+  for (let index = 0; index < sharedLength; index += 1) {
+    if (leftPoints[index] !== rightPoints[index]) {
+      return leftPoints[index] - rightPoints[index];
+    }
+  }
+  return leftPoints.length - rightPoints.length;
+}
+
+function buildFallbackDemographics(): DemographicsStatsResponse {
+  const people = db.getPeople();
+  const ageGenderData = DEMOGRAPHICS_AGE_BUCKETS.map((bucket) => {
+    const matches = people.filter((person) => person.age >= bucket.min && person.age <= bucket.max);
+    return {
+      name: bucket.name,
+      male: matches.filter((person) => person.gender === '男').length,
+      female: matches.filter((person) => person.gender === '女').length,
+    };
+  });
+  const typeData = DEMOGRAPHICS_TYPE_ORDER.map((name) => ({
+    name,
+    value: people.filter((person) => person.type === name).length,
+  }));
+  const educationCounts = new Map<string, number>();
+  for (const person of people) {
+    const name = normalizeDemographicsEducation(person.education);
+    educationCounts.set(name, (educationCounts.get(name) ?? 0) + 1);
+  }
+  const knownEducation = new Set(DEMOGRAPHICS_EDUCATION_ORDER);
+  const educationNames = [
+    ...DEMOGRAPHICS_EDUCATION_ORDER,
+    ...Array.from(educationCounts.keys())
+      .filter((name) => !knownEducation.has(name))
+      .sort(compareCodePoints),
+  ];
+  const educationData = educationNames.map((name) => ({ name, value: educationCounts.get(name) ?? 0 }));
+
+  const nationCounts = new Map<string, number>();
+  for (const person of people) {
+    const name = person.nation?.trim() || '未记录';
+    nationCounts.set(name, (nationCounts.get(name) ?? 0) + 1);
+  }
+  const nationData = Array.from(nationCounts.entries())
+    .sort((left, right) => right[1] - left[1] || compareCodePoints(left[0], right[0]))
+    .slice(0, 6)
+    .map(([name, value]) => ({ name, value }));
+  const elderlyCount = people.filter((person) => person.age > 60).length;
+
+  return {
+    totalPopulation: people.length,
+    elderlyCount,
+    elderlyRate: people.length ? Number((elderlyCount / people.length * 100).toFixed(1)) : 0,
+    ageGenderData,
+    typeData,
+    educationData,
+    nationData,
+  };
+}
+
 export const statsRepository = {
   async getDashboard(range: 'week' | 'month' | 'quarter' = 'month'): Promise<DashboardStatsResponse> {
     return callWithFallback(
@@ -676,6 +777,13 @@ export const statsRepository = {
           grids: dashboard.grids,
         };
       },
+    );
+  },
+
+  async getDemographics(): Promise<DemographicsStatsResponse> {
+    return callWithFallback(
+      () => fetchJson<DemographicsStatsResponse>('/stats/demographics'),
+      () => buildFallbackDemographics(),
     );
   },
 

@@ -15,6 +15,27 @@ class StatsAgeItemRead(ReadSchema):
     fill: str
 
 
+class StatsCountItemRead(ReadSchema):
+    name: str
+    value: int
+
+
+class StatsAgeGenderItemRead(ReadSchema):
+    name: str
+    male: int
+    female: int
+
+
+class StatsDemographicsRead(ReadSchema):
+    totalPopulation: int
+    elderlyCount: int
+    elderlyRate: float
+    ageGenderData: list[StatsAgeGenderItemRead] = Field(default_factory=list)
+    typeData: list[StatsCountItemRead] = Field(default_factory=list)
+    educationData: list[StatsCountItemRead] = Field(default_factory=list)
+    nationData: list[StatsCountItemRead] = Field(default_factory=list)
+
+
 class StatsRiskTagItemRead(ReadSchema):
     name: str
     count: int
