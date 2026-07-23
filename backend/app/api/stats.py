@@ -19,8 +19,11 @@ from app.models.person import Person
 from app.models.visit import VisitRecord
 from app.schemas.stats import (
     StatsAgeItemRead,
+    StatsAgeGenderItemRead,
     StatsConflictStatsRead,
+    StatsCountItemRead,
     StatsDashboardRead,
+    StatsDemographicsRead,
     StatsGenderItemRead,
     StatsGridItemRead,
     StatsGridListRead,
@@ -49,7 +52,22 @@ AGE_BUCKETS = (
     ("0-18岁", 0, 18, "#8b5cf6"),
     ("19-35岁", 19, 35, "#3b82f6"),
     ("36-60岁", 36, 60, "#10b981"),
-    ("60岁以上", 61, 200, "#f59e0b"),
+    ("60岁以上", 61, float("inf"), "#f59e0b"),
+)
+DEMOGRAPHICS_TYPE_ORDER = ("户籍", "流动", "留守", "境外")
+DEMOGRAPHICS_EDUCATION_ORDER = (
+    "学龄前",
+    "未上学",
+    "小学",
+    "初中",
+    "高中",
+    "中专",
+    "大专",
+    "本科",
+    "硕士",
+    "博士",
+    "其他",
+    "未记录",
 )
 RISK_TAGS = (
     ("独居老人", "高", ["独居老人"]),
@@ -65,7 +83,12 @@ PERFORMANCE_SCORE_WEIGHTS = StatsPerformanceScoreRead(
     taskCount=0.15,
     taskSpeed=0.15,
 )
-CacheValueT = TypeVar("CacheValueT", StatsDashboardRead, StatsGridListRead, StatsPerformanceRead)
+CacheValueT = TypeVar(
+    "CacheValueT",
+    StatsDashboardRead,
+    StatsGridListRead,
+    StatsPerformanceRead,
+)
 _stats_cache: dict[str, tuple[float, object]] = {}
 
 
@@ -312,6 +335,77 @@ def _build_age_data(people: list[Person]) -> list[StatsAgeItemRead]:
         StatsAgeItemRead(name=name, value=age_counts[name], fill=color)
         for name, _, _, color in AGE_BUCKETS
     ]
+
+
+def _normalize_demographics_education(raw: str | None) -> str:
+    value = raw.strip() if raw else ""
+    if not value:
+        return "未记录"
+    if value == "研究生":
+        return "硕士"
+    if value == "博士后":
+        return "博士"
+    return value
+
+
+def _build_demographics(session: Session) -> StatsDemographicsRead:
+    people = list(session.exec(select(Person)).all())
+    total_population = len(people)
+    elderly_count = sum(1 for person in people if person.age > 60)
+
+    age_gender_data: list[StatsAgeGenderItemRead] = []
+    for name, lower, upper, _color in reversed(AGE_BUCKETS):
+        bucket = [person for person in people if lower <= person.age <= upper]
+        age_gender_data.append(
+            StatsAgeGenderItemRead(
+                name=name,
+                male=sum(1 for person in bucket if person.gender == "男"),
+                female=sum(1 for person in bucket if person.gender == "女"),
+            )
+        )
+
+    type_counts = Counter(person.type for person in people)
+    type_data = [
+        StatsCountItemRead(name=name, value=type_counts[name])
+        for name in DEMOGRAPHICS_TYPE_ORDER
+    ]
+
+    education_counts = Counter(
+        _normalize_demographics_education(person.education) for person in people
+    )
+    known_education = set(DEMOGRAPHICS_EDUCATION_ORDER)
+    education_names = [
+        *DEMOGRAPHICS_EDUCATION_ORDER,
+        *sorted(name for name in education_counts if name not in known_education),
+    ]
+    education_data = [
+        StatsCountItemRead(name=name, value=education_counts[name])
+        for name in education_names
+    ]
+
+    nation_counts = Counter(
+        person.nation.strip() if person.nation and person.nation.strip() else "未记录"
+        for person in people
+    )
+    nation_data = [
+        StatsCountItemRead(name=name, value=value)
+        for name, value in sorted(
+            nation_counts.items(),
+            key=lambda item: (-item[1], item[0]),
+        )[:6]
+    ]
+
+    return StatsDemographicsRead(
+        totalPopulation=total_population,
+        elderlyCount=elderly_count,
+        elderlyRate=round(elderly_count / total_population * 100, 1)
+        if total_population
+        else 0.0,
+        ageGenderData=age_gender_data,
+        typeData=type_data,
+        educationData=education_data,
+        nationData=nation_data,
+    )
 
 
 def _build_trend_data(people: list[Person], now: datetime) -> list[StatsTrendItemRead]:
@@ -826,6 +920,13 @@ def read_dashboard(
 ) -> StatsDashboardRead:
     _ = range_name
     return _read_cached_stats(f"dashboard:{range_name}", lambda: _build_dashboard(session))
+
+
+@router.get("/demographics", response_model=StatsDemographicsRead)
+def read_demographics(session: Session = Depends(get_session)) -> StatsDemographicsRead:
+    # 人口写入后刷新页面必须立即反映；1917 条本地种子聚合开销远低于传输明细，
+    # 故此端点不复用全局 60 秒 stats cache。
+    return _build_demographics(session)
 
 
 @router.get("/grids", response_model=StatsGridListRead)

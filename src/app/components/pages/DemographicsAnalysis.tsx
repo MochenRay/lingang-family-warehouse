@@ -13,23 +13,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { StatCard } from '../patterns/StatCard';
 import { EmptyState, ErrorState, LoadingState } from '../patterns/states';
 import { PANEL_CLASS } from '../patterns/surfaces';
-import { personRepository } from '../../services/repositories/personRepository';
-import { statsRepository, type DashboardStatsResponse } from '../../services/repositories/statsRepository';
+import { statsRepository, type DemographicsStatsResponse } from '../../services/repositories/statsRepository';
 import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
-import type { Person } from '../../types/core';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { CHART_COLORS, CHART_GENDER_COLORS, CHART_GRID, CHART_GRID_PROPS, CHART_TICK } from '../../config/chartConfig';
 import { PageHeader } from './PageHeader';
-
-const PERSON_TYPE_ORDER: Person['type'][] = ['户籍', '流动', '留守', '境外'];
-const EDUCATION_ORDER = ['学龄前', '未上学', '小学', '初中', '高中', '中专', '大专', '本科', '硕士', '博士', '其他', '未记录'];
-// 桶边界与标签对齐后端 stats.py AGE_BUCKETS（60岁以上 = 61 起，36-60岁 含 60 岁）
-const AGE_BUCKETS = [
-  { name: '60岁以上', min: 61, max: 200 },
-  { name: '36-60岁', min: 36, max: 60 },
-  { name: '19-35岁', min: 19, max: 35 },
-  { name: '0-18岁', min: 0, max: 18 },
-];
 
 interface PyramidRow {
   name: string;
@@ -37,57 +25,6 @@ interface PyramidRow {
   male: number;
   /** 正值 */
   female: number;
-}
-
-function aggregateCounts(items: Array<string | undefined>, limit = 6) {
-  const counts = new Map<string, number>();
-  items.forEach((item) => {
-    const key = item && item.trim() ? item : '未记录';
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  });
-
-  return Array.from(counts.entries())
-    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0], 'zh-CN'))
-    .slice(0, limit)
-    .map(([name, value], index) => ({
-      name,
-      value,
-      fill: CHART_COLORS[index % CHART_COLORS.length],
-    }));
-}
-
-function buildTypeDistribution(people: Person[]) {
-  const counts = new Map<Person['type'], number>(PERSON_TYPE_ORDER.map((type) => [type, 0]));
-  people.forEach((person) => {
-    counts.set(person.type, (counts.get(person.type) ?? 0) + 1);
-  });
-
-  return PERSON_TYPE_ORDER.map((name, index) => ({
-    name,
-    value: counts.get(name) ?? 0,
-    fill: CHART_COLORS[index % CHART_COLORS.length],
-  }));
-}
-
-function buildEducationDistribution(people: Person[]) {
-  const counts = new Map<string, number>();
-  people.forEach((person) => {
-    const raw = person.education?.trim() || '未记录';
-    const key = raw === '研究生' ? '硕士' : raw === '博士后' ? '博士' : raw;
-    counts.set(key, (counts.get(key) ?? 0) + 1);
-  });
-
-  const used = new Set<string>(EDUCATION_ORDER);
-  const ordered = EDUCATION_ORDER.map((name) => [name, counts.get(name) ?? 0] as const);
-  const rest = Array.from(counts.entries())
-    .filter(([name]) => !used.has(name))
-    .sort((left, right) => left[0].localeCompare(right[0], 'zh-CN'));
-
-  return [...ordered, ...rest].map(([name, value], index) => ({
-    name,
-    value,
-    fill: CHART_COLORS[index % CHART_COLORS.length],
-  }));
 }
 
 /**
@@ -161,8 +98,7 @@ function PopulationPyramid({ rows, axisMax }: { rows: PyramidRow[]; axisMax: num
 }
 
 export function DemographicsAnalysis() {
-  const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
-  const [people, setPeople] = useState<Person[]>([]);
+  const [demographics, setDemographics] = useState<DemographicsStatsResponse | null>(null);
   const [tagSnapshot, setTagSnapshot] = useState<TagSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -174,15 +110,12 @@ export function DemographicsAnalysis() {
       try {
         setLoading(true);
         setError('');
-        const [nextDashboard, nextPeople, nextTagSnapshot] = await Promise.all([
-          statsRepository.getDashboard(),
-          // 无参调用走 fetchAllListPages 全量拉取（金字塔与老龄化比例共用同一全量列表）
-          personRepository.getPeople(),
+        const [nextDemographics, nextTagSnapshot] = await Promise.all([
+          statsRepository.getDemographics(),
           tagRepository.getSnapshot(),
         ]);
         if (!cancelled) {
-          setDashboard(nextDashboard);
-          setPeople(nextPeople);
+          setDemographics(nextDemographics);
           setTagSnapshot(nextTagSnapshot);
         }
       } catch (loadError) {
@@ -202,27 +135,31 @@ export function DemographicsAnalysis() {
     };
   }, []);
 
-  const educationData = useMemo(() => buildEducationDistribution(people), [people]);
-  const nationData = useMemo(() => aggregateCounts(people.map((person) => person.nation)), [people]);
-  const typeData = useMemo(() => buildTypeDistribution(people), [people]);
+  const educationData = useMemo(
+    () => (demographics?.educationData ?? []).map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
+    [demographics],
+  );
+  const nationData = useMemo(
+    () => (demographics?.nationData ?? []).map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
+    [demographics],
+  );
+  const typeData = useMemo(
+    () => (demographics?.typeData ?? []).map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
+    [demographics],
+  );
   const pyramid = useMemo(() => {
-    const rows = AGE_BUCKETS.map((bucket) => {
-      const bucketPeople = people.filter((person) => person.age >= bucket.min && person.age <= bucket.max);
-      const male = bucketPeople.filter((person) => person.gender === '男').length;
-      const female = bucketPeople.filter((person) => person.gender === '女').length;
-      return {
-        name: bucket.name,
-        male: -male,
-        female,
-      };
-    });
+    const rows = (demographics?.ageGenderData ?? []).map((item) => ({
+      name: item.name,
+      male: -item.male,
+      female: item.female,
+    }));
     const max = Math.max(1, ...rows.flatMap((row) => [-row.male, row.female]));
     const axisMax = Math.max(10, Math.ceil(max / 10) * 10);
     return {
       rows,
       axisMax,
     };
-  }, [people]);
+  }, [demographics]);
   const topTags = useMemo(
     () =>
       (tagSnapshot?.tags ?? [])
@@ -236,14 +173,9 @@ export function DemographicsAnalysis() {
     [tagSnapshot],
   );
 
-  const elderlyRate = useMemo(() => {
-    if (people.length === 0) {
-      return '0.0';
-    }
-    // 与金字塔统一口径：61 岁及以上（对齐后端 stats.py AGE_BUCKETS）
-    const elderly = people.filter((person) => person.age > 60).length;
-    return ((elderly / people.length) * 100).toFixed(1);
-  }, [people]);
+  const elderlyRate = demographics?.elderlyRate.toFixed(1) ?? '0.0';
+  const registeredCount = demographics?.typeData.find((item) => item.name === '户籍')?.value ?? 0;
+  const floatingCount = demographics?.typeData.find((item) => item.name === '流动')?.value ?? 0;
 
   const taggedCoverage = useMemo(() => {
     if (!tagSnapshot || tagSnapshot.totalPeople === 0) {
@@ -262,11 +194,11 @@ export function DemographicsAnalysis() {
       />
 
       <div className="grid gap-4 md:grid-cols-4">
-        <StatCard label="总人口" value={dashboard?.totalPopulation ?? '--'} tone="brand" />
+        <StatCard label="总人口" value={demographics?.totalPopulation ?? '--'} tone="brand" />
         <StatCard label="老龄化比例" value={`${elderlyRate}%`} tone="info" hint="61 岁及以上人口占比" />
         <StatCard
           label="户籍 / 流动"
-          value={dashboard ? `${dashboard.mobilePeopleStats.registered} / ${dashboard.mobilePeopleStats.floating}` : '--'}
+          value={demographics ? `${registeredCount} / ${floatingCount}` : '--'}
           tone="info"
         />
         <StatCard label="标签覆盖率" value={`${taggedCoverage}%`} tone="success" />
@@ -291,7 +223,7 @@ export function DemographicsAnalysis() {
         <CardContent>
           {loading ? (
             <LoadingState title="正在汇总年龄性别结构..." />
-          ) : people.length === 0 ? (
+          ) : demographics?.totalPopulation === 0 ? (
             <EmptyState title="暂无人口数据" description="未获取到人口记录，无法汇总年龄性别结构。" />
           ) : (
             <PopulationPyramid rows={pyramid.rows} axisMax={pyramid.axisMax} />

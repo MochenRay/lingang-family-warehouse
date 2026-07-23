@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 from sqlmodel import Field
 from pydantic import ConfigDict
@@ -76,12 +76,12 @@ class PersonCreate(ReadSchema):
     gridId: str
     name: str
     idCard: str
-    gender: str
-    age: int = 0
+    gender: Literal["男", "女"]
+    age: int = Field(default=0, ge=0, le=200)
     phone: str | None = None
     address: str
     houseId: str | None = None
-    type: str
+    type: Literal["户籍", "流动", "留守", "境外"]
     tags: list[str] = Field(default_factory=list)
     risk: str
     updatedAt: str
@@ -113,12 +113,12 @@ class PersonUpdate(ReadSchema):
     gridId: str | None = None
     name: str | None = None
     idCard: str | None = None
-    gender: str | None = None
-    age: int | None = None
+    gender: Literal["男", "女"] | None = None
+    age: int | None = Field(default=None, ge=0, le=200)
     phone: str | None = None
     address: str | None = None
     houseId: str | None = None
-    type: str | None = None
+    type: Literal["户籍", "流动", "留守", "境外"] | None = None
     tags: list[str] | None = None
     risk: str | None = None
     updatedAt: str | None = None
