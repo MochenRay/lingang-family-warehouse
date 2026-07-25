@@ -67,6 +67,55 @@ test.describe('K1 高密度页面重设计', () => {
     await expectNoPageHorizontalOverflow(page);
   });
 
+  test('R52 零值因素精确呈现 0% 文本与 aria-label', async ({ page }) => {
+    await dismissJourneyOverlay(page);
+    // 零值 fixture：把待办任务截止时间全部改到未来，「超期待办」因素的原始值归零
+    await page.route('**/api/task-rules/projection**', async (route) => {
+      const response = await route.fetch();
+      const json = await response.json();
+      for (const task of json.pending ?? []) {
+        task.deadline = '2099-01-01T00:00:00';
+      }
+      await route.fulfill({ response, json });
+    });
+    await page.goto('/attribution/contribution');
+
+    const cards = page.locator('[data-testid="contribution-factor-card"]');
+    await expect(cards.first()).toBeVisible({ timeout: 20_000 });
+    const count = await cards.count();
+    expect(count).toBeGreaterThanOrEqual(5);
+
+    // 种子数据中「走访覆盖率」等也可能为 0：对所有零贡献卡逐一精确断言
+    const zeroCards = page.locator('[data-testid="contribution-factor-card"][data-contribution="0"]');
+    await expect(zeroCards.first()).toBeVisible();
+    const zeroCount = await zeroCards.count();
+
+    // 其中必须包含本次零值 fixture 的「超期待办」卡
+    const overdueZero = zeroCards.filter({ hasText: '超期待办' });
+    await expect(overdueZero).toHaveCount(1);
+
+    // 每张零卡都精确呈现 0% 数值文本（不是任意百分数）与对应 aria-label
+    for (let index = 0; index < zeroCount; index += 1) {
+      const card = zeroCards.nth(index);
+      await expect(card.locator('span', { hasText: /^0%$/ }).first()).toBeVisible();
+      await expect(card.getByRole('img', { name: '贡献权重 0%' })).toBeVisible();
+    }
+
+    // 零贡献卡排在全部非零卡之后
+    const allRanks = await cards.evaluateAll((els) =>
+      els.map((el) => Number((el as HTMLElement).dataset.rank)),
+    );
+    const zeroRanks = await zeroCards.evaluateAll((els) =>
+      els.map((el) => Number((el as HTMLElement).dataset.rank)),
+    );
+    const zeroSet = new Set(zeroRanks);
+    const nonZeroRanks = allRanks.filter((rank) => !zeroSet.has(rank));
+    expect(Math.min(...zeroRanks)).toBeGreaterThan(Math.max(...nonZeroRanks));
+
+    // 非零卡不得误显 0%
+    await expect(cards.first().locator('span', { hasText: /^0%$/ })).toHaveCount(0);
+  });
+
   test('R53 用户列表通栏，角色分布默认折叠且筛选可发现可清除', async ({ page }) => {
     await dismissJourneyOverlay(page);
     await page.goto('/settings/users');
@@ -182,6 +231,25 @@ test.describe('K1 高密度页面重设计', () => {
     await expect(page.locator('tbody tr')).toHaveCount(1);
     await expect(page.getByText('删除房屋信息').first()).toBeVisible();
     await page.getByRole('button', { name: '清除筛选' }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+
+    // 时间范围参与过滤并计入「已筛选」状态（锚点为数据集最新日志时间，演示数据均在当天）
+    const timeTrigger = page.getByRole('combobox', { name: '按时间范围筛选' });
+    await expect(timeTrigger).toContainText('今天');
+    await expect(page.getByText('（已筛选）')).toHaveCount(0);
+
+    await timeTrigger.click();
+    await page.getByRole('option', { name: '全部' }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+    await expect(page.getByText('（已筛选）')).toBeVisible();
+
+    await timeTrigger.click();
+    await page.getByRole('option', { name: '近7天' }).click();
+    await expect(page.locator('tbody tr')).toHaveCount(10);
+
+    await page.getByRole('button', { name: '清除筛选' }).click();
+    await expect(timeTrigger).toContainText('今天');
+    await expect(page.getByText('（已筛选）')).toHaveCount(0);
     await expect(page.locator('tbody tr')).toHaveCount(10);
 
     // 桌面与窄屏均无整页横向溢出

@@ -10,6 +10,7 @@ import { Checkbox } from '../ui/checkbox';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge } from '../patterns/StatusBadge';
 import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { useReturnFocus } from '../patterns/returnFocus';
 import { PageHeader } from './PageHeader';
 
 const DARK_INPUT_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)]';
@@ -21,6 +22,8 @@ const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutr
 export function RoleManagement() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<any>(null);
+  // 编辑弹窗为受控打开（无 Dialog.Trigger），关闭后焦点还给「编辑角色」按钮
+  const handleEditCloseAutoFocus = useReturnFocus(Boolean(selectedRole));
 
   // 角色列表
   const roles = [
@@ -403,7 +406,10 @@ export function RoleManagement() {
       {/* 编辑角色对话框 */}
       {selectedRole && (
         <Dialog open={!!selectedRole} onOpenChange={() => setSelectedRole(null)}>
-          <DialogContent className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DIALOG_CLASS}`}>
+          <DialogContent
+            className={`max-w-3xl max-h-[80vh] overflow-y-auto ${DIALOG_CLASS}`}
+            onCloseAutoFocus={handleEditCloseAutoFocus}
+          >
             <DialogHeader>
               <DialogTitle className="text-[var(--color-neutral-11)]">编辑角色 - {selectedRole.name}</DialogTitle>
               <DialogDescription className={MUTED_TEXT_CLASS}>修改角色配置和权限</DialogDescription>

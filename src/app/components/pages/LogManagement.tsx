@@ -10,6 +10,7 @@ import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { FilterBar, SearchInput } from '../patterns/FilterBar';
 import { DataTableBody } from '../patterns/DataTableShell';
 import { PANEL_CLASS } from '../patterns/surfaces';
+import { LOG_TIME_RANGE_DEFAULT, isWithinTimeRange, parseLogTime, type LogTimeRange } from '../../data/logTimeRange';
 import { PageHeader } from './PageHeader';
 
 const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
@@ -21,7 +22,7 @@ const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
 
 export function LogManagement() {
   const [logType, setLogType] = useState('all');
-  const [timeRange, setTimeRange] = useState('today');
+  const [timeRange, setTimeRange] = useState<LogTimeRange>(LOG_TIME_RANGE_DEFAULT);
   const [searchQuery, setSearchQuery] = useState('');
 
   // 操作日志数据
@@ -217,7 +218,11 @@ export function LogManagement() {
     );
   };
 
+  // 时间范围锚点：取数据集内最新一条日志时间，与「演示数据」「今日日志」口径一致
+  const referenceTime = new Date(Math.max(...logs.map((log) => parseLogTime(log.time).getTime())));
+
   const filteredLogs = logs.filter(log => {
+    if (!isWithinTimeRange(log.time, timeRange, referenceTime)) return false;
     if (logType !== 'all' && log.type !== logType) return false;
     if (searchQuery && !(
       log.action.includes(searchQuery) ||
@@ -227,10 +232,10 @@ export function LogManagement() {
     return true;
   });
 
-  const hasActiveFilters = logType !== 'all' || searchQuery !== '';
+  const hasActiveFilters = logType !== 'all' || timeRange !== LOG_TIME_RANGE_DEFAULT || searchQuery !== '';
   const clearFilters = () => {
     setLogType('all');
-    setTimeRange('today');
+    setTimeRange(LOG_TIME_RANGE_DEFAULT);
     setSearchQuery('');
   };
 
@@ -276,7 +281,7 @@ export function LogManagement() {
               </CardDescription>
             </div>
             <FilterBar>
-              <Select value={timeRange} onValueChange={setTimeRange}>
+              <Select value={timeRange} onValueChange={(value) => setTimeRange(value as LogTimeRange)}>
                 <SelectTrigger aria-label="按时间范围筛选" className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
                   <Calendar className="w-4 h-4 mr-2" />
                   <SelectValue />
