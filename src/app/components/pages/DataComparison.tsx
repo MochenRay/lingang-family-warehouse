@@ -477,7 +477,7 @@ export function DataComparison() {
                   strokeWidth={2}
                   strokeDasharray="6 4"
                   ifOverflow="extendDomain"
-                  label={{ value: `片区均值 ${formatNumber(averageValue)}`, position: 'insideTopRight', fill: CHART_AXIS, fontSize: 11 }}
+                  label={{ value: `片区均值 ${formatNumber(averageValue)}`, position: 'insideTopLeft', fill: CHART_AXIS, fontSize: 11 }}
                 />
                 <ReferenceLine
                   y={targetValue}

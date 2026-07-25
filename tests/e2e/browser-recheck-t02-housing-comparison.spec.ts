@@ -13,6 +13,16 @@ async function selectOption(page: Page, trigger: Locator, optionName: string) {
   await page.getByRole('option', { name: optionName, exact: true }).click();
 }
 
+function boxesOverlap(
+  left: { x: number; y: number; width: number; height: number },
+  right: { x: number; y: number; width: number; height: number },
+) {
+  return left.x < right.x + right.width
+    && left.x + left.width > right.x
+    && left.y < right.y + right.height
+    && left.y + left.height > right.y;
+}
+
 test.describe('T02 房屋画像与数据对比', () => {
   test.use({ viewport: { width: 1507, height: 1324 } });
 
@@ -117,6 +127,27 @@ test.describe('T02 房屋画像与数据对比', () => {
     await expect(chartTooltip).toContainText('片区均值');
     await expect(chartTooltip).toContainText('治理目标');
   });
+
+  for (const viewport of [
+    { width: 1507, height: 1324 },
+    { width: 1440, height: 900 },
+    { width: 1024, height: 768 },
+  ]) {
+    test(`R44 ${viewport.width}x${viewport.height} 两参考线标签 bounding boxes 不相交`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      await goto(page, '/analysis/comparison', '数据对比分析');
+      await expect(page.getByRole('button', { name: '查询', exact: true })).toBeDisabled();
+
+      const averageLabel = page.locator('.recharts-reference-line').filter({ hasText: /^片区均值 [\d,.]+$/ }).locator('text');
+      const targetLabel = page.locator('.recharts-reference-line').filter({ hasText: /^治理目标 [\d,.]+$/ }).locator('text');
+      await expect(averageLabel).toHaveCount(1);
+      await expect(targetLabel).toHaveCount(1);
+      const [averageBox, targetBox] = await Promise.all([averageLabel.boundingBox(), targetLabel.boundingBox()]);
+      expect(averageBox).not.toBeNull();
+      expect(targetBox).not.toBeNull();
+      expect(boxesOverlap(averageBox!, targetBox!)).toBe(false);
+    });
+  }
 
   test('R45 条件仅写入 draft，恢复原值禁用，查询后一次性 apply', async ({ page }) => {
     let snapshotReads = 0;
