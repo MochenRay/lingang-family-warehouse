@@ -10,7 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '../ui/dialog';
-import { analysisRepository, type AnalysisAnomalyItem, type AnalysisSeverity, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
+import { analysisRepository, type AnalysisSeverity, type GovernanceAnalysisSnapshot } from '../../services/repositories/analysisRepository';
 import { downloadJson } from '../../services/export';
 import { toast } from 'sonner';
 import { PageHeader } from './PageHeader';
@@ -101,9 +101,11 @@ export function WarningMap() {
       count: snapshot.anomalies.filter((item) => item.gridId === grid.id).length,
       resolved: grid.resolvedConflictCount + grid.completedTaskCount,
       pending: grid.pendingTaskCount,
+      highRiskCount: grid.highRiskCount,
+      overdueTaskCount: grid.overdueTaskCount,
+      visitCoverage: grid.visitCoverage,
       heatScore: grid.heatScore,
       statusLevel: grid.statusLevel,
-      signals: grid.primarySignals,
     }));
   }, [snapshot]);
 
@@ -235,7 +237,7 @@ export function WarningMap() {
               aria-label={`${group.districtName} ${group.streetName}`}
               className="min-w-0 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3"
             >
-              <div className="mb-2 flex items-center justify-between gap-3 border-b border-[var(--color-neutral-03)] pb-2">
+              <div data-testid="zone-group-header" className="mb-2 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h3 className="truncate text-sm font-semibold text-[var(--color-neutral-11)]">{group.districtName} · {group.streetName}</h3>
                   <p className="mt-0.5 text-xs text-[var(--color-neutral-08)]">最高热度 {group.maxHeatScore}</p>
@@ -243,47 +245,60 @@ export function WarningMap() {
                 <span className="shrink-0 text-xs text-[var(--color-neutral-08)]">{group.areas.length} 个网格</span>
               </div>
               <div className="space-y-2">
-                {group.areas.map((area) => (
-                  <button
-                    key={area.id}
-                    type="button"
-                    data-testid="zone-board"
-                    onClick={() => {
-                      const firstWarning = filteredWarnings.find((item) => item.gridId === area.id);
-                      if (firstWarning) {
-                        setSelectedWarningId(firstWarning.id);
-                      } else {
-                        toast.info(`${area.area}${area.gridLabel} 当前没有命中筛选条件下的预警明细`);
-                      }
-                    }}
-                    className="w-full rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-3 text-left transition-colors hover:border-[var(--color-brand-primary)]/50 hover:bg-[var(--color-neutral-03)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]"
-                  >
-                    <div className="mb-2 flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <div className="truncate font-semibold text-[var(--color-neutral-11)]">{area.area}</div>
-                        <div className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{area.gridLabel} · {area.count} 条预警信号</div>
+                {group.areas.map((area) => {
+                  const summary = [
+                    area.highRiskCount > 0 ? `高风险对象 ${area.highRiskCount} 人` : null,
+                    area.overdueTaskCount > 0 ? `超期待办 ${area.overdueTaskCount} 条` : null,
+                    area.visitCoverage > 0 ? `走访覆盖 ${area.visitCoverage}%` : null,
+                  ].filter((item): item is string => Boolean(item));
+
+                  return (
+                    <button
+                      key={area.id}
+                      type="button"
+                      data-testid="zone-board"
+                      onClick={() => {
+                        const firstWarning = filteredWarnings.find((item) => item.gridId === area.id);
+                        if (firstWarning) {
+                          setSelectedWarningId(firstWarning.id);
+                        } else {
+                          toast.info(`${area.area}${area.gridLabel} 当前没有命中筛选条件下的预警明细`);
+                        }
+                      }}
+                      className="w-full rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-3 text-left transition-colors hover:border-[var(--color-brand-primary)]/50 hover:bg-[var(--color-neutral-03)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-brand-primary-hover)]"
+                    >
+                      <div className="mb-2 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold text-[var(--color-neutral-11)]">{area.area}</div>
+                          <div className="mt-0.5 truncate text-xs text-[var(--color-neutral-08)]">{area.gridLabel} · {area.count} 条预警信号</div>
+                        </div>
+                        <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
                       </div>
-                      <StatusBadge tone={getLevelTone(area.statusLevel)}>{getLevelLabel(area.statusLevel)}</StatusBadge>
-                    </div>
-                    <div className="grid grid-cols-3 gap-2 text-xs text-[var(--color-neutral-08)]">
-                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
-                        <span>热度分</span>
-                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.heatScore}</span>
+                      <div className="grid grid-cols-3 gap-2 text-xs text-[var(--color-neutral-08)]">
+                        <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
+                          <span>热度分</span>
+                          <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.heatScore}</span>
+                        </div>
+                        <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
+                          <span>待处理</span>
+                          <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.pending}</span>
+                        </div>
+                        <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
+                          <span>已闭环</span>
+                          <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.resolved}</span>
+                        </div>
                       </div>
-                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
-                        <span>待处理</span>
-                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.pending}</span>
-                      </div>
-                      <div className="rounded border border-[var(--color-neutral-03)] px-2 py-1.5">
-                        <span>已闭环</span>
-                        <span className="ml-1 font-semibold text-[var(--color-neutral-11)]">{area.resolved}</span>
-                      </div>
-                    </div>
-                    <div className="mt-2 line-clamp-2 text-xs leading-5 text-[var(--color-neutral-08)]">
-                      {area.signals.length ? area.signals.join('；') : '当前没有额外重点信号'}
-                    </div>
-                  </button>
-                ))}
+                      {summary.length > 0 ? (
+                        <div
+                          data-testid="zone-summary"
+                          className="mt-2 whitespace-nowrap text-[11px] leading-5 tracking-tight text-[var(--color-neutral-08)] 2xl:text-xs"
+                        >
+                          {summary.join('；')}
+                        </div>
+                      ) : null}
+                    </button>
+                  );
+                })}
               </div>
             </section>
           ))}

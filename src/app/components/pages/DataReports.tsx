@@ -14,6 +14,7 @@ import { downloadJson } from '../../services/export';
 import { EmptyState } from '../patterns/states';
 import { PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
+import { Skeleton } from '../ui/skeleton';
 
 type ReportType = 'monthly' | 'special' | 'task' | 'knowledge';
 
@@ -189,8 +190,8 @@ export function DataReports() {
         description="基于当前治理快照快速生成可留痕导出包，减少手工整理和重复汇总。"
       />
 
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
-        <Card className={`gap-0 self-start lg:col-span-1 ${PANEL_CLASS}`}>
+      <div className="grid items-stretch gap-4 lg:grid-cols-[minmax(280px,0.92fr)_minmax(0,2.08fr)]">
+        <Card data-testid="report-config-card" className={`h-full gap-0 lg:col-span-1 ${PANEL_CLASS}`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-3 pt-4">
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
               <FileText className="h-5 w-5 text-[var(--color-brand-text)]" />
@@ -265,43 +266,70 @@ export function DataReports() {
           </CardFooter>
         </Card>
 
-        <div className="self-start space-y-4">
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            {quickExports.map((item) => (
-              <button
-                key={item.title}
-                type="button"
-                onClick={() => void item.action()}
-                className={`${PANEL_CLASS} group flex min-h-[126px] flex-col items-start justify-between p-4 text-left transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}
-              >
-                <div className="flex w-full items-center justify-between gap-3">
-                  <item.icon className="h-5 w-5" style={{ color: item.accent }} />
-                  <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.accent }} />
+        <div
+          data-testid="report-results-column"
+          className={generatedReports.length === 0
+            ? 'self-stretch space-y-4 lg:flex lg:h-full lg:flex-col lg:gap-4 lg:space-y-0'
+            : 'self-start space-y-4'}
+        >
+          <div data-testid="report-snapshot-grid" className="grid shrink-0 grid-cols-2 gap-3 xl:grid-cols-4">
+            {!snapshot
+              ? Array.from({ length: 4 }, (_, index) => (
+                <div
+                  key={index}
+                  data-testid="report-snapshot-skeleton"
+                  aria-hidden="true"
+                  className={`${PANEL_CLASS} flex min-h-[126px] flex-col justify-between p-4`}
+                >
+                  <Skeleton className="h-5 w-5" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24 max-w-full" />
+                    <Skeleton className="h-3 w-32 max-w-full" />
+                  </div>
                 </div>
-                <div>
-                  <span className="block text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</span>
-                  <span className={`mt-1 block text-xs ${MUTED_TEXT}`}>{item.desc}</span>
-                </div>
-              </button>
-            ))}
+              ))
+              : quickExports.map((item) => (
+                <button
+                  key={item.title}
+                  type="button"
+                  onClick={() => void item.action()}
+                  className={`${PANEL_CLASS} group flex min-h-[126px] flex-col items-start justify-between p-4 text-left transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)]`}
+                >
+                  <div className="flex w-full items-center justify-between gap-3">
+                    <item.icon className="h-5 w-5" style={{ color: item.accent }} />
+                    <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: item.accent }} />
+                  </div>
+                  <div>
+                    <span className="block text-sm font-semibold text-[var(--color-neutral-11)]">{item.title}</span>
+                    <span className={`mt-1 block text-xs ${MUTED_TEXT}`}>{item.desc}</span>
+                  </div>
+                </button>
+              ))}
           </div>
 
-          <Card className={`${PANEL_CLASS} gap-0`}>
+          <Card
+            data-testid="report-records-card"
+            className={`${PANEL_CLASS} gap-0 ${generatedReports.length === 0 ? 'lg:min-h-0 lg:flex-1' : ''}`}
+          >
             <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-3">
               <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">本次导出记录</CardTitle>
             </CardHeader>
-            <CardContent className="px-5 py-4">
-              <div className="space-y-2">
+            <CardContent className={`px-5 py-4 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center' : ''}`}>
+              <div className={`w-full space-y-2 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center' : ''}`}>
                 {generatedReports.length === 0 ? (
                   <EmptyState
                     icon={FileText}
                     title="还没有生成新的导出包"
                     description="选择报表类型和统计范围后，点击“立即导出”生成文件。"
-                    className="min-h-0 py-4"
+                    className="py-4 lg:min-h-[140px] lg:flex-none"
                   />
                 ) : (
                   generatedReports.map((file) => (
-                    <div key={file.id} className={`${INNER_PANEL_CLASS} group flex flex-col gap-3 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)] sm:flex-row sm:items-center sm:justify-between`}>
+                    <div
+                      key={file.id}
+                      data-testid="report-record-item"
+                      className={`${INNER_PANEL_CLASS} group flex flex-col gap-3 p-4 transition-colors hover:border-[var(--color-brand-primary-hover)]/55 hover:bg-[var(--color-neutral-03)] sm:flex-row sm:items-center sm:justify-between`}
+                    >
                       <div className="flex min-w-0 items-center gap-4">
                         <div className="flex h-12 w-12 items-center justify-center rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/15 text-sm font-bold text-[var(--color-brand-text)]">
                           {file.type}
