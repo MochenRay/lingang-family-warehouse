@@ -1,8 +1,9 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../ui/utils';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { DIALOG_CLASS, PANEL_CLASS } from './surfaces';
+import { useReturnFocus } from './returnFocus';
 
 /**
  * 实体详情弹窗统一骨架（R46 冻结）：
@@ -10,8 +11,8 @@ import { DIALOG_CLASS, PANEL_CLASS } from './surfaces';
  * - 头部统一为「徽标行 + 标题 + 说明 + 右侧操作区」；
  * - 正文由 DetailSection（带标题栏的面板）与 DetailField（标签/取值单元）组成，
  *   人口、房屋、人房关系、标签等详情弹窗共用同一信息层级与卡片密度；
- * - 关闭后焦点还给打开前的触发元素（本项目弹窗为受控打开，无 Dialog.Trigger，
- *   组件库默认的焦点还原会落空，由骨架统一兜底）。
+ * - 关闭后焦点还给打开前的触发元素（受控弹窗无 Dialog.Trigger，
+ *   组件库默认的焦点还原会落空，统一走 useReturnFocus 兜底，条件挂载同样生效）。
  */
 
 interface DetailDialogShellProps {
@@ -50,34 +51,13 @@ export function DetailDialogShell({
   maxWidth = '4xl',
   contentLabel,
 }: DetailDialogShellProps) {
-  const returnFocusRef = useRef<HTMLElement | null>(null);
-
-  // 弹窗未打开时通过 focusin 持续记录焦点位置，关闭后据此把焦点还给触发元素。
-  // 不能在 effect 里同步读取 activeElement：关闭瞬间焦点仍落在弹窗内，会覆盖掉真正的触发元素。
-  useEffect(() => {
-    if (open) {
-      return undefined;
-    }
-    const record = () => {
-      returnFocusRef.current =
-        document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    };
-    document.addEventListener('focusin', record);
-    return () => document.removeEventListener('focusin', record);
-  }, [open]);
+  const handleCloseAutoFocus = useReturnFocus(open);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         aria-label={contentLabel}
-        onCloseAutoFocus={(event) => {
-          event.preventDefault();
-          const target = returnFocusRef.current;
-          returnFocusRef.current = null;
-          if (target?.isConnected) {
-            target.focus({ preventScroll: true });
-          }
-        }}
+        onCloseAutoFocus={handleCloseAutoFocus}
         className={cn(
           'flex h-[86vh] max-h-[840px] w-full flex-col gap-0 overflow-hidden p-0 shadow-2xl',
           MAX_WIDTH_CLASS[maxWidth],

@@ -55,18 +55,26 @@ test.describe('K1 治理页面重设计', () => {
     await expect(pendingCard.getByText('志愿服务', { exact: true })).toBeVisible();
     await expect(pendingCard.getByText('政策宣传', { exact: true })).toBeVisible();
 
-    // 历史档案表格保持可用，类型列同样是层级展示
+    // 历史档案表格保持可用，类型列同样是层级展示；Tab 计数与当前列表行数一致
     await historyTab.click();
     await expect(page.getByRole('columnheader', { name: '活动名称' })).toBeVisible();
     const historyRow = page.getByRole('row', { name: /社区环境大扫除/ });
     await expect(historyRow.getByText('志愿服务', { exact: true })).toBeVisible();
     await expect(historyRow.getByText('环境整治', { exact: true })).toBeVisible();
 
-    // 搜索筛选保持可用
+    await expect(historyTab).toContainText(/历史活动档案 \(\d+\)/);
+    const initialTabText = await historyTab.textContent();
+    const initialCount = Number(initialTabText?.match(/\((\d+)\)/)?.[1]);
+    expect(Number.isInteger(initialCount)).toBe(true);
+    expect(await page.locator('tbody tr').count()).toBe(initialCount);
+
+    // 搜索筛选保持可用，且 Tab 计数跟随筛选结果
     await page.getByPlaceholder('搜索活动名称或申请人...').fill('卡拉OK');
     await expect(page.getByRole('row', { name: /社区卡拉OK大赛/ })).toBeVisible();
     await expect(page.getByRole('row', { name: /社区环境大扫除/ })).toHaveCount(0);
+    await expect(historyTab).toContainText('历史活动档案 (1)');
     await page.getByPlaceholder('搜索活动名称或申请人...').fill('');
+    await expect(historyTab).toContainText(`历史活动档案 (${initialCount})`);
   });
 
   test('R48 待办审批完成后自动落到历史活动档案', async ({ page }) => {
@@ -74,8 +82,11 @@ test.describe('K1 治理页面重设计', () => {
     await page.goto('/grid/activities');
 
     const pendingTab = page.getByRole('tab', { name: /待办审批/ });
-    const historyTab = page.getByRole('tab', { name: '历史活动档案' });
+    const historyTab = page.getByRole('tab', { name: /历史活动档案/ });
     await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
+
+    const tabTextBefore = await historyTab.textContent();
+    const countBefore = Number(tabTextBefore?.match(/\((\d+)\)/)?.[1]);
 
     // 通过唯一的待办申请，待办清零后自动切到历史档案
     const pendingCard = page.locator('[data-slot="card"]').filter({ hasText: '防诈骗宣传讲座' });
@@ -84,8 +95,9 @@ test.describe('K1 治理页面重设计', () => {
     await confirmDialog.getByRole('button', { name: '通过' }).click();
 
     await expect(historyTab).toHaveAttribute('aria-selected', 'true');
-    // 刚批准的活动出现在历史档案中
+    // 刚批准的活动出现在历史档案中，且 Tab 计数同步 +1
     await expect(page.getByRole('row', { name: /防诈骗宣传讲座/ })).toBeVisible();
+    await expect(historyTab).toContainText(`历史活动档案 (${countBefore + 1})`);
   });
 
   test('R49 矛盾详情弹窗按统一骨架分区，且无内部口吻文案', async ({ page }) => {
@@ -119,7 +131,10 @@ test.describe('K1 治理页面重设计', () => {
     await page.goto('/grid/notices');
     await expect(page.getByText('公告列表')).toBeVisible({ timeout: 20_000 });
 
-    await page.getByRole('button', { name: '预览公告' }).first().click();
+    // 键盘路径：聚焦「预览公告」后 Enter 打开
+    const firstPreview = page.getByRole('button', { name: '预览公告' }).first();
+    await firstPreview.focus();
+    await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog');
 
     await expect(dialog.getByRole('heading', { name: '通知正文' })).toBeVisible({ timeout: 20_000 });
@@ -129,8 +144,10 @@ test.describe('K1 治理页面重设计', () => {
       await expect(dialog.getByText(section, { exact: true })).toBeVisible();
     }
 
-    await dialog.getByRole('button', { name: 'Close' }).click();
+    // Esc 关闭后焦点归还「预览公告」触发按钮
+    await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
+    await expect(firstPreview).toBeFocused();
 
     // 打开带附件的核查通知，附件区与正文结构同时展示
     const taskRow = page.getByRole('row', { name: /第一季度信息核查/ });

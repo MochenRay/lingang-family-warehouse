@@ -5,6 +5,8 @@
 与前端 NoticeManagement 详情弹窗的解析口径保持一致。
 """
 
+import re
+
 from app.demo_data.notices import build_notice_records
 
 EXPECTED_IDS = ["notice_001", "notice_002", "notice_003", "notice_004", "notice_005"]
@@ -68,7 +70,7 @@ def test_notice_content_follows_grassroots_notice_structure() -> None:
 
 
 def test_notice_content_keeps_original_time_anchors() -> None:
-    """时间表述沿用原有口径，不新增未出现过的截止节点。"""
+    """原文已有的时间口径必须保留（存在性断言）。"""
     contents = {record.id: record.content for record in build_notice_records()}
 
     assert "1月20日" in contents["notice_001"]
@@ -76,3 +78,51 @@ def test_notice_content_keeps_original_time_anchors() -> None:
     assert "12月21日凌晨1:00" in contents["notice_003"]
     assert "本周内" in contents["notice_004"]
     assert "本周五" in contents["notice_005"]
+
+
+# 各通知正文允许出现的日期 / 频率 / 量化表述，与改写前原文口径逐一对应：
+# notice_001：1月20日前完成、第一季度考核、三项任务、2026年度第一季度（标题与引言）
+# notice_002：本周内完成
+# notice_003：12月21日凌晨1:00-3:00 维护窗口（标题）、当天采集
+# notice_004：本周入户、完成一次试用
+# notice_005：本周五前提交、近一月案件
+# 任何新增的日期、频率或量化要求都会使下方测试失败；
+# 确需新增时，须经产品确认后在此同步登记，不得只在正文里加内容。
+ALLOWED_TIME_ANCHORS: dict[str, set[str]] = {
+    "notice_001": {"1月20日", "2026年度", "第一季度", "三项"},
+    "notice_002": {"本周内"},
+    "notice_003": {"12月21日", "1:00", "3:00", "当天"},
+    "notice_004": {"本周内", "一次"},
+    "notice_005": {"本周五前", "近一个月"},
+}
+
+ANCHOR_PATTERNS = [
+    r"\d{1,2}月\d{1,2}日",  # 具体日期，如 1月20日
+    r"\d{1,2}:\d{2}",  # 具体时刻，如 1:00、18:00
+    r"\d{4}年度",  # 年度表述
+    r"第[一二三四]季度",  # 季度
+    r"本周[一二三四五六日内]前?",  # 本周内 / 本周五前
+    r"近一（个）?月",  # 近一月 / 近一个月
+    r"当天|当日",  # 当天 / 当日
+    r"每日|每周[一二三四五六日]?",  # 频率：每日、每周、每周五
+    r"[一二两三四五六七八九十]+(?:例|项|次|条|户|份|个工作日)",  # 中文量化，如 三项、一次、两例
+    r"\d+(?:例|项|次|条|户|份)",  # 阿拉伯数字量化，如 2例
+]
+
+
+def _extract_time_anchors(content: str) -> set[str]:
+    found: set[str] = set()
+    for pattern in ANCHOR_PATTERNS:
+        found.update(re.findall(pattern, content))
+    return found
+
+
+def test_notice_content_uses_only_allowlisted_time_anchors() -> None:
+    """正文不得出现 allowlist 之外的日期、频率或量化表述（精确兜底，防 false-green）。"""
+    for record in build_notice_records():
+        found = _extract_time_anchors(record.content)
+        unexpected = found - ALLOWED_TIME_ANCHORS[record.id]
+        assert not unexpected, (
+            f"{record.id} 出现未登记的日期/频率/量化表述：{sorted(unexpected)}；"
+            "如需新增请先在 ALLOWED_TIME_ANCHORS 登记并说明依据"
+        )

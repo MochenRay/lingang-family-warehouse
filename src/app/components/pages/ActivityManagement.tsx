@@ -132,7 +132,7 @@ export function ActivityManagement() {
           </TabsTrigger>
           <TabsTrigger value="history">
             <History className="w-4 h-4" />
-            历史活动档案
+            历史活动档案 ({historyActivities.length})
           </TabsTrigger>
         </TabsList>
 
