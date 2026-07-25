@@ -7,6 +7,8 @@
 
 import re
 
+import pytest
+
 from app.demo_data.notices import build_notice_records
 
 EXPECTED_IDS = ["notice_001", "notice_002", "notice_003", "notice_004", "notice_005"]
@@ -97,16 +99,17 @@ ALLOWED_TIME_ANCHORS: dict[str, set[str]] = {
 }
 
 ANCHOR_PATTERNS = [
-    r"\d{1,2}月\d{1,2}日",  # 具体日期，如 1月20日
-    r"\d{1,2}:\d{2}",  # 具体时刻，如 1:00、18:00
-    r"\d{4}年度",  # 年度表述
+    r"\d{1,2}月\d{1,2}日(?:\d{1,2}:\d{2})?",  # 具体日期（可带时刻）：1月20日、12月20日24:00
+    r"\d{1,2}:\d{2}",  # 具体时刻：1:00、18:00、24:00
+    r"\d{4}年度?",  # 年度：2026年度、2026年
     r"第[一二三四]季度",  # 季度
-    r"本周[一二三四五六日内]前?",  # 本周内 / 本周五前
-    r"近一（个）?月",  # 近一月 / 近一个月
+    r"[本每]?周[一二三四五六日天](?:以?前)?",  # 周五、周五前、本周五前、每周五前、周天前
+    r"本周[之]?内",  # 本周内 / 本周之内
+    r"近[一二两三四五六七八九十\d]+个?月",  # 近一月、近一个月、近两个月、近2个月
     r"当天|当日",  # 当天 / 当日
-    r"每日|每周[一二三四五六日]?",  # 频率：每日、每周、每周五
-    r"[一二两三四五六七八九十]+(?:例|项|次|条|户|份|个工作日)",  # 中文量化，如 三项、一次、两例
-    r"\d+(?:例|项|次|条|户|份)",  # 阿拉伯数字量化，如 2例
+    r"每[日天月年周]",  # 频率：每日、每天、每月、每年、每周
+    r"[一二两三四五六七八九十]+(?:个?工作日|[例项次条户份人名家])",  # 中文量化：三项、一次、两例、一个工作日
+    r"\d+(?:个?工作日|[例项次条户份人名家])",  # 阿拉伯量化：2例、1个工作日
 ]
 
 
@@ -117,12 +120,61 @@ def _extract_time_anchors(content: str) -> set[str]:
     return found
 
 
+def _find_unexpected_anchors(notice_id: str, content: str) -> set[str]:
+    """正文中未在 allowlist 登记的日期/频率/量化锚点。"""
+    return _extract_time_anchors(content) - ALLOWED_TIME_ANCHORS[notice_id]
+
+
 def test_notice_content_uses_only_allowlisted_time_anchors() -> None:
     """正文不得出现 allowlist 之外的日期、频率或量化表述（精确兜底，防 false-green）。"""
     for record in build_notice_records():
-        found = _extract_time_anchors(record.content)
-        unexpected = found - ALLOWED_TIME_ANCHORS[record.id]
+        unexpected = _find_unexpected_anchors(record.id, record.content)
         assert not unexpected, (
             f"{record.id} 出现未登记的日期/频率/量化表述：{sorted(unexpected)}；"
             "如需新增请先在 ALLOWED_TIME_ANCHORS 登记并说明依据"
         )
+
+
+def test_allowlist_entries_are_all_present_in_content() -> None:
+    """allowlist 中的每个锚点都必须真的被扫描器从正文提取到。
+
+    防止两类 false-green：扫描器模式失效（如全角括号永远匹配不到），
+    以及 allowlist 登记了正文里并不存在的内容。
+    """
+    for record in build_notice_records():
+        found = _extract_time_anchors(record.content)
+        missing = ALLOWED_TIME_ANCHORS[record.id] - found
+        assert not missing, (
+            f"{record.id} 的 allowlist 含有扫描器未在正文提取到的锚点：{sorted(missing)}；"
+            "请检查 ANCHOR_PATTERNS 是否失效，或清理过期登记"
+        )
+
+
+# 直接 mutation 用例：均为历史上被剔除或典型的违规锚点，注入任何一条都必须变红。
+# 注入目标选 allowlist 最小的 notice_002（仅「本周内」），保证注入物必然未登记。
+MUTATION_ANCHORS = [
+    "周五前",
+    "1月21日",
+    "每周五前",
+    "12月20日24:00",
+    "18:00",
+    "两例",
+    "一个工作日",
+]
+
+
+@pytest.mark.parametrize("anchor", MUTATION_ANCHORS)
+def test_injected_unregistered_anchor_is_caught_and_flagged(anchor: str) -> None:
+    """mutation test：向正文注入非 allowlist 锚点，扫描器必须提取到且闸门必须判违规。"""
+    base_content = next(r.content for r in build_notice_records() if r.id == "notice_002")
+    mutated = f"{base_content}\n补充要求：请在{anchor}完成补充登记。"
+
+    found = _extract_time_anchors(mutated)
+    assert any(anchor in item or item in anchor for item in found), (
+        f"扫描器未能提取注入的锚点 {anchor!r}，提取结果：{sorted(found)}"
+    )
+
+    unexpected = _find_unexpected_anchors("notice_002", mutated)
+    assert any(anchor in item or item in anchor for item in unexpected), (
+        f"注入的锚点 {anchor!r} 未被闸门判为违规：{sorted(unexpected)}"
+    )
