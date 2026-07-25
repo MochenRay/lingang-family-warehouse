@@ -5,7 +5,7 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '../ui/utils';
 
-export { DATA_TABLE_ALIGNMENT_CLASS } from './dataTableAlignment';
+export { DATA_TABLE_ALIGNMENT_CLASS } from '../ui/tableAlignment';
 
 /**
  * DataTableShell：表格一致化组合件（非万能表格）。

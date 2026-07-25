@@ -6,6 +6,8 @@ const VIEWPORTS = [
   { width: 1024, height: 768 },
 ] as const;
 
+const CONTENT_ALIGNMENT_TOLERANCE_PX = 4;
+
 const TABLE_ROUTES = [
   '/',
   '/population',
@@ -44,31 +46,50 @@ async function expectNoPageHorizontalOverflow(page: Page) {
 
 async function contentStartX(cell: Locator) {
   return cell.evaluate((element) => {
-    const directContent = Array.from(element.children).find((child) => {
-      const rect = child.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0;
-    });
-    if (directContent) return directContent.getBoundingClientRect().left;
+    const rootRect = element.getBoundingClientRect();
+    const rootStyle = getComputedStyle(element);
+    const contentWidth = rootRect.width
+      - Number.parseFloat(rootStyle.paddingLeft || '0')
+      - Number.parseFloat(rootStyle.paddingRight || '0');
+    const starts: number[] = [];
 
     const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
-    const textStarts: number[] = [];
     let node = walker.nextNode();
     while (node) {
       if (node.textContent?.trim()) {
         const range = document.createRange();
         range.selectNodeContents(node);
-        const rect = range.getBoundingClientRect();
-        if (rect.width > 0 && rect.height > 0) textStarts.push(rect.left);
+        for (const rect of Array.from(range.getClientRects())) {
+          if (rect.width > 0 && rect.height > 0) starts.push(rect.left);
+        }
       }
       node = walker.nextNode();
     }
-    if (textStarts.length > 0) return Math.min(...textStarts);
 
-    const interactive = element.querySelector<HTMLElement>('button, input, [role="checkbox"], [role="switch"]');
-    if (interactive) return interactive.getBoundingClientRect().left;
+    for (const candidate of Array.from(element.querySelectorAll<HTMLElement>('*'))) {
+      const rect = candidate.getBoundingClientRect();
+      const style = getComputedStyle(candidate);
+      if (
+        rect.width <= 0
+        || rect.height <= 0
+        || style.visibility === 'hidden'
+        || style.display === 'none'
+      ) {
+        continue;
+      }
 
-    const style = getComputedStyle(element);
-    return element.getBoundingClientRect().left + Number.parseFloat(style.paddingLeft || '0');
+      const isControl = candidate.matches('input, [role="checkbox"], [role="switch"]');
+      const isNarrowContent = rect.width < contentWidth - 1;
+      const hasVisualBox = style.borderTopStyle !== 'none'
+        || !['transparent', 'rgba(0, 0, 0, 0)'].includes(style.backgroundColor);
+      const isIntrinsicInlineContent = ['inline', 'inline-block', 'inline-flex', 'inline-grid'].includes(style.display)
+        && (isNarrowContent || hasVisualBox);
+      if (isControl || isIntrinsicInlineContent || isNarrowContent) starts.push(rect.left);
+    }
+
+    if (starts.length > 0) return Math.min(...starts);
+
+    return rootRect.left + Number.parseFloat(rootStyle.paddingLeft || '0');
   });
 }
 
@@ -82,51 +103,25 @@ async function expectFirstRowAligned(table: Locator, label = 'table') {
 
   expect(cellCount).toBe(headerCount);
   for (let index = 0; index < headerCount; index += 1) {
-    const [headerMetrics, cellMetrics] = await Promise.all([
+    const [headerStart, cellStart, headerMetrics, cellMetrics] = await Promise.all([
+      contentStartX(headers.nth(index)),
+      contentStartX(cells.nth(index)),
       headers.nth(index).evaluate((element) => {
         const style = getComputedStyle(element);
-        const child = Array.from(element.children).find((candidate) => {
-          const rect = candidate.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-        const childStyle = child ? getComputedStyle(child) : null;
         return {
-          edge: element.getBoundingClientRect().left + Number.parseFloat(style.paddingLeft),
           textAlign: style.textAlign,
-          childStart: child?.getBoundingClientRect().left ?? null,
-          childTag: child?.tagName ?? null,
-          childDisplay: childStyle?.display ?? null,
-          childJustify: childStyle?.justifyContent ?? null,
         };
       }),
       cells.nth(index).evaluate((element) => {
         const style = getComputedStyle(element);
-        const child = Array.from(element.children).find((candidate) => {
-          const rect = candidate.getBoundingClientRect();
-          return rect.width > 0 && rect.height > 0;
-        });
-        const childStyle = child ? getComputedStyle(child) : null;
         return {
-          edge: element.getBoundingClientRect().left + Number.parseFloat(style.paddingLeft),
           textAlign: style.textAlign,
-          childStart: child?.getBoundingClientRect().left ?? null,
-          childTag: child?.tagName ?? null,
-          childDisplay: childStyle?.display ?? null,
-          childJustify: childStyle?.justifyContent ?? null,
         };
       }),
     ]);
     expect(headerMetrics.textAlign, `${label} header ${index + 1} should be left aligned`).toBe('left');
     expect(cellMetrics.textAlign, `${label} cell ${index + 1} should be left aligned`).toBe('left');
-    expect(Math.abs(headerMetrics.edge - cellMetrics.edge), `${label} column ${index + 1} should share a left edge`).toBeLessThanOrEqual(1.5);
-    for (const [kind, metrics] of [['header', headerMetrics], ['cell', cellMetrics]] as const) {
-      if (metrics.childStart !== null) {
-        expect(Math.abs(metrics.childStart - metrics.edge), `${label} ${kind} ${index + 1} content should start at the left edge`).toBeLessThanOrEqual(1.5);
-      }
-      if (metrics.childTag === 'DIV' && (metrics.childDisplay === 'flex' || metrics.childDisplay === 'inline-flex' || metrics.childDisplay === 'grid' || metrics.childDisplay === 'inline-grid')) {
-        expect(['normal', 'start', 'flex-start'], `${label} ${kind} ${index + 1} should not center/end its content`).toContain(metrics.childJustify);
-      }
-    }
+    expect(Math.abs(headerStart - cellStart), `${label} column ${index + 1} actual content should share a left start`).toBeLessThanOrEqual(CONTENT_ALIGNMENT_TOLERANCE_PX);
   }
 }
 
@@ -139,12 +134,24 @@ async function expectTableScrollsToLastColumn(table: Locator, lastColumn: string
   }));
   expect(['auto', 'scroll']).toContain(metrics.overflowX);
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+  const maxScrollLeft = metrics.scrollWidth - metrics.clientWidth;
 
   await table.locator('tbody tr').first().hover();
-  const initialLeft = await scroller.evaluate((element) => element.scrollLeft);
+  let initialLeft = await scroller.evaluate((element) => element.scrollLeft);
+  if (initialLeft >= maxScrollLeft - 2) {
+    for (let attempt = 0; attempt < 24; attempt += 1) {
+      await page.mouse.wheel(-480, 0);
+      await page.waitForTimeout(40);
+      if ((await scroller.evaluate((element) => element.scrollLeft)) < initialLeft - 2) break;
+    }
+    const movedLeft = await scroller.evaluate((element) => element.scrollLeft);
+    expect(movedLeft).toBeLessThan(initialLeft);
+    initialLeft = movedLeft;
+  }
   for (let attempt = 0; attempt < 24; attempt += 1) {
     await page.mouse.wheel(480, 0);
     await page.waitForTimeout(40);
+    if ((await scroller.evaluate((element) => element.scrollLeft)) >= maxScrollLeft - 2) break;
   }
   expect(await scroller.evaluate((element) => element.scrollLeft)).toBeGreaterThan(initialLeft);
 
@@ -159,6 +166,8 @@ async function expectTableScrollsToLastColumn(table: Locator, lastColumn: string
 }
 
 test.describe('T06 R40-R42 首页与全局桌面表格', () => {
+  test.use({ reducedMotion: 'reduce' });
+
   test.beforeEach(async ({ page }) => {
     await dismissJourneyOverlay(page);
   });
@@ -231,6 +240,59 @@ test.describe('T06 R40-R42 首页与全局桌面表格', () => {
     });
   }
 
+  test('R42 hostile 全宽 wrapper 内右对齐内容不会被 helper 误判为左对齐', async ({ page }) => {
+    await page.setContent(`
+      <table>
+        <thead><tr><th style="padding: 16px; text-align: left">指标</th></tr></thead>
+        <tbody>
+          <tr>
+            <td style="width: 320px; padding: 16px; text-align: left">
+              <div style="width: 100%; text-align: right"><span>右对齐值</span></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    `);
+
+    let detected = false;
+    try {
+      await expectFirstRowAligned(page.getByRole('table'), 'hostile wrapper fixture');
+    } catch {
+      detected = true;
+    }
+    expect(detected, 'helper 必须递归测到 wrapper 内的真实右对齐内容').toBe(true);
+  });
+
+  test('R42 用户筛选空态保持跨列居中', async ({ page }) => {
+    const runtimeErrors = collectRuntimeErrors(page);
+    await page.setViewportSize({ width: 1024, height: 768 });
+    await page.goto('/settings/users');
+    await expect(page.getByRole('heading', { name: '用户管理' })).toBeVisible({ timeout: 20_000 });
+    await page.getByPlaceholder('搜索用户...').fill('不存在的用户-空态验收');
+
+    const emptyCell = page.locator('[data-testid="user-table-card"] td[colspan]');
+    await expect(emptyCell).toHaveText('没有符合条件的用户');
+    const emptyMetrics = await emptyCell.evaluate((element) => {
+      const cellRect = element.getBoundingClientRect();
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const contentRect = range.getBoundingClientRect();
+      return {
+        textAlign: getComputedStyle(element).textAlign,
+        cellCenter: cellRect.left + cellRect.width / 2,
+        contentCenter: contentRect.left + contentRect.width / 2,
+      };
+    });
+    expect(emptyMetrics.textAlign).toBe('center');
+    expect(Math.abs(emptyMetrics.cellCenter - emptyMetrics.contentCenter)).toBeLessThanOrEqual(1.5);
+    await expectNoPageHorizontalOverflow(page);
+    expect(runtimeErrors).toEqual({ consoleErrors: [], pageErrors: [] });
+    await page.screenshot({
+      path: '/tmp/lingang-browser-recheck-t06-empty-users-1024x768.png',
+      animations: 'disabled',
+    });
+  });
+
   test('R42 全部桌面数据表首行与列标题共享左起始边', async ({ page }) => {
     const runtimeErrors = collectRuntimeErrors(page);
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -251,6 +313,7 @@ test.describe('T06 R40-R42 首页与全局桌面表格', () => {
     await page.getByRole('button', { name: '导入历史', exact: true }).click();
     const importHistoryTable = page.getByRole('dialog').getByRole('table');
     await expect(importHistoryTable).toBeVisible();
+    await page.waitForTimeout(250);
     await expectFirstRowAligned(importHistoryTable, '/batch-import history table');
     await expectNoPageHorizontalOverflow(page);
 

@@ -1,6 +1,6 @@
 import * as React from "react"
 
-import { DATA_TABLE_ALIGNMENT_CLASS } from "../patterns/dataTableAlignment"
+import { DATA_TABLE_ALIGNMENT_CLASS } from "./tableAlignment"
 import { cn } from "./utils"
 
 const Table = React.forwardRef<
