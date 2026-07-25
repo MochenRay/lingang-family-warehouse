@@ -11,17 +11,19 @@ import {
   Clock,
   CheckCircle2,
   Bell,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  ClipboardList,
+  MapPin,
+  ListChecks,
+  MessageSquareReply,
+  ShieldCheck,
+  Paperclip,
+  type LucideIcon,
 } from 'lucide-react';
 import { PublishNoticeDialog } from '../notices/PublishNoticeDialog';
 import { formatNoticeTime, noticeRepository, type NoticeRecord } from '../../services/repositories/noticeRepository';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog";
+import { DetailDialogShell, DetailField, DetailFieldGrid, DetailSection } from '../patterns/DetailDialog';
 import {
   Table,
   TableBody,
@@ -37,7 +39,7 @@ import { TablePagination } from '../patterns/DataTableShell';
 import { SearchInput } from '../patterns/FilterBar';
 import { EmptyState } from '../patterns/states';
 import { ConfirmDialog } from '../patterns/ConfirmDialog';
-import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { PANEL_CLASS } from '../patterns/surfaces';
 
 const PAGE_SIZE = 20;
 
@@ -49,6 +51,53 @@ const noticeTypes: Array<{ value: string; label: string; tone: StatusTone }> = [
   { value: 'task', label: '工作任务', tone: 'warning' },
   { value: 'info', label: '普通通知', tone: 'neutral' },
 ];
+
+/** 通知正文中一个结构化模块（【模块名】内容） */
+interface NoticeContentSection {
+  title: string;
+  body: string;
+}
+
+/**
+ * 解析按基层通知结构撰写的正文：引言段 + 若干「【模块名】内容」分区。
+ * 手工发布的公告没有结构标记时，sections 为空，调用方回退为整段展示。
+ */
+function parseNoticeContent(content: string): { intro: string; sections: NoticeContentSection[] } {
+  const introLines: string[] = [];
+  const sections: NoticeContentSection[] = [];
+  let current: NoticeContentSection | null = null;
+
+  for (const line of content.split('\n')) {
+    const match = line.match(/^【([^】]+)】\s*(.*)$/);
+    if (match) {
+      current = { title: match[1], body: match[2] };
+      sections.push(current);
+    } else if (current) {
+      current.body = current.body ? `${current.body}\n${line}` : line;
+    } else {
+      introLines.push(line);
+    }
+  }
+
+  return {
+    intro: introLines.join('\n').trim(),
+    sections: sections.map((section) => ({ ...section, body: section.body.trim() })),
+  };
+}
+
+/** 常见通知模块的展示图标（未知名称回退为正文图标） */
+const SECTION_ICON_MAP: Record<string, LucideIcon> = {
+  通知对象: Users,
+  工作任务: ClipboardList,
+  时间安排: Clock,
+  覆盖范围: MapPin,
+  执行要求: ListChecks,
+  反馈方式: MessageSquareReply,
+  责任分工: ShieldCheck,
+};
+
+/** 内容较长的模块独占一行，短模块并入字段网格 */
+const WIDE_SECTION_TITLES = new Set(['工作任务', '执行要求']);
 
 export function NoticeManagement() {
   const [notices, setNotices] = useState<NoticeRecord[]>([]);
@@ -310,33 +359,85 @@ export function NoticeManagement() {
         onConfirm={() => void handleDeleteConfirm()}
       />
 
-      <Dialog open={Boolean(previewNotice)} onOpenChange={(open) => !open && setPreviewNotice(null)}>
-        <DialogContent className={DIALOG_CLASS}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--color-neutral-11)]">{previewNotice?.title ?? '公告预览'}</DialogTitle>
-            <DialogDescription className="text-[var(--color-neutral-08)]">
-              {previewNotice
-                ? `${formatNoticeTime(previewNotice.publishedAt)} · ${getScopeText(previewNotice.scope)} · ${previewNotice.publisher}`
-                : '查看公告详情'}
-            </DialogDescription>
-          </DialogHeader>
-          {previewNotice ? (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <StatusBadge tone={getTypeConfig(previewNotice.type).tone}>
-                  {getTypeConfig(previewNotice.type).label}
-                </StatusBadge>
-                <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]">
-                  {previewNotice.status === 'published' ? '已发布' : '草稿'}
-                </Badge>
+      {previewNotice ? (
+        <DetailDialogShell
+          open={Boolean(previewNotice)}
+          onOpenChange={(open) => !open && setPreviewNotice(null)}
+          contentLabel="公告详情"
+          maxWidth="4xl"
+          badges={
+            <>
+              <StatusBadge tone={getTypeConfig(previewNotice.type).tone}>
+                {getTypeConfig(previewNotice.type).label}
+              </StatusBadge>
+              <Badge variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]">
+                {previewNotice.status === 'published' ? '已发布' : '草稿'}
+              </Badge>
+            </>
+          }
+          title={previewNotice.title}
+          description={`${previewNotice.department} · ${previewNotice.publisher} · ${formatNoticeTime(previewNotice.publishedAt)}发布`}
+        >
+          {(() => {
+            const { intro, sections } = parseNoticeContent(previewNotice.content);
+            return (
+              <div className="space-y-4">
+                <DetailSection
+                  icon={FileText}
+                  title="通知正文"
+                  description={`${getScopeText(previewNotice.scope)} · 已读 ${previewNotice.readCount} 次`}
+                >
+                  {sections.length > 0 ? (
+                    <div className="space-y-4">
+                      {intro ? (
+                        <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{intro}</p>
+                      ) : null}
+                      <DetailFieldGrid>
+                        {sections.map((section) => {
+                          const SectionIcon = SECTION_ICON_MAP[section.title] ?? FileText;
+                          const wide = WIDE_SECTION_TITLES.has(section.title);
+                          return (
+                            <DetailField
+                              key={section.title}
+                              label={section.title}
+                              icon={<SectionIcon className="h-3.5 w-3.5" />}
+                              value={section.body}
+                              className={wide ? 'sm:col-span-2 xl:col-span-3' : undefined}
+                            />
+                          );
+                        })}
+                      </DetailFieldGrid>
+                    </div>
+                  ) : (
+                    <div className="whitespace-pre-wrap text-sm leading-6 text-[var(--color-neutral-10)]">
+                      {previewNotice.content}
+                    </div>
+                  )}
+                </DetailSection>
+
+                {previewNotice.attachments.length > 0 ? (
+                  <DetailSection icon={Paperclip} title={`附件（${previewNotice.attachments.length}）`}>
+                    <div className="space-y-2">
+                      {previewNotice.attachments.map((attachment, index) => (
+                        <div
+                          key={`${previewNotice.id}-attachment-${index}`}
+                          className="flex items-center justify-between gap-3 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <Paperclip className="h-3.5 w-3.5 shrink-0 text-[var(--color-neutral-08)]" />
+                            <span className="truncate text-sm text-[var(--color-neutral-11)]">{attachment.name}</span>
+                          </div>
+                          <span className="shrink-0 text-xs text-[var(--color-neutral-08)]">{attachment.size}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </DetailSection>
+                ) : null}
               </div>
-              <div className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-4 text-sm leading-6 text-[var(--color-neutral-10)] whitespace-pre-wrap">
-                {previewNotice.content}
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+            );
+          })()}
+        </DetailDialogShell>
+      ) : null}
     </div>
   );
 }

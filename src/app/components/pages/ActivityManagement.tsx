@@ -1,19 +1,15 @@
-import { useState } from 'react';
-import { 
+import { useEffect, useState } from 'react';
+import {
   History,
-  Filter, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  MapPin, 
-  Calendar, 
+  Filter,
+  Clock,
+  Calendar,
   Users,
   Eye,
   MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
-import { Badge } from '../ui/badge';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { 
   Table, 
@@ -31,7 +27,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '../ui/dialog';
 import { Textarea } from '../ui/textarea';
 import { toast } from 'sonner';
-import { MOCK_ACTIVITIES, Activity } from '../../data/activities';
+import { MOCK_ACTIVITIES, Activity, getActivityTypePath, getCategoryLabel } from '../../data/activities';
 import { PageHeader } from './PageHeader';
 import { StatusBadge } from '../patterns/StatusBadge';
 import { DataTableBody } from '../patterns/DataTableShell';
@@ -45,10 +41,21 @@ const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const ACTION_BUTTON_CLASS =
   'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 
+/** 「类型 · 子分类」层级徽标：类型作主徽标、子分类作从属文本，表达从属关系而非两个并列 pill */
+function ActivityTypeBadge({ category, subcategory }: { category: Activity['category']; subcategory: string }) {
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5">
+      <StatusBadge tone={category === 'volunteer' ? 'warning' : 'info'}>{getCategoryLabel(category)}</StatusBadge>
+      <span className="text-xs text-[var(--color-neutral-08)]">·</span>
+      <span className="truncate text-xs text-[var(--color-neutral-10)]">{subcategory}</span>
+    </span>
+  );
+}
+
 export function ActivityManagement() {
   const [activities, setActivities] = useState<Activity[]>(MOCK_ACTIVITIES);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Dialog State
   const [rejectDialog, setRejectDialog] = useState<{ open: boolean; activityId: string | null }>({ open: false, activityId: null });
   const [rejectReason, setRejectReason] = useState('');
@@ -57,6 +64,17 @@ export function ActivityManagement() {
 
   // Filtered Lists
   const pendingActivities = activities.filter(a => a.approvalStatus === 'pending');
+
+  // 默认落在待办审批；待办被清空（或初始为空）时自动落到历史活动档案
+  const [activeTab, setActiveTab] = useState<'pending' | 'history'>(() =>
+    MOCK_ACTIVITIES.some(a => a.approvalStatus === 'pending') ? 'pending' : 'history',
+  );
+
+  useEffect(() => {
+    if (pendingActivities.length === 0) {
+      setActiveTab('history');
+    }
+  }, [pendingActivities.length]);
   
   const historyActivities = activities.filter(a => {
     if (a.approvalStatus === 'pending') return false; // Exclude pending from history list? Or include? Requirement says "History Archive". Usually pending is separate.
@@ -94,12 +112,6 @@ export function ActivityManagement() {
     }
   };
 
-  const getTypeBadge = (category: string) => {
-     return category === 'volunteer' 
-       ? <StatusBadge tone="warning">志愿服务</StatusBadge>
-       : <StatusBadge tone="info">文娱活动</StatusBadge>;
-  };
-
   return (
     <div className="space-y-5 pb-16 text-[var(--color-neutral-10)]">
       <PageHeader
@@ -108,175 +120,180 @@ export function ActivityManagement() {
         description="统筹社区活动报名、签到和反馈，辅助评估居民参与情况。"
       />
 
-      {/* Section 1: Pending Approvals */}
-      <section>
-        <h2 className="mb-3 flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
-          <Clock className="w-5 h-5 text-[var(--color-brand-text)]" />
-          待办审批 ({pendingActivities.length})
-        </h2>
-        
-        {pendingActivities.length === 0 ? (
-          <div className="rounded-[8px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-6 text-center text-[var(--color-neutral-08)]">
-            暂无待审批的活动申请
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {pendingActivities.map(activity => (
-              <Card key={activity.id} className={`${PANEL_CLASS} border-l-4 border-l-[var(--color-status-warning)] transition-colors hover:bg-[var(--color-neutral-03)]`}>
-                <CardHeader className="pb-2">
-                  <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="mb-2 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">{activity.subcategory}</Badge>
-                    <span className="text-xs text-[var(--color-neutral-08)]">{activity.createdAt.split(' ')[0]} 申请</span>
-                  </div>
-                  <CardTitle className="line-clamp-1 text-base font-bold text-[var(--color-neutral-11)]">
-                    {activity.title}
-                  </CardTitle>
-                  <CardDescription className="mt-1 line-clamp-2 text-xs text-[var(--color-neutral-08)]">
-                    {activity.description}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pb-2">
-                   <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
-                        <Users className="w-4 h-4 text-[var(--color-neutral-08)]" />
-                        <span>申请人: {activity.creatorName}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
-                        <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
-                        <span>{activity.date} {activity.startTime}</span>
-                      </div>
-                      <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-text)]">
-                        <span className="font-bold">系统预测:</span> {activity.predictionText || '暂无预测'}
-                      </div>
-                   </div>
-                </CardContent>
-                <CardFooter className="pt-2 flex gap-2">
-                   <Button variant="outline" className={`h-8 flex-1 text-xs ${ACTION_BUTTON_CLASS}`} onClick={() => setDetailDialog({ open: true, activity })}>
-                     查看详情
-                   </Button>
-                   <Button 
-                     className="h-8 flex-1 bg-[var(--color-status-success)] text-xs text-[var(--color-neutral-11)] hover:bg-[var(--color-status-success)]/90"
-                     onClick={() => handleApprove(activity.id)}
-                   >
-                     通过
-                   </Button>
-                   <Button 
-                     variant="destructive" 
-                     className="flex-1 text-xs h-8"
-                     onClick={() => setRejectDialog({ open: true, activityId: activity.id })}
-                   >
-                     驳回
-                   </Button>
-                </CardFooter>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Section 2: History & Archives */}
-      <section className="mt-6">
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-lg font-semibold text-[var(--color-neutral-11)]">
-            <History className="w-5 h-5 text-[var(--color-neutral-08)]" />
+      <Tabs
+        value={activeTab}
+        onValueChange={(value) => setActiveTab(value as 'pending' | 'history')}
+        className="gap-4"
+      >
+        <TabsList className="border-b border-[var(--color-neutral-03)]">
+          <TabsTrigger value="pending">
+            <Clock className="w-4 h-4" />
+            待办审批 ({pendingActivities.length})
+          </TabsTrigger>
+          <TabsTrigger value="history">
+            <History className="w-4 h-4" />
             历史活动档案
-          </h2>
-          <div className="flex items-center gap-2">
-             <SearchInput
-               className="w-64"
-               placeholder="搜索活动名称或申请人..."
-               value={searchQuery}
-               onChange={setSearchQuery}
-             />
-             <Button variant="outline" size="sm" className={`h-9 ${ACTION_BUTTON_CLASS}`}>
-               <Filter className="w-4 h-4 mr-2" /> 筛选
-             </Button>
-          </div>
-        </div>
+          </TabsTrigger>
+        </TabsList>
 
-        <div className="overflow-hidden rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
-          <Table>
-            <TableHeader>
-              <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                <TableHead>活动名称</TableHead>
-                <TableHead>类型</TableHead>
-                <TableHead>时间/地点</TableHead>
-                <TableHead>申请人</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>执行情况</TableHead>
-                <TableHead className="text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <DataTableBody
-              empty={historyActivities.length === 0}
-              emptyText="暂无相关活动记录"
-              columnCount={7}
-            >
-              {historyActivities.map(activity => (
-                <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-brand-primary)]/8">
-                  <TableCell className="font-medium text-[var(--color-neutral-11)]">{activity.title}</TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1">
-                       {getTypeBadge(activity.category)}
-                       <span className="text-xs text-[var(--color-neutral-08)]">{activity.subcategory}</span>
+        <TabsContent value="pending">
+          {pendingActivities.length === 0 ? (
+            <div className="rounded-[8px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] p-6 text-center text-[var(--color-neutral-08)]">
+              暂无待审批的活动申请
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {pendingActivities.map(activity => (
+                <Card key={activity.id} className={`${PANEL_CLASS} border-l-4 border-l-[var(--color-status-warning)] transition-colors hover:bg-[var(--color-neutral-03)]`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start gap-2">
+                      <div className="mb-2 min-w-0">
+                        <ActivityTypeBadge category={activity.category} subcategory={activity.subcategory} />
+                      </div>
+                      <span className="shrink-0 text-xs text-[var(--color-neutral-08)]">{activity.createdAt.split(' ')[0]} 申请</span>
                     </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-sm">{activity.date}</div>
-                    <div className="text-xs text-[var(--color-neutral-08)]">{activity.location}</div>
-                  </TableCell>
-                  <TableCell>{activity.creatorName}</TableCell>
-                  <TableCell>
-                    {activity.approvalStatus === 'rejected' ? (
-                       <StatusBadge tone="error">已驳回</StatusBadge>
-                    ) : (
-                       <StatusBadge tone="success">已批准</StatusBadge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                     {activity.approvalStatus === 'approved' && (
-                       <div className="flex flex-col gap-1">
-                         <span className={
-                           activity.executionStatus === 'in_progress' ? 'text-[var(--color-status-success-text)] font-bold text-xs' :
-                           activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[var(--color-brand-text)] text-xs'
-                         }>
-                           {activity.executionStatus === 'in_progress' ? '进行中' : 
-                            activity.executionStatus === 'ended' ? '已结束' : '待开始'}
-                         </span>
-                         <span className="text-xs text-[var(--color-neutral-08)]">
-                           {activity.attendeeIds.length} 人参与
-                         </span>
-                       </div>
-                     )}
-                     {activity.approvalStatus === 'rejected' && <span className="text-xs text-[var(--color-neutral-08)]">-</span>}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
-                          <span className="sr-only">Open menu</span>
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => setDetailDialog({ open: true, activity })}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          查看详情
-                        </DropdownMenuItem>
-                        {activity.executionStatus === 'ended' && (
-                          <DropdownMenuItem>
-                             查看执行报告
-                          </DropdownMenuItem>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
+                    <CardTitle className="line-clamp-1 text-base font-bold text-[var(--color-neutral-11)]">
+                      {activity.title}
+                    </CardTitle>
+                    <CardDescription className="mt-1 line-clamp-2 text-xs text-[var(--color-neutral-08)]">
+                      {activity.description}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="pb-2">
+                     <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
+                          <Users className="w-4 h-4 text-[var(--color-neutral-08)]" />
+                          <span>申请人: {activity.creatorName}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
+                          <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
+                          <span>{activity.date} {activity.startTime}</span>
+                        </div>
+                        <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-text)]">
+                          <span className="font-bold">参与预测:</span> {activity.predictionText || '暂无预测'}
+                        </div>
+                     </div>
+                  </CardContent>
+                  <CardFooter className="pt-2 flex gap-2">
+                     <Button variant="outline" className={`h-8 flex-1 text-xs ${ACTION_BUTTON_CLASS}`} onClick={() => setDetailDialog({ open: true, activity })}>
+                       查看详情
+                     </Button>
+                     <Button
+                       className="h-8 flex-1 bg-[var(--color-status-success)] text-xs text-[var(--color-neutral-11)] hover:bg-[var(--color-status-success)]/90"
+                       onClick={() => handleApprove(activity.id)}
+                     >
+                       通过
+                     </Button>
+                     <Button
+                       variant="destructive"
+                       className="flex-1 text-xs h-8"
+                       onClick={() => setRejectDialog({ open: true, activityId: activity.id })}
+                     >
+                       驳回
+                     </Button>
+                  </CardFooter>
+                </Card>
               ))}
-            </DataTableBody>
-          </Table>
-        </div>
-      </section>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="history">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+               <SearchInput
+                 className="w-64"
+                 placeholder="搜索活动名称或申请人..."
+                 value={searchQuery}
+                 onChange={setSearchQuery}
+               />
+               <Button variant="outline" size="sm" className={`h-9 ${ACTION_BUTTON_CLASS}`}>
+                 <Filter className="w-4 h-4 mr-2" /> 筛选
+               </Button>
+            </div>
+          </div>
+
+          <div className="overflow-hidden rounded-[8px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] shadow-none">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                  <TableHead>活动名称</TableHead>
+                  <TableHead>类型</TableHead>
+                  <TableHead>时间/地点</TableHead>
+                  <TableHead>申请人</TableHead>
+                  <TableHead>状态</TableHead>
+                  <TableHead>执行情况</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
+                </TableRow>
+              </TableHeader>
+              <DataTableBody
+                empty={historyActivities.length === 0}
+                emptyText="暂无相关活动记录"
+                columnCount={7}
+              >
+                {historyActivities.map(activity => (
+                  <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-brand-primary)]/8">
+                    <TableCell className="font-medium text-[var(--color-neutral-11)]">{activity.title}</TableCell>
+                    <TableCell>
+                      <ActivityTypeBadge category={activity.category} subcategory={activity.subcategory} />
+                    </TableCell>
+                    <TableCell>
+                      <div className="text-sm">{activity.date}</div>
+                      <div className="text-xs text-[var(--color-neutral-08)]">{activity.location}</div>
+                    </TableCell>
+                    <TableCell>{activity.creatorName}</TableCell>
+                    <TableCell>
+                      {activity.approvalStatus === 'rejected' ? (
+                         <StatusBadge tone="error">已驳回</StatusBadge>
+                      ) : (
+                         <StatusBadge tone="success">已批准</StatusBadge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                       {activity.approvalStatus === 'approved' && (
+                         <div className="flex flex-col gap-1">
+                           <span className={
+                             activity.executionStatus === 'in_progress' ? 'text-[var(--color-status-success-text)] font-bold text-xs' :
+                             activity.executionStatus === 'ended' ? 'text-[var(--color-neutral-08)] text-xs' : 'text-[var(--color-brand-text)] text-xs'
+                           }>
+                             {activity.executionStatus === 'in_progress' ? '进行中' :
+                              activity.executionStatus === 'ended' ? '已结束' : '待开始'}
+                           </span>
+                           <span className="text-xs text-[var(--color-neutral-08)]">
+                             {activity.attendeeIds.length} 人参与
+                           </span>
+                         </div>
+                       )}
+                       {activity.approvalStatus === 'rejected' && <span className="text-xs text-[var(--color-neutral-08)]">-</span>}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                            <span className="sr-only">Open menu</span>
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setDetailDialog({ open: true, activity })}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            查看详情
+                          </DropdownMenuItem>
+                          {activity.executionStatus === 'ended' && (
+                            <DropdownMenuItem>
+                               查看执行报告
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </DataTableBody>
+            </Table>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Reject Dialog */}
       <Dialog open={rejectDialog.open} onOpenChange={(open) => setRejectDialog(prev => ({ ...prev, open }))}>
@@ -322,7 +339,7 @@ export function ActivityManagement() {
                    </div>
                    <div>
                      <span className="block text-sm text-[var(--color-neutral-08)]">类型</span>
-                     <span className="font-medium text-[var(--color-neutral-11)]">{detailDialog.activity.category} - {detailDialog.activity.subcategory}</span>
+                     <span className="font-medium text-[var(--color-neutral-11)]">{getActivityTypePath(detailDialog.activity)}</span>
                    </div>
                    <div>
                      <span className="block text-sm text-[var(--color-neutral-08)]">时间</span>

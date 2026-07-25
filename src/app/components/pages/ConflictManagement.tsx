@@ -4,6 +4,7 @@ import {
   Calendar,
   FileText,
   Filter,
+  History,
   Home,
   Loader2,
   MapPin,
@@ -42,9 +43,6 @@ import { Badge } from "../ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "../ui/card";
 import { Textarea } from "../ui/textarea";
 import { conflictRepository, type ConflictContext } from "../../services/repositories/conflictRepository";
@@ -57,6 +55,7 @@ import { StatusBadge, type StatusTone } from "../patterns/StatusBadge";
 import { DataTableBody, TablePagination } from "../patterns/DataTableShell";
 import { SearchInput } from "../patterns/FilterBar";
 import { ConfirmDialog } from "../patterns/ConfirmDialog";
+import { DetailDialogShell, DetailField, DetailFieldGrid, DetailSection } from "../patterns/DetailDialog";
 import { DIALOG_CLASS, PANEL_CLASS } from "../patterns/surfaces";
 
 interface ConflictManagementProps {
@@ -641,299 +640,28 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-        <DialogContent className={`max-w-5xl ${DIALOG_CLASS}`}>
-          <DialogHeader>
-            <div className="flex items-center gap-2">
-              <DialogTitle>{selectedConflict?.title ?? "纠纷详情"}</DialogTitle>
-              {selectedConflict ? (
-                <StatusBadge tone={getConflictStatusTone(selectedConflict.status)}>
-                  {selectedConflict.status}
-                </StatusBadge>
-              ) : null}
-            </div>
-            {selectedConflict ? (
-              <DialogDescription className="flex items-center gap-2 mt-1 text-[var(--color-neutral-08)]">
-                <span>{selectedConflict.source}</span>
-                <span>•</span>
-                <span>{selectedConflict.type}</span>
-                <span>•</span>
-                <span>{getGridName(selectedConflict.gridId)}</span>
-              </DialogDescription>
-            ) : null}
-          </DialogHeader>
-
-          {isDetailLoading ? (
-            <div className="py-16">
-              <div className="flex items-center justify-center gap-2 text-[var(--color-neutral-08)]">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                <span>正在加载案件上下文...</span>
-              </div>
-            </div>
-          ) : selectedConflict ? (
-            <div className="py-4 space-y-6 max-h-[70vh] overflow-y-auto pr-2">
-              <div className="grid gap-4 lg:grid-cols-[1.5fr,1fr]">
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">案件概况</CardTitle>
-                    <CardDescription className={DARK_MUTED_TEXT}>以真实案件对象、地点和过程为准。</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className={`${PANEL_CLASS} p-3 text-sm text-[var(--color-neutral-10)]`}>
-                      {selectedConflict.description}
-                    </div>
-                    <div className="grid md:grid-cols-2 gap-3 text-sm">
-                      <div className={`${PANEL_CLASS} p-3`}>
-                        <div className="text-[var(--color-neutral-08)] flex items-center gap-2">
-                          <MapPin className="w-4 h-4" />
-                          发生地点
-                        </div>
-                        <p className="mt-2 font-medium text-[var(--color-neutral-11)]">{selectedConflict.location}</p>
-                      </div>
-                      <div className={`${PANEL_CLASS} p-3`}>
-                        <div className="text-[var(--color-neutral-08)] flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          最近更新时间
-                        </div>
-                        <p className="mt-2 font-medium text-[var(--color-neutral-11)]">{selectedConflict.updatedAt}</p>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm font-medium text-[var(--color-neutral-11)] mb-2 flex items-center gap-2">
-                        <Users className="w-4 h-4" />
-                        当事人与参与方
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedConflict.involvedParties.length > 0 ? (
-                          selectedConflict.involvedParties.map((party) => (
-                            <Badge
-                              key={`${party.id}-${party.name}`}
-                              variant="outline"
-                              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1 text-[var(--color-neutral-10)]"
-                            >
-                              {party.name}
-                              {party.type === "organization" ? (
-                                <span className="text-[var(--color-neutral-08)] ml-1">(单位)</span>
-                              ) : null}
-                            </Badge>
-                          ))
-                        ) : (
-                          <span className="text-sm text-[var(--color-neutral-08)]">暂无明确参与方</span>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">社工助手建议</CardTitle>
-                    <CardDescription className={DARK_MUTED_TEXT}>当前先基于真实案件上下文生成稳定的建议位。</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className={`${PANEL_CLASS} p-3`}>
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-sm text-[var(--color-neutral-08)]">回访状态</p>
-                          <p className="mt-1 text-sm text-[var(--color-neutral-10)]">
-                            {selectedContext?.followUpStatus.detail ?? "暂无回访状态"}
-                          </p>
-                        </div>
-                        <StatusBadge tone={getFollowUpTone(selectedContext?.followUpStatus.code)}>
-                          {selectedContext?.followUpStatus.label ?? "待补充"}
-                        </StatusBadge>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-[var(--color-neutral-11)] flex items-center gap-2">
-                        <MessageSquare className="w-4 h-4 text-[var(--color-brand-text)]" />
-                        建议动作
-                      </div>
-                      {selectedContext?.suggestedActions.length ? (
-                        <div className="space-y-2">
-                          {selectedContext.suggestedActions.map((action, index) => (
-                            <div
-                              key={`${selectedConflict.id}-action-${index}`}
-                              className="rounded-lg border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/10 p-3 text-sm text-[var(--color-neutral-10)]"
-                            >
-                              {action}
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-3 text-sm text-[var(--color-neutral-08)]">
-                          暂无建议动作
-                        </div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <div className="grid gap-4 lg:grid-cols-[1.2fr,0.8fr]">
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">关联人员画像</CardTitle>
-                    <CardDescription className={DARK_MUTED_TEXT}>当前案件中的住户对象与风险信息。</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {selectedContext?.relatedPeople.length ? (
-                      selectedContext.relatedPeople.map((person) => (
-                        <div
-                          key={person.id}
-                          className={`${PANEL_CLASS} p-3 flex items-start justify-between gap-3`}
-                        >
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-[var(--color-neutral-11)]">{person.name}</p>
-                              <StatusBadge tone={getRiskTone(person.risk)}>{person.risk}</StatusBadge>
-                              <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
-                                {person.type}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-[var(--color-neutral-10)]">{person.address}</p>
-                            <p className="text-xs text-[var(--color-neutral-08)]">
-                              标签：{(person.tags ?? []).slice(0, 3).join(" / ") || "暂无标签"}
-                            </p>
-                          </div>
-                          {onRouteChange ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
-                              onClick={() =>
-                                handleRouteJump("population", "app_focus_person_id", person.id)
-                              }
-                            >
-                              查看人口档案
-                              <ArrowUpRight className="w-4 h-4 ml-1" />
-                            </Button>
-                          ) : null}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
-                        当前案件暂无可关联的住户对象。
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">关联房屋节点</CardTitle>
-                    <CardDescription className={DARK_MUTED_TEXT}>用于校验人房一致性和居住状态。</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {selectedContext?.relatedHouse ? (
-                      <div className={`${PANEL_CLASS} p-4 space-y-3`}>
-                        <div className="flex items-center gap-2 text-[var(--color-neutral-11)]">
-                          <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
-                          <p className="font-medium">{selectedContext.relatedHouse.address}</p>
-                        </div>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          <div>
-                            <p className="text-[var(--color-neutral-08)]">产权人</p>
-                            <p className="mt-1 text-[var(--color-neutral-11)]">{selectedContext.relatedHouse.ownerName}</p>
-                          </div>
-                          <div>
-                            <p className="text-[var(--color-neutral-08)]">房屋类型</p>
-                            <p className="mt-1 text-[var(--color-neutral-11)]">{selectedContext.relatedHouse.type}</p>
-                          </div>
-                          <div>
-                            <p className="text-[var(--color-neutral-08)]">居住类型</p>
-                            <p className="mt-1 text-[var(--color-neutral-11)]">
-                              {selectedContext.relatedHouse.residenceType ?? "待补充"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[var(--color-neutral-08)]">居住人数</p>
-                            <p className="mt-1 text-[var(--color-neutral-11)]">{selectedContext.relatedHouse.memberCount} 人</p>
-                          </div>
-                        </div>
-                        {onRouteChange ? (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
-                            onClick={() =>
-                              handleRouteJump("housing", "app_focus_house_id", selectedContext.relatedHouse!.id)
-                            }
-                          >
-                            前往房屋管理
-                            <ArrowUpRight className="w-4 h-4 ml-1" />
-                          </Button>
-                        ) : null}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
-                        当前案件还未能稳定关联到具体房屋，建议先补地点和住户信息。
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card className={PANEL_CLASS}>
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base">近期走访与处置过程</CardTitle>
-                  <CardDescription className={DARK_MUTED_TEXT}>用真实走访和处理时间线互相印证案件进度。</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-5">
-                  <div>
-                    <div className="text-sm font-medium text-[var(--color-neutral-11)] mb-3">最近走访记录</div>
-                    {selectedContext?.recentVisits.length ? (
-                      <div className="space-y-2">
-                        {selectedContext.recentVisits.map((visit) => (
-                          <div
-                            key={visit.id}
-                            className={`${PANEL_CLASS} p-3 flex items-start justify-between gap-4`}
-                          >
-                            <div>
-                              <p className="text-sm font-medium text-[var(--color-neutral-11)]">{visit.content}</p>
-                              <p className="mt-1 text-xs text-[var(--color-neutral-08)]">
-                                {visit.date} · {visit.visitorName} · {visit.targetType === "person" ? "人员走访" : "房屋走访"}
-                              </p>
-                            </div>
-                            {visit.tags?.length ? (
-                              <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
-                                {visit.tags[0]}
-                              </Badge>
-                            ) : null}
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="rounded-lg border border-dashed border-[var(--color-neutral-03)] p-4 text-sm text-[var(--color-neutral-08)]">
-                        当前案件暂无最近走访记录，建议补一次跟进。
-                      </div>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="text-sm font-medium text-[var(--color-neutral-11)] mb-3">处理进度</div>
-                    <div className="space-y-4 pl-2 border-l-2 border-[var(--color-neutral-03)] ml-2">
-                      {[...selectedConflict.timeline].reverse().map((item, index) => (
-                        <div key={`${selectedConflict.id}-timeline-${index}`} className="relative pl-6 pb-2">
-                          <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary-hover)] ring-2 ring-[var(--color-neutral-01)]" />
-                          <div className="flex justify-between text-xs text-[var(--color-neutral-08)] mb-1">
-                            <span>{item.date}</span>
-                            <span>{item.operator}</span>
-                          </div>
-                          <div className="text-sm text-[var(--color-neutral-10)]">{item.content}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          ) : (
-            <div className="py-12 text-center text-[var(--color-neutral-08)]">未找到案件详情</div>
-          )}
-
-          <DialogFooter>
+      <DetailDialogShell
+        open={isDetailDialogOpen}
+        onOpenChange={setIsDetailDialogOpen}
+        contentLabel="纠纷详情"
+        maxWidth="5xl"
+        badges={
+          selectedConflict ? (
+            <>
+              <StatusBadge tone={getConflictStatusTone(selectedConflict.status)}>{selectedConflict.status}</StatusBadge>
+              <StatusBadge tone={getSourceTone(selectedConflict.source)}>{selectedConflict.source}</StatusBadge>
+              <StatusBadge tone="neutral">{selectedConflict.type}</StatusBadge>
+            </>
+          ) : undefined
+        }
+        title={selectedConflict?.title ?? "纠纷详情"}
+        description={
+          selectedConflict
+            ? `${getGridName(selectedConflict.gridId)} · 更新于 ${selectedConflict.updatedAt}`
+            : undefined
+        }
+        footer={
+          <div className="flex justify-end gap-2">
             <Button
               variant="outline"
               className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
@@ -960,9 +688,230 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                 已进入回访观察
               </Button>
             )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+        }
+      >
+        {isDetailLoading ? (
+          <div className="flex h-full items-center justify-center gap-2 text-[var(--color-neutral-08)]">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>正在加载案件详情...</span>
+          </div>
+        ) : selectedConflict ? (
+          <div className="space-y-4">
+            <DetailSection icon={FileText} title="案件概况" description="登记信息、发生地点与当事人一览。">
+              <div className="space-y-3">
+                <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2 text-sm leading-6 text-[var(--color-neutral-10)]">
+                  {selectedConflict.description}
+                </div>
+                <DetailFieldGrid>
+                  <DetailField label="发生地点" icon={<MapPin className="h-3.5 w-3.5" />} value={selectedConflict.location} />
+                  <DetailField label="登记时间" icon={<Calendar className="h-3.5 w-3.5" />} value={selectedConflict.createdAt} />
+                  <DetailField label="最近更新" icon={<Calendar className="h-3.5 w-3.5" />} value={selectedConflict.updatedAt} />
+                </DetailFieldGrid>
+                <div>
+                  <div className="mb-2 flex items-center gap-1.5 text-xs text-[var(--color-neutral-08)]">
+                    <Users className="h-3.5 w-3.5" />
+                    当事人与参与方
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedConflict.involvedParties.length > 0 ? (
+                      selectedConflict.involvedParties.map((party) => (
+                        <Badge
+                          key={`${party.id}-${party.name}`}
+                          variant="outline"
+                          className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-1 text-[var(--color-neutral-10)]"
+                        >
+                          {party.name}
+                          {party.type === "organization" ? (
+                            <span className="text-[var(--color-neutral-08)] ml-1">(单位)</span>
+                          ) : null}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-sm text-[var(--color-neutral-08)]">暂无明确参与方</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </DetailSection>
+
+            <div className="grid gap-4 lg:grid-cols-2">
+              <DetailSection icon={MessageSquare} title="调解建议" description="结合案件进度给出的回访状态与建议动作。">
+                <div className="space-y-3">
+                  <div className="rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2">
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs text-[var(--color-neutral-08)]">回访状态</p>
+                        <p className="mt-1 text-sm text-[var(--color-neutral-10)]">
+                          {selectedContext?.followUpStatus.detail ?? "暂无回访状态"}
+                        </p>
+                      </div>
+                      <StatusBadge tone={getFollowUpTone(selectedContext?.followUpStatus.code)}>
+                        {selectedContext?.followUpStatus.label ?? "待补充"}
+                      </StatusBadge>
+                    </div>
+                  </div>
+                  {selectedContext?.suggestedActions.length ? (
+                    <div className="space-y-2">
+                      {selectedContext.suggestedActions.map((action, index) => (
+                        <div
+                          key={`${selectedConflict.id}-action-${index}`}
+                          className="rounded border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/10 px-3 py-2 text-sm leading-6 text-[var(--color-neutral-10)]"
+                        >
+                          {action}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded border border-dashed border-[var(--color-neutral-03)] px-3 py-2 text-sm text-[var(--color-neutral-08)]">
+                      暂无建议动作
+                    </div>
+                  )}
+                </div>
+              </DetailSection>
+
+              <DetailSection icon={Home} title="关联房屋" description="用于核对居住情况和人房一致性。">
+                {selectedContext?.relatedHouse ? (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 text-[var(--color-neutral-11)]">
+                      <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
+                      <p className="font-medium">{selectedContext.relatedHouse.address}</p>
+                    </div>
+                    <DetailFieldGrid className="sm:grid-cols-2 xl:grid-cols-2">
+                      <DetailField label="产权人" value={selectedContext.relatedHouse.ownerName} />
+                      <DetailField label="房屋类型" value={selectedContext.relatedHouse.type} />
+                      <DetailField label="居住类型" value={selectedContext.relatedHouse.residenceType ?? "待补充"} />
+                      <DetailField label="居住人数" value={`${selectedContext.relatedHouse.memberCount} 人`} />
+                    </DetailFieldGrid>
+                    {onRouteChange ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
+                        onClick={() =>
+                          handleRouteJump("housing", "app_focus_house_id", selectedContext.relatedHouse!.id)
+                        }
+                      >
+                        前往房屋管理
+                        <ArrowUpRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="rounded border border-dashed border-[var(--color-neutral-03)] px-3 py-2 text-sm text-[var(--color-neutral-08)]">
+                    暂未关联到具体房屋，建议先补充地点和住户信息。
+                  </div>
+                )}
+              </DetailSection>
+            </div>
+
+            <DetailSection
+              icon={Users}
+              title="关联人员"
+              description="案件涉及的住户与需要关注的风险等级。"
+              trailing={
+                selectedContext?.relatedPeople.length ? (
+                  <span className="text-xs text-[var(--color-neutral-08)]">{selectedContext.relatedPeople.length} 人</span>
+                ) : undefined
+              }
+            >
+              {selectedContext?.relatedPeople.length ? (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {selectedContext.relatedPeople.map((person) => (
+                    <div
+                      key={person.id}
+                      className="flex items-start justify-between gap-3 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2"
+                    >
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-[var(--color-neutral-11)]">{person.name}</p>
+                          <StatusBadge tone={getRiskTone(person.risk)}>{person.risk}</StatusBadge>
+                          <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
+                            {person.type}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-[var(--color-neutral-10)]">{person.address}</p>
+                        <p className="text-xs text-[var(--color-neutral-08)]">
+                          标签：{(person.tags ?? []).slice(0, 3).join(" / ") || "暂无标签"}
+                        </p>
+                      </div>
+                      {onRouteChange ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="shrink-0 border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]"
+                          onClick={() =>
+                            handleRouteJump("population", "app_focus_person_id", person.id)
+                          }
+                        >
+                          人口档案
+                          <ArrowUpRight className="w-4 h-4 ml-1" />
+                        </Button>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded border border-dashed border-[var(--color-neutral-03)] px-3 py-2 text-sm text-[var(--color-neutral-08)]">
+                  当前案件暂无关联住户记录。
+                </div>
+              )}
+            </DetailSection>
+
+            <DetailSection icon={History} title="走访与处置过程" description="走访记录与处理进度按时间排列。">
+              <div className="space-y-5">
+                <div>
+                  <div className="mb-2 text-xs text-[var(--color-neutral-08)]">最近走访记录</div>
+                  {selectedContext?.recentVisits.length ? (
+                    <div className="space-y-2">
+                      {selectedContext.recentVisits.map((visit) => (
+                        <div
+                          key={visit.id}
+                          className="flex items-start justify-between gap-4 rounded border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-2"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-[var(--color-neutral-11)]">{visit.content}</p>
+                            <p className="mt-1 text-xs text-[var(--color-neutral-08)]">
+                              {visit.date} · {visit.visitorName} · {visit.targetType === "person" ? "人员走访" : "房屋走访"}
+                            </p>
+                          </div>
+                          {visit.tags?.length ? (
+                            <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
+                              {visit.tags[0]}
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="rounded border border-dashed border-[var(--color-neutral-03)] px-3 py-2 text-sm text-[var(--color-neutral-08)]">
+                      暂无走访记录，建议安排一次跟进走访。
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <div className="mb-3 text-xs text-[var(--color-neutral-08)]">处理进度</div>
+                  <div className="space-y-4 pl-2 border-l-2 border-[var(--color-neutral-03)] ml-2">
+                    {[...selectedConflict.timeline].reverse().map((item, index) => (
+                      <div key={`${selectedConflict.id}-timeline-${index}`} className="relative pl-6 pb-2">
+                        <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary-hover)] ring-2 ring-[var(--color-neutral-01)]" />
+                        <div className="flex justify-between text-xs text-[var(--color-neutral-08)] mb-1">
+                          <span>{item.date}</span>
+                          <span>{item.operator}</span>
+                        </div>
+                        <div className="text-sm text-[var(--color-neutral-10)]">{item.content}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </DetailSection>
+          </div>
+        ) : (
+          <div className="flex h-full items-center justify-center text-[var(--color-neutral-08)]">未找到案件详情</div>
+        )}
+      </DetailDialogShell>
 
       <ConfirmDialog
         open={isResolveConfirmOpen}

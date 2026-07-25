@@ -192,7 +192,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
         <PageHeader
           eyebrow="KNOWLEDGE LEDGER"
           title="知识沉淀"
-          description="沉淀政策、公告和治理经验，给智能体问答与报表生成提供可信材料。"
+          description="集中沉淀政策文件、公告材料和治理经验，方便网格员随查随用。"
           actions={
             <Button
               size="sm"
@@ -201,7 +201,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
               disabled
             >
               <Plus className="h-4 w-4" />
-              上传资料（Phase 4）
+              上传资料
             </Button>
           }
         />
@@ -243,7 +243,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
                 <div className="min-w-0">
                   <div className="text-sm font-semibold text-[var(--color-neutral-11)]">全局检索结果</div>
                   <div className={`text-xs ${MUTED_TEXT_CLASS}`}>
-                    从人口、房屋、公告和知识条目中统一检索，点击后回到真实页面
+                    从人口、房屋、公告和知识条目中统一检索，点击跳转到对应页面
                   </div>
                 </div>
                 {searching ? <Loader2 className="h-4 w-4 animate-spin text-[var(--color-neutral-08)]" /> : null}
@@ -301,35 +301,59 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
         ) : null}
 
         <ScrollArea className={`${PANEL_CLASS} flex-1`}>
-          <div className="grid gap-3 p-4">
+          <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3" data-knowledge-grid>
             {loading ? (
-              <LoadingState title="正在加载知识资料..." />
+              <div className="sm:col-span-2 xl:col-span-3">
+                <LoadingState title="正在加载知识资料..." />
+              </div>
             ) : entries.length > 0 ? (
               entries.map((item) => (
                 <div
                   key={item.id}
-                  className={`${INNER_PANEL_CLASS} group flex items-center gap-4 p-3 transition-colors hover:border-[var(--color-brand-primary-hover)]/35 hover:bg-[var(--color-brand-primary)]/8`}
+                  data-knowledge-card
+                  className={`${INNER_PANEL_CLASS} group flex flex-col gap-2 p-3 transition-colors hover:border-[var(--color-brand-primary-hover)]/35 hover:bg-[var(--color-brand-primary)]/8`}
                 >
-                  <div className="shrink-0 rounded-md bg-[var(--color-neutral-03)] p-2 ring-1 ring-[var(--color-neutral-04)]/40">
-                    {getKnowledgeIcon(item.type)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="mb-1 flex min-w-0 items-center gap-2">
+                  <div className="flex items-start gap-2">
+                    <div className="shrink-0 rounded-md bg-[var(--color-neutral-03)] p-2 ring-1 ring-[var(--color-neutral-04)]/40">
+                      {getKnowledgeIcon(item.type)}
+                    </div>
+                    <div className="min-w-0 flex-1">
                       <h4 className="truncate font-medium text-[var(--color-neutral-11)]" title={item.title}>
                         {item.title}
                       </h4>
-                      <Badge variant="outline" className="h-5 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-xs text-[var(--color-neutral-10)]">
+                      <Badge variant="outline" className="mt-1 h-5 border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-xs text-[var(--color-neutral-10)]">
                         {item.category}
                       </Badge>
                     </div>
-                    <p className="line-clamp-2 text-sm leading-6 text-[var(--color-neutral-10)]">{item.summary}</p>
-                    <div className={`mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs ${MUTED_TEXT_CLASS}`}>
-                      <span>{item.size ?? '-'}</span>
-                      <span>上传于 {item.uploadDate}</span>
-                      <span>上传人: {item.author}</span>
-                      <span>{item.source ?? '内部沉淀'}</span>
+                    <div className="flex shrink-0 items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="预览"
+                        className="h-7 w-7 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-status-info-text)]"
+                        onClick={() => setSelectedEntry(item)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        title="下载"
+                        className="h-7 w-7 text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-status-info-text)]"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                     </div>
-                    <div className="mt-2 flex flex-wrap gap-1">
+                  </div>
+                  <p className="line-clamp-3 min-h-[3rem] text-sm leading-6 text-[var(--color-neutral-10)]">{item.summary}</p>
+                  <div className={`mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-xs ${MUTED_TEXT_CLASS}`}>
+                    <span>{item.size ?? '-'}</span>
+                    <span>上传于 {item.uploadDate}</span>
+                    <span>{item.author}</span>
+                    <span>{item.source ?? '内部沉淀'}</span>
+                  </div>
+                  {item.tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
                       {item.tags.map((tag) => (
                         <span
                           key={`${item.id}-${tag}`}
@@ -339,30 +363,13 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
                         </span>
                       ))}
                     </div>
-                  </div>
-                  <div className="flex shrink-0 items-center gap-2 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="预览"
-                      className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-status-info-text)]"
-                      onClick={() => setSelectedEntry(item)}
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      title="下载"
-                      className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-status-info-text)]"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  ) : null}
                 </div>
               ))
             ) : (
-              <EmptyState title="当前筛选条件下暂无知识资料。" />
+              <div className="sm:col-span-2 xl:col-span-3">
+                <EmptyState title="当前筛选条件下暂无知识资料。" />
+              </div>
             )}
           </div>
         </ScrollArea>
@@ -416,7 +423,7 @@ export function KnowledgeAccumulation({ onRouteChange }: KnowledgeAccumulationPr
                         }
                       }}
                     >
-                      回到真实页面
+                      打开关联页面
                     </Button>
                   </div>
                 ) : null}
