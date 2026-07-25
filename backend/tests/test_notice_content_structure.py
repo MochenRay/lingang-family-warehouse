@@ -3,8 +3,17 @@
 每条通知正文 = 引言段 + 七个「【模块名】内容」分区
 （通知对象/工作任务/时间安排/覆盖范围/执行要求/反馈方式/责任分工），
 与前端 NoticeManagement 详情弹窗的解析口径保持一致。
+
+正文漂移防护分两层：
+1. SHA-256 冻结表（完整 truth freeze）：对每条 record.content 的 UTF-8
+   字节直接计算摘要，任何正文漂移（含未被任何正则覆盖的中文时间表达）
+   都使测试变红；合法修改必须显式更新摘要并经审查。
+2. 锚点扫描器（可读诊断层）：仅覆盖「已登记格式及历史违规回归」，
+   用于在漂移发生时给出可读的差异定位；不宣称覆盖任何新增中文
+   时间/频率/量化表达。
 """
 
+import hashlib
 import re
 
 import pytest
@@ -82,14 +91,40 @@ def test_notice_content_keeps_original_time_anchors() -> None:
     assert "本周五" in contents["notice_005"]
 
 
+# 五条已验收公告正文的 SHA-256 冻结表（对完整 record.content 的 UTF-8 字节计算）。
+# 这是正文内容的完整 truth freeze：任何漂移（包括未被下方诊断正则覆盖的
+# 中文时间/频率/量化表达，如「下周完成」「月底前」「两天内」「半个月内」
+# 「每季度」等）都会使测试变红。合法修改必须显式更新对应摘要并经审查，
+# 不得只改正文。
+NOTICE_CONTENT_SHA256: dict[str, str] = {
+    "notice_001": "59e8b0905a7359c87b4d36d23667915d3be81d73e632fcd001951a58a56c1287",
+    "notice_002": "4a37036ffd57324f534468fbc5be38837bea010ba31a181469099a7475196d03",
+    "notice_003": "198d1caafd33f139ed4ea8691dd4dc4430b744a5d0a85af5ba660a5ec0b2dd5c",
+    "notice_004": "77a15fc09810ce9f010fc82c21482a016e2f099a2bb6a5197ccbb2354b42c34f",
+    "notice_005": "0e1146343b3c8b67dbb10a7bb8e6d70e23899146d4ef5c03b89cb19aa4a7785b",
+}
+
+
+def test_notice_content_sha256_frozen() -> None:
+    """每条正文与冻结摘要逐字节一致；任何漂移均变红。"""
+    records = build_notice_records()
+    assert {record.id for record in records} == set(NOTICE_CONTENT_SHA256)
+    for record in records:
+        digest = hashlib.sha256(record.content.encode("utf-8")).hexdigest()
+        assert digest == NOTICE_CONTENT_SHA256[record.id], (
+            f"{record.id} 正文发生漂移（期望 {NOTICE_CONTENT_SHA256[record.id]}，实际 {digest}）；"
+            "如为合法修改，请显式更新 NOTICE_CONTENT_SHA256 并在提交信息中说明依据"
+        )
+
+
 # 各通知正文允许出现的日期 / 频率 / 量化表述，与改写前原文口径逐一对应：
 # notice_001：1月20日前完成、第一季度考核、三项任务、2026年度第一季度（标题与引言）
 # notice_002：本周内完成
 # notice_003：12月21日凌晨1:00-3:00 维护窗口（标题）、当天采集
 # notice_004：本周入户、完成一次试用
 # notice_005：本周五前提交、近一月案件
-# 任何新增的日期、频率或量化要求都会使下方测试失败；
-# 确需新增时，须经产品确认后在此同步登记，不得只在正文里加内容。
+# 扫描器仅覆盖已登记格式及历史违规回归（可读诊断层）：已登记格式内的新增
+# 表述会使下方测试失败；完整漂移防护由上方 SHA-256 冻结表承担。
 ALLOWED_TIME_ANCHORS: dict[str, set[str]] = {
     "notice_001": {"1月20日", "2026年度", "第一季度", "三项"},
     "notice_002": {"本周内"},
@@ -103,7 +138,9 @@ ANCHOR_PATTERNS = [
     r"\d{1,2}:\d{2}",  # 具体时刻：1:00、18:00、24:00
     r"\d{4}年度?",  # 年度：2026年度、2026年
     r"第[一二三四]季度",  # 季度
-    r"[本每]?周[一二三四五六日天](?:以?前)?",  # 周五、周五前、本周五前、每周五前、周天前
+    # 周X（前）：周五、周五前、本周五前、每周五前、周天前；
+    # 负向后行排除「每两周一次」这类 数字+周+数字 组合被误切成「周一」
+    r"(?<![一二两三四五六七八九十\d])[本每]?周[一二三四五六日天](?:以?前)?",
     r"本周[之]?内",  # 本周内 / 本周之内
     r"近[一二两三四五六七八九十\d]+个?月",  # 近一月、近一个月、近两个月、近2个月
     r"当天|当日",  # 当天 / 当日
@@ -125,8 +162,12 @@ def _find_unexpected_anchors(notice_id: str, content: str) -> set[str]:
     return _extract_time_anchors(content) - ALLOWED_TIME_ANCHORS[notice_id]
 
 
-def test_notice_content_uses_only_allowlisted_time_anchors() -> None:
-    """正文不得出现 allowlist 之外的日期、频率或量化表述（精确兜底，防 false-green）。"""
+def test_known_anchor_formats_stay_within_allowlist() -> None:
+    """已登记格式内的锚点不得超出 allowlist（诊断层断言）。
+
+    仅覆盖 ANCHOR_PATTERNS 登记的格式与历史违规回归，不宣称覆盖
+    任何新增中文时间/频率/量化表达；完整漂移防护由 SHA-256 冻结表承担。
+    """
     for record in build_notice_records():
         unexpected = _find_unexpected_anchors(record.id, record.content)
         assert not unexpected, (
@@ -136,7 +177,7 @@ def test_notice_content_uses_only_allowlisted_time_anchors() -> None:
 
 
 def test_allowlist_entries_are_all_present_in_content() -> None:
-    """allowlist 中的每个锚点都必须真的被扫描器从正文提取到。
+    """allowlist 中的每个锚点都必须真的被扫描器从正文提取到（诊断层自洽）。
 
     防止两类 false-green：扫描器模式失效（如全角括号永远匹配不到），
     以及 allowlist 登记了正文里并不存在的内容。
@@ -150,8 +191,20 @@ def test_allowlist_entries_are_all_present_in_content() -> None:
         )
 
 
-# 直接 mutation 用例：均为历史上被剔除或典型的违规锚点，注入任何一条都必须变红。
-# 注入目标选 allowlist 最小的 notice_002（仅「本周内」），保证注入物必然未登记。
+def test_biweekly_once_is_not_misread_as_monday() -> None:
+    """回归：「每两周一次」不得被误切成「周一」（数字+周+数字 组合）。
+
+    历史上的误报：每两周一次 → ['一次', '周一']；修复后应只提取到「一次」。
+    """
+    found = _extract_time_anchors("排查每两周一次，半个月内完成一轮。")
+    assert "周一" not in found, f"「每两周一次」被误切出「周一」：{sorted(found)}"
+    assert "一次" in found
+    assert not {"周二", "周三", "两周"} & found
+
+
+# 历史违规回归用例（直接 mutation）：均为历史上被剔除或典型的违规锚点，
+# 注入任何一条都必须被诊断层提取并判违规。注入目标选 allowlist 最小的
+# notice_002（仅「本周内」），保证注入物必然未登记。
 MUTATION_ANCHORS = [
     "周五前",
     "1月21日",
@@ -164,8 +217,8 @@ MUTATION_ANCHORS = [
 
 
 @pytest.mark.parametrize("anchor", MUTATION_ANCHORS)
-def test_injected_unregistered_anchor_is_caught_and_flagged(anchor: str) -> None:
-    """mutation test：向正文注入非 allowlist 锚点，扫描器必须提取到且闸门必须判违规。"""
+def test_historical_violation_injection_is_flagged(anchor: str) -> None:
+    """历史违规回归：注入非 allowlist 锚点，扫描器必须提取到且闸门必须判违规。"""
     base_content = next(r.content for r in build_notice_records() if r.id == "notice_002")
     mutated = f"{base_content}\n补充要求：请在{anchor}完成补充登记。"
 
