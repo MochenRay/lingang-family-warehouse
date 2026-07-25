@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { FileText, Download, Filter, Calendar, User, Activity } from 'lucide-react';
+import { FileText, Download, Filter, Calendar, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
-import { SearchInput } from '../patterns/FilterBar';
+import { FilterBar, SearchInput } from '../patterns/FilterBar';
+import { DataTableBody } from '../patterns/DataTableShell';
 import { PANEL_CLASS } from '../patterns/surfaces';
 import { PageHeader } from './PageHeader';
 
@@ -15,6 +17,7 @@ const DARK_SELECT_TRIGGER_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--co
 const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]';
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
+const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
 
 export function LogManagement() {
   const [logType, setLogType] = useState('all');
@@ -224,12 +227,19 @@ export function LogManagement() {
     return true;
   });
 
+  const hasActiveFilters = logType !== 'all' || searchQuery !== '';
+  const clearFilters = () => {
+    setLogType('all');
+    setTimeRange('today');
+    setSearchQuery('');
+  };
+
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
       <PageHeader
         eyebrow="AUDIT LOGS"
         title="日志管理"
-        description="追踪关键操作、登录和数据变更，为演示审计链路留痕。"
+        description="追踪关键操作、登录和数据变更，支撑问题回溯与责任定位。"
         actions={
           <div className="flex items-center gap-2">
             <StatusBadge tone="info">演示数据</StatusBadge>
@@ -254,143 +264,142 @@ export function LogManagement() {
         <StatCard label="失败操作" value={stats.failed} hint="需要关注" tone="error" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* 操作类型分布 */}
-        <Card className={PANEL_CLASS}>
-          <CardHeader>
-            <CardTitle className="text-base text-[var(--color-neutral-11)]">操作类型</CardTitle>
-            <CardDescription className={MUTED_TEXT_CLASS}>操作统计</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {typeDistribution.map((item) => (
-                <div key={item.type} className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="w-3 h-3 rounded-full"
-                      style={{ backgroundColor: item.color }}
-                    />
-                    <span className="text-sm text-[var(--color-neutral-10)]">{item.label}</span>
-                  </div>
-                  <Badge variant="outline" className={INFO_BADGE_CLASS}>{item.count}</Badge>
-                </div>
-              ))}
+      {/* 操作日志：通栏表格，筛选区与表格同卡 */}
+      <Card className={`${PANEL_CLASS} overflow-hidden`}>
+        <CardHeader className="border-b border-[var(--color-neutral-03)]">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <CardTitle className="text-base text-[var(--color-neutral-11)]">操作日志</CardTitle>
+              <CardDescription className={MUTED_TEXT_CLASS}>
+                共 {filteredLogs.length} 条记录
+                {hasActiveFilters && '（已筛选）'}
+              </CardDescription>
             </div>
+            <FilterBar>
+              <Select value={timeRange} onValueChange={setTimeRange}>
+                <SelectTrigger aria-label="按时间范围筛选" className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
+                  <Calendar className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="today">今天</SelectItem>
+                  <SelectItem value="week">近7天</SelectItem>
+                  <SelectItem value="month">近30天</SelectItem>
+                  <SelectItem value="all">全部</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={logType} onValueChange={setLogType}>
+                <SelectTrigger aria-label="按类型筛选" className={`w-[148px] ${DARK_SELECT_TRIGGER_CLASS}`}>
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部类型</SelectItem>
+                  <SelectItem value="login">登录/登出</SelectItem>
+                  <SelectItem value="create">新建</SelectItem>
+                  <SelectItem value="update">编辑</SelectItem>
+                  <SelectItem value="delete">删除</SelectItem>
+                  <SelectItem value="export">导出</SelectItem>
+                  <SelectItem value="view">查看</SelectItem>
+                </SelectContent>
+              </Select>
+              <SearchInput
+                className="w-[220px]"
+                placeholder="搜索操作、操作人或详情..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+              {hasActiveFilters ? (
+                <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  清除筛选
+                </Button>
+              ) : null}
+            </FilterBar>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table className="min-w-[960px]">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[150px]`}>时间</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[72px]`}>类型</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[96px]`}>模块</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[240px]`}>操作内容</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[104px]`}>操作人</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[132px]`}>来源</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[80px]`}>状态</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} text-right min-w-[80px]`}>耗时</TableHead>
+              </TableRow>
+            </TableHeader>
+            <DataTableBody columnCount={8} empty={filteredLogs.length === 0} emptyText="没有符合条件的日志">
+              {filteredLogs.map((log) => (
+                <TableRow key={log.id}>
+                  <TableCell className="whitespace-nowrap font-mono text-xs tabular-nums">{log.time}</TableCell>
+                  <TableCell>{getTypeBadge(log.type)}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={INFO_BADGE_CLASS}>{log.module}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[280px]">
+                    <p className="font-medium text-[var(--color-neutral-11)]">{log.action}</p>
+                    <p className={`truncate text-xs ${MUTED_TEXT_CLASS}`} title={log.detail}>{log.detail}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-medium text-[var(--color-neutral-11)]">{log.user}</p>
+                    <p className={`text-xs ${MUTED_TEXT_CLASS}`}>{log.username}</p>
+                  </TableCell>
+                  <TableCell>
+                    <p className="font-mono text-xs text-[var(--color-neutral-10)]">{log.ip}</p>
+                    <p className={`text-xs ${MUTED_TEXT_CLASS}`}>{log.location}</p>
+                  </TableCell>
+                  <TableCell className="text-center">{getStatusBadge(log.status)}</TableCell>
+                  <TableCell className="text-right font-mono text-xs tabular-nums">{log.duration}</TableCell>
+                </TableRow>
+              ))}
+            </DataTableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
-            <div className="mt-6">
-              <p className={`text-sm font-medium ${MUTED_TEXT_CLASS} mb-2`}>模块分布</p>
-              <div className="space-y-2">
-                {moduleDistribution.map((item) => (
-                  <div key={item.module} className="flex items-center justify-between text-sm">
-                    <span className={MUTED_TEXT_CLASS}>{item.module}</span>
-                    <span className="font-medium text-[var(--color-neutral-11)]">{item.count}</span>
+      {/* 日志分布：类型与模块同卡两列 */}
+      <Card className={PANEL_CLASS}>
+        <CardHeader>
+          <CardTitle className="text-base text-[var(--color-neutral-11)]">日志分布</CardTitle>
+          <CardDescription className={MUTED_TEXT_CLASS}>按操作类型与所属模块统计</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <div>
+              <p className={`mb-3 text-sm font-medium ${MUTED_TEXT_CLASS}`}>操作类型</p>
+              <div className="space-y-3">
+                {typeDistribution.map((item) => (
+                  <div key={item.type} className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-3 h-3 rounded-full"
+                        style={{ backgroundColor: item.color }}
+                      />
+                      <span className="text-sm text-[var(--color-neutral-10)]">{item.label}</span>
+                    </div>
+                    <Badge variant="outline" className={INFO_BADGE_CLASS}>{item.count}</Badge>
                   </div>
                 ))}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* 日志列表 */}
-        <Card className={`lg:col-span-3 ${PANEL_CLASS} overflow-hidden`}>
-          <CardHeader className="border-b border-[var(--color-neutral-03)]">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <CardTitle className="text-base text-[var(--color-neutral-11)]">操作日志</CardTitle>
-                <CardDescription className={MUTED_TEXT_CLASS}>
-                  共 {filteredLogs.length} 条记录
-                  {(logType !== 'all' || searchQuery) && ` (已筛选)`}
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Select value={timeRange} onValueChange={setTimeRange}>
-                  <SelectTrigger className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="today">今天</SelectItem>
-                    <SelectItem value="week">近7天</SelectItem>
-                    <SelectItem value="month">近30天</SelectItem>
-                    <SelectItem value="all">全部</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={logType} onValueChange={setLogType}>
-                  <SelectTrigger className={`w-[120px] ${DARK_SELECT_TRIGGER_CLASS}`}>
-                    <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部类型</SelectItem>
-                    <SelectItem value="login">登录/登出</SelectItem>
-                    <SelectItem value="create">新建</SelectItem>
-                    <SelectItem value="update">编辑</SelectItem>
-                    <SelectItem value="delete">删除</SelectItem>
-                    <SelectItem value="export">导出</SelectItem>
-                    <SelectItem value="view">查看</SelectItem>
-                  </SelectContent>
-                </Select>
-                <SearchInput
-                  className="w-[200px]"
-                  placeholder="搜索日志..."
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                />
+            <div>
+              <p className={`mb-3 text-sm font-medium ${MUTED_TEXT_CLASS}`}>模块分布</p>
+              <div className="space-y-2">
+                {moduleDistribution.map((item) => (
+                  <div key={item.module} className="flex items-center justify-between text-sm">
+                    <span className={MUTED_TEXT_CLASS}>{item.module}</span>
+                    <span className="font-medium tabular-nums text-[var(--color-neutral-11)]">{item.count}</span>
+                  </div>
+                ))}
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="max-h-[600px] divide-y divide-[var(--color-neutral-03)] overflow-y-auto">
-              {filteredLogs.map((log) => (
-                <div key={log.id} className="p-4 transition-colors hover:bg-[var(--color-neutral-03)]/70">
-                  <div className="mb-2 flex flex-col gap-2 xl:flex-row xl:items-start xl:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                      {getTypeBadge(log.type)}
-                      <Badge variant="outline" className={INFO_BADGE_CLASS}>{log.module}</Badge>
-                      <span className="font-medium text-[var(--color-neutral-11)]">{log.action}</span>
-                      {getStatusBadge(log.status)}
-                    </div>
-                    <span className={`shrink-0 text-sm ${MUTED_TEXT_CLASS}`}>{log.time}</span>
-                  </div>
-
-                  <p className={`mb-3 text-sm ${MUTED_TEXT_CLASS}`}>{log.detail}</p>
-
-                  <div className="grid grid-cols-1 gap-3 text-sm md:grid-cols-2 xl:grid-cols-4">
-                    <div className="flex items-center gap-2">
-                      <User className={`w-4 h-4 ${MUTED_TEXT_CLASS}`} />
-                      <div>
-                        <p className={MUTED_TEXT_CLASS}>操作人</p>
-                        <p className="font-medium text-[var(--color-neutral-11)]">{log.user}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Activity className={`w-4 h-4 ${MUTED_TEXT_CLASS}`} />
-                      <div>
-                        <p className={MUTED_TEXT_CLASS}>IP地址</p>
-                        <p className="font-mono font-medium text-[var(--color-neutral-11)]">{log.ip}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4" />
-                      <div>
-                        <p className={MUTED_TEXT_CLASS}>位置</p>
-                        <p className="font-medium text-[var(--color-neutral-11)]">{log.location}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4" />
-                      <div>
-                        <p className={MUTED_TEXT_CLASS}>耗时</p>
-                        <p className="font-medium text-[var(--color-neutral-11)]">{log.duration}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 日志保留策略 */}
       <Card className={PANEL_CLASS}>

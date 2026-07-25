@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { UserCog, Plus, Download, RefreshCw, Edit, Trash2, Lock, Unlock } from 'lucide-react';
+import { UserCog, Plus, Download, RefreshCw, Edit, Trash2, Lock, Unlock, ChevronDown, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -10,7 +10,7 @@ import { Label } from '../ui/label';
 import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge } from '../patterns/StatusBadge';
-import { SearchInput } from '../patterns/FilterBar';
+import { FilterBar, SearchInput } from '../patterns/FilterBar';
 import { DataTableBody } from '../patterns/DataTableShell';
 import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
 import { getCommunities, getDistricts, getStreets } from '../../config/regions';
@@ -26,6 +26,7 @@ export function UserManagement() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [roleFilter, setRoleFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isRolePanelOpen, setIsRolePanelOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   
   // 新增用户表单状态
@@ -141,6 +142,13 @@ export function UserManagement() {
     )) return false;
     return true;
   });
+
+  const hasActiveFilters = roleFilter !== 'all' || statusFilter !== 'all' || searchQuery !== '';
+  const clearFilters = () => {
+    setRoleFilter('all');
+    setStatusFilter('all');
+    setSearchQuery('');
+  };
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -278,135 +286,170 @@ export function UserManagement() {
         <StatCard label="在线用户" value={stats.online} tone="brand" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* 角色分布 */}
-        <Card className={PANEL_CLASS}>
-          <CardHeader>
-            <CardTitle className="text-base text-[var(--color-neutral-11)]">角色分布</CardTitle>
-            <CardDescription className={MUTED_TEXT_CLASS}>用户角色统计</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {roleDistribution.map((item) => (
-                <div key={item.role} className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
+      {/* 角色分布：默认折叠，展开后点击角色可直接筛选用户列表 */}
+      <Card data-testid="role-distribution-panel" className={PANEL_CLASS}>
+        <button
+          type="button"
+          aria-expanded={isRolePanelOpen}
+          onClick={() => setIsRolePanelOpen(open => !open)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="text-base font-semibold text-[var(--color-neutral-11)]">角色分布</span>
+            <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">
+              {roleDistribution.length} 类角色
+            </Badge>
+            <span className={`hidden text-sm md:inline ${MUTED_TEXT_CLASS}`}>展开后点击角色可直接筛选用户列表</span>
+          </span>
+          <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${MUTED_TEXT_CLASS} ${isRolePanelOpen ? 'rotate-180' : ''}`} />
+        </button>
+        {isRolePanelOpen ? (
+          <CardContent className="border-t border-[var(--color-neutral-03)] pt-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+              {roleDistribution.map((item) => {
+                const active = roleFilter === item.role;
+                return (
+                  <button
+                    key={item.role}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => setRoleFilter(active ? 'all' : item.role)}
+                    className={`space-y-2 rounded-[4px] border p-3 text-left transition-colors ${
+                      active
+                        ? 'border-[var(--color-brand-primary)]/60 bg-[var(--color-brand-primary)]/10'
+                        : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] hover:border-[var(--color-neutral-04)]'
+                    }`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="flex min-w-0 items-center gap-2">
+                        <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: item.color }} />
+                        <span className="truncate text-sm text-[var(--color-neutral-10)]">{item.role}</span>
+                      </span>
+                      <span className="shrink-0 text-sm font-semibold tabular-nums text-[var(--color-neutral-11)]">{item.count}</span>
+                    </span>
+                    <span className="block h-2 w-full rounded-full bg-[var(--color-neutral-03)]">
+                      <span
+                        className="block h-2 rounded-full"
+                        style={{ width: `${(item.count / stats.total) * 100}%`, backgroundColor: item.color }}
                       />
-                      <span className="text-sm text-[var(--color-neutral-10)]">{item.role}</span>
-                    </div>
-                    <span className="text-sm font-semibold text-[var(--color-neutral-11)]">{item.count}</span>
-                  </div>
-                  <div className="h-2 w-full rounded-full bg-[var(--color-neutral-03)]">
-                    <div
-                      className="h-2 rounded-full"
-                      style={{
-                        width: `${(item.count / stats.total) * 100}%`,
-                        backgroundColor: item.color
-                      }}
-                    />
-                  </div>
-                </div>
-              ))}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </CardContent>
-        </Card>
+        ) : null}
+      </Card>
 
-        {/* 用户列表 */}
-        <Card className={`lg:col-span-3 ${PANEL_CLASS} overflow-hidden`}>
-          <CardHeader className="border-b border-[var(--color-neutral-03)]">
-            <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
-              <div>
-                <CardTitle className="text-base text-[var(--color-neutral-11)]">用户列表</CardTitle>
-                <CardDescription className={MUTED_TEXT_CLASS}>
-                  共 {filteredUsers.length} 个用户
-                </CardDescription>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className={`w-[140px] ${DARK_SELECT_TRIGGER_CLASS}`}>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">全部角色</SelectItem>
-                    <SelectItem value="系统管理员">系统管理员</SelectItem>
-                    <SelectItem value="区域管理员">区域管理员</SelectItem>
-                    <SelectItem value="街道干部">街道干部</SelectItem>
-                    <SelectItem value="网格员">网格员</SelectItem>
-                  </SelectContent>
-                </Select>
-                <SearchInput
-                  className="w-[200px]"
-                  placeholder="搜索用户..."
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                />
-              </div>
+      {/* 用户列表：通栏展示完整字段 */}
+      <Card data-testid="user-table-card" className={`${PANEL_CLASS} overflow-hidden`}>
+        <CardHeader className="border-b border-[var(--color-neutral-03)]">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+            <div>
+              <CardTitle className="text-base text-[var(--color-neutral-11)]">用户列表</CardTitle>
+              <CardDescription className={MUTED_TEXT_CLASS}>
+                共 {filteredUsers.length} 个用户
+                {hasActiveFilters && '（已筛选）'}
+              </CardDescription>
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Table className="min-w-[920px]">
-              <TableHeader>
-                <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
-                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[132px]`}>用户</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[116px]`}>角色</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[156px]`}>部门</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[170px]`}>管辖范围</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} min-w-[172px]`}>关联账户</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>状态</TableHead>
-                  <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>操作</TableHead>
+            <FilterBar>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger aria-label="按角色筛选" className={`w-[150px] ${DARK_SELECT_TRIGGER_CLASS}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部角色</SelectItem>
+                  <SelectItem value="系统管理员">系统管理员</SelectItem>
+                  <SelectItem value="区域管理员">区域管理员</SelectItem>
+                  <SelectItem value="街道干部">街道干部</SelectItem>
+                  <SelectItem value="网格员">网格员</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger aria-label="按状态筛选" className={`w-[130px] ${DARK_SELECT_TRIGGER_CLASS}`}>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">全部状态</SelectItem>
+                  <SelectItem value="active">启用</SelectItem>
+                  <SelectItem value="disabled">禁用</SelectItem>
+                </SelectContent>
+              </Select>
+              <SearchInput
+                className="w-[200px]"
+                placeholder="搜索用户..."
+                value={searchQuery}
+                onChange={setSearchQuery}
+              />
+              {hasActiveFilters ? (
+                <Button variant="outline" className={ACTION_BUTTON_CLASS} onClick={clearFilters}>
+                  <X className="w-4 h-4 mr-2" />
+                  清除筛选
+                </Button>
+              ) : null}
+            </FilterBar>
+          </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table className="min-w-[920px]">
+            <TableHeader>
+              <TableRow className="border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[132px]`}>用户</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[116px]`}>角色</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[156px]`}>部门</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[170px]`}>管辖范围</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} min-w-[172px]`}>关联账户</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>状态</TableHead>
+                <TableHead className={`${TABLE_HEAD_CLASS} text-center min-w-[92px]`}>操作</TableHead>
+              </TableRow>
+            </TableHeader>
+            <DataTableBody columnCount={7} empty={filteredUsers.length === 0} emptyText="没有符合条件的用户">
+              {filteredUsers.map((user) => (
+                <TableRow key={user.id}>
+                  <TableCell>
+                    <div>
+                      <p className="font-medium text-[var(--color-neutral-11)]">{user.realName}</p>
+                      <p className={`text-sm ${MUTED_TEXT_CLASS}`}>{user.username}</p>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">{user.role}</Badge>
+                  </TableCell>
+                  <TableCell className="max-w-[180px] truncate" title={user.department}>{user.department}</TableCell>
+                  <TableCell className="max-w-[200px] truncate" title={user.scope}>
+                    {user.scope}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
+                         <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/15 text-[10px] font-bold text-[var(--color-brand-text)]">城</div>
+                         <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
+                      </div>
+                      <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
+                         <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning)]/15 text-[10px] font-bold text-[var(--color-status-warning-text)]">鲁</div>
+                         <span className="truncate max-w-[100px]">{user.shandongPassId || '-'}</span>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-center">
+                    {getStatusBadge(user.status)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`编辑用户 ${user.realName}`} className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`删除用户 ${user.realName}`} className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <DataTableBody columnCount={7} empty={filteredUsers.length === 0} emptyText="没有符合条件的用户">
-                {filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div>
-                        <p className="font-medium text-[var(--color-neutral-11)]">{user.realName}</p>
-                        <p className={`text-sm ${MUTED_TEXT_CLASS}`}>{user.username}</p>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]">{user.role}</Badge>
-                    </TableCell>
-                    <TableCell className="max-w-[180px] truncate" title={user.department}>{user.department}</TableCell>
-                    <TableCell className="max-w-[200px] truncate" title={user.scope}>
-                      {user.scope}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="城市大脑账号">
-                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/15 text-[10px] font-bold text-[var(--color-brand-text)]">城</div>
-                           <span className="truncate max-w-[100px]">{user.cityBrainAccount || '-'}</span>
-                        </div>
-                        <div className={`flex items-center gap-1 text-xs ${MUTED_TEXT_CLASS}`} title="山东通ID">
-                           <div className="flex h-4 w-4 items-center justify-center rounded border border-[var(--color-status-warning)]/35 bg-[var(--color-status-warning)]/15 text-[10px] font-bold text-[var(--color-status-warning-text)]">鲁</div>
-                           <span className="truncate max-w-[100px]">{user.shandongPassId || '-'}</span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getStatusBadge(user.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center justify-center gap-2">
-                        <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`编辑用户 ${user.realName}`} className="text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]">
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" disabled title="演示数据暂未启用" aria-label={`删除用户 ${user.realName}`} className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/15 hover:text-[var(--color-status-error-text)]">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </DataTableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
+              ))}
+            </DataTableBody>
+          </Table>
+        </CardContent>
+      </Card>
     </div>
   );
 }

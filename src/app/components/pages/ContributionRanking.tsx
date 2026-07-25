@@ -218,31 +218,76 @@ export function ContributionRanking() {
       <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">影响因子贡献排名</CardTitle>
-          <CardDescription className={MUTED_TEXT}>统一使用真实治理快照排序，不再引用静态样例或手工排序。</CardDescription>
+          <CardDescription className={MUTED_TEXT}>按贡献权重从高到低排序，切换指标后自动更新。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {contributions.map((item) => (
-            <div key={item.factor} className={`${INNER_PANEL_CLASS} p-4`}>
-              <div className="flex items-center justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-semibold text-[var(--color-neutral-11)]">{item.rank}. {item.factor}</span>
-                    <StatusBadge tone="info">{item.category}</StatusBadge>
+        <CardContent>
+          <div data-testid="contribution-factor-grid" className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {contributions.map((item) => (
+              <div
+                key={item.factor}
+                data-testid="contribution-factor-card"
+                data-rank={item.rank}
+                data-contribution={item.contribution}
+                className={`${INNER_PANEL_CLASS} flex h-full flex-col p-4`}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border text-sm font-semibold tabular-nums ${
+                        item.rank === 1
+                          ? 'border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] text-[var(--color-status-success-text)]'
+                          : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]'
+                      }`}
+                    >
+                      {item.rank}
+                    </span>
+                    <span className="truncate font-semibold text-[var(--color-neutral-11)]" title={item.factor}>
+                      {item.factor}
+                    </span>
                   </div>
-                  <p className={`text-sm ${MUTED_TEXT}`}>{item.description}</p>
+                  <StatusBadge tone="info" className="shrink-0">{item.category}</StatusBadge>
                 </div>
-                <div className="text-right min-w-[110px]">
-                  <div className="text-2xl font-semibold text-[var(--color-status-success-text)]">{item.contribution}%</div>
-                  <div className={`text-xs ${MUTED_TEXT}`}>贡献权重</div>
+
+                <div className="mt-3 flex items-end justify-between gap-3">
+                  <div className="shrink-0">
+                    <span className="text-2xl font-semibold tabular-nums text-[var(--color-status-success-text)]">
+                      {item.contribution}%
+                    </span>
+                    <span className={`ml-2 text-xs ${MUTED_TEXT}`}>贡献权重</span>
+                  </div>
+                  <span className={`shrink-0 text-xs ${MUTED_TEXT}`}>可信度 {item.confidence}%</span>
                 </div>
+                <div
+                  className="mt-2 h-1.5 w-full rounded-full bg-[var(--color-neutral-03)]"
+                  role="img"
+                  aria-label={`贡献权重 ${item.contribution}%`}
+                >
+                  <div
+                    className="h-1.5 rounded-full bg-[var(--color-status-success)]"
+                    style={{
+                      width: `${item.contribution}%`,
+                      minWidth: item.contribution > 0 ? '4px' : undefined,
+                    }}
+                  />
+                </div>
+
+                <div className={`mt-3 grid grid-cols-2 gap-2 text-sm ${MUTED_TEXT}`}>
+                  <div className="min-w-0">
+                    <div className="text-xs">当前量级</div>
+                    <div className="truncate font-medium tabular-nums text-[var(--color-neutral-10)]" title={item.absoluteValue}>
+                      {item.absoluteValue}
+                    </div>
+                  </div>
+                  <div className="min-w-0">
+                    <div className="text-xs">最近趋势</div>
+                    <div className="font-medium tabular-nums text-[var(--color-neutral-10)]">{item.trend}</div>
+                  </div>
+                </div>
+
+                <p className={`mt-3 flex-1 text-xs leading-5 ${MUTED_TEXT}`}>{item.description}</p>
               </div>
-              <div className={`mt-3 grid gap-3 text-sm md:grid-cols-3 ${MUTED_TEXT}`}>
-                <div>当前量级：{item.absoluteValue}</div>
-                <div>最近趋势：{item.trend}</div>
-                <div>可信度：{item.confidence}%</div>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </CardContent>
       </Card>
     </div>
