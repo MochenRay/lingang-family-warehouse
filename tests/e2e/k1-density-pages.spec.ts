@@ -233,29 +233,77 @@ test.describe('K1 高密度页面重设计', () => {
     await page.getByRole('button', { name: '清除筛选' }).click();
     await expect(page.locator('tbody tr')).toHaveCount(10);
 
-    // 时间范围参与过滤并计入「已筛选」状态（锚点为数据集最新日志时间，演示数据均在当天）
-    const timeTrigger = page.getByRole('combobox', { name: '按时间范围筛选' });
-    await expect(timeTrigger).toContainText('今天');
-    await expect(page.getByText('（已筛选）')).toHaveCount(0);
-
-    await timeTrigger.click();
-    await page.getByRole('option', { name: '全部' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(10);
-    await expect(page.getByText('（已筛选）')).toBeVisible();
-
-    await timeTrigger.click();
-    await page.getByRole('option', { name: '近7天' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(10);
-
-    await page.getByRole('button', { name: '清除筛选' }).click();
-    await expect(timeTrigger).toContainText('今天');
-    await expect(page.getByText('（已筛选）')).toHaveCount(0);
-    await expect(page.locator('tbody tr')).toHaveCount(10);
-
     // 桌面与窄屏均无整页横向溢出
     await expectNoPageHorizontalOverflow(page);
     await page.setViewportSize({ width: 480, height: 900 });
     await expectNoPageHorizontalOverflow(page);
     await expect(page.getByRole('columnheader', { name: '操作内容', exact: true })).toBeVisible();
+  });
+
+  test('R56 时间范围跨日期夹具：切换改变行数与行身份', async ({ page }) => {
+    await dismissJourneyOverlay(page);
+    // 跨日期夹具：Vite dev 按模块服务，拦截日志数据模块替换为跨日期数据，
+    // 不改生产统计、路由与 API。锚点 = 数据集最新时间 2026-01-15 18:00，
+    // 今天 3 条、近7天 5 条（含 01-09 边界）、近30天 6 条、全部 7 条 ——
+    // 删除 LogManagement 的 isWithinTimeRange 接线后各档行数相同，本测试即变红。
+    await page.route(/\/src\/app\/data\/operationLogs\.ts/, (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/javascript',
+        body: `const entry = (id, action, time, type = 'view') => ({
+  id, type, module: '数据管理', action, user: '夹具操作员', username: 'fixture',
+  ip: '10.0.0.1', location: '夹具科', detail: '跨日期夹具条目：' + action,
+  status: 'success', time, duration: '0.10s',
+});
+export const OPERATION_LOGS = [
+  entry(101, '夹具-今日甲', '2026-01-15 09:00:00', 'create'),
+  entry(102, '夹具-今日乙', '2026-01-15 12:00:00', 'update'),
+  entry(103, '夹具-今日丙', '2026-01-15 18:00:00', 'login'),
+  entry(104, '夹具-七天内', '2026-01-10 10:00:00'),
+  entry(105, '夹具-七天边界', '2026-01-09 10:00:00', 'export'),
+  entry(106, '夹具-三十天内', '2025-12-20 10:00:00', 'delete'),
+  entry(107, '夹具-全部范围', '2025-06-01 10:00:00', 'login'),
+];`,
+      }),
+    );
+    await page.goto('/settings/logs');
+    await expect(page.getByRole('heading', { name: '日志管理' })).toBeVisible({ timeout: 20_000 });
+
+    const rows = page.locator('tbody tr');
+    const timeTrigger = page.getByRole('combobox', { name: '按时间范围筛选' });
+
+    // 默认今天：3 行且不含更早条目，无「已筛选」标记
+    await expect(timeTrigger).toContainText('今天');
+    await expect(rows).toHaveCount(3);
+    await expect(rows.filter({ hasText: '夹具-今日甲' })).toHaveCount(1);
+    await expect(rows.filter({ hasText: '夹具-七天内' })).toHaveCount(0);
+    await expect(page.getByText('（已筛选）')).toHaveCount(0);
+
+    // 近7天：5 行（01-09 边界含内），不含 12-20 与 2025-06-01
+    await timeTrigger.click();
+    await page.getByRole('option', { name: '近7天' }).click();
+    await expect(rows).toHaveCount(5);
+    await expect(rows.filter({ hasText: '夹具-七天边界' })).toHaveCount(1);
+    await expect(rows.filter({ hasText: '夹具-三十天内' })).toHaveCount(0);
+    await expect(page.getByText('（已筛选）')).toBeVisible();
+
+    // 近30天：6 行，仍不含 2025-06-01
+    await timeTrigger.click();
+    await page.getByRole('option', { name: '近30天' }).click();
+    await expect(rows).toHaveCount(6);
+    await expect(rows.filter({ hasText: '夹具-三十天内' })).toHaveCount(1);
+    await expect(rows.filter({ hasText: '夹具-全部范围' })).toHaveCount(0);
+
+    // 全部：7 行，行身份齐备
+    await timeTrigger.click();
+    await page.getByRole('option', { name: '全部' }).click();
+    await expect(rows).toHaveCount(7);
+    await expect(rows.filter({ hasText: '夹具-全部范围' })).toHaveCount(1);
+
+    // 清除筛选：回默认今天 3 行
+    await page.getByRole('button', { name: '清除筛选' }).click();
+    await expect(timeTrigger).toContainText('今天');
+    await expect(rows).toHaveCount(3);
+    await expect(page.getByText('（已筛选）')).toHaveCount(0);
   });
 });

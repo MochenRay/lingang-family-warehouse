@@ -40,23 +40,57 @@ const VIEWPORTS = [
   { width: 1024, height: 768 },
 ];
 
-/** 断言表格在其滚动容器内可横向滚至最后一列（整页不溢出，滚动发生在容器内） */
-async function expectTableScrollsToLastColumn(table: Locator, lastColumn: string) {
+/**
+ * 断言表格在其滚动容器内可由用户真实横向滚至最后一列（整页不溢出，滚动发生在容器内）。
+ * 不接受直接赋值 scrollLeft：overflow-hidden 下赋值也可能生效，不能证明用户可滚。
+ * 步骤：computed overflow-x 必须为 auto/scroll → 真实 wheel 输入令 scrollLeft 增长 →
+ * 持续 wheel 到底 → 末列完整落入容器可视区域。
+ */
+async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastColumn: string) {
   const scroller = table.locator('xpath=..');
+
+  // 1) 容器必须真的声明可横向滚动（用户可滚的前提）
+  const overflowX = await scroller.evaluate((el) => getComputedStyle(el).overflowX);
+  expect(['auto', 'scroll']).toContain(overflowX);
+
   const metrics = await scroller.evaluate((el) => ({
     scrollWidth: el.scrollWidth,
     clientWidth: el.clientWidth,
   }));
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
+  const maxScrollLeft = metrics.scrollWidth - metrics.clientWidth;
 
-  await scroller.evaluate((el) => {
-    el.scrollLeft = el.scrollWidth;
-  });
+  // 2) 真实 wheel 输入（deltaX）令 scrollLeft 增长；deltaX 无效时退回 Shift+纵向轮。
+  // 鼠标落点必须位于容器可视区域内：长表的几何中心可能在视口之外，
+  // 故 hover 首行（自动滚入视口并落在容器内的真实可见点）。
+  await table.locator('tbody tr').first().hover();
+  const readScrollLeft = () => scroller.evaluate((el) => el.scrollLeft);
+  const initialLeft = await readScrollLeft();
+  await page.mouse.wheel(240, 0);
+  await page.waitForTimeout(100);
+  if ((await readScrollLeft()) <= initialLeft) {
+    await page.keyboard.down('Shift');
+    await page.mouse.wheel(0, 240);
+    await page.keyboard.up('Shift');
+    await page.waitForTimeout(100);
+  }
+  expect(await readScrollLeft()).toBeGreaterThan(initialLeft);
+
+  // 3) 持续 wheel 至滚动尽头（scrollLeft 到达最大值）
+  for (let attempt = 0; attempt < 24; attempt += 1) {
+    if ((await readScrollLeft()) >= maxScrollLeft - 2) break;
+    await page.mouse.wheel(480, 0);
+    await page.waitForTimeout(50);
+  }
+  expect(await readScrollLeft()).toBeGreaterThanOrEqual(maxScrollLeft - 2);
+
+  // 4) 末列完整落入容器可视区域（容器可能因页面滚动移位，此处重新量取）
   const header = table.getByRole('columnheader', { name: lastColumn, exact: true });
   const headerBox = await header.boundingBox();
   const scrollerBox = await scroller.boundingBox();
   expect(headerBox).not.toBeNull();
   expect(scrollerBox).not.toBeNull();
+  expect(headerBox!.x).toBeGreaterThanOrEqual(scrollerBox!.x - 1);
   expect(headerBox!.x + headerBox!.width).toBeLessThanOrEqual(scrollerBox!.x + scrollerBox!.width + 1);
 }
 
@@ -146,6 +180,7 @@ test.describe('K1-B/C 三视口截图', () => {
     await page.goto('/settings/users');
     await expect(page.getByRole('heading', { name: '用户管理' })).toBeVisible({ timeout: 20_000 });
     await expectTableScrollsToLastColumn(
+      page,
       page.locator('[data-testid="user-table-card"] table'),
       '操作',
     );
@@ -154,7 +189,7 @@ test.describe('K1-B/C 三视口截图', () => {
     // 日志表：1024 宽度下容器内可横向滚动至「耗时」列
     await page.goto('/settings/logs');
     await expect(page.getByRole('heading', { name: '日志管理' })).toBeVisible({ timeout: 20_000 });
-    await expectTableScrollsToLastColumn(page.getByRole('table'), '耗时');
+    await expectTableScrollsToLastColumn(page, page.getByRole('table'), '耗时');
     await expectNoPageHorizontalOverflow(page);
 
     // 角色弹窗：键盘 Enter 打开、Esc 关闭、焦点归还触发按钮
