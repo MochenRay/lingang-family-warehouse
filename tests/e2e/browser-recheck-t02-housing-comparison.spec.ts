@@ -48,22 +48,39 @@ test.describe('T02 房屋画像与数据对比', () => {
 
     const before = await scroller.evaluate((element) => ({
       clientHeight: element.clientHeight,
+      clientWidth: element.clientWidth,
+      overflowY: getComputedStyle(element).overflowY,
       scrollHeight: element.scrollHeight,
+      scrollWidth: element.scrollWidth,
       scrollTop: element.scrollTop,
     }));
+    expect(['auto', 'scroll']).toContain(before.overflowY);
     expect(before.scrollHeight).toBeGreaterThan(before.clientHeight + 1);
+    expect(before.scrollWidth).toBeLessThanOrEqual(before.clientWidth + 1);
     expect(before.scrollTop).toBe(0);
 
     await scroller.focus();
     await expect(scroller).toBeFocused();
     await scroller.press('End');
-    await expect(cards.nth(5)).toBeInViewport();
+    await expect.poll(
+      () => scroller.evaluate((element) => element.scrollTop),
+      { timeout: 3_000 },
+    ).toBeGreaterThanOrEqual(before.scrollHeight - before.clientHeight - 2);
+
+    const [scrollerBox, sixthCardBox] = await Promise.all([
+      scroller.boundingBox(),
+      cards.nth(5).boundingBox(),
+    ]);
+    expect(scrollerBox).not.toBeNull();
+    expect(sixthCardBox).not.toBeNull();
+    expect(sixthCardBox!.y).toBeGreaterThanOrEqual(scrollerBox!.y - 1);
+    expect(sixthCardBox!.y + sixthCardBox!.height)
+      .toBeLessThanOrEqual(scrollerBox!.y + scrollerBox!.height + 1);
+
     const after = await scroller.evaluate((element) => ({
       clientWidth: element.clientWidth,
       scrollWidth: element.scrollWidth,
-      scrollTop: element.scrollTop,
     }));
-    expect(after.scrollTop).toBeGreaterThan(0);
     expect(after.scrollWidth).toBeLessThanOrEqual(after.clientWidth + 1);
   });
 
