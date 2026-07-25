@@ -25,6 +25,7 @@ import { CHART_COLORS, CHART_GRID_PROPS, CHART_GRADIENT_BLUE, CHART_TICK } from 
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { SortableHeader } from '../statistics/SortableHeader';
 import { PageHeader } from './PageHeader';
+import { DATA_TABLE_ALIGNMENT_CLASS } from '../patterns/DataTableShell';
 
 interface StatisticsOverviewProps {
   onRouteChange?: (route: string) => void;
@@ -302,42 +303,34 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
         }
       />
 
-      <section className="rounded-[4px] border border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)]/10 px-6 py-5">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="min-w-0">
-            <div className="mb-2 text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-text)]">AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}</div>
-            <div className="text-sm leading-7 text-[var(--color-neutral-10)]">
-              {actionItems.length > 0 ? (
-                actionItems.slice(0, 3).map((item, index) => (
-                  <button
-                    key={item.id}
-                    type="button"
-                    onClick={() => onRouteChange?.(item.route)}
-                    className="mr-4 inline-flex text-left text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)]"
-                  >
-                    <span className="font-semibold text-[var(--color-neutral-11)]">{index + 1}. {item.title}</span>
-                    <span className="ml-1 text-[var(--color-neutral-08)]">{item.area} · {item.metric}</span>
-                  </button>
-                ))
-              ) : (
-                <span>当前暂无需要督办的事项。</span>
-              )}
-            </div>
+      <section
+        data-testid="dashboard-action-strip"
+        className="rounded-[4px] border border-[var(--color-brand-primary)]/35 bg-[var(--color-brand-primary)]/10 px-4 py-3"
+      >
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm leading-6 text-[var(--color-neutral-10)]">
+          <div
+            data-action-strip-content
+            className="shrink-0 whitespace-nowrap text-xs font-semibold tracking-[0.12em] text-[var(--color-brand-text)]"
+          >
+            AI 研判与行动清单 · {RANGE_LABELS[selectedRange]}
           </div>
-          <div className="grid shrink-0 grid-cols-3 gap-6 text-center">
-            <div>
-              <div className="text-3xl font-bold text-[var(--color-brand-primary)]">{formatNumber(totalPopulation)}</div>
-              <div className="mt-1 text-xs text-[var(--color-neutral-08)]">总人口</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-[var(--color-status-success-text)]">{formatNumber(totalVisits)}</div>
-              <div className="mt-1 text-xs text-[var(--color-neutral-08)]">{RANGE_LABELS[selectedRange]}走访</div>
-            </div>
-            <div>
-              <div className="text-3xl font-bold text-[var(--color-status-warning-text)]">{districtRows.length}</div>
-              <div className="mt-1 text-xs text-[var(--color-neutral-08)]">区县样本</div>
-            </div>
-          </div>
+          {actionItems.length > 0 ? (
+            actionItems.slice(0, 3).map((item, index) => (
+              <button
+                key={item.id}
+                type="button"
+                data-testid="dashboard-action-item"
+                data-action-strip-content
+                onClick={() => onRouteChange?.(item.route)}
+                className="inline-flex min-w-0 items-center whitespace-nowrap text-left text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)]"
+              >
+                <span className="font-semibold text-[var(--color-neutral-11)]">{index + 1}. {item.title}</span>
+                <span className="ml-1 text-[var(--color-neutral-08)]">{item.area} · {item.metric}</span>
+              </button>
+            ))
+          ) : (
+            <span data-action-strip-content>当前暂无需要督办的事项。</span>
+          )}
         </div>
       </section>
 
@@ -403,10 +396,10 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
           <Button variant="ghost" size="sm" onClick={() => onRouteChange?.('data-comparison')}>进入数据对比</Button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] border-collapse">
+          <table data-testid="district-overview-table" className={`${DATA_TABLE_ALIGNMENT_CLASS} w-full min-w-[940px] border-collapse`}>
             <thead>
               <tr className="border-b border-[var(--color-neutral-03)]">
-                <SortableHeader sortKey="rank" currentKey={districtSort.key} direction={districtSort.direction} label="排名" align="left" className="w-16 py-3 text-xs" onSort={handleDistrictSort} />
+                <SortableHeader sortKey="rank" currentKey={districtSort.key} direction={districtSort.direction} label="排名" align="left" className="w-[88px] min-w-[88px] whitespace-nowrap py-3 text-xs" onSort={handleDistrictSort} />
                 <SortableHeader sortKey="name" currentKey={districtSort.key} direction={districtSort.direction} label="区县名称" align="left" className="py-3 text-xs" onSort={handleDistrictSort} />
                 <SortableHeader sortKey="peopleCount" currentKey={districtSort.key} direction={districtSort.direction} label="人口数" className="py-3 text-xs" onSort={handleDistrictSort} />
                 <SortableHeader sortKey="houseCount" currentKey={districtSort.key} direction={districtSort.direction} label="房屋数" className="py-3 text-xs" onSort={handleDistrictSort} />
@@ -429,7 +422,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-status-warning-text)]">{formatNumber(row.activeConflictCount)}</td>
                     <td className="px-4 py-3 text-right text-sm tabular-nums text-[var(--color-neutral-10)]">{formatNumber(row.floatingCount)}</td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto grid w-[236px] grid-cols-[148px_64px] items-center justify-end gap-4">
+                      <div data-testid="district-risk-content" className="grid w-[236px] grid-cols-[148px_64px] items-center gap-4">
                         <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-neutral-03)]">
                           <div className={`h-full rounded-full ${SCORE_BAR_CLASS[scoreTone]}`} style={{ width: `${Math.min(100, row.score)}%` }} />
                         </div>

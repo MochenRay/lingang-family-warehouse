@@ -5,6 +5,8 @@ import { Button } from '../ui/button';
 import { Skeleton } from '../ui/skeleton';
 import { cn } from '../ui/utils';
 
+export { DATA_TABLE_ALIGNMENT_CLASS } from './dataTableAlignment';
+
 /**
  * DataTableShell：表格一致化组合件（非万能表格）。
  * - DataTableBody：loading 骨架行 / empty 空态行（自动 colSpan）/ 正常内容

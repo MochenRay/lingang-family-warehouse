@@ -1,5 +1,6 @@
 import * as React from "react"
 
+import { DATA_TABLE_ALIGNMENT_CLASS } from "../patterns/dataTableAlignment"
 import { cn } from "./utils"
 
 const Table = React.forwardRef<
@@ -9,7 +10,7 @@ const Table = React.forwardRef<
   <div className="relative w-full overflow-auto">
     <table
       ref={ref}
-      className={cn("w-full caption-bottom text-sm", className)}
+      className={cn("w-full caption-bottom text-sm", DATA_TABLE_ALIGNMENT_CLASS, className)}
       {...props}
     />
   </div>
