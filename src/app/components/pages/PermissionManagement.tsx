@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Shield, Lock, Eye, Edit2, Database, Settings, Save, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
@@ -14,8 +14,10 @@ const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
 const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-text)]';
-const CURRENT_USER_ROLE_KEY = 'homedata.permission-management.current-user-role';
+const LOCAL_PREVIEW_ROLE_KEY = 'homedata.permission-management.local-preview-role';
+const LOCAL_PREVIEW_HOSTS = new Set(['localhost', '127.0.0.1']);
 const PERMISSIONS_STORAGE_KEY = 'homedata.permission-management.permissions';
+const UNSAVED_HISTORY_SENTINEL = 'homedataPermissionUnsaved';
 
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
@@ -133,8 +135,11 @@ export function PermissionManagement() {
     { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
+  // 本地开发预览 seam 仅用于 localhost 交互验收，不代表真实登录态或授权来源。
+  const isLocalPreviewRoleSeam = import.meta.env.DEV && LOCAL_PREVIEW_HOSTS.has(window.location.hostname);
   const [currentUserRole] = useState(() => {
-    const storedRole = typeof window === 'undefined' ? null : window.localStorage.getItem(CURRENT_USER_ROLE_KEY);
+    if (!isLocalPreviewRoleSeam) return 'viewer';
+    const storedRole = window.localStorage.getItem(LOCAL_PREVIEW_ROLE_KEY);
     return roles.some((role) => role.code === storedRole) ? storedRole! : 'admin';
   });
   const canManagePermissions = currentUserRole === 'admin';
@@ -152,6 +157,30 @@ export function PermissionManagement() {
 
   type RolePermissions = ReturnType<typeof clonePerms>;
   type PermissionsByRole = Record<string, RolePermissions>;
+  type FunctionPermission = RolePermissions['function'][number]['permissions'][number];
+  type DataPermission = RolePermissions['data'][number];
+
+  const normalizeFunctionPermission = (permission: FunctionPermission): FunctionPermission =>
+    permission.view
+      ? permission
+      : { ...permission, create: false, edit: false, delete: false, export: false };
+
+  const normalizeDataPermission = (permission: DataPermission): DataPermission =>
+    permission.canView ? permission : { ...permission, canEdit: false };
+
+  const normalizeRolePermissions = (permissions: RolePermissions): RolePermissions => ({
+    function: permissions.function.map((mod) => ({
+      ...mod,
+      permissions: mod.permissions.map((permission) => normalizeFunctionPermission({ ...permission })),
+    })),
+    data: permissions.data.map((permission) => normalizeDataPermission({ ...permission })),
+  });
+
+  const normalizePermissionsByRole = (permissions: PermissionsByRole): PermissionsByRole =>
+    Object.fromEntries(Object.entries(permissions).map(([roleCode, rolePermissions]) => [
+      roleCode,
+      normalizeRolePermissions(rolePermissions),
+    ]));
 
   const cloneRolePermissions = (permissions: RolePermissions): RolePermissions => ({
     function: permissions.function.map((mod) => ({
@@ -204,7 +233,7 @@ export function PermissionManagement() {
             };
           }),
         };
-        return [role.code, hydrated];
+        return [role.code, normalizeRolePermissions(hydrated)];
       }));
     } catch {
       return seeded;
@@ -215,10 +244,27 @@ export function PermissionManagement() {
   const [isEditing, setIsEditing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [editSnapshot, setEditSnapshot] = useState<RolePermissions | null>(null);
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const bypassHistoryRef = useRef(false);
+  const pendingRouteRef = useRef<string | null>(null);
+  const isDirtyRef = useRef(false);
+  isDirtyRef.current = isDirty;
 
   const currentPerms = permsByRole[selectedRole];
 
+  const returnFocusToEditButton = () => {
+    window.requestAnimationFrame(() => editButtonRef.current?.focus());
+  };
+
+  const collapseHistorySentinel = () => {
+    if (!window.history.state?.[UNSAVED_HISTORY_SENTINEL]) return false;
+    bypassHistoryRef.current = true;
+    window.history.back();
+    return true;
+  };
+
   const restoreSnapshot = () => {
+    collapseHistorySentinel();
     if (editSnapshot) {
       setPermsByRole((previous) => ({
         ...previous,
@@ -228,6 +274,7 @@ export function PermissionManagement() {
     setIsEditing(false);
     setIsDirty(false);
     setEditSnapshot(null);
+    returnFocusToEditButton();
   };
 
   const startEditing = () => {
@@ -239,7 +286,9 @@ export function PermissionManagement() {
 
   const savePermissions = () => {
     if (!canManagePermissions || !isEditing) return;
-    const storable = Object.fromEntries(Object.entries(permsByRole).map(([roleCode, permissions]) => [
+    collapseHistorySentinel();
+    const normalized = normalizePermissionsByRole(permsByRole);
+    const storable = Object.fromEntries(Object.entries(normalized).map(([roleCode, permissions]) => [
       roleCode,
       {
         function: permissions.function.map((mod) => ({
@@ -255,9 +304,11 @@ export function PermissionManagement() {
       },
     ]));
     window.localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(storable));
+    setPermsByRole(normalized);
     setIsEditing(false);
     setIsDirty(false);
     setEditSnapshot(null);
+    returnFocusToEditButton();
   };
 
   const selectRole = (nextRole: string) => {
@@ -266,6 +317,7 @@ export function PermissionManagement() {
     if (isEditing && isDirty && !window.confirm('当前权限修改尚未保存，是否放弃修改并切换角色？')) {
       return;
     }
+    if (isEditing && isDirty) collapseHistorySentinel();
     if (isEditing && editSnapshot) {
       setPermsByRole((previous) => ({
         ...previous,
@@ -292,7 +344,55 @@ export function PermissionManagement() {
   }, [editSnapshot, isEditing, selectedRole]);
 
   useEffect(() => {
+    const handlePopState = () => {
+      if (bypassHistoryRef.current) {
+        bypassHistoryRef.current = false;
+        const pendingRoute = pendingRouteRef.current;
+        pendingRouteRef.current = null;
+        if (pendingRoute) {
+          isDirtyRef.current = false;
+          setIsEditing(false);
+          setIsDirty(false);
+          setEditSnapshot(null);
+          window.requestAnimationFrame(() => {
+            document.querySelector<HTMLElement>(`[data-route-id="${pendingRoute}"]`)?.click();
+          });
+        }
+        return;
+      }
+      if (!isDirtyRef.current) return;
+
+      if (!window.confirm('当前权限修改尚未保存，是否放弃修改并离开本页？')) {
+        window.history.pushState(
+          { ...window.history.state, [UNSAVED_HISTORY_SENTINEL]: true },
+          '',
+          window.location.href,
+        );
+        return;
+      }
+
+      isDirtyRef.current = false;
+      setIsEditing(false);
+      setIsDirty(false);
+      setEditSnapshot(null);
+      bypassHistoryRef.current = true;
+      window.history.back();
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
     if (!isEditing || !isDirty) return undefined;
+
+    if (!window.history.state?.[UNSAVED_HISTORY_SENTINEL]) {
+      window.history.pushState(
+        { ...window.history.state, [UNSAVED_HISTORY_SENTINEL]: true },
+        '',
+        window.location.href,
+      );
+    }
 
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
       event.preventDefault();
@@ -304,6 +404,13 @@ export function PermissionManagement() {
       if (!window.confirm('当前权限修改尚未保存，是否放弃修改并离开本页？')) {
         event.preventDefault();
         event.stopPropagation();
+        return;
+      }
+      if (window.history.state?.[UNSAVED_HISTORY_SENTINEL]) {
+        event.preventDefault();
+        event.stopPropagation();
+        pendingRouteRef.current = target.dataset.routeId ?? null;
+        collapseHistorySentinel();
         return;
       }
       setIsEditing(false);
@@ -328,7 +435,14 @@ export function PermissionManagement() {
         ...prev[selectedRole],
         function: prev[selectedRole].function.map((mod, mi) =>
           mi === moduleIndex
-            ? { ...mod, permissions: mod.permissions.map((perm, pi) => (pi === permIndex ? { ...perm, [field]: checked } : perm)) }
+            ? {
+                ...mod,
+                permissions: mod.permissions.map((perm, pi) =>
+                  pi === permIndex
+                    ? normalizeFunctionPermission({ ...perm, [field]: checked })
+                    : perm,
+                ),
+              }
             : mod,
         ),
       },
@@ -342,7 +456,9 @@ export function PermissionManagement() {
       ...prev,
       [selectedRole]: {
         ...prev[selectedRole],
-        data: prev[selectedRole].data.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)),
+        data: prev[selectedRole].data.map((area, i) =>
+          i === areaIndex ? normalizeDataPermission({ ...area, [field]: checked }) : area,
+        ),
       },
     }));
     setIsDirty(true);
@@ -361,6 +477,9 @@ export function PermissionManagement() {
 
   const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
   const currentUserRoleName = roles.find(r => r.code === currentUserRole)?.name ?? currentUserRole;
+  const currentAccessLabel = isLocalPreviewRoleSeam
+    ? `本地预览角色：${currentUserRoleName}`
+    : '公开演示：只读';
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -375,7 +494,7 @@ export function PermissionManagement() {
         <CardHeader>
           <CardTitle className="text-base text-[var(--color-neutral-11)]">选择角色</CardTitle>
           <CardDescription className={MUTED_TEXT_CLASS}>
-            选择要查看的权限角色 · 当前登录角色：{currentUserRoleName}
+            选择要查看的权限角色 · {currentAccessLabel}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -432,7 +551,7 @@ export function PermissionManagement() {
                 <Badge variant="outline" className={INFO_BADGE_CLASS}>受保护角色</Badge>
               )}
               {canManagePermissions && selectedRole !== 'admin' && !isEditing && (
-                <Button type="button" size="sm" onClick={startEditing}>
+                <Button ref={editButtonRef} type="button" size="sm" onClick={startEditing}>
                   <Edit2 className="mr-2 h-4 w-4" />
                   编辑权限
                 </Button>
@@ -456,7 +575,11 @@ export function PermissionManagement() {
               ? isDirty
                 ? '编辑中：修改尚未保存，切换角色或离开页面时将先请求确认。'
                 : '编辑中：可调整当前角色权限；保存后生效，取消可恢复进入编辑前的配置。'
-              : '当前为只读视图；只有具备权限管理能力的当前用户可进入编辑。'}
+              : isLocalPreviewRoleSeam
+                ? canManagePermissions
+                  ? '当前为只读视图；可进入编辑以验证本地权限配置交互。'
+                  : '当前为只读视图；本地预览角色无编辑入口。'
+                : '公开演示恒为只读；权限变更仅可在本地预览验证。'}
           </div>
         </CardHeader>
         <CardContent>
