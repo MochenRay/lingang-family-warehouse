@@ -2,10 +2,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Building2,
   ChevronRight,
+  Edit,
   Grid3x3,
   Home,
   Layers,
   Loader2,
+  MapPin,
+  Trash2,
   Warehouse,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,10 +37,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { houseRepository } from '../../services/repositories/houseRepository';
 import type { Grid, House, HousingHistory, Person } from '../../types/core';
 import { StatCard } from '../patterns/StatCard';
+import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { SearchInput } from '../patterns/FilterBar';
 import { ConfirmDialog } from '../patterns/ConfirmDialog';
 import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { DetailDialogShell } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
+
+const HOUSE_TYPE_TONE: Record<House['type'], StatusTone> = {
+  自住: 'info',
+  出租: 'warning',
+  空置: 'neutral',
+  经营: 'success',
+  其他: 'neutral',
+};
 
 const fieldClassName =
   'h-9 border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-11)] placeholder:text-[var(--color-neutral-08)] focus-visible:ring-[var(--color-brand-primary-hover)]/40';
@@ -209,6 +222,7 @@ export function HousingManagement() {
   const [residents, setResidents] = useState<Person[]>([]);
   const [history, setHistory] = useState<HousingHistory[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [detailReloadToken, setDetailReloadToken] = useState(0);
   const [editingHouse, setEditingHouse] = useState<House | null>(null);
   const [editForm, setEditForm] = useState<HouseEditForm | null>(null);
   const [pendingDeleteHouse, setPendingDeleteHouse] = useState<House | null>(null);
@@ -341,7 +355,7 @@ export function HousingManagement() {
     return () => {
       cancelled = true;
     };
-  }, [selection.houseId]);
+  }, [selection.houseId, detailReloadToken]);
 
   useEffect(() => {
     const prev = prevSelectionRef.current;
@@ -392,10 +406,6 @@ export function HousingManagement() {
 
   const selectHouse = (item: FinderColumnItem) => {
     setSelection((current) => ({ ...current, houseId: item.id }));
-  };
-
-  const refreshSelectedHouse = () => {
-    void loadData();
   };
 
   const openEditDialog = (house: House) => {
@@ -668,40 +678,65 @@ export function HousingManagement() {
         )}
       </div>
 
-      <Dialog open={Boolean(selection.houseId)} onOpenChange={(open) => {
-        if (!open) {
-          setSelection((current) => ({ ...current, houseId: undefined }));
-          const url = new URL(window.location.href);
-          if (url.searchParams.has('houseId')) {
-            url.searchParams.delete('houseId');
-            window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+      <DetailDialogShell
+        open={Boolean(selection.houseId)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelection((current) => ({ ...current, houseId: undefined }));
+            const url = new URL(window.location.href);
+            if (url.searchParams.has('houseId')) {
+              url.searchParams.delete('houseId');
+              window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`);
+            }
           }
-        }
-      }}>
-        <DialogContent className={`max-h-[90vh] max-w-4xl overflow-y-auto shadow-2xl ${DIALOG_CLASS}`}>
-          <DialogHeader className="sr-only">
-            <DialogTitle>
-              {selectedHouse
-                ? `${selectedHouse.communityName} ${selectedHouse.building} ${selectedHouse.unit} ${selectedHouse.room}`
-                : '房屋详情'}
-            </DialogTitle>
-            <DialogDescription>查看房屋基础信息、现居住户和居住历史。</DialogDescription>
-          </DialogHeader>
-          <HouseDetailPanel
-            house={selectedHouse}
-            residents={residents}
-            history={history}
-            loading={isDetailLoading}
-            error={detailError}
-            onEdit={openEditDialog}
-            onDelete={handleDelete}
-            onRefresh={refreshSelectedHouse}
-            onViewPerson={openPersonDetail}
-            isDeleting={isSaving}
-            className="border-0 min-h-0"
-          />
-        </DialogContent>
-      </Dialog>
+        }}
+        maxWidth="4xl"
+        contentLabel="房屋详情"
+        badges={selectedHouse ? (
+          <>
+            <StatusBadge tone={HOUSE_TYPE_TONE[selectedHouse.type] ?? 'neutral'}>{selectedHouse.type}</StatusBadge>
+            {selectedHouse.residenceType ? <StatusBadge tone="neutral">{selectedHouse.residenceType}</StatusBadge> : null}
+            {selectedHouse.occupancyStatus ? <StatusBadge tone="info">{selectedHouse.occupancyStatus}</StatusBadge> : null}
+          </>
+        ) : undefined}
+        title={selectedHouse
+          ? `房屋详情 · ${selectedHouse.communityName} ${selectedHouse.building} ${selectedHouse.unit} ${selectedHouse.room}`
+          : '房屋详情'}
+        description={selectedHouse ? (
+          <span className="inline-flex items-center gap-1.5">
+            <MapPin className="h-3.5 w-3.5 shrink-0" />
+            {selectedHouse.address}
+          </span>
+        ) : '查看房屋基础信息、现居住户和居住历史。'}
+        actions={selectedHouse ? (
+          <>
+            <Button variant="outline" size="sm" onClick={() => openEditDialog(selectedHouse)}>
+              <Edit className="h-3.5 w-3.5" />
+              编辑
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-[var(--color-status-error)]/40 text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error-soft)] hover:text-[var(--color-status-error-text)]"
+              disabled={isSaving}
+              onClick={() => handleDelete(selectedHouse)}
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              {isSaving ? '删除中' : '删除'}
+            </Button>
+          </>
+        ) : undefined}
+      >
+        <HouseDetailPanel
+          house={selectedHouse}
+          residents={residents}
+          history={history}
+          loading={isDetailLoading}
+          error={detailError}
+          onRetry={() => setDetailReloadToken((token) => token + 1)}
+          onViewPerson={openPersonDetail}
+        />
+      </DetailDialogShell>
 
       <Dialog open={Boolean(editingHouse)} onOpenChange={(open) => {
         if (!open) {

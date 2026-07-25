@@ -70,7 +70,7 @@ export function FinderColumn({
   loadingLabel = '正在加载本列数据',
   error,
   emptyTitle = '暂无可选项',
-  emptyDescription = '当前筛选条件下没有可浏览的数据，请切换上一级或刷新后重试。',
+  emptyDescription = '当前筛选条件下没有可浏览的数据，请切换上一级或稍后重试。',
   onItemClick,
   collapsed = false,
   onHeaderClick,

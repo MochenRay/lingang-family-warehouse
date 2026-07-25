@@ -21,15 +21,9 @@ import { tagRepository, type TagSnapshot } from '../../services/repositories/tag
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { EmptyState, ErrorState, LoadingState } from '../patterns/states';
-import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { PANEL_CLASS } from '../patterns/surfaces';
+import { DetailDialogShell } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '../ui/dialog';
 
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 const RISK_LEVEL_COLORS: Record<string, string> = {
@@ -57,20 +51,17 @@ function PersonMatchCard({ record, selectedTagIds }: { record: TaggedPersonRecor
   const initial = record.person.name.slice(0, 1) || '?';
 
   return (
-    <div className={`${PANEL_CLASS} p-4`}>
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div className="flex min-w-0 gap-3">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded bg-[linear-gradient(135deg,var(--color-brand-primary-hover),var(--color-accent-purple))] text-base font-semibold text-[var(--color-neutral-11)]">
+    <div className={`${PANEL_CLASS} p-3`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-[linear-gradient(135deg,var(--color-brand-primary-hover),var(--color-accent-purple))] text-sm font-semibold text-[var(--color-neutral-11)]">
             {initial}
           </div>
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-semibold text-[var(--color-neutral-11)]">{record.person.name}</p>
-              <span className={`text-sm ${MUTED_TEXT}`}>
-                {record.person.gender || '性别未录'} / {record.person.age ?? '--'}岁 / {record.person.type}
-              </span>
-            </div>
-            <p className={`mt-1 text-sm ${MUTED_TEXT}`}>{record.person.address || '地址未登记'}</p>
+            <p className="truncate font-semibold text-[var(--color-neutral-11)]">{record.person.name}</p>
+            <p className={`text-xs ${MUTED_TEXT}`}>
+              {record.person.gender || '性别未录'} / {record.person.age ?? '--'}岁 / {record.person.type}
+            </p>
           </div>
         </div>
         <StatusBadge tone={RISK_BADGE_TONE[record.person.risk] ?? 'neutral'}>
@@ -78,40 +69,21 @@ function PersonMatchCard({ record, selectedTagIds }: { record: TaggedPersonRecor
         </StatusBadge>
       </div>
 
-      <div className="mt-4 grid gap-2 text-xs text-[var(--color-neutral-08)] sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
-          <div>联系方式</div>
-          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{record.person.phone || '未登记'}</div>
-        </div>
-        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
-          <div>关联房屋</div>
-          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{getHouseLabel(record)}</div>
-        </div>
-        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
-          <div>最近走访</div>
-          <div className="mt-1 truncate font-medium text-[var(--color-neutral-11)]">{record.lastVisitAt || '暂无记录'}</div>
-        </div>
-        <div className="rounded border border-[var(--color-neutral-03)] bg-[rgba(10,18,36,0.36)] px-3 py-2">
-          <div>纠纷关联</div>
-          <div className="mt-1 font-medium text-[var(--color-neutral-11)]">
-            {record.totalConflictCount} 起 / 调解中 {record.activeConflictCount} 起
-          </div>
-        </div>
+      <p className={`mt-2 break-words text-xs leading-5 ${MUTED_TEXT}`}>{record.person.address || '地址未登记'}</p>
+
+      <div className={`mt-2 space-y-1 text-xs ${MUTED_TEXT}`}>
+        <p className="break-words">关联房屋：<span className="text-[var(--color-neutral-10)]">{getHouseLabel(record)}</span></p>
+        <p>最近走访：<span className="text-[var(--color-neutral-10)]">{record.lastVisitAt || '暂无记录'}</span></p>
+        <p>纠纷关联：<span className="text-[var(--color-neutral-10)]">{record.totalConflictCount} 起 / 调解中 {record.activeConflictCount} 起</span></p>
       </div>
 
-      <div className="mt-4 space-y-2">
-        {selectedMatches.map((match) => (
-          <div key={match.tagId} className="rounded border border-[var(--color-neutral-03)] bg-[rgba(78,134,223,0.08)] px-3 py-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="secondary">{match.tagName}</Badge>
-              <span className={`text-xs ${MUTED_TEXT}`}>命中原因</span>
-            </div>
-            <p className="mt-2 text-xs leading-5 text-[var(--color-neutral-10)]">
-              {match.reasons.length ? match.reasons.join('；') : '规则命中，暂无详细原因。'}
-            </p>
-          </div>
-        ))}
-      </div>
+      {selectedMatches.length > 0 ? (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {selectedMatches.map((match) => (
+            <Badge key={match.tagId} variant="secondary">{match.tagName}</Badge>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -401,25 +373,24 @@ export function PopulationTags() {
         </Card>
       </div>
 
-      <Dialog open={residentDialogOpen} onOpenChange={setResidentDialogOpen}>
-        <DialogContent className={`${DIALOG_CLASS} max-h-[86vh] max-w-5xl overflow-hidden shadow-2xl`}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--color-neutral-11)]">命中居民详情</DialogTitle>
-            <DialogDescription className="text-[var(--color-neutral-08)]">
-              当前组合共命中 {selectedResults.length} 人：{selectedTags.map((tag) => tag.name).join('、')}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="max-h-[62vh] space-y-3 overflow-y-auto pr-1">
-            {selectedResults.length === 0 ? (
-              <EmptyState title="当前组合暂无共同命中对象。" />
-            ) : (
-              selectedResults.map((record) => (
-                <PersonMatchCard key={record.person.id} record={record} selectedTagIds={selectedTagIds} />
-              ))
-            )}
+      <DetailDialogShell
+        open={residentDialogOpen}
+        onOpenChange={setResidentDialogOpen}
+        maxWidth="5xl"
+        contentLabel="命中居民详情"
+        title={`命中居民详情 · ${selectedResults.length} 人`}
+        description={`当前组合共同命中的居民：${selectedTags.map((tag) => tag.name).join('、') || '未选择标签'}`}
+      >
+        {selectedResults.length === 0 ? (
+          <EmptyState title="当前组合暂无共同命中对象。" />
+        ) : (
+          <div data-matched-residents-grid className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            {selectedResults.map((record) => (
+              <PersonMatchCard key={record.person.id} record={record} selectedTagIds={selectedTagIds} />
+            ))}
           </div>
-        </DialogContent>
-      </Dialog>
+        )}
+      </DetailDialogShell>
     </div>
   );
 }

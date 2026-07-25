@@ -22,6 +22,7 @@ import {
   ChevronUp,
   AlertCircle,
   Loader2,
+  History as HistoryIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -69,9 +70,6 @@ import { Badge } from "../ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
@@ -85,6 +83,7 @@ import { DataTableBody, TablePagination } from "../patterns/DataTableShell";
 import { SearchInput } from "../patterns/FilterBar";
 import { ConfirmDialog } from "../patterns/ConfirmDialog";
 import { DIALOG_CLASS, PANEL_CLASS } from "../patterns/surfaces";
+import { DetailDialogShell, DetailField, DetailFieldGrid, DetailSection } from "../patterns/DetailDialog";
 import { PageHeader } from "./PageHeader";
 import { Grid, House, Person, PersonType, VisitRecord } from "../../types/core";
 import { getCommunities, getDistricts, getStreets, inferRegionByGridName } from "../../config/regions";
@@ -984,7 +983,7 @@ export function PopulationManagement() {
               <Loader2 className="h-5 w-5 animate-spin" />
             </div>
             <p className="text-sm font-medium text-[var(--color-neutral-11)]">正在加载人口台账</p>
-            <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">正在读取真实人员、区域与房屋数据，完成前不会展示零值或空列表。</p>
+            <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">正在读取人口、区域与房屋台账，数据准备好后会自动显示，请稍候。</p>
           </div>
         </div>
       </div>
@@ -1456,17 +1455,38 @@ export function PopulationManagement() {
       </Card>
 
       {/* 查看详情对话框 */}
-      <Dialog open={isViewDialogOpen} onOpenChange={handleViewDialogOpenChange}>
-        <DialogContent className={`h-[90vh] max-w-5xl overflow-hidden flex flex-col ${DIALOG_CLASS} shadow-2xl`}>
-          <DialogHeader>
-            <DialogTitle>人口详情</DialogTitle>
-            <DialogDescription>
-              查看人口详细档案信息，包括基础信息、关系图谱和标签。
-            </DialogDescription>
-          </DialogHeader>
-          {selectedPopulation && (
-            <ScrollArea className="min-h-0 flex-1 pr-4 overflow-y-auto">
-              <div className="pb-6">
+      <DetailDialogShell
+        open={isViewDialogOpen}
+        onOpenChange={handleViewDialogOpenChange}
+        maxWidth="5xl"
+        contentLabel="人口详情"
+        badges={selectedPopulation ? (
+          <>
+            <StatusBadge tone={RESIDENCE_TYPE_TONE[selectedPopulation.type] ?? 'neutral'}>{selectedPopulation.type}</StatusBadge>
+            <StatusBadge tone={RISK_BADGE_TONE[selectedPopulation.risk] ?? 'neutral'}>{selectedPopulation.risk}</StatusBadge>
+            <StatusBadge tone={STATUS_BADGE_TONE[selectedPopulation.status] ?? 'neutral'}>{selectedPopulation.status}</StatusBadge>
+          </>
+        ) : undefined}
+        title={selectedPopulation ? `人口详情 · ${selectedPopulation.name}` : '人口详情'}
+        description={selectedPopulation
+          ? `${selectedPopulation.district || '-'} / ${selectedPopulation.street || '-'} / ${selectedPopulation.community || '-'} · ${selectedPopulation.address}`
+          : '查看人口详细档案信息。'}
+        actions={selectedPopulation ? (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              clearPersonFocusQuery();
+              setIsViewDialogOpen(false);
+              handleEdit(selectedPopulation);
+            }}
+          >
+            <Edit className="w-4 h-4" />
+            编辑
+          </Button>
+        ) : undefined}
+      >
+        {selectedPopulation && (
               <Tabs defaultValue="basic" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="basic">基础信息</TabsTrigger>
@@ -1475,86 +1495,48 @@ export function PopulationManagement() {
                 </TabsList>
                 
                 <TabsContent value="basic" className="space-y-4">
-                  {/* 个人概览卡片 */}
-                  <Card className={PANEL_CLASS}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">个人概览</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div><Label className="text-[var(--color-neutral-08)]">姓名</Label><p className="mt-1 font-medium">{selectedPopulation.name}</p></div>
-                        <div><Label className="text-[var(--color-neutral-08)]">性别</Label><p className="mt-1">{selectedPopulation.gender}</p></div>
-                        <div><Label className="text-[var(--color-neutral-08)]">年龄</Label><p className="mt-1">{selectedPopulation.age}岁</p></div>
-                        <div><Label className="text-[var(--color-neutral-08)]">民族</Label><p className="mt-1">{selectedPopulation.nation || '-'}</p></div>
-                        <div><Label className="text-[var(--color-neutral-08)]">教育程度</Label><p className="mt-1">{selectedPopulation.education || '-'}</p></div>
-                        <div>
-                          <Label className="text-[var(--color-neutral-08)]">居住类型</Label>
-                          <p className="mt-1"><StatusBadge tone={RESIDENCE_TYPE_TONE[selectedPopulation.type] ?? 'neutral'}>{selectedPopulation.type}</StatusBadge></p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* 个人概览 */}
+                  <DetailSection icon={Users} title="个人概览">
+                    <DetailFieldGrid>
+                      <DetailField label="姓名" value={selectedPopulation.name} />
+                      <DetailField label="性别" value={selectedPopulation.gender} />
+                      <DetailField label="年龄" value={`${selectedPopulation.age} 岁`} />
+                      <DetailField label="民族" value={selectedPopulation.nation || '-'} />
+                      <DetailField label="教育程度" value={selectedPopulation.education || '-'} />
+                      <DetailField label="居住类型" value={<StatusBadge tone={RESIDENCE_TYPE_TONE[selectedPopulation.type] ?? 'neutral'}>{selectedPopulation.type}</StatusBadge>} />
+                    </DetailFieldGrid>
+                  </DetailSection>
 
-                  {/* 联系信息 */}
-                  <Card className={PANEL_CLASS}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">联系信息</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div><Label className="text-[var(--color-neutral-08)]">身份证号</Label><p className="mt-1 font-mono text-sm">{selectedPopulation.idCard}</p></div>
-                        <div><Label className="text-[var(--color-neutral-08)]">电话</Label><p className="mt-1">{selectedPopulation.phone}</p></div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  {/* 联系与居住 */}
+                  <DetailSection icon={Home} title="联系与居住">
+                    <DetailFieldGrid>
+                      <DetailField label="身份证号" value={<span className="font-mono text-[13px]">{selectedPopulation.idCard || '-'}</span>} />
+                      <DetailField label="联系电话" value={selectedPopulation.phone || '-'} />
+                      <DetailField label="所属区域" value={`${selectedPopulation.district || '-'} / ${selectedPopulation.street || '-'} / ${selectedPopulation.community || '-'}`} />
+                      <DetailField className="sm:col-span-2 xl:col-span-3" label="详细地址" value={selectedPopulation.address || '-'} />
+                    </DetailFieldGrid>
+                  </DetailSection>
 
-                  {/* 居住信息 */}
-                  <Card className={PANEL_CLASS}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">居住信息</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div>
-                          <Label className="text-[var(--color-neutral-08)]">所属区域</Label>
-                          <p className="mt-1">{selectedPopulation.district || '-'} / {selectedPopulation.street || '-'} / {selectedPopulation.community || '-'}</p>
-                        </div>
-                        <div>
-                          <Label className="text-[var(--color-neutral-08)]">详细地址</Label>
-                          <p className="mt-1">{selectedPopulation.address}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  {/* 标签信息 */}
-                  <Card className={PANEL_CLASS}>
-                    <CardHeader className="pb-3">
-                      <CardTitle className="text-base">人员标签</CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                  {/* 人员标签 */}
+                  <DetailSection icon={Tag} title="人员标签">
+                    {getPopulationTags(selectedPopulation.tags).length > 0 ? (
                       <div className="flex gap-2 flex-wrap">
-                        {getPopulationTags(selectedPopulation.tags).length > 0 ? (
-                          getPopulationTags(selectedPopulation.tags).map((tag: any) => (
-                            <Badge key={tag.id} variant="outline" className="text-sm">{tag.name}</Badge>
-                          ))
-                        ) : (
-                          <span className="text-sm text-[var(--color-neutral-08)]">暂无人员标签</span>
-                        )}
+                        {getPopulationTags(selectedPopulation.tags).map((tag: any) => (
+                          <Badge key={tag.id} variant="outline" className="text-sm">{tag.name}</Badge>
+                        ))}
                       </div>
-                    </CardContent>
-                  </Card>
+                    ) : (
+                      <p className="text-sm text-[var(--color-neutral-08)]">暂无人员标签</p>
+                    )}
+                  </DetailSection>
 
                   <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Shield className="w-4 h-4 text-[var(--color-status-warning-text)]" />
-                          风险摘要
-                        </CardTitle>
-                        <CardDescription>基于当前对象字段、标签和历史走访生成</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
+                    <DetailSection
+                      icon={Shield}
+                      title="风险摘要"
+                      description="根据该人员的风险等级、标签和历史走访记录汇总，供快速判断关注程度。"
+                    >
+                      <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <StatusBadge tone={RISK_BADGE_TONE[selectedPopulation.risk] ?? 'neutral'}>
                             {selectedPopulation.risk}
@@ -1564,27 +1546,23 @@ export function PopulationManagement() {
                           </span>
                         </div>
                         <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{selectedRiskSummary}</p>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </DetailSection>
 
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Calendar className="w-4 h-4 text-[var(--color-brand-text)]" />
-                          推荐动作
-                        </CardTitle>
-                        <CardDescription>为数据画像智能体预留的业务嵌入位</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-2">
-                          {selectedRecommendedActions.map((action, index) => (
-                            <div key={index} className="rounded-[4px] border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/12 p-3 text-sm text-[var(--color-status-info-text)]">
-                              {action}
-                            </div>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DetailSection
+                      icon={Calendar}
+                      title="推荐动作"
+                      description="推荐动作是系统根据该人员的风险等级、人员标签、最近走访时间和同住情况，按走访工作规则自动给出的下一步建议，供网格员安排工作时参考。"
+                    >
+                      <ol className="space-y-2">
+                        {selectedRecommendedActions.map((action, index) => (
+                          <li key={index} className="flex gap-2.5 rounded-[4px] border border-[var(--color-brand-primary-hover)]/30 bg-[var(--color-brand-primary-hover)]/12 p-3 text-sm text-[var(--color-status-info-text)]">
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--color-brand-primary)]/20 text-xs font-semibold">{index + 1}</span>
+                            <span className="leading-5">{action}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </DetailSection>
                   </div>
 
                   {/* 详细信息 */}
@@ -1592,249 +1570,165 @@ export function PopulationManagement() {
                     selectedPopulation.religion || selectedPopulation.politicalStatus || selectedPopulation.militaryService !== undefined ||
                     selectedPopulation.graduationInfo || selectedPopulation.workplace || selectedPopulation.communityVolunteer !== undefined ||
                     selectedPopulation.skills || selectedPopulation.pets) && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Briefcase className="w-4 h-4" />
-                          详细信息
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-3 gap-4">
-                          {selectedPopulation.birthDate && (
-                            <div><Label className="text-[var(--color-neutral-08)]">出生年月</Label><p className="mt-1">{selectedPopulation.birthDate}</p></div>
-                          )}
-                          {selectedPopulation.birthplace && (
-                            <div><Label className="text-[var(--color-neutral-08)]">籍贯</Label><p className="mt-1">{selectedPopulation.birthplace}</p></div>
-                          )}
-                          {selectedPopulation.maritalStatus && (
-                            <div><Label className="text-[var(--color-neutral-08)]">婚姻状况</Label><p className="mt-1">{selectedPopulation.maritalStatus}</p></div>
-                          )}
-                          {selectedPopulation.religion && (
-                            <div><Label className="text-[var(--color-neutral-08)]">宗教信仰</Label><p className="mt-1">{selectedPopulation.religion}</p></div>
-                          )}
-                          {selectedPopulation.politicalStatus && (
-                            <div><Label className="text-[var(--color-neutral-08)]">政治面貌</Label><p className="mt-1">{selectedPopulation.politicalStatus}</p></div>
-                          )}
-                          {selectedPopulation.militaryService !== undefined && (
-                            <div><Label className="text-[var(--color-neutral-08)]">服役情况</Label><p className="mt-1">{selectedPopulation.militaryService ? '是' : '否'}</p></div>
-                          )}
-                          {selectedPopulation.graduationInfo && (
-                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">毕业院校及专业</Label><p className="mt-1">{selectedPopulation.graduationInfo}</p></div>
-                          )}
-                          {selectedPopulation.workplace && (
-                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">工作单位</Label><p className="mt-1">{selectedPopulation.workplace}</p></div>
-                          )}
-                          {selectedPopulation.communityVolunteer !== undefined && (
-                            <div><Label className="text-[var(--color-neutral-08)]">社区志愿者</Label><p className="mt-1">{selectedPopulation.communityVolunteer ? '是' : '否'}</p></div>
-                          )}
-                          {selectedPopulation.skills && (
-                            <div className="col-span-2"><Label className="text-[var(--color-neutral-08)]">技能特长</Label><p className="mt-1">{selectedPopulation.skills}</p></div>
-                          )}
-                          {selectedPopulation.pets && (
-                            <div><Label className="text-[var(--color-neutral-08)]">宠物情况</Label><p className="mt-1">{selectedPopulation.pets}</p></div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={Briefcase} title="详细信息">
+                      <DetailFieldGrid>
+                        {selectedPopulation.birthDate && (
+                          <DetailField label="出生年月" value={selectedPopulation.birthDate} />
+                        )}
+                        {selectedPopulation.birthplace && (
+                          <DetailField label="籍贯" value={selectedPopulation.birthplace} />
+                        )}
+                        {selectedPopulation.maritalStatus && (
+                          <DetailField label="婚姻状况" value={selectedPopulation.maritalStatus} />
+                        )}
+                        {selectedPopulation.religion && (
+                          <DetailField label="宗教信仰" value={selectedPopulation.religion} />
+                        )}
+                        {selectedPopulation.politicalStatus && (
+                          <DetailField label="政治面貌" value={selectedPopulation.politicalStatus} />
+                        )}
+                        {selectedPopulation.militaryService !== undefined && (
+                          <DetailField label="服役情况" value={selectedPopulation.militaryService ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.graduationInfo && (
+                          <DetailField className="sm:col-span-2" label="毕业院校及专业" value={selectedPopulation.graduationInfo} />
+                        )}
+                        {selectedPopulation.workplace && (
+                          <DetailField className="sm:col-span-2" label="工作单位" value={selectedPopulation.workplace} />
+                        )}
+                        {selectedPopulation.communityVolunteer !== undefined && (
+                          <DetailField label="社区志愿者" value={selectedPopulation.communityVolunteer ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.skills && (
+                          <DetailField className="sm:col-span-2" label="技能特长" value={selectedPopulation.skills} />
+                        )}
+                        {selectedPopulation.pets && (
+                          <DetailField label="宠物情况" value={selectedPopulation.pets} />
+                        )}
+                      </DetailFieldGrid>
+                    </DetailSection>
                   )}
 
                   {/* 重点关爱标签 */}
                   {selectedPopulation.careLabels && selectedPopulation.careLabels.length > 0 && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Shield className="w-4 h-4" />
-                          重点关爱标签
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex gap-2 flex-wrap">
-                          {selectedPopulation.careLabels.map((label, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-sm bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]">{label}</Badge>
-                          ))}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={Shield} title="重点关爱标签">
+                      <div className="flex gap-2 flex-wrap">
+                        {selectedPopulation.careLabels.map((label, idx) => (
+                          <Badge key={idx} variant="secondary" className="text-sm bg-[var(--color-status-warning-soft)] text-[var(--color-status-warning-text)]">{label}</Badge>
+                        ))}
+                      </div>
+                    </DetailSection>
                   )}
 
                   {/* 人员类别标签 */}
                   {selectedPopulation.categoryLabels && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Award className="w-4 h-4" />
-                          人员类别标签
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {selectedPopulation.categoryLabels.isFloorLeader && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">楼长</Badge>
+                    <DetailSection icon={Award} title="人员类别标签">
+                      <div className="space-y-3">
+                        {selectedPopulation.categoryLabels.isFloorLeader && (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">楼长</Badge>
+                          </div>
+                        )}
+                        {selectedPopulation.categoryLabels.isUnitLeader && (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">单元长</Badge>
+                          </div>
+                        )}
+                        {selectedPopulation.categoryLabels.isAssistant && (
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">网格助理</Badge>
+                          </div>
+                        )}
+                        {selectedPopulation.categoryLabels.focusType && selectedPopulation.categoryLabels.focusType.length > 0 && (
+                          <div>
+                            <p className="text-xs text-[var(--color-neutral-08)]">重点关注类型</p>
+                            <div className="flex gap-2 flex-wrap mt-2">
+                              {selectedPopulation.categoryLabels.focusType.map((type, idx) => (
+                                <Badge key={idx} variant="secondary" className="text-sm bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]">{type}</Badge>
+                              ))}
                             </div>
-                          )}
-                          {selectedPopulation.categoryLabels.isUnitLeader && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">单元长</Badge>
-                            </div>
-                          )}
-                          {selectedPopulation.categoryLabels.isAssistant && (
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="bg-[var(--color-brand-primary-hover)]/12">网格助理</Badge>
-                            </div>
-                          )}
-                          {selectedPopulation.categoryLabels.focusType && selectedPopulation.categoryLabels.focusType.length > 0 && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">重点关注类型</Label>
-                              <div className="flex gap-2 flex-wrap mt-2">
-                                {selectedPopulation.categoryLabels.focusType.map((type, idx) => (
-                                  <Badge key={idx} variant="secondary" className="text-sm bg-[var(--color-status-error-soft)] text-[var(--color-status-error-text)]">{type}</Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                          </div>
+                        )}
+                      </div>
+                    </DetailSection>
                   )}
 
                   {/* 个人经历 */}
                   {selectedPopulation.biography && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <FileText className="w-4 h-4" />
-                          个人经历
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.biography}</p>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={FileText} title="个人经历">
+                      <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.biography}</p>
+                    </DetailSection>
                   )}
 
                   {/* 活动参与 */}
                   {selectedPopulation.activityParticipation && (selectedPopulation.activityParticipation.activities || selectedPopulation.activityParticipation.needs) && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Activity className="w-4 h-4" />
-                          活动参与
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {selectedPopulation.activityParticipation.activities && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">参与活动</Label>
-                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.activities}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.activityParticipation.needs && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">需求建议</Label>
-                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.needs}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={Activity} title="活动参与">
+                      <div className="space-y-3">
+                        {selectedPopulation.activityParticipation.activities && (
+                          <div>
+                            <p className="text-xs text-[var(--color-neutral-08)]">参与活动</p>
+                            <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.activities}</p>
+                          </div>
+                        )}
+                        {selectedPopulation.activityParticipation.needs && (
+                          <div>
+                            <p className="text-xs text-[var(--color-neutral-08)]">需求建议</p>
+                            <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.activityParticipation.needs}</p>
+                          </div>
+                        )}
+                      </div>
+                    </DetailSection>
                   )}
 
                   {/* 健康档案 */}
                   {selectedPopulation.healthRecord && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <Calendar className="w-4 h-4" />
-                          健康档案
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                          {selectedPopulation.healthRecord.hasChronic !== undefined && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">是否患慢性病</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.hasChronic ? '是' : '否'}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.chronicDetails && (
-                            <div className="col-span-2">
-                              <Label className="text-[var(--color-neutral-08)]">慢性病详情</Label>
-                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.healthRecord.chronicDetails}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.needsRegularMedicine !== undefined && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">是否需定期服药</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.needsRegularMedicine ? '是' : '否'}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.medicineFrequency && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">服药频率</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.medicineFrequency}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.medicalVisitFrequency && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">就医频率</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.medicalVisitFrequency}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.isSeverePatient !== undefined && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">是否重症患者</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.isSeverePatient ? '是' : '否'}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.isPregnant !== undefined && (
-                            <div>
-                              <Label className="text-[var(--color-neutral-08)]">是否孕妇</Label>
-                              <p className="mt-1">{selectedPopulation.healthRecord.isPregnant ? '是' : '否'}</p>
-                            </div>
-                          )}
-                          {selectedPopulation.healthRecord.specialNotes && (
-                            <div className="col-span-2">
-                              <Label className="text-[var(--color-neutral-08)]">特殊备注</Label>
-                              <p className="mt-1 text-sm text-[var(--color-neutral-10)]">{selectedPopulation.healthRecord.specialNotes}</p>
-                            </div>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={Calendar} title="健康档案">
+                      <DetailFieldGrid className="xl:grid-cols-2">
+                        {selectedPopulation.healthRecord.hasChronic !== undefined && (
+                          <DetailField label="是否患慢性病" value={selectedPopulation.healthRecord.hasChronic ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.healthRecord.chronicDetails && (
+                          <DetailField label="慢性病详情" value={selectedPopulation.healthRecord.chronicDetails} />
+                        )}
+                        {selectedPopulation.healthRecord.needsRegularMedicine !== undefined && (
+                          <DetailField label="是否需定期服药" value={selectedPopulation.healthRecord.needsRegularMedicine ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.healthRecord.medicineFrequency && (
+                          <DetailField label="服药频率" value={selectedPopulation.healthRecord.medicineFrequency} />
+                        )}
+                        {selectedPopulation.healthRecord.medicalVisitFrequency && (
+                          <DetailField label="就医频率" value={selectedPopulation.healthRecord.medicalVisitFrequency} />
+                        )}
+                        {selectedPopulation.healthRecord.isSeverePatient !== undefined && (
+                          <DetailField label="是否重症患者" value={selectedPopulation.healthRecord.isSeverePatient ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.healthRecord.isPregnant !== undefined && (
+                          <DetailField label="是否孕妇" value={selectedPopulation.healthRecord.isPregnant ? '是' : '否'} />
+                        )}
+                        {selectedPopulation.healthRecord.specialNotes && (
+                          <DetailField className="sm:col-span-2" label="特殊备注" value={selectedPopulation.healthRecord.specialNotes} />
+                        )}
+                      </DetailFieldGrid>
+                    </DetailSection>
                   )}
 
                   {/* 重要事件记录 */}
                   {selectedPopulation.importantEvents && (
-                    <Card className={PANEL_CLASS}>
-                      <CardHeader className="pb-3">
-                        <CardTitle className="text-base flex items-center gap-2">
-                          <FileText className="w-4 h-4" />
-                          重要事件记录
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.importantEvents}</p>
-                      </CardContent>
-                    </Card>
+                    <DetailSection icon={FileText} title="重要事件记录">
+                      <p className="text-sm text-[var(--color-neutral-10)] whitespace-pre-wrap leading-relaxed">{selectedPopulation.importantEvents}</p>
+                    </DetailSection>
                   )}
                 </TabsContent>
 
                 <TabsContent value="relation" className="space-y-4">
                   <>
                         {/* 同住关系 */}
-                        <Card className={PANEL_CLASS}>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Home className="w-4 h-4 text-[var(--color-brand-text)]" />
-                              同住关系
-                              <Badge variant="secondary" className="ml-1">{selectedHousemates.length}</Badge>
-                            </CardTitle>
-                            <CardDescription>与{selectedPopulation.name}居住在同一房间的人员</CardDescription>
-                          </CardHeader>
-                          <CardContent>
+                        <DetailSection
+                          icon={Home}
+                          title="同住关系"
+                          trailing={<Badge variant="secondary">{selectedHousemates.length} 人</Badge>}
+                          description={`与${selectedPopulation.name}居住在同一房间的人员`}
+                        >
                             {selectedHousemates.length > 0 ? (
                               <div className="space-y-3">
                                 {selectedHousemates.map((person) => (
@@ -1860,20 +1754,15 @@ export function PopulationManagement() {
                             ) : (
                               <p className="text-[var(--color-neutral-08)] text-sm text-center py-4">暂无同住人员</p>
                             )}
-                          </CardContent>
-                        </Card>
+                        </DetailSection>
 
                         {/* 血缘关系 */}
-                        <Card className={PANEL_CLASS}>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Heart className="w-4 h-4 text-[var(--color-status-error-text)]" />
-                              血缘关系
-                              <Badge variant="secondary" className="ml-1">{selectedFamilyMembers.length}</Badge>
-                            </CardTitle>
-                            <CardDescription>与{selectedPopulation.name}有血缘或婚姻关系的人员</CardDescription>
-                          </CardHeader>
-                          <CardContent>
+                        <DetailSection
+                          icon={Heart}
+                          title="血缘关系"
+                          trailing={<Badge variant="secondary">{selectedFamilyMembers.length} 人</Badge>}
+                          description={`与${selectedPopulation.name}有血缘或婚姻关系的人员`}
+                        >
                             {selectedFamilyMembers.length > 0 ? (
                               <div className="space-y-3">
                                 {selectedFamilyMembers.map((item, idx: number) => (
@@ -1903,19 +1792,10 @@ export function PopulationManagement() {
                             ) : (
                               <p className="text-[var(--color-neutral-08)] text-sm text-center py-4">暂无血缘关系记录</p>
                             )}
-                          </CardContent>
-                        </Card>
+                        </DetailSection>
 
                         {/* 关系网络图 */}
-                        <Card className={PANEL_CLASS}>
-                          <CardHeader className="pb-3">
-                            <CardTitle className="text-base flex items-center gap-2">
-                              <Network className="w-4 h-4 text-[var(--color-accent-purple)]" />
-                              关系网络
-                            </CardTitle>
-                            <CardDescription>可视化展示人员关系网络</CardDescription>
-                          </CardHeader>
-                          <CardContent>
+                        <DetailSection icon={Network} title="关系网络" description="以该人员为中心展示血缘与同住关系">
                             <div className="relative w-full h-64 bg-gradient-to-br from-[var(--color-brand-primary-hover)]/12 to-[var(--color-accent-purple)]/10 rounded-[4px] flex items-center justify-center">
                               {/* 中心节点 */}
                               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
@@ -2051,18 +1931,12 @@ export function PopulationManagement() {
                                 <span className="text-[var(--color-neutral-08)]">血缘+同住</span>
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
+                        </DetailSection>
                   </>
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-4">
-                  <Card className={PANEL_CLASS}>
-                    <CardHeader>
-                      <CardTitle className="text-base">访问记录</CardTitle>
-                      <CardDescription>最近的入户访问和服务记录</CardDescription>
-                    </CardHeader>
-                    <CardContent>
+                  <DetailSection icon={HistoryIcon} title="访问记录" description="最近的入户走访和服务记录">
                       {isDetailLoading ? (
                         <p className="text-[var(--color-neutral-08)] text-sm text-center py-8">正在加载历史走访...</p>
                       ) : selectedPopulationVisits.length > 0 ? (
@@ -2091,15 +1965,11 @@ export function PopulationManagement() {
                       ) : (
                         <p className="text-[var(--color-neutral-08)] text-sm text-center py-8">暂无历史记录</p>
                       )}
-                    </CardContent>
-                  </Card>
+                  </DetailSection>
                 </TabsContent>
               </Tabs>
-              </div>
-            </ScrollArea>
-          )}
-        </DialogContent>
-      </Dialog>
+        )}
+      </DetailDialogShell>
    
       {/* 新增/编辑对话框 */}
       <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsAddDialogOpen(false); setIsEditDialogOpen(false); setFormData({}); setRecommendedTags([]); setSelectedPersonTags([]); setExpandedSections({ detail: false, biography: false, activity: false, health: false, events: false }); } }}>
