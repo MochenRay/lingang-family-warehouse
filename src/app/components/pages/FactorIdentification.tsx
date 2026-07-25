@@ -52,8 +52,90 @@ interface RawFactorItem {
   impact: string;
 }
 
+interface ScatterPoint {
+  x: number;
+  y: number;
+  z: number;
+  peopleCount: number;
+  name: string;
+}
+
+interface ScatterTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload?: ScatterPoint }>;
+}
+
+type NumericDomain = [number, number];
+
 const INNER_PANEL_CLASS = 'rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
+
+function niceStep(value: number): number {
+  if (!Number.isFinite(value) || value <= 0) {
+    return 1;
+  }
+  const magnitude = 10 ** Math.floor(Math.log10(value));
+  const normalized = value / magnitude;
+  const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return factor * magnitude;
+}
+
+function buildPaddedDomain(values: number[], bounds: NumericDomain = [0, 100]): NumericDomain {
+  const finiteValues = values.filter(Number.isFinite);
+  if (finiteValues.length === 0) {
+    return bounds;
+  }
+
+  const sampleMin = Math.min(...finiteValues);
+  const sampleMax = Math.max(...finiteValues);
+  const sampleSpan = sampleMax - sampleMin;
+  const paddedSpan = Math.max(sampleSpan * 1.24, 10);
+  const center = (sampleMin + sampleMax) / 2;
+  let lower = center - paddedSpan / 2;
+  let upper = center + paddedSpan / 2;
+
+  if (lower < bounds[0]) {
+    upper += bounds[0] - lower;
+    lower = bounds[0];
+  }
+  if (upper > bounds[1]) {
+    lower -= upper - bounds[1];
+    upper = bounds[1];
+  }
+
+  lower = Math.max(bounds[0], lower);
+  upper = Math.min(bounds[1], upper);
+  const step = niceStep((upper - lower) / 5);
+  lower = Math.max(bounds[0], Math.floor(lower / step) * step);
+  upper = Math.min(bounds[1], Math.ceil(upper / step) * step);
+
+  return [Number(lower.toFixed(4)), Number(upper.toFixed(4))];
+}
+
+function ScatterTooltip({ active, payload }: ScatterTooltipProps) {
+  const point = payload?.[0]?.payload;
+  if (!active || !point) {
+    return null;
+  }
+
+  return (
+    <div className={`${INNER_PANEL_CLASS} min-w-[168px] space-y-1 px-3 py-2 text-xs shadow-01`}>
+      <div className="font-semibold text-[var(--color-neutral-11)]">{point.name}</div>
+      <div className="flex items-center justify-between gap-4">
+        <span className={MUTED_TEXT}>走访覆盖率</span>
+        <span className="font-semibold text-[var(--color-neutral-11)]">{point.x}%</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className={MUTED_TEXT}>热度</span>
+        <span className="font-semibold text-[var(--color-neutral-11)]">{point.y}</span>
+      </div>
+      <div className="flex items-center justify-between gap-4">
+        <span className={MUTED_TEXT}>人口规模</span>
+        <span className="font-semibold text-[var(--color-neutral-11)]">{point.peopleCount} 人</span>
+      </div>
+    </div>
+  );
+}
 
 function buildFactors(snapshot: GovernanceAnalysisSnapshot, targetVariable: TargetVariable): FactorItem[] {
   const totals = snapshot.totals;
@@ -210,6 +292,11 @@ export function FactorIdentification() {
     }));
   }, [factors]);
 
+  const categoryChartData = useMemo(() => categoryStats.map((item, index) => ({
+    ...item,
+    color: CHART_COLORS[index % CHART_COLORS.length],
+  })), [categoryStats]);
+
   const scatterData = useMemo(() => {
     if (!snapshot) {
       return [];
@@ -218,9 +305,15 @@ export function FactorIdentification() {
       x: Number(grid.visitCoverage.toFixed(1)),
       y: Number(grid.heatScore.toFixed(1)),
       z: Math.max(grid.peopleCount, 20),
-      name: grid.communityName,
+      peopleCount: grid.peopleCount,
+      name: grid.name,
     }));
   }, [snapshot]);
+
+  const scatterDomains = useMemo(() => ({
+    x: buildPaddedDomain(scatterData.map((item) => item.x)),
+    y: buildPaddedDomain(scatterData.map((item) => item.y)),
+  }), [scatterData]);
 
   const handleExport = () => {
     downloadJson(`factor-identification-${targetVariable}-${new Date().toISOString().slice(0, 10)}.json`, {
@@ -329,31 +422,81 @@ export function FactorIdentification() {
 
         <div className="xl:col-span-2 space-y-6">
           <ChartCard title="分类贡献结构" description="按固定分类聚合当前目标的因子贡献。">
-            <div className="h-[240px]">
+            <div
+              className="h-[280px]"
+              data-testid="factor-category-chart"
+              role="group"
+              aria-label="当前目标下各类因子贡献占比及颜色图例"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={categoryStats} dataKey="contribution" nameKey="category" outerRadius={82} label={{ fill: CHART_LABEL }}>
-                    {categoryStats.map((item, index) => (
-                      <Cell key={item.category} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                  <Pie
+                    data={categoryChartData}
+                    dataKey="contribution"
+                    nameKey="category"
+                    cx="50%"
+                    cy="43%"
+                    outerRadius={72}
+                    isAnimationActive={false}
+                    labelLine={{ stroke: CHART_LABEL }}
+                    label={({ category, contribution }) => `${String(category)} ${Number(contribution).toFixed(1)}%`}
+                  >
+                    {categoryChartData.map((item) => (
+                      <Cell key={item.category} fill={item.color} />
                     ))}
                   </Pie>
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Legend
+                    align="center"
+                    verticalAlign="bottom"
+                    iconType="circle"
+                    wrapperStyle={{ color: CHART_LEGEND, fontSize: 12 }}
+                    formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
             </div>
           </ChartCard>
 
           <ChartCard title="网格热度散点" description="X 轴为走访覆盖率，Y 轴为热度，气泡大小代表人口规模。">
-            <div className="h-[260px]">
+            <div
+              className="h-[260px]"
+              data-testid="factor-scatter-chart"
+              role="group"
+              aria-label="网格走访覆盖率与治理热度散点图"
+            >
               <ResponsiveContainer width="100%" height="100%">
                 <ScatterChart margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
                   <CartesianGrid stroke={CHART_GRID} strokeDasharray="3 3" />
-                  <XAxis type="number" dataKey="x" name="走访覆盖率" unit="%" axisLine={false} tickLine={false} tick={CHART_TICK} />
-                  <YAxis type="number" dataKey="y" name="热度" axisLine={false} tickLine={false} tick={CHART_TICK} />
+                  <XAxis
+                    type="number"
+                    dataKey="x"
+                    name="走访覆盖率"
+                    unit="%"
+                    domain={scatterDomains.x}
+                    padding={{ left: 12, right: 12 }}
+                    tickCount={6}
+                    allowDecimals={false}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={CHART_TICK}
+                  />
+                  <YAxis
+                    type="number"
+                    dataKey="y"
+                    name="热度"
+                    domain={scatterDomains.y}
+                    padding={{ top: 12, bottom: 12 }}
+                    tickCount={6}
+                    allowDecimals={false}
+                    axisLine={false}
+                    tickLine={false}
+                    tick={CHART_TICK}
+                  />
                   <ZAxis type="number" dataKey="z" range={[80, 420]} />
-                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  <Tooltip content={<ScatterTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
                   <Legend wrapperStyle={{ color: CHART_LEGEND }} formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>} />
-                  <Scatter name="网格样本" data={scatterData} fill={CHART_PRIMARY} />
+                  <Scatter name="网格样本" data={scatterData} fill={CHART_PRIMARY} isAnimationActive={false} />
                 </ScatterChart>
               </ResponsiveContainer>
             </div>
