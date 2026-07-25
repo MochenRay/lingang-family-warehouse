@@ -27,6 +27,12 @@ interface PyramidRow {
   female: number;
 }
 
+const DISTRIBUTION_CHART_HEIGHT = 'h-[280px] xl:h-[340px]';
+
+function formatAgeBucketLabel(name: string) {
+  return name === '81岁及以上' ? '81+' : name;
+}
+
 /**
  * 金字塔 tooltip：本地包装 DarkChartTooltip，展示值取绝对值。
  * 负值仅用于镜像布局（male 存负），不对用户展示。
@@ -141,7 +147,11 @@ export function DemographicsAnalysis() {
     [demographics],
   );
   const nationData = useMemo(
-    () => (demographics?.nationData ?? []).map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
+    () =>
+      (demographics?.nationData ?? [])
+        .slice()
+        .sort((left, right) => right.value - left.value)
+        .map((item, index) => ({ ...item, fill: CHART_COLORS[index % CHART_COLORS.length] })),
     [demographics],
   );
   const typeData = useMemo(
@@ -150,7 +160,7 @@ export function DemographicsAnalysis() {
   );
   const pyramid = useMemo(() => {
     const rows = (demographics?.ageGenderData ?? []).map((item) => ({
-      name: item.name,
+      name: formatAgeBucketLabel(item.name),
       male: -item.male,
       female: item.female,
     }));
@@ -233,11 +243,11 @@ export function DemographicsAnalysis() {
       </Card>
 
       <div className="grid gap-6 xl:grid-cols-3">
-        <Card className={PANEL_CLASS}>
+        <Card className={`${PANEL_CLASS} h-full`} data-testid="type-distribution">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">人口类型</CardTitle>
           </CardHeader>
-          <CardContent className="h-[280px]">
+          <CardContent className={DISTRIBUTION_CHART_HEIGHT} data-testid="type-distribution-chart">
             {loading ? (
               <LoadingState title="正在汇总人口类型..." />
             ) : (
@@ -258,11 +268,11 @@ export function DemographicsAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className={PANEL_CLASS}>
+        <Card className={`${PANEL_CLASS} h-full`} data-testid="education-distribution">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">教育程度</CardTitle>
           </CardHeader>
-          <CardContent className="h-[340px]">
+          <CardContent className={DISTRIBUTION_CHART_HEIGHT} data-testid="education-distribution-chart">
             {loading ? (
               <LoadingState title="正在汇总教育结构..." />
             ) : (
@@ -283,27 +293,46 @@ export function DemographicsAnalysis() {
           </CardContent>
         </Card>
 
-        <Card className={PANEL_CLASS} data-testid="nation-distribution">
+        <Card className={`${PANEL_CLASS} h-full`} data-testid="nation-distribution">
           <CardHeader>
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">民族分布</CardTitle>
           </CardHeader>
-          <CardContent className="h-[280px]">
+          <CardContent className={DISTRIBUTION_CHART_HEIGHT} data-testid="nation-distribution-chart">
             {loading ? (
               <LoadingState title="正在汇总民族分布..." />
             ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={nationData}>
-                  <CartesianGrid {...CHART_GRID_PROPS} />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
-                  <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
-                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
+              <>
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={nationData}>
+                    <CartesianGrid {...CHART_GRID_PROPS} />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
+                    <YAxis axisLine={false} tickLine={false} tick={CHART_TICK} allowDecimals={false} />
+                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                    <Bar dataKey="value" name="人数" radius={[8, 8, 0, 0]}>
+                      {nationData.map((item) => (
+                        <Cell key={item.name} fill={item.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+                <table className="sr-only">
+                  <caption>民族分布数据（单位：人）</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col">民族</th>
+                      <th scope="col">人数</th>
+                    </tr>
+                  </thead>
+                  <tbody>
                     {nationData.map((item) => (
-                      <Cell key={item.name} fill={item.fill} />
+                      <tr key={item.name}>
+                        <th scope="row">{item.name}</th>
+                        <td>{item.value}</td>
+                      </tr>
                     ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                  </tbody>
+                </table>
+              </>
             )}
           </CardContent>
         </Card>
