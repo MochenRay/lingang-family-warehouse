@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Shield, Lock, Eye, Edit2, Database, Settings } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Shield, Lock, Eye, Edit2, Database, Settings, Save, X } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Checkbox } from '../ui/checkbox';
@@ -13,6 +14,8 @@ const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
 const NOTE_PANEL_CLASS = 'rounded-lg border border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary-hover)]/10 p-4 text-sm font-medium text-[var(--color-brand-text)]';
+const CURRENT_USER_ROLE_KEY = 'homedata.permission-management.current-user-role';
+const PERMISSIONS_STORAGE_KEY = 'homedata.permission-management.permissions';
 
 export function PermissionManagement() {
   const [selectedRole, setSelectedRole] = useState('district_admin');
@@ -130,6 +133,12 @@ export function PermissionManagement() {
     { code: 'viewer', name: '访客', color: 'var(--color-neutral-06)' }
   ];
 
+  const [currentUserRole] = useState(() => {
+    const storedRole = typeof window === 'undefined' ? null : window.localStorage.getItem(CURRENT_USER_ROLE_KEY);
+    return roles.some((role) => role.code === storedRole) ? storedRole! : 'admin';
+  });
+  const canManagePermissions = currentUserRole === 'admin';
+
   // 各角色独立的权限矩阵（修改互不影响——此前全局单一状态会跨角色串联）。
   // 注意：手工深拷贝纯数据并保留 icon 引用——structuredClone 会因
   // Lucide forwardRef 对象含 Symbol(react.forward_ref) 抛 DataCloneError（整页白屏的教训）。
@@ -141,14 +150,178 @@ export function PermissionManagement() {
     data: dataPermissionsSeed.map((area) => ({ ...area })),
   });
 
-  const [permsByRole, setPermsByRole] = useState<
-    Record<string, { function: typeof functionPermissionsSeed; data: typeof dataPermissionsSeed }>
-  >(() => Object.fromEntries(roles.map((role) => [role.code, clonePerms()])));
+  type RolePermissions = ReturnType<typeof clonePerms>;
+  type PermissionsByRole = Record<string, RolePermissions>;
+
+  const cloneRolePermissions = (permissions: RolePermissions): RolePermissions => ({
+    function: permissions.function.map((mod) => ({
+      ...mod,
+      permissions: mod.permissions.map((permission) => ({ ...permission })),
+    })),
+    data: permissions.data.map((area) => ({ ...area })),
+  });
+
+  const buildSeededPermissions = (): PermissionsByRole =>
+    Object.fromEntries(roles.map((role) => [role.code, clonePerms()]));
+
+  const loadPermissions = (): PermissionsByRole => {
+    const seeded = buildSeededPermissions();
+    if (typeof window === 'undefined') return seeded;
+
+    const stored = window.localStorage.getItem(PERMISSIONS_STORAGE_KEY);
+    if (!stored) return seeded;
+
+    try {
+      const parsed = JSON.parse(stored) as Record<string, {
+        function?: Array<{ permissions?: Array<Partial<Record<FunctionPermField, boolean>>> }>;
+        data?: Array<Partial<Record<'canView' | 'canEdit', boolean>>>;
+      }>;
+
+      return Object.fromEntries(roles.map((role) => {
+        const storedRole = parsed[role.code];
+        const roleSeed = seeded[role.code];
+        const hydrated: RolePermissions = {
+          function: roleSeed.function.map((mod, moduleIndex) => ({
+            ...mod,
+            permissions: mod.permissions.map((permission, permissionIndex) => {
+              const storedPermission = storedRole?.function?.[moduleIndex]?.permissions?.[permissionIndex];
+              return {
+                ...permission,
+                view: typeof storedPermission?.view === 'boolean' ? storedPermission.view : permission.view,
+                create: typeof storedPermission?.create === 'boolean' ? storedPermission.create : permission.create,
+                edit: typeof storedPermission?.edit === 'boolean' ? storedPermission.edit : permission.edit,
+                delete: typeof storedPermission?.delete === 'boolean' ? storedPermission.delete : permission.delete,
+                export: typeof storedPermission?.export === 'boolean' ? storedPermission.export : permission.export,
+              };
+            }),
+          })),
+          data: roleSeed.data.map((area, areaIndex) => {
+            const storedArea = storedRole?.data?.[areaIndex];
+            return {
+              ...area,
+              canView: typeof storedArea?.canView === 'boolean' ? storedArea.canView : area.canView,
+              canEdit: typeof storedArea?.canEdit === 'boolean' ? storedArea.canEdit : area.canEdit,
+            };
+          }),
+        };
+        return [role.code, hydrated];
+      }));
+    } catch {
+      return seeded;
+    }
+  };
+
+  const [permsByRole, setPermsByRole] = useState<PermissionsByRole>(loadPermissions);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [editSnapshot, setEditSnapshot] = useState<RolePermissions | null>(null);
 
   const currentPerms = permsByRole[selectedRole];
 
+  const restoreSnapshot = () => {
+    if (editSnapshot) {
+      setPermsByRole((previous) => ({
+        ...previous,
+        [selectedRole]: cloneRolePermissions(editSnapshot),
+      }));
+    }
+    setIsEditing(false);
+    setIsDirty(false);
+    setEditSnapshot(null);
+  };
+
+  const startEditing = () => {
+    if (!canManagePermissions || selectedRole === 'admin') return;
+    setEditSnapshot(cloneRolePermissions(currentPerms));
+    setIsEditing(true);
+    setIsDirty(false);
+  };
+
+  const savePermissions = () => {
+    if (!canManagePermissions || !isEditing) return;
+    const storable = Object.fromEntries(Object.entries(permsByRole).map(([roleCode, permissions]) => [
+      roleCode,
+      {
+        function: permissions.function.map((mod) => ({
+          permissions: mod.permissions.map(({ view, create, edit, delete: canDelete, export: canExport }) => ({
+            view,
+            create,
+            edit,
+            delete: canDelete,
+            export: canExport,
+          })),
+        })),
+        data: permissions.data.map(({ canView, canEdit }) => ({ canView, canEdit })),
+      },
+    ]));
+    window.localStorage.setItem(PERMISSIONS_STORAGE_KEY, JSON.stringify(storable));
+    setIsEditing(false);
+    setIsDirty(false);
+    setEditSnapshot(null);
+  };
+
+  const selectRole = (nextRole: string) => {
+    if (nextRole === selectedRole) return;
+
+    if (isEditing && isDirty && !window.confirm('当前权限修改尚未保存，是否放弃修改并切换角色？')) {
+      return;
+    }
+    if (isEditing && editSnapshot) {
+      setPermsByRole((previous) => ({
+        ...previous,
+        [selectedRole]: cloneRolePermissions(editSnapshot),
+      }));
+    }
+    setIsEditing(false);
+    setIsDirty(false);
+    setEditSnapshot(null);
+    setSelectedRole(nextRole);
+  };
+
+  useEffect(() => {
+    if (!isEditing) return undefined;
+
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      restoreSnapshot();
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [editSnapshot, isEditing, selectedRole]);
+
+  useEffect(() => {
+    if (!isEditing || !isDirty) return undefined;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    const handleRouteClick = (event: MouseEvent) => {
+      const target = event.target instanceof Element ? event.target.closest<HTMLElement>('[data-route-id]') : null;
+      if (!target || target.dataset.routeId === 'permission-management') return;
+      if (!window.confirm('当前权限修改尚未保存，是否放弃修改并离开本页？')) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+      setIsEditing(false);
+      setIsDirty(false);
+      setEditSnapshot(null);
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    document.addEventListener('click', handleRouteClick, true);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      document.removeEventListener('click', handleRouteClick, true);
+    };
+  }, [isDirty, isEditing]);
+
   // 权限矩阵勾选（演示数据，本地状态按角色可操作；admin 角色保持只读）
   const toggleFunctionPermission = (moduleIndex: number, permIndex: number, field: FunctionPermField, checked: boolean) => {
+    if (!isEditing || !canManagePermissions || selectedRole === 'admin') return;
     setPermsByRole((prev) => ({
       ...prev,
       [selectedRole]: {
@@ -160,9 +333,11 @@ export function PermissionManagement() {
         ),
       },
     }));
+    setIsDirty(true);
   };
 
   const toggleDataPermission = (areaIndex: number, field: 'canView' | 'canEdit', checked: boolean) => {
+    if (!isEditing || !canManagePermissions || selectedRole === 'admin') return;
     setPermsByRole((prev) => ({
       ...prev,
       [selectedRole]: {
@@ -170,6 +345,7 @@ export function PermissionManagement() {
         data: prev[selectedRole].data.map((area, i) => (i === areaIndex ? { ...area, [field]: checked } : area)),
       },
     }));
+    setIsDirty(true);
   };
 
   // 权限操作统计（按当前角色视图）
@@ -184,6 +360,7 @@ export function PermissionManagement() {
   };
 
   const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
+  const currentUserRoleName = roles.find(r => r.code === currentUserRole)?.name ?? currentUserRole;
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -197,14 +374,17 @@ export function PermissionManagement() {
       <Card className={PANEL_CLASS}>
         <CardHeader>
           <CardTitle className="text-base text-[var(--color-neutral-11)]">选择角色</CardTitle>
-          <CardDescription className={MUTED_TEXT_CLASS}>选择要配置权限的角色</CardDescription>
+          <CardDescription className={MUTED_TEXT_CLASS}>
+            选择要查看的权限角色 · 当前登录角色：{currentUserRoleName}
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3">
             {roles.map((role) => (
               <button
                 key={role.code}
-                onClick={() => setSelectedRole(role.code)}
+                type="button"
+                onClick={() => selectRole(role.code)}
                 className={`px-4 py-2 rounded-lg border-2 transition-all ${
                   selectedRole === role.code
                     ? 'border-[var(--color-brand-primary-hover)] bg-[var(--color-brand-primary-hover)]/10 text-[var(--color-neutral-11)]'
@@ -237,10 +417,47 @@ export function PermissionManagement() {
       {/* 权限配置 */}
       <Card className={PANEL_CLASS}>
         <CardHeader className="border-b border-[var(--color-neutral-03)]">
-          <CardTitle className="text-base text-[var(--color-neutral-11)]">权限配置</CardTitle>
-          <CardDescription className={MUTED_TEXT_CLASS}>
-            当前角色：{roles.find(r => r.code === selectedRole)?.name}
-          </CardDescription>
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div className="space-y-1">
+              <CardTitle className="text-base text-[var(--color-neutral-11)]">权限配置</CardTitle>
+              <CardDescription className={MUTED_TEXT_CLASS}>
+                当前角色：{selectedRoleName}
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-2">
+              {!canManagePermissions && (
+                <Badge variant="outline" className={INFO_BADGE_CLASS}>只读</Badge>
+              )}
+              {canManagePermissions && selectedRole === 'admin' && (
+                <Badge variant="outline" className={INFO_BADGE_CLASS}>受保护角色</Badge>
+              )}
+              {canManagePermissions && selectedRole !== 'admin' && !isEditing && (
+                <Button type="button" size="sm" onClick={startEditing}>
+                  <Edit2 className="mr-2 h-4 w-4" />
+                  编辑权限
+                </Button>
+              )}
+              {canManagePermissions && isEditing && (
+                <>
+                  <Button type="button" size="sm" variant="outline" onClick={restoreSnapshot}>
+                    <X className="mr-2 h-4 w-4" />
+                    取消
+                  </Button>
+                  <Button type="button" size="sm" onClick={savePermissions} disabled={!isDirty}>
+                    <Save className="mr-2 h-4 w-4" />
+                    保存
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+          <div role="status" aria-live="polite" className={`text-sm ${MUTED_TEXT_CLASS}`}>
+            {isEditing
+              ? isDirty
+                ? '编辑中：修改尚未保存，切换角色或离开页面时将先请求确认。'
+                : '编辑中：可调整当前角色权限；保存后生效，取消可恢复进入编辑前的配置。'
+              : '当前为只读视图；只有具备权限管理能力的当前用户可进入编辑。'}
+          </div>
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="function">
@@ -301,7 +518,7 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.view}
                                   onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'view', checked === true)}
-                                  disabled={selectedRole === 'admin'}
+                                  disabled={!isEditing || selectedRole === 'admin'}
                                   aria-label={`${selectedRoleName}-${perm.name}-查看`}
                                 />
                               </TableCell>
@@ -309,7 +526,7 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.create}
                                   onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'create', checked === true)}
-                                  disabled={selectedRole === 'admin' || !perm.view}
+                                  disabled={!isEditing || selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-新建`}
                                 />
                               </TableCell>
@@ -317,7 +534,7 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.edit}
                                   onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'edit', checked === true)}
-                                  disabled={selectedRole === 'admin' || !perm.view}
+                                  disabled={!isEditing || selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-编辑`}
                                 />
                               </TableCell>
@@ -325,7 +542,7 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.delete}
                                   onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'delete', checked === true)}
-                                  disabled={selectedRole === 'admin' || !perm.view}
+                                  disabled={!isEditing || selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-删除`}
                                 />
                               </TableCell>
@@ -333,7 +550,7 @@ export function PermissionManagement() {
                                 <Checkbox
                                   checked={perm.export}
                                   onCheckedChange={(checked) => toggleFunctionPermission(moduleIndex, index, 'export', checked === true)}
-                                  disabled={selectedRole === 'admin' || !perm.view}
+                                  disabled={!isEditing || selectedRole === 'admin' || !perm.view}
                                   aria-label={`${selectedRoleName}-${perm.name}-导出`}
                                 />
                               </TableCell>
@@ -394,7 +611,7 @@ export function PermissionManagement() {
                             <Checkbox
                               checked={area.canView}
                               onCheckedChange={(checked) => toggleDataPermission(index, 'canView', checked === true)}
-                              disabled={selectedRole === 'admin'}
+                              disabled={!isEditing || selectedRole === 'admin'}
                               aria-label={`${selectedRoleName}-${area.area}-可查看`}
                             />
                           </TableCell>
@@ -402,7 +619,7 @@ export function PermissionManagement() {
                             <Checkbox
                               checked={area.canEdit}
                               onCheckedChange={(checked) => toggleDataPermission(index, 'canEdit', checked === true)}
-                              disabled={selectedRole === 'admin' || !area.canView}
+                              disabled={!isEditing || selectedRole === 'admin' || !area.canView}
                               aria-label={`${selectedRoleName}-${area.area}-可编辑`}
                             />
                           </TableCell>
