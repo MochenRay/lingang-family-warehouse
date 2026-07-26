@@ -4,6 +4,7 @@ import { expect, test, type Page } from '@playwright/test';
 
 const LOCAL_PREVIEW_ROLE_KEY = 'homedata.permission-management.local-preview-role';
 const PERMISSIONS_STORAGE_KEY = 'homedata.permission-management.permissions';
+const INTERNAL_COPY_PATTERN = /本地预览|公开演示|验证/;
 
 test.use({
   viewport: { width: 1440, height: 900 },
@@ -30,6 +31,10 @@ async function preparePage(page: Page, currentUserRole: 'admin' | 'viewer', pers
   }
 }
 
+async function expectBusinessFacingCopy(page: Page) {
+  await expect(page.locator('.page-enter')).not.toContainText(INTERNAL_COPY_PATTERN);
+}
+
 test.describe('R55 permission boundary', () => {
   test('public build branch is fail-closed before any local-preview role seam is read', async () => {
     const source = await readFile(resolve(process.cwd(), 'src/app/components/pages/PermissionManagement.tsx'), 'utf8');
@@ -47,7 +52,9 @@ test.describe('R55 permission boundary', () => {
     await page.goto('/settings/permissions');
 
     await expect(page.getByRole('heading', { name: '权限管理' })).toBeVisible();
-    await expect(page.getByText('本地预览角色：访客')).toBeVisible();
+    await expect(page.getByText('当前登录角色：访客')).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('当前账号仅可查看权限配置。');
+    await expectBusinessFacingCopy(page);
     await expect(page.getByRole('button', { name: '编辑权限' })).toHaveCount(0);
 
     const checkboxes = page.getByRole('checkbox');
@@ -74,7 +81,9 @@ test.describe('R55 permission boundary', () => {
     const editButton = page.getByRole('button', { name: '编辑权限' });
     const target = page.getByRole('checkbox', { name: '区域管理员-人口信息管理-删除' });
 
-    await expect(page.getByText('本地预览角色：系统管理员')).toBeVisible();
+    await expect(page.getByText('当前登录角色：系统管理员')).toBeVisible();
+    await expect(page.getByRole('status')).toHaveText('当前为只读视图；可进入编辑以调整当前角色权限。');
+    await expectBusinessFacingCopy(page);
     await expect(editButton).toBeVisible();
     await expect(target).toBeDisabled();
     await editButton.focus();

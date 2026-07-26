@@ -477,9 +477,7 @@ export function PermissionManagement() {
 
   const selectedRoleName = roles.find(r => r.code === selectedRole)?.name ?? selectedRole;
   const currentUserRoleName = roles.find(r => r.code === currentUserRole)?.name ?? currentUserRole;
-  const currentAccessLabel = isLocalPreviewRoleSeam
-    ? `本地预览角色：${currentUserRoleName}`
-    : '公开演示：只读';
+  const currentAccessLabel = `当前登录角色：${currentUserRoleName}`;
 
   return (
     <div className="space-y-5 text-[var(--color-neutral-10)] page-enter">
@@ -575,11 +573,9 @@ export function PermissionManagement() {
               ? isDirty
                 ? '编辑中：修改尚未保存，切换角色或离开页面时将先请求确认。'
                 : '编辑中：可调整当前角色权限；保存后生效，取消可恢复进入编辑前的配置。'
-              : isLocalPreviewRoleSeam
-                ? canManagePermissions
-                  ? '当前为只读视图；可进入编辑以验证本地权限配置交互。'
-                  : '当前为只读视图；本地预览角色无编辑入口。'
-                : '公开演示恒为只读；权限变更仅可在本地预览验证。'}
+              : canManagePermissions
+                ? '当前为只读视图；可进入编辑以调整当前角色权限。'
+                : '当前账号仅可查看权限配置。'}
           </div>
         </CardHeader>
         <CardContent>
