@@ -360,7 +360,7 @@ export function StatisticsOverview({ onRouteChange }: StatisticsOverviewProps) {
                   <YAxis axisLine={false} tickLine={false} domain={['dataMin - 5', 'auto']} tick={CHART_TICK} />
                   <CartesianGrid {...CHART_GRID_PROPS} />
                   <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Area type="monotone" dataKey="value" name="人口数" stroke={CHART_COLORS[0]} strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" />
+                  <Area type="monotone" dataKey="value" name="人口数" stroke={CHART_COLORS[0]} strokeWidth={3} fillOpacity={1} fill="url(#phase10DarkPopulation)" isAnimationActive={false} />
                 </AreaChart>
               </ResponsiveContainer>
             ) : (
