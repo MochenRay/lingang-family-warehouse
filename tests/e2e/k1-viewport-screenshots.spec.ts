@@ -132,7 +132,9 @@ async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastCo
     }
     expect(await readScrollLeft()).toBeGreaterThanOrEqual(maxScrollLeft - 2);
   } finally {
-    // 键盘回退借用了焦点，无论成败必定归还，避免污染后续断言
+    // 键盘回退借用了焦点，无论成败必定归还，避免污染后续断言：
+    // 先 blur 解除 scroller 焦点（body.focus() 可能是 no-op），再尽量还原先前焦点
+    await scroller.evaluate((el) => (el as HTMLElement).blur());
     if (previousFocus) {
       await previousFocus.focus().catch(() => undefined);
     }
