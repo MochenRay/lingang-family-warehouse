@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  CANONICAL_PERFORMANCE_EXECUTION_CLASS,
   CANONICAL_PERFORMANCE_PROFILE,
   PERFORMANCE_SCHEMA_VERSION,
+  baselineRefreshReasons,
   evaluatePerformanceBaseline,
   performanceBaselineWarnings,
   requireCanonicalUbuntuBaseline,
@@ -44,6 +46,7 @@ function report(routeMetrics: PerformanceReport['routes']): PerformanceReport {
       nodeVersion: 'v22.0.0',
       browserVersion: '140.0.0.0',
       playwrightVersion: '1.58.2',
+      executionClass: 'local',
       sourceRevision: 'a'.repeat(40),
       dirty: false,
       seedFingerprint: 'b'.repeat(64),
@@ -51,6 +54,17 @@ function report(routeMetrics: PerformanceReport['routes']): PerformanceReport {
     },
     routes: routeMetrics,
   };
+}
+
+function markCanonical(reportValue: PerformanceReport): PerformanceReport {
+  reportValue.provenance = {
+    ...reportValue.provenance,
+    runner: 'github-actions',
+    platform: 'linux',
+    arch: 'x64',
+    executionClass: CANONICAL_PERFORMANCE_EXECUTION_CLASS,
+  };
+  return reportValue;
 }
 
 describe('performance budget', () => {
@@ -91,8 +105,8 @@ describe('performance budget', () => {
     current.profile.cpuSlowdown = 1;
 
     expect(evaluatePerformanceBaseline(baseline, current)).toEqual([
-      'baseline schemaVersion 1 != canonical 2',
-      'current schemaVersion 1 != canonical 2',
+      'baseline schemaVersion 1 != canonical 3',
+      'current schemaVersion 1 != canonical 3',
       'baseline profile differs from canonical measurement profile',
       'current profile differs from canonical measurement profile',
     ]);
@@ -112,11 +126,16 @@ describe('performance budget', () => {
     const call = 'GET /api/stats/dashboard';
     const baseline = report({ dashboard: route('/', 1000, 1, 1000, [call]) });
     const current = report({ dashboard: route('/', 2000, 1, 1000, [call]) });
-    current.provenance = { ...current.provenance, runner: 'github-actions', platform: 'linux' };
+    current.provenance = {
+      ...current.provenance,
+      runner: 'github-actions',
+      platform: 'linux',
+      executionClass: CANONICAL_PERFORMANCE_EXECUTION_CLASS,
+    };
 
     expect(evaluatePerformanceBaseline(baseline, current)).toEqual([]);
     expect(performanceBaselineWarnings(baseline, current)).toEqual([
-      'readyMs budget skipped: timing cohort differs: runner, platform',
+      'readyMs budget skipped: timing cohort differs: runner, platform, executionClass',
     ]);
   });
 
@@ -134,7 +153,7 @@ describe('performance budget', () => {
     const baseline = report({});
 
     expect(requireCanonicalUbuntuBaseline(baseline)).toEqual([
-      'baseline is not canonical GitHub Actions Linux x64 evidence: local/darwin/arm64, dirty=false',
+      'baseline is not canonical PR CI performance evidence: local/darwin/arm64, dirty=false, executionClass=local',
     ]);
 
     baseline.provenance = {
@@ -142,8 +161,31 @@ describe('performance budget', () => {
       runner: 'github-actions',
       platform: 'linux',
       arch: 'x64',
+      executionClass: CANONICAL_PERFORMANCE_EXECUTION_CLASS,
     };
     expect(requireCanonicalUbuntuBaseline(baseline)).toEqual([]);
+  });
+
+  it('requests a refresh only for canonical schema, profile, provenance, or timing-cohort drift', () => {
+    const baseline = markCanonical(report({ dashboard: route('/', 1000, 1, 1000) }));
+    const current = markCanonical(report({ dashboard: route('/', 2000, 2, 2000) }));
+
+    expect(baselineRefreshReasons(baseline, current)).toEqual([]);
+
+    current.provenance.executionClass = 'manual-candidate';
+    expect(baselineRefreshReasons(baseline, current)).toEqual([
+      'canonical timing cohort mismatch: executionClass',
+    ]);
+    current.provenance.executionClass = CANONICAL_PERFORMANCE_EXECUTION_CLASS;
+
+    baseline.schemaVersion = 2;
+    baseline.profile.warmups = 0;
+    current.provenance.seedFingerprint = 'c'.repeat(64);
+    expect(baselineRefreshReasons(baseline, current)).toEqual([
+      'baseline schemaVersion 2 != canonical 3',
+      'baseline profile differs from canonical measurement profile',
+      'canonical timing cohort mismatch: seedFingerprint',
+    ]);
   });
 
   it('skips local timing and blocks canonical enforcement when seed/runtime cohort drifts', () => {

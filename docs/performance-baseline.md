@@ -23,7 +23,7 @@
 - `apiRequestCount`：GET `/api/**` 响应数
 - `apiResponseBytes`：Playwright 读取的 decoded response body bytes
 - 三次 raw samples 与逐 API path/status/bytes
-- runner / OS / arch / Node / Chromium、source revision、dirty 状态与 seed source fingerprint
+- runner / OS / arch / Node / Chromium、execution class、source revision、dirty 状态与 seed source fingerprint
 
 `schemaVersion` 与上述 canonical profile 任一漂移均直接失败；每路由三次样本的 API path 合同须一致。页面出现可见 `ErrorState` / `LoadingState`、request failure、pageerror 或非 2xx API 时，不得记作 ready。
 
@@ -33,7 +33,7 @@
 - `readyMs`：同时超过 baseline 20% 且绝对增加超过 250 ms 才失败，以收敛 runner 抖动。
 - 缺失/新增 route 或 canonical path 漂移直接失败。
 - baseline 中稳定出现的 `method + API path` 多重集若消失、增加或次数改变，直接失败，避免错误壳因请求更少而假绿。
-- `readyMs` 仅在 baseline 与 current 的 runner / OS / arch、Node major、Chromium、Playwright 与 seed fingerprint 全部相同才比较；本地环境不相容时，summary 明示跳过 ready 预算。canonical CI 遇 cohort 漂移则直接阻断，要求重产基线。
+- `readyMs` 仅在 baseline 与 current 的 runner / OS / arch、Node major、Chromium、Playwright、execution class 与 seed fingerprint 全部相同才比较；本地环境不相容时，summary 明示跳过 ready 预算。canonical CI 遇 cohort 漂移则直接阻断，要求重产基线。
 
 ## 命令
 
@@ -43,21 +43,21 @@
 PYTHON_BIN=backend/.venv/bin/python npm run test:e2e:perf
 ```
 
-生成候选：
+生成本地诊断候选：
 
 ```bash
 PYTHON_BIN=backend/.venv/bin/python npm run test:e2e:perf:update
 ```
 
-更新模式只写 `test-results/performance/baseline-candidate.json`，不得自动覆盖仓内 `tests/performance/performance-baseline.json`。应先审查 route manifest、raw samples、请求明细及异常原因，再显式替换基线并用普通校验模式复跑。
+更新模式只写 `test-results/performance/baseline-candidate.json`，不得自动覆盖仓内 `tests/performance/performance-baseline.json`。本地或手动 workflow 候选的 execution class 不是 `ci-performance`，只用于诊断，不得作为 canonical baseline 入仓。
 
-GitHub Actions 的 `Performance baseline candidate` 手动 workflow 可按需重产 canonical Ubuntu candidate artifact。普通 CI 若发现仓内基线尚非 clean `github-actions/linux/x64`，会进入一次性 bootstrap 模式：生成并上传 Ubuntu candidate 后主动失败，杜绝 provisional 基线随绿色 PR 合并；仓内基线换成该 artifact 后，后续 CI 才以 `PERF_REQUIRE_CANONICAL_BASELINE=1` 强制预算。current、candidate、summary 与 Playwright 证据皆始终上传。
+普通 PR CI 的 `Route performance budget` 是 canonical candidate 与 enforcement 的唯一 truth path，execution class 固定为 `ci-performance`。若 baseline 的 schema/profile/canonical provenance 或 timing cohort 漂移，同一 performance job 会原样写出 `baseline-candidate.json` 并主动失败；仓内基线换成该 artifact 后，再由同一路径独立复跑。纯 `readyMs`、request 或 payload 超预算不会生成 candidate，防止用失败 current 自动抬高基线。current、candidate、summary 与 Playwright 证据始终上传。
 
 ## 首轮 Ubuntu bootstrap
 
 首轮 bootstrap 已由 PR #84 的 GitHub Actions run `29990772916` 生成并审查。当前入仓基线 provenance 为 clean `github-actions/linux/x64`；`sourceRevision=b81c65e15caec4507ef88d2376ae742bebb98ffd` 是 GitHub 合成合并提交，父提交分别为当时的 `main=f2183773c2e9d6b16410c8e952434fe8953059cd` 与 PR head `48b3e8e28d27181fb3454a03436c5fe23dfcdf88`。候选与 current SHA-256 相同，30 路由、三次 raw samples、API 状态/字节/调用多重集均已核验。
 
-后续若 provenance 不再满足 canonical cohort，CI 会重新进入 bootstrap、上传 `baseline-candidate.json` 并主动失败。亦可手动运行 `Performance baseline candidate`。必须确认 run URL/ID、source revision、30 路由、profile、seed fingerprint、raw samples 与 API 明细无异常后，方可原样替换仓内基线再普通复跑；不得用本机候选冒充 Ubuntu 证据。
+后续若 schema/profile/provenance/timing cohort 不再满足 canonical 合同，PR CI 会重新进入 refresh、上传 `baseline-candidate.json` 并主动失败。必须确认 run URL/ID、`executionClass=ci-performance`、source revision、30 路由、profile、seed fingerprint、raw samples 与 API 明细无异常后，方可原样替换仓内基线再普通复跑；不得用本机或手动 workflow 候选冒充 PR CI 证据。
 
 ## 当前已知边界
 

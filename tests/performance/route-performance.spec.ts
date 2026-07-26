@@ -8,9 +8,11 @@ import { DESKTOP_ROUTES, type DesktopRouteProbe } from '../e2e/support/desktop-r
 import {
   CANONICAL_PERFORMANCE_PROFILE,
   PERFORMANCE_SCHEMA_VERSION,
+  baselineRefreshReasons,
   evaluatePerformanceBaseline,
   performanceBaselineWarnings,
   requireCanonicalUbuntuBaseline,
+  requireCanonicalUbuntuCurrent,
   requireComparableTimingCohort,
   type ApiResponseMetric,
   type PerformanceReport,
@@ -72,6 +74,8 @@ function buildProvenance(browser: Browser): PerformanceReport['provenance'] {
     nodeVersion: process.version,
     browserVersion: browser.version(),
     playwrightVersion: playwrightPackage.version,
+    executionClass: process.env.PERF_EXECUTION_CLASS
+      ?? (process.env.GITHUB_ACTIONS === 'true' ? 'unclassified-github-actions' : 'local'),
     sourceRevision: gitOutput(['rev-parse', 'HEAD']),
     dirty: gitOutput(['status', '--porcelain']) !== '',
     seedFingerprint: seedFingerprint(),
@@ -259,10 +263,22 @@ test('30 desktop routes stay within the committed performance baseline @perf', a
   }
 
   const baseline = JSON.parse(readFileSync(BASELINE_PATH, 'utf-8')) as PerformanceReport;
+  const refreshReasons = baselineRefreshReasons(baseline, report);
+  if (process.env.PERF_AUTO_CANDIDATE_ON_REFRESH === '1' && refreshReasons.length > 0) {
+    const currentEvidenceBlockers = requireCanonicalUbuntuCurrent(report);
+    if (currentEvidenceBlockers.length === 0) {
+      writeFileSync(CANDIDATE_PATH, `${JSON.stringify(report, null, 2)}\n`, 'utf-8');
+    }
+    const refreshViolations = [...refreshReasons, ...currentEvidenceBlockers];
+    writeSummary(report, refreshViolations, []);
+    expect(refreshViolations, refreshViolations.join('\n')).toEqual([]);
+  }
+
   const violations = evaluatePerformanceBaseline(baseline, report);
   if (process.env.PERF_REQUIRE_CANONICAL_BASELINE === '1') {
     violations.unshift(
       ...requireCanonicalUbuntuBaseline(baseline),
+      ...requireCanonicalUbuntuCurrent(report),
       ...requireComparableTimingCohort(baseline, report),
     );
   }
