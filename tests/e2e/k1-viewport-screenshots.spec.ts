@@ -98,17 +98,22 @@ async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastCo
   // 4) 定位动作不得偷滚：move + 命中检查后 scrollLeft 保持初始值
   expect(await readScrollLeft()).toBe(beforePositioning);
 
-  // 5) 真实 wheel 输入（deltaX）令 scrollLeft 增长；deltaX 无效时退回 Shift+纵向轮
+  // 5) 首次 deltaX wheel 后只做非断言的短暂等待与读取：若此处用 expect.poll 断言，
+  // deltaX 无效时会先抛错，Shift 回退永不可达。未增长则退回 Shift+纵向轮
+  // （Chromium 按住 Shift 会转置滚轮轴）；keyboard.down 配 try/finally 保证
+  // keyboard.up 必定执行。两种输入尝试完成后才执行唯一的增长断言。
   await page.mouse.wheel(240, 0);
-  await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
+  await page.waitForTimeout(150);
   if ((await readScrollLeft()) <= beforePositioning) {
     await page.keyboard.down('Shift');
-    await page.mouse.wheel(0, 240);
-    await page.keyboard.up('Shift');
-    await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
+    try {
+      await page.mouse.wheel(0, 240);
+      await page.waitForTimeout(150);
+    } finally {
+      await page.keyboard.up('Shift');
+    }
   }
-  const afterFirstWheel = await readScrollLeft();
-  expect(afterFirstWheel).toBeGreaterThan(beforePositioning);
+  await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
 
   // 6) 持续 wheel 至滚动尽头（scrollLeft 到达最大值附近）
   for (let attempt = 0; attempt < 24; attempt += 1) {
