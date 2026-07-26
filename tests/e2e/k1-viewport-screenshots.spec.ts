@@ -42,9 +42,12 @@ const VIEWPORTS = [
 
 /**
  * 断言表格在其滚动容器内可由用户真实横向滚至最后一列（整页不溢出，滚动发生在容器内）。
- * 不接受直接赋值 scrollLeft：overflow-hidden 下赋值也可能生效，不能证明用户可滚。
- * 步骤：computed overflow-x 必须为 auto/scroll → 真实 wheel 输入令 scrollLeft 增长 →
- * 持续 wheel 到底 → 末列完整落入容器可视区域。
+ * 证据链：computed overflow-x ∈ {auto, scroll} → scrollWidth > clientWidth →
+ * 定位动作不偷滚 scrollLeft → 真实 wheel 令 scrollLeft 增长 → 到达 maxScrollLeft 附近 →
+ * 末列完整落入容器可视区域。
+ * 不用 hover 定位：对超宽行 hover 会先 scrollIntoViewIfNeeded，可能把容器自动滚到末端
+ * （曾实测 initialLeft == maxScrollLeft 造成 false-red）；也不直接赋值 scrollLeft
+ * （overflow-hidden 下赋值也可生效，不能证明用户可滚）。
  */
 async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastColumn: string) {
   const scroller = table.locator('xpath=..');
@@ -60,23 +63,54 @@ async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastCo
   expect(metrics.scrollWidth).toBeGreaterThan(metrics.clientWidth);
   const maxScrollLeft = metrics.scrollWidth - metrics.clientWidth;
 
-  // 2) 真实 wheel 输入（deltaX）令 scrollLeft 增长；deltaX 无效时退回 Shift+纵向轮。
-  // 鼠标落点必须位于容器可视区域内：长表的几何中心可能在视口之外，
-  // 故 hover 首行（自动滚入视口并落在容器内的真实可见点）。
-  await table.locator('tbody tr').first().hover();
+  // 2) 在容器「可视区域」内计算真实鼠标点（getBoundingClientRect 为视口坐标，
+  // 与 elementFromPoint / mouse.move 同坐标系），不做任何会引发自动滚动的定位
+  const point = await scroller.evaluate((el) => {
+    const rect = el.getBoundingClientRect();
+    const visibleLeft = Math.max(rect.left, 0);
+    const visibleRight = Math.min(rect.right, window.innerWidth);
+    const visibleTop = Math.max(rect.top, 0);
+    const visibleBottom = Math.min(rect.bottom, window.innerHeight);
+    if (visibleRight - visibleLeft < 8 || visibleBottom - visibleTop < 8) {
+      return null;
+    }
+    return { x: (visibleLeft + visibleRight) / 2, y: (visibleTop + visibleBottom) / 2 };
+  });
+  expect(point).not.toBeNull();
+
   const readScrollLeft = () => scroller.evaluate((el) => el.scrollLeft);
-  const initialLeft = await readScrollLeft();
+  const beforePositioning = await readScrollLeft();
+  // 前置条件：初始位置必须留有可滚空间，否则「wheel 令 scrollLeft 增长」无从证明
+  expect(beforePositioning).toBeLessThan(maxScrollLeft);
+
+  await page.mouse.move(point!.x, point!.y);
+
+  // 3) 命中证明：鼠标点必须落在 scroller 本身或其后代上
+  const hitInside = await scroller.evaluate(
+    (el, p) => {
+      const hit = document.elementFromPoint(p.x, p.y);
+      return hit === el || el.contains(hit);
+    },
+    point!,
+  );
+  expect(hitInside).toBe(true);
+
+  // 4) 定位动作不得偷滚：move + 命中检查后 scrollLeft 保持初始值
+  expect(await readScrollLeft()).toBe(beforePositioning);
+
+  // 5) 真实 wheel 输入（deltaX）令 scrollLeft 增长；deltaX 无效时退回 Shift+纵向轮
   await page.mouse.wheel(240, 0);
-  await page.waitForTimeout(100);
-  if ((await readScrollLeft()) <= initialLeft) {
+  await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
+  if ((await readScrollLeft()) <= beforePositioning) {
     await page.keyboard.down('Shift');
     await page.mouse.wheel(0, 240);
     await page.keyboard.up('Shift');
-    await page.waitForTimeout(100);
+    await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
   }
-  expect(await readScrollLeft()).toBeGreaterThan(initialLeft);
+  const afterFirstWheel = await readScrollLeft();
+  expect(afterFirstWheel).toBeGreaterThan(beforePositioning);
 
-  // 3) 持续 wheel 至滚动尽头（scrollLeft 到达最大值）
+  // 6) 持续 wheel 至滚动尽头（scrollLeft 到达最大值附近）
   for (let attempt = 0; attempt < 24; attempt += 1) {
     if ((await readScrollLeft()) >= maxScrollLeft - 2) break;
     await page.mouse.wheel(480, 0);
@@ -84,7 +118,7 @@ async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastCo
   }
   expect(await readScrollLeft()).toBeGreaterThanOrEqual(maxScrollLeft - 2);
 
-  // 4) 末列完整落入容器可视区域（容器可能因页面滚动移位，此处重新量取）
+  // 7) 末列完整落入容器可视区域（容器可能因页面滚动移位，此处重新量取）
   const header = table.getByRole('columnheader', { name: lastColumn, exact: true });
   const headerBox = await header.boundingBox();
   const scrollerBox = await scroller.boundingBox();
@@ -171,7 +205,7 @@ test.describe('K1-B/C 三视口截图', () => {
     expect(runtimeErrors).toEqual([]);
   });
 
-  test('R53/R56 1024 宽度表格容器内横向滚动，R54 角色弹窗键盘与焦点归还', async ({ page }) => {
+  test('R53/R56 1024 宽度表格容器内真实横向滚动', async ({ page }) => {
     const runtimeErrors = collectRuntimeErrors(page);
     await dismissJourneyOverlay(page);
     await page.setViewportSize({ width: 1024, height: 768 });
@@ -192,6 +226,14 @@ test.describe('K1-B/C 三视口截图', () => {
     await expectTableScrollsToLastColumn(page, page.getByRole('table'), '耗时');
     await expectNoPageHorizontalOverflow(page);
 
+    expect(runtimeErrors).toEqual([]);
+  });
+
+  test('R54 角色弹窗键盘开启、Escape 关闭与焦点归还', async ({ page }) => {
+    const runtimeErrors = collectRuntimeErrors(page);
+    await dismissJourneyOverlay(page);
+    await page.setViewportSize({ width: 1024, height: 768 });
+
     // 角色弹窗：键盘 Enter 打开、Esc 关闭、焦点归还触发按钮
     await page.goto('/settings/roles');
     await expect(page.locator('[data-testid="role-card"]').first()).toBeVisible({ timeout: 20_000 });
@@ -200,6 +242,20 @@ test.describe('K1-B/C 三视口截图', () => {
     await page.keyboard.press('Enter');
     const dialog = page.getByRole('dialog');
     await expect(dialog.getByText('编辑角色 - 系统管理员')).toBeVisible();
+
+    // Escape readiness：Radix 的 Esc listener 与 DismissableLayer 顶层状态经 effect
+    // 注册/更新，标题刚可见就发 Esc 可能被忽略。等焦点进入弹窗（effect 完成的
+    // 可观测信号），再连续等两个 requestAnimationFrame，然后才发送 Escape。
+    await expect
+      .poll(() => dialog.evaluate((el) => el.contains(document.activeElement)))
+      .toBe(true);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => {
+          requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+        }),
+    );
+
     await page.keyboard.press('Escape');
     await expect(dialog).toHaveCount(0);
     await expect(editButton).toBeFocused();
