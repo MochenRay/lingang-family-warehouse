@@ -47,8 +47,10 @@ async function openFirstHouseDetail(page: Page) {
     await expect(finderColumns).toHaveCount(columnIndex + 2);
   }
   await finderColumns.nth(4).locator('button[aria-pressed]').first().click();
-  await expect(page.getByRole('heading', { name: '房屋详情' })).toBeVisible();
-  return page.getByRole('dialog');
+  const dialog = page.getByRole('dialog');
+  // 数据加载期间标题同为「房屋详情」，必须等待数据就绪后的最终标题「房屋详情 · 小区 楼栋 单元 房号」
+  await expect(dialog.getByRole('heading', { name: /^房屋详情 · .+$/ })).toBeVisible();
+  return dialog;
 }
 
 test.describe('K1-A 实体与标签详情', () => {
@@ -282,6 +284,15 @@ test.describe('K1-A 实体与标签详情', () => {
       await expect(page.getByRole('columnheader', { name: '姓名' })).toBeVisible({ timeout: 20_000 });
       await page.getByRole('button', { name: '查看人员' }).first().click();
       await expect(page.getByRole('heading', { name: '人口详情' })).toBeVisible();
+      // 先进入「历史记录」等走访请求收敛，再切回「基础信息」，避免截图/Escape/导航中止在途请求产生 console 告警
+      const populationDialog = page.getByRole('dialog');
+      const historyTab = populationDialog.getByRole('tab', { name: '历史记录' });
+      await historyTab.click();
+      await expect(historyTab).toHaveAttribute('data-state', 'active');
+      await expect(populationDialog.getByText('正在加载历史走访...', { exact: true })).toBeHidden({ timeout: 20_000 });
+      const basicTab = populationDialog.getByRole('tab', { name: '基础信息' });
+      await basicTab.click();
+      await expect(basicTab).toHaveAttribute('data-state', 'active');
       await expectNoPageHorizontalOverflow(page);
       await page.screenshot({ path: `/tmp/k1-r46-population-${tag}.png`, animations: 'disabled' });
       await page.keyboard.press('Escape');
