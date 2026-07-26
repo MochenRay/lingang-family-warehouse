@@ -1,6 +1,8 @@
 import { isDeepStrictEqual } from 'node:util';
 
-export const PERFORMANCE_SCHEMA_VERSION = 2;
+export const PERFORMANCE_SCHEMA_VERSION = 3;
+
+export const CANONICAL_PERFORMANCE_EXECUTION_CLASS = 'ci-performance';
 
 export interface PerformanceProfile {
   build: 'production-preview';
@@ -69,6 +71,7 @@ export interface PerformanceReport {
     nodeVersion: string;
     browserVersion: string;
     playwrightVersion: string;
+    executionClass: string;
     sourceRevision: string;
     dirty: boolean;
     seedFingerprint: string;
@@ -108,6 +111,7 @@ function timingCohortMismatches(
     ['nodeMajor', nodeMajor(baseline.provenance.nodeVersion), nodeMajor(current.provenance.nodeVersion)],
     ['browserVersion', baseline.provenance.browserVersion, current.provenance.browserVersion],
     ['playwrightVersion', baseline.provenance.playwrightVersion, current.provenance.playwrightVersion],
+    ['executionClass', baseline.provenance.executionClass, current.provenance.executionClass],
     ['seedFingerprint', baseline.provenance.seedFingerprint, current.provenance.seedFingerprint],
   ];
   return fields.filter(([, left, right]) => left !== right).map(([name]) => name);
@@ -129,6 +133,7 @@ function validateProvenance(label: 'baseline' | 'current', report: PerformanceRe
     && Boolean(provenance.nodeVersion)
     && Boolean(provenance.browserVersion)
     && Boolean(provenance.playwrightVersion)
+    && Boolean(provenance.executionClass)
     && typeof provenance.dirty === 'boolean'
     && validSha
     && validSeed
@@ -164,13 +169,50 @@ export function requireComparableTimingCohort(
 }
 
 export function requireCanonicalUbuntuBaseline(baseline: PerformanceReport): string[] {
-  const { runner, platform, arch, dirty } = baseline.provenance;
-  if (runner === 'github-actions' && platform === 'linux' && arch === 'x64' && dirty === false) {
+  const {
+    runner,
+    platform,
+    arch,
+    dirty,
+    executionClass,
+  } = baseline.provenance;
+  if (
+    runner === 'github-actions'
+    && platform === 'linux'
+    && arch === 'x64'
+    && dirty === false
+    && executionClass === CANONICAL_PERFORMANCE_EXECUTION_CLASS
+  ) {
     return [];
   }
   return [
-    `baseline is not canonical GitHub Actions Linux x64 evidence: ${environmentKey(baseline)}, dirty=${String(dirty)}`,
+    `baseline is not canonical PR CI performance evidence: ${environmentKey(baseline)}, dirty=${String(dirty)}, executionClass=${String(executionClass)}`,
   ];
+}
+
+export function requireCanonicalUbuntuCurrent(current: PerformanceReport): string[] {
+  const baselineMessage = requireCanonicalUbuntuBaseline(current);
+  return [...new Set([
+    ...baselineMessage.map((message) => message.replace(/^baseline /, 'current ')),
+    ...validateProvenance('current', current),
+  ])];
+}
+
+export function baselineRefreshReasons(
+  baseline: PerformanceReport,
+  current: PerformanceReport,
+): string[] {
+  const reasons: string[] = [];
+  if (baseline.schemaVersion !== PERFORMANCE_SCHEMA_VERSION) {
+    reasons.push(`baseline schemaVersion ${baseline.schemaVersion} != canonical ${PERFORMANCE_SCHEMA_VERSION}`);
+  }
+  if (!isDeepStrictEqual(baseline.profile, CANONICAL_PERFORMANCE_PROFILE)) {
+    reasons.push('baseline profile differs from canonical measurement profile');
+  }
+  reasons.push(...validateProvenance('baseline', baseline));
+  reasons.push(...requireCanonicalUbuntuBaseline(baseline));
+  reasons.push(...requireComparableTimingCohort(baseline, current));
+  return [...new Set(reasons)];
 }
 
 export function evaluatePerformanceBaseline(

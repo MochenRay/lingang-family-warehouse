@@ -307,3 +307,13 @@ export const MOCK_ACTIVITIES: Activity[] = [
      updatedAt: getDaysAgo(11)
   }
 ];
+
+/** 类型中文名：与 CATEGORY_OPTIONS 的 label 保持一致 */
+export function getCategoryLabel(category: Activity['category']): string {
+  return CATEGORY_OPTIONS.find((option) => option.value === category)?.label ?? category;
+}
+
+/** 「类型 · 子分类」层级展示文本，用于卡片与表格中表达从属关系 */
+export function getActivityTypePath(activity: Pick<Activity, 'category' | 'subcategory'>): string {
+  return `${getCategoryLabel(activity.category)} · ${activity.subcategory}`;
+}

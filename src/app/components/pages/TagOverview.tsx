@@ -3,13 +3,13 @@ import { AlertCircle, Eye, RefreshCw, ShieldAlert, Sparkles, Tag, Users } from '
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
 import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { tagRepository, type ManagedTagSummary, type TagSnapshot } from '../../services/repositories/tagRepository';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { DataTableBody } from '../patterns/DataTableShell';
-import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { PANEL_CLASS } from '../patterns/surfaces';
+import { DetailDialogShell, DetailSection } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
 
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
@@ -207,91 +207,95 @@ export function TagOverview() {
           </CardContent>
       </Card>
 
-      <Dialog open={Boolean(selectedTag)} onOpenChange={(open) => !open && setSelectedTagId('')}>
-        <DialogContent className={`${DIALOG_CLASS} max-h-[86vh] max-w-4xl overflow-y-auto shadow-2xl`}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--color-neutral-11)]">{selectedTag?.name ?? '标签详情'}</DialogTitle>
-            <DialogDescription className={MUTED_TEXT_CLASS}>
-              {selectedTag ? `${selectedTag.type} · ${selectedTag.category} · 覆盖 ${selectedTag.coverageCount} 人` : '查看标签规则与覆盖对象。'}
-            </DialogDescription>
-          </DialogHeader>
-          {selectedTag ? (
-            <div className="space-y-4">
-                <div className="space-y-3 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className={getTagTypeClass(selectedTag.type)}>{selectedTag.type}</Badge>
-                    <StatusBadge tone={RISK_BADGE_TONE[selectedTag.riskLevel] ?? 'neutral'}>{selectedTag.riskLevel}</StatusBadge>
-                    <Badge variant="outline" className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}>
-                      {selectedTag.coverageCount} 人
-                    </Badge>
+      <DetailDialogShell
+        open={Boolean(selectedTag)}
+        onOpenChange={(open) => !open && setSelectedTagId('')}
+        maxWidth="5xl"
+        contentLabel="标签详情"
+        badges={selectedTag ? (
+          <>
+            <Badge variant="outline" className={getTagTypeClass(selectedTag.type)}>{selectedTag.type}</Badge>
+            <StatusBadge tone={RISK_BADGE_TONE[selectedTag.riskLevel] ?? 'neutral'}>{selectedTag.riskLevel}</StatusBadge>
+            <Badge variant="outline" className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}>
+              覆盖 {selectedTag.coverageCount} 人
+            </Badge>
+          </>
+        ) : undefined}
+        title={selectedTag ? `标签详情 · ${selectedTag.name}` : '标签详情'}
+        description={selectedTag ? `${selectedTag.type} · ${selectedTag.category} · ${selectedTag.description}` : '查看标签规则与覆盖对象。'}
+      >
+        {selectedTag ? (
+          <div className="space-y-4">
+            <DetailSection icon={Tag} title="规则信息">
+              <div className="space-y-3">
+                {selectedTag.rules?.length ? (
+                  <div className="space-y-1.5">
+                    <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>规则条件</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedTag.rules.map((rule) => (
+                        <Badge
+                          key={rule}
+                          variant="outline"
+                          className={`${CHIP_BASE_CLASS} border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/10 text-[var(--color-status-info-text)]`}
+                        >
+                          {rule}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
-                  <p className={`text-sm leading-6 ${MUTED_TEXT_CLASS}`}>{selectedTag.description}</p>
-                  {selectedTag.rules?.length ? (
-                    <div className="space-y-1">
-                      <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>规则条件</p>
-                      <div className="flex flex-wrap gap-2">
-                        {selectedTag.rules.map((rule) => (
-                          <Badge
-                            key={rule}
-                            variant="outline"
-                            className={`${CHIP_BASE_CLASS} border-[var(--color-brand-primary-hover)]/35 bg-[var(--color-brand-primary)]/10 text-[var(--color-status-info-text)]`}
-                          >
-                            {rule}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  ) : null}
-                  {selectedTag.judgmentCriteria ? (
-                    <div className="space-y-1">
-                      <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>推导逻辑</p>
-                      <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{selectedTag.judgmentCriteria}</p>
-                    </div>
-                  ) : null}
-                </div>
+                ) : null}
+                {selectedTag.judgmentCriteria ? (
+                  <div className="space-y-1.5">
+                    <p className={`text-xs font-medium ${MUTED_TEXT_CLASS}`}>推导逻辑</p>
+                    <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{selectedTag.judgmentCriteria}</p>
+                  </div>
+                ) : null}
+              </div>
+            </DetailSection>
 
-                <div className="space-y-3">
-                  <p className="text-sm font-medium text-[var(--color-neutral-11)]">覆盖对象</p>
-                  <div className="space-y-3">
-                    {coveredPeople.length === 0 ? (
-                      <div className={`rounded-[4px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 text-sm ${MUTED_TEXT_CLASS}`}>
-                        当前没有命中对象。
-                      </div>
-                    ) : (
-                      coveredPeople.slice(0, 8).map((person) => (
-                        <div key={person.id} className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="min-w-0">
-                              <p className="font-medium text-[var(--color-neutral-11)]">{person.name}</p>
-                              <p className={`text-sm leading-6 ${MUTED_TEXT_CLASS}`}>
-                                {person.age} 岁 · {person.address}
-                              </p>
-                            </div>
-                            <StatusBadge tone={RISK_BADGE_TONE[person.risk] ?? 'neutral'}>{person.risk}</StatusBadge>
-                          </div>
-                          <div className="mt-3 space-y-1">
-                            <p className={`text-xs ${MUTED_TEXT_CLASS}`}>最近走访：{person.lastVisitAt}</p>
-                            <div className="flex flex-wrap gap-2">
-                              {person.reasons.map((reason) => (
-                                <Badge
-                                  key={reason}
-                                  variant="outline"
-                                  className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}
-                                >
-                                  {reason}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
+            <DetailSection
+              icon={Users}
+              title="覆盖对象"
+              trailing={<Badge variant="outline" className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}>{coveredPeople.length} 人</Badge>}
+            >
+              {coveredPeople.length === 0 ? (
+                <div className={`rounded-[4px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 text-sm ${MUTED_TEXT_CLASS}`}>
+                  当前没有命中对象。
                 </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+              ) : (
+                <div data-covered-people-grid className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {coveredPeople.map((person) => (
+                    <div key={person.id} className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="min-w-0 font-medium text-[var(--color-neutral-11)]">
+                          {person.name}
+                          <span className="ml-2 text-xs font-normal text-[var(--color-neutral-08)]">{person.age} 岁</span>
+                        </p>
+                        <StatusBadge tone={RISK_BADGE_TONE[person.risk] ?? 'neutral'}>{person.risk}</StatusBadge>
+                      </div>
+                      <p className={`mt-1 break-words text-xs leading-5 ${MUTED_TEXT_CLASS}`}>{person.address || '地址未登记'}</p>
+                      <p className={`mt-1 text-xs ${MUTED_TEXT_CLASS}`}>最近走访：{person.lastVisitAt}</p>
+                      {person.reasons.length > 0 ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {person.reasons.map((reason) => (
+                            <Badge
+                              key={reason}
+                              variant="outline"
+                              className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}
+                            >
+                              {reason}
+                            </Badge>
+                          ))}
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </DetailSection>
+          </div>
+        ) : null}
+      </DetailDialogShell>
     </div>
   );
 }

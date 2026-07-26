@@ -103,29 +103,15 @@ jobs:
       - run: npm ci
       - run: python -m pip install -r backend/requirements-dev.txt
       - run: npx playwright install --with-deps chromium
-      - name: Determine performance baseline mode
-        id: perf-baseline
-        run: node -e "const fs=require('fs');const b=JSON.parse(fs.readFileSync('tests/performance/performance-baseline.json','utf8'));const p=b.provenance||{};const canonical=p.runner==='github-actions'&&p.platform==='linux'&&p.arch==='x64'&&p.dirty===false;fs.appendFileSync(process.env.GITHUB_OUTPUT,'canonical='+canonical+'\n');"
-      - name: Generate first canonical Ubuntu candidate
-        if: steps.perf-baseline.outputs.canonical != 'true'
-        run: npm run test:e2e:perf:update
-        env:
-          CI: 'true'
-          PYTHON_BIN: python
-          TZ: Asia/Shanghai
       - name: Enforce route performance budget
-        if: steps.perf-baseline.outputs.canonical == 'true'
         run: npm run test:e2e:perf
         env:
           CI: 'true'
           PYTHON_BIN: python
           TZ: Asia/Shanghai
+          PERF_AUTO_CANDIDATE_ON_REFRESH: '1'
+          PERF_EXECUTION_CLASS: ci-performance
           PERF_REQUIRE_CANONICAL_BASELINE: '1'
-      - name: Block merge until the Ubuntu candidate is reviewed and committed
-        if: steps.perf-baseline.outputs.canonical != 'true'
-        run: |
-          echo "::error::Provisional performance baseline detected. Review the uploaded Ubuntu candidate, commit it unchanged, then rerun CI."
-          exit 1
       - name: Upload route performance evidence
         if: always()
         uses: actions/upload-artifact@v4

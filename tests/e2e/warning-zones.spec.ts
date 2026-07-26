@@ -10,12 +10,14 @@ const backendPort = Number(process.env.BACKEND_PORT ?? '8000');
  *     已同步，由 a11y-audit 套件在扫描路由内复验「阻断为零」）。
  *  2. 热区矩阵（真实种子）：板数 = snapshot.grids.length（合同断言 + 当前种子 12）、
  *     组内 heatScore 降序、同名社区（海梦苑第一/第二网格）板面 gridLabel 可区分。
- *  3. 预警清单四级确定性排序（mock fixture）：severityRank 降序 → grid.heatScore 降序
+ *  3. R07 摘要（mock fixture）：严格按高风险对象、超期待办、走访覆盖三项生成；
+ *     零值字段省略、整行全零不占位、摘要单行且不溢出。
+ *  4. 预警清单四级确定性排序（mock fixture）：severityRank 降序 → grid.heatScore 降序
  *     → gridName zh-CN 升序 → warning.id 升序，排序后 .slice(0, 12)。
- *     fixture 构造 14 条预警：1 high（丁，heat 92）+ 2 medium（丙，heat 98，同网格
+ *     fixture 构造 14 条预警：1 high（丁，heat 60）+ 2 medium（丙，heat 98，同网格
  *     验证 id 升序）+ 11 medium（heat 68，甲/乙验证 gridName zh-CN 升序，综合 01-09
  *     验证截断）。期望序见 EXPECTED_WARNING_IDS。
- *  4. 行为回归（mock fixture）：类型筛选生效、点击热区板弹出预警详情 Dialog。
+ *  5. 行为回归（mock fixture）：类型筛选生效、点击热区板弹出预警详情 Dialog。
  *
  * mock 面（仅 GET，驱动 analysisRepository.getGovernanceSnapshot 的最小集合）：
  *  /api/stats/grids、/api/people、/api/houses（含 history-records）、/api/visits、
@@ -73,12 +75,41 @@ function makeOverdueTask(id: string, gridId: string): MockTask {
 
 /** 排序 fixture 网格清单（id 故意与名称拼音序错位，防「按 id 排」假绿）。 */
 const FIXTURE_GRIDS: MockGrid[] = [
-  makeGrid('g_high', '登州街道丁社区第一网格'), // 2 条超期待办 → high 预警，heat 92
+  makeGrid('g_high', '登州街道丁社区第一网格'), // 1 高风险 + 2 超期 + 100% 走访 → high 预警
   makeGrid('g_tie_c', '登州街道丙社区第一网格'), // 1 超期 + 2 调解中 → 2 条 medium，heat 98
   makeGrid('g_tie_b', '登州街道甲社区第一网格'), // 1 超期 → medium，heat 68（甲 jiǎ，名称序最前）
   makeGrid('g_tie_a', '登州街道乙社区第一网格'), // 1 超期 → medium，heat 68（乙 yǐ）
   ...Array.from({ length: 9 }, (_, index) =>
     makeGrid(`g_fill_${String(index + 1).padStart(2, '0')}`, `登州街道综合社区${String(index + 1).padStart(2, '0')}第一网格`)),
+  makeGrid('g_zero', '登州街道零值社区第一网格'),
+];
+
+const FIXTURE_PEOPLE = [
+  {
+    id: 'person_high_1',
+    gridId: 'g_high',
+    name: '摘要验证对象',
+    idCard: '370684199001010001',
+    gender: '男',
+    age: 36,
+    address: '丁社区第一网格',
+    type: '户籍',
+    tags: [],
+    risk: 'High',
+    updatedAt: '2026-07-25 09:00:00',
+  },
+];
+
+const FIXTURE_VISITS = [
+  {
+    id: 'visit_high_1',
+    targetId: 'person_high_1',
+    targetType: 'person',
+    gridId: 'g_high',
+    visitorName: '自动化验证员',
+    date: '2026-07-25 10:00:00',
+    content: '摘要走访覆盖验证',
+  },
 ];
 
 const FIXTURE_TASKS: MockTask[] = [
@@ -152,12 +183,34 @@ function dismissJourneyOverlay(page: Page) {
   });
 }
 
+function trackRuntimeFailures(page: Page) {
+  const consoleErrors: string[] = [];
+  const pageErrors: string[] = [];
+  const requestFailures: string[] = [];
+
+  page.on('console', (message) => {
+    if (message.type() === 'error') {
+      consoleErrors.push(message.text());
+    }
+  });
+  page.on('pageerror', (error) => pageErrors.push(error.message));
+  page.on('requestfailed', (request) => {
+    requestFailures.push(`${request.method()} ${request.url()} ${request.failure()?.errorText ?? ''}`.trim());
+  });
+
+  return () => {
+    expect(consoleErrors, 'console errors').toEqual([]);
+    expect(pageErrors, 'page errors').toEqual([]);
+    expect(requestFailures, 'request failures').toEqual([]);
+  };
+}
+
 /** 最小 mock 面：驱动 getGovernanceSnapshot 的全部 GET 端点（buildAnomalies 的数据依赖）。 */
 async function mockGovernanceSnapshot(page: Page) {
   await page.route('**/api/stats/grids**', (route) =>
     route.fulfill({ json: { grids: FIXTURE_GRIDS } }));
   await page.route('**/api/people**', (route) =>
-    route.fulfill({ json: { items: [], total: 0 } }));
+    route.fulfill({ json: { items: FIXTURE_PEOPLE, total: FIXTURE_PEOPLE.length } }));
   // /api/houses 与 /api/houses/history-records 共用一个 handler，按 pathname 分流，避免路由顺序陷阱
   await page.route('**/api/houses**', (route) => {
     const { pathname } = new URL(route.request().url());
@@ -167,7 +220,7 @@ async function mockGovernanceSnapshot(page: Page) {
     return route.fulfill({ json: { items: [], total: 0 } });
   });
   await page.route('**/api/visits**', (route) =>
-    route.fulfill({ json: { items: [], total: 0 } }));
+    route.fulfill({ json: { items: FIXTURE_VISITS, total: FIXTURE_VISITS.length } }));
   await page.route('**/api/conflicts**', (route) =>
     route.fulfill({ json: { items: FIXTURE_CONFLICTS, total: FIXTURE_CONFLICTS.length } }));
   await page.route('**/api/task-rules/projection**', (route) =>
@@ -252,6 +305,42 @@ test.describe('P5-T7 方案一 预警热区（真实种子）', () => {
     // 两块同名社区板的完整文案必须不同（靠 gridLabel 区分）
     expect(texts[0]).not.toBe(texts[1]);
   });
+
+  for (const viewport of [
+    { width: 1507, height: 1324, columns: 3 },
+    { width: 1440, height: 900, columns: 3 },
+    { width: 1024, height: 768, columns: 2 },
+  ]) {
+    test(`R07 ${viewport.width}x${viewport.height}：多列铺开且无横向溢出`, async ({ page }) => {
+      await page.setViewportSize(viewport);
+      const assertRuntimeClean = trackRuntimeFailures(page);
+      await gotoWarningZones(page);
+      await expect(page.getByTestId('zone-board')).toHaveCount(12);
+
+      const groupXs = await page.getByTestId('zone-group').evaluateAll((elements) =>
+        elements.map((element) => Math.round(element.getBoundingClientRect().x)));
+      expect(new Set(groupXs).size).toBe(viewport.columns);
+
+      const summaryMetrics = await page.getByTestId('zone-summary').evaluateAll((elements) =>
+        elements.map((element) => ({
+          whiteSpace: getComputedStyle(element).whiteSpace,
+          clientWidth: element.clientWidth,
+          scrollWidth: element.scrollWidth,
+        })));
+      for (const summary of summaryMetrics) {
+        expect(summary.whiteSpace).toBe('nowrap');
+        expect(summary.scrollWidth).toBeLessThanOrEqual(summary.clientWidth + 1);
+      }
+
+      const overflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
+      expect(overflow).toBeLessThanOrEqual(1);
+      await page.screenshot({
+        path: `/tmp/lingang-t03-warning-${viewport.width}x${viewport.height}.png`,
+        fullPage: true,
+      });
+      assertRuntimeClean();
+    });
+  }
 });
 
 test.describe('P5-T7 方案一 预警清单排序与行为回归（mock fixture）', () => {
@@ -268,13 +357,43 @@ test.describe('P5-T7 方案一 预警清单排序与行为回归（mock fixture�
       .evaluateAll((elements) => elements.map((element) => String(element.getAttribute('data-warning-id'))));
     // 一条断言锁全序：14 条 fixture 截断为 12 条，两个 tie-break 与截断全部蕴含在期望序中
     expect(ids).toEqual(EXPECTED_WARNING_IDS);
-    // 首条为唯一 high（丁社区，heat 92 压过 heat 98 的丙网格 → 验证 severity 主键优先）
+    // 首条为唯一 high（丁社区热度低于丙网格 → 验证 severity 主键优先）
     const first = page.getByTestId('warning-list-item').first();
     await expect(first).toContainText('丁社区');
     await expect(first).toContainText('严重');
     // 截断佐证：综合社区08/09 被切掉
     await expect(page.getByTestId('warning-list-item').filter({ hasText: '综合社区08' })).toHaveCount(0);
     await expect(page.getByTestId('warning-list-item').filter({ hasText: '综合社区09' })).toHaveCount(0);
+  });
+
+  test('R07：摘要严格使用三项口径，零值字段与整行全零均省略', async ({ page }) => {
+    const highBoard = page.getByTestId('zone-board').filter({ hasText: '丁社区' });
+    await expect(highBoard.getByTestId('zone-summary')).toHaveText(
+      '高风险对象 1 人；超期待办 2 条；走访覆盖 100%',
+    );
+
+    const overdueOnlyBoard = page.getByTestId('zone-board').filter({ hasText: '甲社区' });
+    await expect(overdueOnlyBoard.getByTestId('zone-summary')).toHaveText('超期待办 1 条');
+    await expect(overdueOnlyBoard.getByTestId('zone-summary')).not.toContainText('高风险对象');
+    await expect(overdueOnlyBoard.getByTestId('zone-summary')).not.toContainText('走访覆盖');
+
+    const zeroBoard = page.getByTestId('zone-board').filter({ hasText: '零值社区' });
+    await expect(zeroBoard.getByTestId('zone-summary')).toHaveCount(0);
+    await expect(zeroBoard).not.toContainText('当前没有额外重点信号');
+
+    const summaryMetrics = await highBoard.getByTestId('zone-summary').evaluate((element) => ({
+      whiteSpace: getComputedStyle(element).whiteSpace,
+      clientWidth: element.clientWidth,
+      scrollWidth: element.scrollWidth,
+    }));
+    expect(summaryMetrics.whiteSpace).toBe('nowrap');
+    expect(summaryMetrics.scrollWidth).toBeLessThanOrEqual(summaryMetrics.clientWidth + 1);
+  });
+
+  test('R07：街道卡最高热度下方无分隔线', async ({ page }) => {
+    const header = page.getByTestId('zone-group-header').first();
+    await expect(header).toBeVisible();
+    expect(await header.evaluate((element) => getComputedStyle(element).borderBottomWidth)).toBe('0px');
   });
 
   test('回归：类型筛选生效（跟进超期）', async ({ page }) => {

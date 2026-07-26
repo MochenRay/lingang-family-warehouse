@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Eye, History, Home, Link2, Shield, UserCheck } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../ui/dialog';
+import { Card, CardContent, CardHeader } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Table, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
@@ -13,7 +12,8 @@ import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { DataTableBody } from '../patterns/DataTableShell';
 import { SearchInput } from '../patterns/FilterBar';
-import { DIALOG_CLASS, PANEL_CLASS } from '../patterns/surfaces';
+import { PANEL_CLASS } from '../patterns/surfaces';
+import { DetailDialogShell, DetailField, DetailSection } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
 
 type RelationType = '现居' | '历史';
@@ -235,16 +235,6 @@ export function RelationshipManagement() {
         eyebrow="RELATIONSHIP LEDGER"
         title="人房关系管理"
         description="对齐人员、房屋和迁入迁出记录，识别人房分离与关系异常。"
-        actions={
-          <Button
-            variant="outline"
-            disabled
-            title="后续将在迁居流程中开放真实写操作"
-            className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-08)]"
-          >
-            迁居流程待接入
-          </Button>
-        }
       />
 
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -390,83 +380,80 @@ export function RelationshipManagement() {
         </Tabs>
       </Card>
 
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className={`max-w-3xl ${DIALOG_CLASS}`}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--color-neutral-11)]">人房关系详情</DialogTitle>
-            <DialogDescription className="text-[var(--color-neutral-08)]">查看当前对象的人房绑定与历史信息。</DialogDescription>
-          </DialogHeader>
-          {selectedRelationship && (
-            <div className="space-y-4 py-2">
-              <div className="grid gap-3 md:grid-cols-2">
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <UserCheck className="h-4 w-4 text-[var(--color-brand-text)]" />
-                      人员信息
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">姓名</p>
-                      <p className="font-medium text-[var(--color-neutral-11)]">{selectedRelationship.personName}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">身份证号</p>
-                      <p className="font-mono text-[var(--color-neutral-10)]">{selectedRelationship.personIdCard ?? '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">关系类型</p>
-                      <div className="mt-1 flex gap-2">
+      <DetailDialogShell
+        open={isViewDialogOpen}
+        onOpenChange={setIsViewDialogOpen}
+        maxWidth="4xl"
+        contentLabel="人房关系详情"
+        badges={selectedRelationship ? (
+          <>
+            <StatusBadge tone={RELATION_TYPE_TONE[selectedRelationship.relationType]}>{selectedRelationship.relationType}</StatusBadge>
+            <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
+              {selectedRelationship.relationship}
+            </StatusBadge>
+            {selectedRelationship.risk ? (
+              <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.risk] ?? 'neutral'}>{selectedRelationship.risk}</StatusBadge>
+            ) : null}
+          </>
+        ) : undefined}
+        title={selectedRelationship ? `人房关系详情 · ${selectedRelationship.personName}` : '人房关系详情'}
+        description={selectedRelationship ? selectedRelationship.houseAddress : '查看当前对象的人房绑定与历史信息。'}
+      >
+        {selectedRelationship && (
+          <div className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2">
+              <DetailSection icon={UserCheck} title="人员信息">
+                <div className="space-y-2 text-sm">
+                  <DetailField label="姓名" value={selectedRelationship.personName} />
+                  <DetailField label="身份证号" value={<span className="font-mono text-[13px]">{selectedRelationship.personIdCard ?? '-'}</span>} />
+                  <DetailField
+                    label="关系类型"
+                    value={
+                      <span className="flex flex-wrap gap-2">
                         <StatusBadge tone={RELATION_TYPE_TONE[selectedRelationship.relationType]}>{selectedRelationship.relationType}</StatusBadge>
                         <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
                           {selectedRelationship.relationship}
                         </StatusBadge>
-                      </div>
-                    </div>
-                    {selectedRelationship.person && (
-                      <>
-                        <div>
-                          <p className="text-[var(--color-neutral-08)]">风险等级</p>
-                          <div className="mt-1">
-                            <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.person.risk] ?? 'neutral'}>
-                              {selectedRelationship.person.risk}
-                            </StatusBadge>
-                          </div>
-                        </div>
-                        <div>
-                          <p className="text-[var(--color-neutral-08)]">人员标签</p>
-                          <div className="mt-1 flex flex-wrap gap-2">
-                            {(selectedRelationship.person.tags ?? []).slice(0, 4).map((tag, index) => (
-                              <Badge key={index} variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{tag}</Badge>
-                            ))}
-                            {(selectedRelationship.person.tags ?? []).length === 0 && <span className="text-[var(--color-neutral-08)]">-</span>}
-                          </div>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
+                      </span>
+                    }
+                  />
+                  {selectedRelationship.person && (
+                    <>
+                      <DetailField
+                        label="风险等级"
+                        value={
+                          <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.person.risk] ?? 'neutral'}>
+                            {selectedRelationship.person.risk}
+                          </StatusBadge>
+                        }
+                      />
+                      <DetailField
+                        label="人员标签"
+                        value={
+                          (selectedRelationship.person.tags ?? []).length > 0 ? (
+                            <span className="flex flex-wrap gap-2">
+                              {(selectedRelationship.person.tags ?? []).slice(0, 4).map((tag, index) => (
+                                <Badge key={index} variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">{tag}</Badge>
+                              ))}
+                            </span>
+                          ) : (
+                            <span className="text-[var(--color-neutral-08)]">-</span>
+                          )
+                        }
+                      />
+                    </>
+                  )}
+                </div>
+              </DetailSection>
 
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Home className="h-4 w-4 text-[var(--color-status-success-text)]" />
-                      房屋信息
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">房屋地址</p>
-                      <p className="font-medium text-[var(--color-neutral-11)]">{selectedRelationship.houseAddress}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">业主姓名</p>
-                      <p className="text-[var(--color-neutral-10)]">{selectedRelationship.house.ownerName || '-'}</p>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">房屋状态</p>
-                      <div className="mt-1 flex flex-wrap gap-2">
+              <DetailSection icon={Home} title="房屋信息">
+                <div className="space-y-2 text-sm">
+                  <DetailField label="房屋地址" value={selectedRelationship.houseAddress} />
+                  <DetailField label="业主姓名" value={selectedRelationship.house.ownerName || '-'} />
+                  <DetailField
+                    label="房屋状态"
+                    value={
+                      <span className="flex flex-wrap gap-2">
                         <StatusBadge tone={HOUSE_TYPE_TONE[selectedRelationship.house.type]}>{selectedRelationship.house.type}</StatusBadge>
                         {selectedRelationship.house.occupancyStatus && (
                           <StatusBadge tone="info">{selectedRelationship.house.occupancyStatus}</StatusBadge>
@@ -474,66 +461,54 @@ export function RelationshipManagement() {
                         {selectedRelationship.house.residenceType && (
                           <StatusBadge tone="success">{selectedRelationship.house.residenceType}</StatusBadge>
                         )}
-                      </div>
-                    </div>
-                    <div>
-                      <p className="text-[var(--color-neutral-08)]">绑定时间</p>
-                      <p className="text-[var(--color-neutral-10)]">{selectedRelationship.moveInDate}</p>
-                    </div>
-                    {selectedRelationship.moveOutDate && (
-                      <div>
-                        <p className="text-[var(--color-neutral-08)]">迁出时间</p>
-                        <p className="text-[var(--color-neutral-10)]">{selectedRelationship.moveOutDate}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {selectedRelationship.relationType === '现居' && (
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Link2 className="h-4 w-4 text-[var(--color-status-success-text)]" />
-                      现居关系摘要
-                    </CardTitle>
-                    <CardDescription className="text-[var(--color-neutral-08)]">当前房屋内可交叉印证的住户关系。</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
-                    <p className="text-[var(--color-neutral-10)]">
-                      当前房屋共有 <span className="font-medium">{currentHousemates.length + 1}</span> 名现居人员，
-                      房屋标签为 {(selectedRelationship.house.tags ?? []).slice(0, 2).join(' / ') || '无重点标签'}。
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {currentHousemates.slice(0, 6).map((relationship) => (
-                        <Badge key={relationship.id} variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
-                          {relationship.personName} · {relationship.relationship}
-                        </Badge>
-                      ))}
-                      {currentHousemates.length === 0 && <span className="text-[var(--color-neutral-08)]">暂无其他同住人员</span>}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {selectedRelationship.relationType === '历史' && (
-                <Card className={PANEL_CLASS}>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="flex items-center gap-2 text-base text-[var(--color-neutral-11)]">
-                      <Shield className="h-4 w-4 text-[var(--color-status-warning-text)]" />
-                      历史迁居备注
-                    </CardTitle>
-                    <CardDescription className="text-[var(--color-neutral-08)]">来自房屋历史档案的原始说明。</CardDescription>
-                  </CardHeader>
-                  <CardContent className="text-sm leading-6 text-[var(--color-neutral-10)]">
-                    {selectedRelationship.moveOutReason ?? '暂无迁出原因备注。'}
-                  </CardContent>
-                </Card>
-              )}
+                      </span>
+                    }
+                  />
+                  <DetailField label="绑定时间" value={selectedRelationship.moveInDate} />
+                  {selectedRelationship.moveOutDate && (
+                    <DetailField label="迁出时间" value={selectedRelationship.moveOutDate} />
+                  )}
+                </div>
+              </DetailSection>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            {selectedRelationship.relationType === '现居' && (
+              <DetailSection
+                icon={Link2}
+                title="现居关系摘要"
+                description="当前房屋内可交叉印证的住户关系。"
+              >
+                <div className="space-y-3 text-sm">
+                  <p className="text-[var(--color-neutral-10)]">
+                    当前房屋共有 <span className="font-medium">{currentHousemates.length + 1}</span> 名现居人员，
+                    房屋标签为 {(selectedRelationship.house.tags ?? []).slice(0, 2).join(' / ') || '无重点标签'}。
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {currentHousemates.slice(0, 6).map((relationship) => (
+                      <Badge key={relationship.id} variant="outline" className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
+                        {relationship.personName} · {relationship.relationship}
+                      </Badge>
+                    ))}
+                    {currentHousemates.length === 0 && <span className="text-[var(--color-neutral-08)]">暂无其他同住人员</span>}
+                  </div>
+                </div>
+              </DetailSection>
+            )}
+
+            {selectedRelationship.relationType === '历史' && (
+              <DetailSection
+                icon={Shield}
+                title="历史迁居备注"
+                description="来自房屋历史档案的原始说明。"
+              >
+                <p className="text-sm leading-6 text-[var(--color-neutral-10)]">
+                  {selectedRelationship.moveOutReason ?? '暂无迁出原因备注。'}
+                </p>
+              </DetailSection>
+            )}
+          </div>
+        )}
+      </DetailDialogShell>
     </div>
   );
 }

@@ -134,8 +134,8 @@ export function HousingStatistics() {
     return [
       { name: '自住', value: dashboard.housingStats.selfOccupied, color: CHART_COLORS[0] },
       { name: '出租', value: dashboard.housingStats.rental, color: CHART_WARNING },
-      { name: '空置', value: dashboard.housingStats.vacant, color: CHART_AXIS },
       { name: '经营', value: dashboard.housingStats.commercial, color: CHART_SUCCESS },
+      { name: '空置', value: dashboard.housingStats.vacant, color: CHART_AXIS },
     ];
   }, [dashboard]);
 
@@ -212,7 +212,7 @@ export function HousingStatistics() {
           </CardContent>
         </Card>
 
-        <Card className={`${PANEL_CLASS} gap-0`}>
+        <Card className={`${PANEL_CLASS} h-[420px] gap-0 overflow-hidden`}>
           <CardHeader className="gap-3 border-b border-[var(--color-neutral-03)] px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
@@ -249,9 +249,15 @@ export function HousingStatistics() {
               </Select>
             </div>
           </CardHeader>
-          <CardContent className="grid gap-3 p-4 sm:grid-cols-2">
-            {districtHousingRows.slice(0, 6).map((row, index) => (
-              <article key={row.name} data-testid="district-priority-card" className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
+          <CardContent className="min-h-0 flex-1 p-4">
+            <div
+              data-testid="district-priority-scroll"
+              aria-label="重点区县清单，可上下滚动"
+              tabIndex={0}
+              className="grid h-full content-start gap-3 overflow-x-hidden overflow-y-auto overscroll-contain pr-1 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] sm:grid-cols-2"
+            >
+              {districtHousingRows.slice(0, 6).map((row, index) => (
+                <article key={row.name} data-testid="district-priority-card" className="min-h-[116px] rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
                     <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] bg-[var(--color-brand-primary)] text-xs font-semibold text-[var(--color-neutral-11)]">{index + 1}</span>
@@ -272,19 +278,20 @@ export function HousingStatistics() {
                   <div><span className="text-[var(--color-neutral-07)]">预警</span><strong className="ml-1 text-[var(--color-neutral-11)]">{row.warningCount}</strong></div>
                   <div><span className="text-[var(--color-neutral-07)]">流动</span><strong className="ml-1 text-[var(--color-neutral-11)]">{row.floatingCount}</strong></div>
                 </div>
-              </article>
-            ))}
+                </article>
+              ))}
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
         <Card className={PANEL_CLASS}>
           <CardHeader>
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">房屋用途分布</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-[300px] w-full">
+            <div className="h-[260px] w-full">
               {loading || !dashboard ? (
                 <LoadingState title="正在汇总房屋用途..." />
               ) : (
@@ -309,6 +316,22 @@ export function HousingStatistics() {
                 </ResponsiveContainer>
               )}
             </div>
+            {!loading && dashboard ? (
+              <div aria-label="房屋用途图例" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {houseUsageData.map((entry) => (
+                  <span
+                    key={entry.name}
+                    data-testid="house-usage-legend-item"
+                    data-color={entry.color}
+                    data-value={entry.value}
+                    className="inline-flex items-center gap-2 text-xs text-[var(--color-neutral-09)]"
+                  >
+                    <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
+                    {entry.name}
+                  </span>
+                ))}
+              </div>
+            ) : null}
           </CardContent>
         </Card>
 
