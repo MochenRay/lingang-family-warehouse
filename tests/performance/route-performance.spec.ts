@@ -229,6 +229,10 @@ test('30 desktop routes stay within the committed performance baseline @perf', a
     routes: {},
   };
 
+  for (let index = 0; index < PROFILE.suiteWarmups; index += 1) {
+    await measureRoute(browser, baseURL!, DESKTOP_ROUTES[0]);
+  }
+
   for (const route of DESKTOP_ROUTES) {
     for (let index = 0; index < PROFILE.warmups; index += 1) {
       await measureRoute(browser, baseURL!, route); // primes server/OS caches, intentionally discarded
