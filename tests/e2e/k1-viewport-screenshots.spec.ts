@@ -98,30 +98,50 @@ async function expectTableScrollsToLastColumn(page: Page, table: Locator, lastCo
   // 4) 定位动作不得偷滚：move + 命中检查后 scrollLeft 保持初始值
   expect(await readScrollLeft()).toBe(beforePositioning);
 
-  // 5) 首次 deltaX wheel 后只做非断言的短暂等待与读取：若此处用 expect.poll 断言，
-  // deltaX 无效时会先抛错，Shift 回退永不可达。未增长则退回 Shift+纵向轮
-  // （Chromium 按住 Shift 会转置滚轮轴）；keyboard.down 配 try/finally 保证
-  // keyboard.up 必定执行。两种输入尝试完成后才执行唯一的增长断言。
-  await page.mouse.wheel(240, 0);
-  await page.waitForTimeout(150);
-  if ((await readScrollLeft()) <= beforePositioning) {
-    await page.keyboard.down('Shift');
-    try {
-      await page.mouse.wheel(0, 240);
-      await page.waitForTimeout(150);
-    } finally {
-      await page.keyboard.up('Shift');
+  // 5) 首次 deltaX wheel 后只做非断言的短暂等待与读取（poll 抛错会使回退不可达）。
+  // 回退路径为键盘：Chromium 的滚动容器可被键盘聚焦（keyboard-focusable scroller），
+  // ArrowRight 是真实键盘横向滚动。注：Shift+纵向轮在本环境不可合成
+  // （探针：Playwright keyboard.down 与裸 CDP 带 Shift modifier 均不滚动，
+  // scrollbarHeight=0 亦无滚动条可拖），故不采用。焦点借用经 try/finally
+  // 必定归还；两种输入尝试完成后才执行唯一的增长断言。
+  let previousFocus: import('@playwright/test').ElementHandle | null = null;
+  let keyboardFallbackActive = false;
+  try {
+    await page.mouse.wheel(240, 0);
+    await page.waitForTimeout(150);
+    if ((await readScrollLeft()) <= beforePositioning) {
+      keyboardFallbackActive = true;
+      previousFocus = (await page.evaluateHandle(() => document.activeElement)).asElement();
+      await scroller.evaluate((el) => (el as HTMLElement).focus());
+      for (let step = 0; step < 6 && (await readScrollLeft()) <= beforePositioning; step += 1) {
+        await page.keyboard.press('ArrowRight');
+        await page.waitForTimeout(60);
+      }
+    }
+    await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
+
+    // 6) 持续滚动至尽头（沿用在当前环境已被证明有效的输入路径）
+    for (let attempt = 0; attempt < 32; attempt += 1) {
+      if ((await readScrollLeft()) >= maxScrollLeft - 2) break;
+      if (keyboardFallbackActive) {
+        await page.keyboard.press('ArrowRight');
+      } else {
+        await page.mouse.wheel(480, 0);
+      }
+      await page.waitForTimeout(50);
+    }
+    expect(await readScrollLeft()).toBeGreaterThanOrEqual(maxScrollLeft - 2);
+  } finally {
+    // 键盘回退借用了焦点，无论成败必定归还，避免污染后续断言
+    if (previousFocus) {
+      await previousFocus.focus().catch(() => undefined);
     }
   }
-  await expect.poll(readScrollLeft, { timeout: 2_000 }).toBeGreaterThan(beforePositioning);
-
-  // 6) 持续 wheel 至滚动尽头（scrollLeft 到达最大值附近）
-  for (let attempt = 0; attempt < 24; attempt += 1) {
-    if ((await readScrollLeft()) >= maxScrollLeft - 2) break;
-    await page.mouse.wheel(480, 0);
-    await page.waitForTimeout(50);
+  // 清理验证：焦点不得滞留在 scroller 上（若 finally 的归还被删，此处变红）
+  if (previousFocus) {
+    const focusLeaked = await scroller.evaluate((el) => document.activeElement === el);
+    expect(focusLeaked).toBe(false);
   }
-  expect(await readScrollLeft()).toBeGreaterThanOrEqual(maxScrollLeft - 2);
 
   // 7) 末列完整落入容器可视区域（容器可能因页面滚动移位，此处重新量取）
   const header = table.getByRole('columnheader', { name: lastColumn, exact: true });
