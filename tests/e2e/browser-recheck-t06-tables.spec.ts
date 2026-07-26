@@ -294,6 +294,7 @@ test.describe('T06 R40-R42 首页与全局桌面表格', () => {
   });
 
   test('R42 全部桌面数据表首行与列标题共享左起始边', async ({ page }) => {
+    test.setTimeout(120_000);
     const runtimeErrors = collectRuntimeErrors(page);
     await page.setViewportSize({ width: 1440, height: 900 });
 

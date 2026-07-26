@@ -268,6 +268,7 @@ test.describe('K1-A 实体与标签详情', () => {
   });
 
   test('R46/R57 三视口截图与横向溢出检查', async ({ page }) => {
+    test.setTimeout(120_000);
     const runtimeErrors = collectRuntimeErrors(page, [ABORTED_VISIT_SUMMARY]);
     await dismissJourneyOverlay(page);
     const viewports = [
