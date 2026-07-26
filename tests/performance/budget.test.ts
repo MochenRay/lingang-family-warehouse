@@ -91,8 +91,8 @@ describe('performance budget', () => {
     current.profile.cpuSlowdown = 1;
 
     expect(evaluatePerformanceBaseline(baseline, current)).toEqual([
-      'baseline schemaVersion 1 != canonical 3',
-      'current schemaVersion 1 != canonical 3',
+      'baseline schemaVersion 1 != canonical 2',
+      'current schemaVersion 1 != canonical 2',
       'baseline profile differs from canonical measurement profile',
       'current profile differs from canonical measurement profile',
     ]);

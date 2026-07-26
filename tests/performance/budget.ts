@@ -1,13 +1,12 @@
 import { isDeepStrictEqual } from 'node:util';
 
-export const PERFORMANCE_SCHEMA_VERSION = 3;
+export const PERFORMANCE_SCHEMA_VERSION = 2;
 
 export interface PerformanceProfile {
   build: 'production-preview';
   dataMode: 'api';
   browser: 'chromium';
   samples: number;
-  suiteWarmups: number;
   warmups: number;
   viewport: { width: number; height: number };
   network: { downloadMbps: number; uploadMbps: number; latencyMs: number };
@@ -25,7 +24,6 @@ export const CANONICAL_PERFORMANCE_PROFILE: PerformanceProfile = {
   dataMode: 'api',
   browser: 'chromium',
   samples: 3,
-  suiteWarmups: 1,
   warmups: 1,
   viewport: { width: 1440, height: 900 },
   network: { downloadMbps: 5, uploadMbps: 3, latencyMs: 80 },

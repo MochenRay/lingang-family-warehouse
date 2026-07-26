@@ -15,7 +15,6 @@
 - service worker blocked、HTTP cache disabled、字体加载完成、网络静默 200 ms
 - 网络：download 5 Mbps / upload 3 Mbps / latency 80 ms
 - CPU slowdown：4×
-- 全套计时前先执行 1 次首页 suite primer 并丢弃结果，用于收敛 runner、浏览器与 preview server 的启动态
 - 每路由 1 次 warm-up 丢弃，继以 3 个冷 browser context 量测并取中位数
 
 每次记录：
