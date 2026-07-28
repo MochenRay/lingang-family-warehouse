@@ -3,13 +3,10 @@ import {
   History,
   Filter,
   Clock,
-  Calendar,
-  Users,
   Eye,
   MoreHorizontal
 } from 'lucide-react';
 import { Button } from '../ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../ui/tabs';
 import { 
   Table, 
@@ -142,58 +139,61 @@ export function ActivityManagement() {
               暂无待审批的活动申请
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {pendingActivities.map(activity => (
-                <Card key={activity.id} className={`${PANEL_CLASS} border-l-4 border-l-[var(--color-status-warning)] transition-colors hover:bg-[var(--color-neutral-03)]`}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start gap-2">
-                      <div className="mb-2 min-w-0">
+            <div className={`${PANEL_CLASS} overflow-hidden`}>
+              <Table className="min-w-[920px]">
+                <TableHeader>
+                  <TableRow className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-02)]">
+                    <TableHead>活动</TableHead>
+                    <TableHead>类型</TableHead>
+                    <TableHead>时间</TableHead>
+                    <TableHead>申请人</TableHead>
+                    <TableHead>参与预测</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <DataTableBody columnCount={6}>
+                  {pendingActivities.map(activity => (
+                    <TableRow key={activity.id} className="border-[var(--color-neutral-03)] hover:bg-[var(--color-brand-primary)]/8">
+                      <TableCell className="min-w-[190px]">
+                        <p className="font-medium text-[var(--color-neutral-11)]">{activity.title}</p>
+                        <p className="mt-1 line-clamp-1 text-xs text-[var(--color-neutral-08)]">{activity.description}</p>
+                      </TableCell>
+                      <TableCell>
                         <ActivityTypeBadge category={activity.category} subcategory={activity.subcategory} />
-                      </div>
-                      <span className="shrink-0 text-xs text-[var(--color-neutral-08)]">{activity.createdAt.split(' ')[0]} 申请</span>
-                    </div>
-                    <CardTitle className="line-clamp-1 text-base font-bold text-[var(--color-neutral-11)]">
-                      {activity.title}
-                    </CardTitle>
-                    <CardDescription className="mt-1 line-clamp-2 text-xs text-[var(--color-neutral-08)]">
-                      {activity.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pb-2">
-                     <div className="space-y-2 text-sm">
-                        <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
-                          <Users className="w-4 h-4 text-[var(--color-neutral-08)]" />
-                          <span>申请人: {activity.creatorName}</span>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <p>{activity.date}</p>
+                        <p className="text-xs text-[var(--color-neutral-08)]">{activity.startTime} · {activity.createdAt.split(' ')[0]} 申请</p>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{activity.creatorName}</TableCell>
+                      <TableCell className="max-w-[220px] text-sm text-[var(--color-brand-text)]">
+                        {activity.predictionText || '暂无预测'}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2 whitespace-nowrap">
+                          <Button variant="outline" size="sm" className={ACTION_BUTTON_CLASS} onClick={() => setDetailDialog({ open: true, activity })}>
+                            查看
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="bg-[var(--color-status-success)] text-[var(--color-neutral-11)] hover:bg-[var(--color-status-success)]/90"
+                            onClick={() => handleApprove(activity.id)}
+                          >
+                            通过
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => setRejectDialog({ open: true, activityId: activity.id })}
+                          >
+                            驳回
+                          </Button>
                         </div>
-                        <div className="flex items-center gap-2 text-[var(--color-neutral-09)]">
-                          <Calendar className="w-4 h-4 text-[var(--color-neutral-08)]" />
-                          <span>{activity.date} {activity.startTime}</span>
-                        </div>
-                        <div className="mt-2 rounded border border-[var(--color-brand-primary-hover)]/25 bg-[var(--color-brand-primary-hover)]/10 p-2 text-xs text-[var(--color-brand-text)]">
-                          <span className="font-bold">参与预测:</span> {activity.predictionText || '暂无预测'}
-                        </div>
-                     </div>
-                  </CardContent>
-                  <CardFooter className="pt-2 flex gap-2">
-                     <Button variant="outline" className={`h-8 flex-1 text-xs ${ACTION_BUTTON_CLASS}`} onClick={() => setDetailDialog({ open: true, activity })}>
-                       查看详情
-                     </Button>
-                     <Button
-                       className="h-8 flex-1 bg-[var(--color-status-success)] text-xs text-[var(--color-neutral-11)] hover:bg-[var(--color-status-success)]/90"
-                       onClick={() => handleApprove(activity.id)}
-                     >
-                       通过
-                     </Button>
-                     <Button
-                       variant="destructive"
-                       className="flex-1 text-xs h-8"
-                       onClick={() => setRejectDialog({ open: true, activityId: activity.id })}
-                     >
-                       驳回
-                     </Button>
-                  </CardFooter>
-                </Card>
-              ))}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </DataTableBody>
+              </Table>
             </div>
           )}
         </TabsContent>

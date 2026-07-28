@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Plus,
   Download,
@@ -77,6 +77,12 @@ import { tagStore } from "../../utils/tagStore";
 import { houseRepository } from "../../services/repositories/houseRepository";
 import { personRepository } from "../../services/repositories/personRepository";
 import { visitRepository } from "../../services/repositories/visitRepository";
+import {
+  getPopulationLedgerSnapshot,
+  invalidatePopulationLedgerCache,
+  readPopulationLedgerCache,
+  type PopulationLedgerSnapshot,
+} from "../../services/populationLedgerCache";
 import { StatCard } from "../patterns/StatCard";
 import { StatusBadge, type StatusTone } from "../patterns/StatusBadge";
 import { DataTableBody, TablePagination } from "../patterns/DataTableShell";
@@ -284,6 +290,7 @@ export function PopulationManagement() {
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const ledgerLoadGeneration = useRef(0);
   
   // 标签管理状态
   const [recommendedTags, setRecommendedTags] = useState<string[]>([]); // 推荐的标签名称
@@ -476,51 +483,73 @@ export function PopulationManagement() {
     setIsGridSelectDialogOpen(false);
   };
 
+  const applyLedgerSnapshot = (snapshot: PopulationLedgerSnapshot) => {
+    const gridMap = new Map(snapshot.grids.map((grid) => [grid.id, grid]));
+    const mappedPopulations = snapshot.people.map((person) =>
+      mapPersonToPopulation(person, gridMap.get(person.gridId)));
+
+    setPopulationTotal(snapshot.total);
+    setGrids(snapshot.grids);
+    setHouses(snapshot.houses);
+    setPopulations(mappedPopulations);
+    setSelectedPopulation((prev) => {
+      if (!prev) {
+        return null;
+      }
+      return mappedPopulations.find((person) => person.id === prev.id) ?? null;
+    });
+  };
+
   const loadData = async () => {
-    setIsLoading(true);
+    const generation = ++ledgerLoadGeneration.current;
+    const cachedSnapshot = readPopulationLedgerCache();
+    const hadVisibleSnapshot = cachedSnapshot !== null || populations.length > 0;
+    if (cachedSnapshot) {
+      applyLedgerSnapshot(cachedSnapshot);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
     setLoadError(null);
 
     try {
-      const [peopleResult, nextGrids, nextHouses] = await Promise.all([
-        personRepository.getPeopleList(),
-        personRepository.getGrids(),
-        houseRepository.getHouses(),
-      ]);
-      const people = peopleResult.items;
-      const gridMap = new Map(nextGrids.map((grid) => [grid.id, grid]));
-      const mappedPopulations = people.map((person) => mapPersonToPopulation(person, gridMap.get(person.gridId)));
-
-      setPopulationTotal(peopleResult.total);
-      setGrids(nextGrids);
-      setHouses(nextHouses);
-      setPopulations(mappedPopulations);
-      setSelectedPopulation((prev) => {
-        if (!prev) {
-          return null;
-        }
-        return mappedPopulations.find((person) => person.id === prev.id) ?? null;
-      });
+      const nextSnapshot = await getPopulationLedgerSnapshot();
+      if (generation !== ledgerLoadGeneration.current) return;
+      applyLedgerSnapshot(nextSnapshot);
 
       setIsVisitSummaryLoading(true);
       setVisitSummaryError(null);
       void visitRepository.getVisits({ targetType: "person", order: "desc" })
-        .then(setVisits)
+        .then((nextVisits) => {
+          if (generation === ledgerLoadGeneration.current) setVisits(nextVisits);
+        })
         .catch((error) => {
+          if (generation !== ledgerLoadGeneration.current) return;
           console.error("Failed to load population visit summaries", error);
           setVisitSummaryError(error instanceof Error ? error.message : "走访摘要读取失败");
         })
-        .finally(() => setIsVisitSummaryLoading(false));
+        .finally(() => {
+          if (generation === ledgerLoadGeneration.current) setIsVisitSummaryLoading(false);
+        });
     } catch (error) {
+      if (generation !== ledgerLoadGeneration.current) return;
       console.error("Failed to load population management data", error);
       setLoadError(error instanceof Error ? error.message : "人口台账读取失败");
-      toast.error("人口数据加载失败，请稍后重试");
+      toast.error(
+        hadVisibleSnapshot
+          ? "人口数据刷新失败，继续显示最近一次快照"
+          : "人口数据加载失败，请稍后重试",
+      );
     } finally {
-      setIsLoading(false);
+      if (generation === ledgerLoadGeneration.current) setIsLoading(false);
     }
   };
 
   useEffect(() => {
     void loadData();
+    return () => {
+      ledgerLoadGeneration.current += 1;
+    };
   }, []);
 
   const clearPersonFocusQuery = () => {
@@ -767,6 +796,7 @@ export function PopulationManagement() {
         clearPersonFocusQuery();
         setSelectedPopulation(null);
       }
+      invalidatePopulationLedgerCache();
       await loadData();
     } catch (error) {
       console.error("Failed to delete person", error);
@@ -832,6 +862,7 @@ export function PopulationManagement() {
     setIsSaving(true);
     try {
       await personRepository.addPerson(newPerson);
+      invalidatePopulationLedgerCache();
       await loadData();
       setIsAddDialogOpen(false);
       setFormData({});
@@ -882,6 +913,7 @@ export function PopulationManagement() {
           healthRecord: formData.healthRecord,
           importantEvents: formData.importantEvents,
         });
+        invalidatePopulationLedgerCache();
         await loadData();
         setIsEditDialogOpen(false);
         setSelectedPopulation(null);
@@ -1019,6 +1051,21 @@ export function PopulationManagement() {
         title="人口管理"
         description="维护人口台账、走访状态和重点标签，保证一线工作台数据可查可追踪。"
       />
+
+      {loadError ? (
+        <div
+          role="alert"
+          className={PANEL_CLASS + " flex flex-col gap-3 border-[var(--color-status-warning)]/45 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"}
+        >
+          <div>
+            <p className="font-medium text-[var(--color-status-warning-text)]">人口台账刷新失败，正在显示最近一次成功快照</p>
+            <p className="mt-1 text-xs text-[var(--color-neutral-08)]">{loadError}</p>
+          </div>
+          <Button variant="outline" size="sm" className="shrink-0" onClick={() => void loadData()}>
+            重新读取
+          </Button>
+        </div>
+      ) : null}
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">

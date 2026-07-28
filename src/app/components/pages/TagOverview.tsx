@@ -212,6 +212,7 @@ export function TagOverview() {
         onOpenChange={(open) => !open && setSelectedTagId('')}
         maxWidth="5xl"
         contentLabel="标签详情"
+        bodyClassName="overflow-hidden"
         badges={selectedTag ? (
           <>
             <Badge variant="outline" className={getTagTypeClass(selectedTag.type)}>{selectedTag.type}</Badge>
@@ -225,8 +226,8 @@ export function TagOverview() {
         description={selectedTag ? `${selectedTag.type} · ${selectedTag.category} · ${selectedTag.description}` : '查看标签规则与覆盖对象。'}
       >
         {selectedTag ? (
-          <div className="space-y-4">
-            <DetailSection icon={Tag} title="规则信息">
+          <div className="flex h-full min-h-0 flex-col gap-4">
+            <DetailSection icon={Tag} title="规则信息" className="shrink-0">
               <div className="space-y-3">
                 {selectedTag.rules?.length ? (
                   <div className="space-y-1.5">
@@ -256,8 +257,16 @@ export function TagOverview() {
             <DetailSection
               icon={Users}
               title="覆盖对象"
+              className="flex min-h-0 flex-1 flex-col gap-0 overflow-hidden"
+              contentClassName="min-h-0 flex-1 p-0"
               trailing={<Badge variant="outline" className={`${CHIP_BASE_CLASS} border-[var(--color-neutral-03)] bg-[var(--color-neutral-03)] text-[var(--color-neutral-10)]`}>{coveredPeople.length} 人</Badge>}
             >
+              <div
+                role="region"
+                aria-label="覆盖对象列表，可上下滚动"
+                tabIndex={0}
+                className="h-full overflow-y-auto overscroll-contain p-4 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--color-brand-primary)]"
+              >
               {coveredPeople.length === 0 ? (
                 <div className={`rounded-[4px] border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 text-sm ${MUTED_TEXT_CLASS}`}>
                   当前没有命中对象。
@@ -292,6 +301,7 @@ export function TagOverview() {
                   ))}
                 </div>
               )}
+              </div>
             </DetailSection>
           </div>
         ) : null}

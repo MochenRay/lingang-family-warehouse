@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Download, Loader2, Search, TrendingDown, TrendingUp } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { ChartCard } from '../statistics/ChartCard';
@@ -14,6 +14,7 @@ import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTo
 import { CHART_AXIS, CHART_GRID_PROPS, CHART_PRIMARY, CHART_TICK, CHART_WARNING } from '../../config/chartConfig';
 import { SortableHeader } from '../statistics/SortableHeader';
 import { DataTableBody } from '../patterns/DataTableShell';
+import { ErrorState, LoadingState } from '../patterns/states';
 import { StatusBadge } from '../patterns/StatusBadge';
 import { PageHeader } from './PageHeader';
 
@@ -207,36 +208,39 @@ export function DataComparison() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [querying, setQuerying] = useState(false);
   const [queryError, setQueryError] = useState('');
+  const [initialError, setInitialError] = useState('');
   const [draftFilters, setDraftFilters] = useState<ComparisonFilters>(DEFAULT_COMPARISON_FILTERS);
   const [appliedFilters, setAppliedFilters] = useState<ComparisonFilters>(DEFAULT_COMPARISON_FILTERS);
   const [sortState, setSortState] = useState(DEFAULT_COMPARISON_SORT);
+  const initialLoadGeneration = useRef(0);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadInitialSnapshot() {
-      try {
-        setInitialLoading(true);
-        setQueryError('');
-        const next = await analysisRepository.getGovernanceSnapshot();
-        if (!cancelled) {
-          setSnapshot(next);
-        }
-      } catch {
-        if (!cancelled) {
-          setQueryError('数据加载失败，请修改条件后重新查询。');
-        }
-      } finally {
-        if (!cancelled) {
-          setInitialLoading(false);
-        }
+  const loadInitialSnapshot = async () => {
+    const generation = ++initialLoadGeneration.current;
+    setInitialLoading(true);
+    setInitialError('');
+    try {
+      const next = await analysisRepository.getGovernanceSnapshot();
+      if (generation === initialLoadGeneration.current) {
+        setSnapshot(next);
+      }
+    } catch {
+      if (generation === initialLoadGeneration.current) {
+        setInitialError('数据对比加载失败，请稍后重试。');
+      }
+    } finally {
+      if (generation === initialLoadGeneration.current) {
+        setInitialLoading(false);
       }
     }
+  };
 
+  useEffect(() => {
     void loadInitialSnapshot();
     return () => {
-      cancelled = true;
+      initialLoadGeneration.current += 1;
     };
+    // 仅首载执行一次；失败后的重试由 ErrorState 的 onRetry 触发
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const isDirty = !filtersEqual(draftFilters, appliedFilters);
@@ -442,6 +446,12 @@ export function DataComparison() {
         </CardContent>
       </Card>
 
+      {initialLoading ? (
+        <LoadingState title="正在加载数据对比…" />
+      ) : initialError ? (
+        <ErrorState title="数据对比加载失败" description={initialError} onRetry={() => void loadInitialSnapshot()} />
+      ) : (
+        <>
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
         <ChartCard
           title={`${getLevelLabel(compareLevel)}趋势直方图`}
@@ -477,7 +487,7 @@ export function DataComparison() {
                   strokeWidth={2}
                   strokeDasharray="6 4"
                   ifOverflow="extendDomain"
-                  label={{ value: `片区均值 ${formatNumber(averageValue)}`, position: 'insideTopLeft', fill: CHART_AXIS, fontSize: 11 }}
+                  label={{ value: `片区均值 ${formatNumber(averageValue)}`, position: 'insideBottomRight', fill: CHART_AXIS, fontSize: 11 }}
                 />
                 <ReferenceLine
                   y={targetValue}
@@ -550,6 +560,8 @@ export function DataComparison() {
           </Table>
         </CardContent>
       </Card>
+        </>
+      )}
     </div>
   );
 }

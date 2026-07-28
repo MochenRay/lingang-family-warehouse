@@ -50,10 +50,10 @@ test.describe('K1 治理页面重设计', () => {
     // 有待办时默认落在待办审批
     await expect(pendingTab).toHaveAttribute('aria-selected', 'true');
 
-    // 待办卡片中类型与子分类是层级组合而非孤立 pill
-    const pendingCard = page.locator('[data-slot="card"]').filter({ hasText: '防诈骗宣传讲座' });
-    await expect(pendingCard.getByText('志愿服务', { exact: true })).toBeVisible();
-    await expect(pendingCard.getByText('政策宣传', { exact: true })).toBeVisible();
+    // 待办表格行中类型与子分类是层级组合而非孤立 pill
+    const pendingRow = page.getByRole('row', { name: /防诈骗宣传讲座/ });
+    await expect(pendingRow.getByText('志愿服务', { exact: true })).toBeVisible();
+    await expect(pendingRow.getByText('政策宣传', { exact: true })).toBeVisible();
 
     // 历史档案表格保持可用，类型列同样是层级展示；Tab 计数与当前列表行数一致
     await historyTab.click();
@@ -89,8 +89,8 @@ test.describe('K1 治理页面重设计', () => {
     const countBefore = Number(tabTextBefore?.match(/\((\d+)\)/)?.[1]);
 
     // 通过唯一的待办申请，待办清零后自动切到历史档案
-    const pendingCard = page.locator('[data-slot="card"]').filter({ hasText: '防诈骗宣传讲座' });
-    await pendingCard.getByRole('button', { name: '通过' }).click();
+    const pendingRow = page.getByRole('row', { name: /防诈骗宣传讲座/ });
+    await pendingRow.getByRole('button', { name: '通过' }).click();
     const confirmDialog = page.getByRole('dialog');
     await confirmDialog.getByRole('button', { name: '通过' }).click();
 

@@ -19,7 +19,7 @@ test.describe('analysis page polish', () => {
     await goto(page, '/analysis/housing', '房屋网格画像');
 
     const cards = page.getByTestId('district-priority-card');
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(11);
     const first = await cards.nth(0).boundingBox();
     const second = await cards.nth(1).boundingBox();
     expect(first).not.toBeNull();

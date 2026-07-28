@@ -201,6 +201,41 @@ test.describe('P5-T7c 人口金字塔 Recharts（mock fixture）', () => {
     expect(await axisTickTexts(page, 'population-pyramid', 'recharts-yAxis')).toEqual(EXPECTED_BUCKETS.map(({ name }) => name));
   });
 
+  test('B04 自定义 shape 整数化同档 SVG 与真实 bounding box，并关闭两侧动画', async ({ page }) => {
+    const males = maleBars(page);
+    const females = femaleBars(page);
+    expect(await males.evaluateAll((elements) => elements.map((element) => element.getAttribute('data-pyramid-gender'))))
+      .toEqual(Array(9).fill('male'));
+    expect(await females.evaluateAll((elements) => elements.map((element) => element.getAttribute('data-pyramid-gender'))))
+      .toEqual(Array(9).fill('female'));
+    expect(await males.evaluateAll((elements) => elements.map((element) => element.getAttribute('data-animation-enabled'))))
+      .toEqual(Array(9).fill('false'));
+    expect(await females.evaluateAll((elements) => elements.map((element) => element.getAttribute('data-animation-enabled'))))
+      .toEqual(Array(9).fill('false'));
+
+    for (let index = 0; index < 9; index += 1) {
+      const maleY = Number(await males.nth(index).getAttribute('y'));
+      const femaleY = Number(await females.nth(index).getAttribute('y'));
+      const maleHeight = Number(await males.nth(index).getAttribute('height'));
+      const femaleHeight = Number(await females.nth(index).getAttribute('height'));
+      expect(Number.isInteger(maleY), 'male y bucket ' + index).toBe(true);
+      expect(Number.isInteger(femaleY), 'female y bucket ' + index).toBe(true);
+      expect(Number.isInteger(maleHeight), 'male height bucket ' + index).toBe(true);
+      expect(Number.isInteger(femaleHeight), 'female height bucket ' + index).toBe(true);
+      expect(maleY).toBe(femaleY);
+      expect(maleHeight).toBe(femaleHeight);
+
+      const [maleBox, femaleBox] = await Promise.all([
+        males.nth(index).boundingBox(),
+        females.nth(index).boundingBox(),
+      ]);
+      expect(maleBox).not.toBeNull();
+      expect(femaleBox).not.toBeNull();
+      expect(Math.abs(maleBox!.y - femaleBox!.y), 'real y bucket ' + index).toBeLessThanOrEqual(0.01);
+      expect(Math.abs(maleBox!.height - femaleBox!.height), 'real height bucket ' + index).toBeLessThanOrEqual(0.01);
+    }
+  });
+
   test('tooltip 显示正人数（无负号）', async ({ page }) => {
     // hover 首行（UI 轴文案 81+：男 1 / 女 1）女条
     await femaleBars(page).first().hover();

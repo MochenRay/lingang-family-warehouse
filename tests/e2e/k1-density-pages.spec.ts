@@ -221,17 +221,18 @@ test.describe('K1 高密度页面重设计', () => {
     for (const column of ['时间', '类型', '模块', '操作内容', '操作人', '来源', '状态', '耗时']) {
       await expect(page.getByRole('columnheader', { name: column, exact: true })).toBeVisible();
     }
-    await expect(page.locator('tbody tr')).toHaveCount(10);
+    const logRows = page.getByRole('columnheader', { name: '操作内容', exact: true }).locator('xpath=ancestor::table').locator('tbody tr');
+    await expect(logRows).toHaveCount(10);
     await expect(page.getByRole('cell', { name: '2026-01-20 15:45:23' })).toBeVisible();
     await expect(page.getByText('新建人口信息：李明（身份证：370XXXXXXXXX）')).toBeVisible();
 
     // 类型筛选生效且可清除
     await typeTrigger.click();
     await page.getByRole('option', { name: '删除' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(1);
+    await expect(logRows).toHaveCount(1);
     await expect(page.getByText('删除房屋信息').first()).toBeVisible();
     await page.getByRole('button', { name: '清除筛选' }).click();
-    await expect(page.locator('tbody tr')).toHaveCount(10);
+    await expect(logRows).toHaveCount(10);
 
     // 桌面与窄屏均无整页横向溢出
     await expectNoPageHorizontalOverflow(page);
@@ -269,7 +270,7 @@ export const OPERATION_LOGS = [
     await page.goto('/settings/logs');
     await expect(page.getByRole('heading', { name: '日志管理' })).toBeVisible({ timeout: 20_000 });
 
-    const rows = page.locator('tbody tr');
+    const rows = page.getByRole('columnheader', { name: '操作内容', exact: true }).locator('xpath=ancestor::table').locator('tbody tr');
     const timeTrigger = page.getByRole('combobox', { name: '按时间范围筛选' });
 
     // 默认今天：3 行且不含更早条目，无「已筛选」标记

@@ -645,13 +645,13 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
         onOpenChange={setIsDetailDialogOpen}
         contentLabel="纠纷详情"
         maxWidth="5xl"
-        badges={
+        actions={
           selectedConflict ? (
-            <>
+            <div data-testid="conflict-detail-statuses" className="flex flex-wrap gap-2 max-sm:w-[calc(100vw-2.75rem)]">
               <StatusBadge tone={getConflictStatusTone(selectedConflict.status)}>{selectedConflict.status}</StatusBadge>
               <StatusBadge tone={getSourceTone(selectedConflict.source)}>{selectedConflict.source}</StatusBadge>
               <StatusBadge tone="neutral">{selectedConflict.type}</StatusBadge>
-            </>
+            </div>
           ) : undefined
         }
         title={selectedConflict?.title ?? "纠纷详情"}

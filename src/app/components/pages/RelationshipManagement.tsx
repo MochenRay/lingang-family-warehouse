@@ -385,19 +385,23 @@ export function RelationshipManagement() {
         onOpenChange={setIsViewDialogOpen}
         maxWidth="4xl"
         contentLabel="人房关系详情"
-        badges={selectedRelationship ? (
-          <>
-            <StatusBadge tone={RELATION_TYPE_TONE[selectedRelationship.relationType]}>{selectedRelationship.relationType}</StatusBadge>
-            <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
-              {selectedRelationship.relationship}
-            </StatusBadge>
-            {selectedRelationship.risk ? (
-              <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.risk] ?? 'neutral'}>{selectedRelationship.risk}</StatusBadge>
-            ) : null}
-          </>
-        ) : undefined}
         title={selectedRelationship ? `人房关系详情 · ${selectedRelationship.personName}` : '人房关系详情'}
-        description={selectedRelationship ? selectedRelationship.houseAddress : '查看当前对象的人房绑定与历史信息。'}
+        description={selectedRelationship ? (
+          <span data-testid="relationship-detail-meta" className="flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <span data-testid="relationship-detail-address" className="min-w-0 break-words">
+              {selectedRelationship.houseAddress}
+            </span>
+            <span data-testid="relationship-detail-pills" className="flex shrink-0 flex-wrap gap-2">
+              <StatusBadge tone={RELATION_TYPE_TONE[selectedRelationship.relationType]}>{selectedRelationship.relationType}</StatusBadge>
+              <StatusBadge tone={RELATIONSHIP_BADGE_TONE[selectedRelationship.relationship] ?? 'neutral'}>
+                {selectedRelationship.relationship}
+              </StatusBadge>
+              {selectedRelationship.risk ? (
+                <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.risk] ?? 'neutral'}>{selectedRelationship.risk}</StatusBadge>
+              ) : null}
+            </span>
+          </span>
+        ) : '查看当前对象的人房绑定与历史信息。'}
       >
         {selectedRelationship && (
           <div className="space-y-4">

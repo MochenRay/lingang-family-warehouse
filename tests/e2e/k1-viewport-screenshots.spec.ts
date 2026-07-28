@@ -250,7 +250,8 @@ test.describe('K1-B/C 三视口截图', () => {
     // 日志表：1024 宽度下容器内可横向滚动至「耗时」列
     await page.goto('/settings/logs');
     await expect(page.getByRole('heading', { name: '日志管理' })).toBeVisible({ timeout: 20_000 });
-    await expectTableScrollsToLastColumn(page, page.getByRole('table'), '耗时');
+    const logTable = page.getByRole('columnheader', { name: '操作内容', exact: true }).locator('xpath=ancestor::table');
+    await expectTableScrollsToLastColumn(page, logTable, '耗时');
     await expectNoPageHorizontalOverflow(page);
 
     expect(runtimeErrors).toEqual([]);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis } from 'recharts';
-import { AlertTriangle, Building, HelpCircle, Home, Hotel, MapPinned, Store } from 'lucide-react';
+import { AlertTriangle, Building, ChartPie, HelpCircle, Home, Hotel, MapPinned, Store } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
@@ -215,9 +215,11 @@ export function HousingStatistics() {
         <Card className={`${PANEL_CLASS} h-[420px] gap-0 overflow-hidden`}>
           <CardHeader className="gap-3 border-b border-[var(--color-neutral-03)] px-4 py-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-                <AlertTriangle className="h-5 w-5 text-[var(--color-status-warning-text)]" />
-                重点区县清单
+              <div className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
+                  <AlertTriangle className="h-5 w-5 text-[var(--color-status-warning-text)]" />
+                  重点区县清单
+                </CardTitle>
                 <TooltipProvider delayDuration={100}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -235,7 +237,7 @@ export function HousingStatistics() {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </CardTitle>
+              </div>
               <Select value={districtSort} onValueChange={(value) => setDistrictSort(value as DistrictSortKey)}>
                 <SelectTrigger className="h-9 w-full border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] sm:w-[148px]">
                   <SelectValue />
@@ -256,7 +258,7 @@ export function HousingStatistics() {
               tabIndex={0}
               className="grid h-full content-start gap-3 overflow-x-hidden overflow-y-auto overscroll-contain pr-1 outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] sm:grid-cols-2"
             >
-              {districtHousingRows.slice(0, 6).map((row, index) => (
+              {districtHousingRows.map((row, index) => (
                 <article key={row.name} data-testid="district-priority-card" className="min-h-[116px] rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -288,7 +290,10 @@ export function HousingStatistics() {
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.2fr_1fr]">
         <Card className={PANEL_CLASS}>
           <CardHeader>
-            <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">房屋用途分布</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
+              <ChartPie className="h-5 w-5 text-[var(--color-brand-text)]" />
+              房屋用途分布
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[260px] w-full">
@@ -317,7 +322,7 @@ export function HousingStatistics() {
               )}
             </div>
             {!loading && dashboard ? (
-              <div aria-label="房屋用途图例" className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div aria-label="房屋用途图例" className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
                 {houseUsageData.map((entry) => (
                   <span
                     key={entry.name}

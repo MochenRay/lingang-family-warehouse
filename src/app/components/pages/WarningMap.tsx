@@ -310,7 +310,7 @@ export function WarningMap() {
           <CardTitle>预警清单</CardTitle>
           <CardDescription>当前筛选下共 {filteredWarnings.length} 条，点击“查看详情”可展开解释。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="grid grid-cols-1 gap-3 xl:grid-cols-2">
           {filteredWarnings.map((warning) => (
             <div key={warning.id} data-testid="warning-list-item" data-warning-id={warning.id} className="flex flex-col gap-3 rounded-[4px] border p-4 md:flex-row md:items-center md:justify-between">
               <div className="space-y-1">

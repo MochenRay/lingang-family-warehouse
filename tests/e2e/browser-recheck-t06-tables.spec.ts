@@ -300,7 +300,7 @@ test.describe('T06 R40-R42 首页与全局桌面表格', () => {
 
     for (const route of TABLE_ROUTES) {
       await page.goto(route);
-      const tables = page.locator('table:visible');
+      const tables = page.locator('table:not(.sr-only):visible');
       await expect(tables.first(), `${route} should expose a desktop data table`).toBeVisible({ timeout: 20_000 });
       await page.waitForLoadState('networkidle');
       const tableCount = await tables.count();
@@ -386,7 +386,7 @@ test.describe('T06 R40-R42 首页与全局桌面表格', () => {
     await expectNoPageHorizontalOverflow(page);
 
     await page.goto('/settings/logs');
-    const logTable = page.getByRole('table');
+    const logTable = page.getByRole('columnheader', { name: '操作内容', exact: true }).locator('xpath=ancestor::table');
     await expect(logTable).toBeVisible({ timeout: 20_000 });
     await expectTableScrollsToLastColumn(logTable, '耗时', page);
     await expectNoPageHorizontalOverflow(page);
