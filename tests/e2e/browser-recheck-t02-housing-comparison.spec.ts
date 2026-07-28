@@ -26,12 +26,12 @@ function boxesOverlap(
 test.describe('T02 房屋画像与数据对比', () => {
   test.use({ viewport: { width: 1507, height: 1324 } });
 
-  test('R05 重点区县为稳定高度双列卡片并可内部滚动至第六项', async ({ page }) => {
+  test('B05 重点区县为稳定高度双列卡片并可内部滚动至全部十一项', async ({ page }) => {
     await goto(page, '/analysis/housing', '房屋网格画像');
 
     const scroller = page.getByTestId('district-priority-scroll');
     const cards = page.getByTestId('district-priority-card');
-    await expect(cards).toHaveCount(6);
+    await expect(cards).toHaveCount(11);
     await expect(scroller).toBeVisible();
 
     const [first, second, third] = await Promise.all([
@@ -67,14 +67,14 @@ test.describe('T02 房屋画像与数据对比', () => {
       { timeout: 3_000 },
     ).toBeGreaterThanOrEqual(before.scrollHeight - before.clientHeight - 2);
 
-    const [scrollerBox, sixthCardBox] = await Promise.all([
+    const [scrollerBox, lastCardBox] = await Promise.all([
       scroller.boundingBox(),
-      cards.nth(5).boundingBox(),
+      cards.last().boundingBox(),
     ]);
     expect(scrollerBox).not.toBeNull();
-    expect(sixthCardBox).not.toBeNull();
-    expect(sixthCardBox!.y).toBeGreaterThanOrEqual(scrollerBox!.y - 1);
-    expect(sixthCardBox!.y + sixthCardBox!.height)
+    expect(lastCardBox).not.toBeNull();
+    expect(lastCardBox!.y).toBeGreaterThanOrEqual(scrollerBox!.y - 1);
+    expect(lastCardBox!.y + lastCardBox!.height)
       .toBeLessThanOrEqual(scrollerBox!.y + scrollerBox!.height + 1);
 
     const after = await scroller.evaluate((element) => ({
@@ -121,6 +121,7 @@ test.describe('T02 房屋画像与数据对比', () => {
   test('R44 每区仅一根当前值柱并以两条具名数值参考线对比', async ({ page }) => {
     await goto(page, '/analysis/comparison', '数据对比分析');
 
+    await expect(page.getByRole('heading', { name: /趋势直方图$/ })).toBeVisible({ timeout: 20_000 });
     await expect(page.getByText('对比模式', { exact: true })).toHaveCount(0);
     await expect(page.locator('.recharts-bar')).toHaveCount(1);
     await expect(page.locator('.recharts-reference-line-line')).toHaveCount(2);
@@ -153,6 +154,7 @@ test.describe('T02 房屋画像与数据对比', () => {
     test(`R44 ${viewport.width}x${viewport.height} 两参考线标签 bounding boxes 不相交`, async ({ page }) => {
       await page.setViewportSize(viewport);
       await goto(page, '/analysis/comparison', '数据对比分析');
+      await expect(page.getByRole('heading', { name: /趋势直方图$/ })).toBeVisible({ timeout: 20_000 });
       await expect(page.getByRole('button', { name: '查询', exact: true })).toBeDisabled();
 
       const averageLabel = page.locator('.recharts-reference-line').filter({ hasText: /^片区均值 [\d,.]+$/ }).locator('text');
@@ -258,11 +260,11 @@ test.describe('T02 房屋画像与数据对比', () => {
       const housingOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       expect(housingOverflow).toBeLessThanOrEqual(1);
       const districtScroller = page.getByTestId('district-priority-scroll');
-      await expect(page.getByTestId('district-priority-card')).toHaveCount(6);
+      await expect(page.getByTestId('district-priority-card')).toHaveCount(11);
       await districtScroller.focus();
       await expect(districtScroller).toBeFocused();
       await districtScroller.press('End');
-      await expect(page.getByTestId('district-priority-card').nth(5)).toBeInViewport();
+      await expect(page.getByTestId('district-priority-card').last()).toBeInViewport();
       await expect(page.locator('.recharts-sector')).toHaveCount(4);
       await page.evaluate(() => window.scrollTo(0, 0));
       await page.screenshot({ path: `/tmp/lingang-t02-housing-${viewport.width}x${viewport.height}.png`, fullPage: true });

@@ -4,10 +4,12 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Rectangle,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type RectangleProps,
 } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { StatCard } from '../patterns/StatCard';
@@ -50,6 +52,28 @@ function PyramidTooltip({
   return <DarkChartTooltip active={active} payload={absPayload} label={label} />;
 }
 
+interface PyramidBarShapeProps extends RectangleProps {
+  gender: 'male' | 'female';
+}
+
+/**
+ * 两侧共用同一 shape，统一整数化类别行几何。
+ * 男性负宽度会令 Recharts 自动翻转同一 radius 到左外端；
+ * 女性正宽度则保留在右外端。
+ */
+function PyramidBarShape({ gender, y = 0, height = 0, ...props }: PyramidBarShapeProps) {
+  return (
+    <Rectangle
+      {...props}
+      y={Math.round(y)}
+      height={Math.round(height)}
+      radius={[0, 6, 6, 0]}
+      data-pyramid-gender={gender}
+      data-animation-enabled="false"
+    />
+  );
+}
+
 /**
  * 人口金字塔（Recharts 镜像条形，全站首例负值法）：
  * male 负值 / female 正值 + 相同 stackId + stackOffset="sign" + 对称 domain，
@@ -75,9 +99,24 @@ function PopulationPyramid({ rows, axisMax }: { rows: PyramidRow[]; axisMax: num
           />
           <YAxis dataKey="name" type="category" width={62} axisLine={false} tickLine={false} tick={CHART_TICK} interval={0} />
           <Tooltip content={<PyramidTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-          {/* Recharts 会按负值方向翻转圆角位置；此处配置使男性柱外侧（左端）为圆角。 */}
-          <Bar dataKey="male" name="男" stackId="gender" fill={CHART_GENDER_COLORS.male} radius={[0, 6, 6, 0]} barSize={18} />
-          <Bar dataKey="female" name="女" stackId="gender" fill={CHART_GENDER_COLORS.female} radius={[0, 6, 6, 0]} barSize={18} />
+          <Bar
+            dataKey="male"
+            name="男"
+            stackId="gender"
+            fill={CHART_GENDER_COLORS.male}
+            shape={(props: RectangleProps) => <PyramidBarShape {...props} gender="male" />}
+            isAnimationActive={false}
+            barSize={18}
+          />
+          <Bar
+            dataKey="female"
+            name="女"
+            stackId="gender"
+            fill={CHART_GENDER_COLORS.female}
+            shape={(props: RectangleProps) => <PyramidBarShape {...props} gender="female" />}
+            isAnimationActive={false}
+            barSize={18}
+          />
         </BarChart>
       </ResponsiveContainer>
       {/* 视觉隐藏数据表：金字塔数据的辅助技术可读副本 */}

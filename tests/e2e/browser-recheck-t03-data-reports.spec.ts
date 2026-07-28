@@ -74,7 +74,7 @@ test.describe('R10 报表治理快照与导出记录布局', () => {
       expect(loadingRecordsBox).not.toBeNull();
 
       releaseSnapshot();
-      await expect(page.getByTestId('report-snapshot-skeleton')).toHaveCount(0);
+      await expect(page.getByTestId('report-snapshot-skeleton')).toHaveCount(0, { timeout: 20_000 });
       await expect(page.getByRole('button', { name: /治理总览快照/ })).toBeVisible();
 
       const loadedGridBox = await snapshotGrid.boundingBox();

@@ -96,9 +96,6 @@ const SECTION_ICON_MAP: Record<string, LucideIcon> = {
   责任分工: ShieldCheck,
 };
 
-/** 内容较长的模块独占一行，短模块并入字段网格 */
-const WIDE_SECTION_TITLES = new Set(['工作任务', '执行要求']);
-
 export function NoticeManagement() {
   const [notices, setNotices] = useState<NoticeRecord[]>([]);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
@@ -392,17 +389,15 @@ export function NoticeManagement() {
                       {intro ? (
                         <p className="text-sm leading-6 text-[var(--color-neutral-10)]">{intro}</p>
                       ) : null}
-                      <DetailFieldGrid>
+                      <DetailFieldGrid className="sm:grid-cols-2 xl:grid-cols-2">
                         {sections.map((section) => {
                           const SectionIcon = SECTION_ICON_MAP[section.title] ?? FileText;
-                          const wide = WIDE_SECTION_TITLES.has(section.title);
                           return (
                             <DetailField
                               key={section.title}
                               label={section.title}
                               icon={<SectionIcon className="h-3.5 w-3.5" />}
                               value={section.body}
-                              className={wide ? 'sm:col-span-2 xl:col-span-3' : undefined}
                             />
                           );
                         })}

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FileText, Download, Filter, Calendar, X } from 'lucide-react';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
@@ -13,6 +14,7 @@ import { PANEL_CLASS } from '../patterns/surfaces';
 import { LOG_TIME_RANGE_DEFAULT, isWithinTimeRange, parseLogTime, type LogTimeRange } from '../../data/logTimeRange';
 import { OPERATION_LOGS } from '../../data/operationLogs';
 import { PageHeader } from './PageHeader';
+import { DarkChartTooltip } from '../statistics/DarkChartTooltip';
 
 const DARK_PANEL_CLASS = 'rounded-lg border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)]';
 const DARK_SELECT_TRIGGER_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
@@ -20,6 +22,74 @@ const ACTION_BUTTON_CLASS = 'border-[var(--color-neutral-03)] bg-[var(--color-ne
 const MUTED_TEXT_CLASS = 'text-[var(--color-neutral-08)]';
 const INFO_BADGE_CLASS = 'border-[var(--color-neutral-04)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)]';
 const TABLE_HEAD_CLASS = 'text-xs uppercase whitespace-nowrap';
+
+interface DistributionDatum {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+}
+
+function DistributionPie({
+  title,
+  items,
+  chartTestId,
+  legendTestId,
+  tableLabel,
+}: {
+  title: string;
+  items: DistributionDatum[];
+  chartTestId: string;
+  legendTestId: string;
+  tableLabel: string;
+}) {
+  return (
+    <section>
+      <h3 className={`mb-3 text-sm font-medium ${MUTED_TEXT_CLASS}`}>{title}</h3>
+      <div data-testid={chartTestId} className="h-[260px] w-full" role="img" aria-label={`${title}饼图`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={items}
+              dataKey="value"
+              nameKey="label"
+              cx="50%"
+              cy="50%"
+              outerRadius="62%"
+              isAnimationActive={false}
+              labelLine={{ stroke: 'var(--color-neutral-06)' }}
+              label={({ value }) => String(value)}
+            >
+              {items.map((item) => <Cell key={item.key} fill={item.color} />)}
+            </Pie>
+            <Tooltip content={<DarkChartTooltip />} />
+          </PieChart>
+        </ResponsiveContainer>
+      </div>
+      <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2" aria-label={`${title}图例`}>
+        {items.map((item) => (
+          <span
+            key={item.key}
+            data-testid={legendTestId}
+            data-color={item.color}
+            data-value={item.value}
+            className="inline-flex items-center gap-2 text-xs text-[var(--color-neutral-09)]"
+          >
+            <span aria-hidden="true" className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+            <span>{item.label}</span>
+            <span className="font-medium tabular-nums text-[var(--color-neutral-11)]">{item.value}</span>
+          </span>
+        ))}
+      </div>
+      <table className="sr-only" aria-label={tableLabel}>
+        <thead><tr><th scope="col">分类</th><th scope="col">数量</th></tr></thead>
+        <tbody>
+          {items.map((item) => <tr key={item.key}><th scope="row">{item.label}</th><td>{item.value}</td></tr>)}
+        </tbody>
+      </table>
+    </section>
+  );
+}
 
 export function LogManagement() {
   const [logType, setLogType] = useState('all');
@@ -39,21 +109,21 @@ export function LogManagement() {
 
   // 操作类型分布
   const typeDistribution = [
-    { type: 'login', label: '登录/登出', count: 2, color: 'var(--color-brand-primary-hover)' },
-    { type: 'create', label: '新建', count: 2, color: 'var(--color-status-success)' },
-    { type: 'update', label: '编辑', count: 3, color: 'var(--color-status-warning)' },
-    { type: 'delete', label: '删除', count: 1, color: 'var(--color-status-error)' },
-    { type: 'export', label: '导出', count: 1, color: 'var(--color-accent-purple)' },
-    { type: 'view', label: '查看', count: 1, color: 'var(--color-neutral-06)' }
+    { key: 'login', label: '登录/登出', value: 2, color: 'var(--color-brand-primary-hover)' },
+    { key: 'create', label: '新建', value: 2, color: 'var(--color-status-success)' },
+    { key: 'update', label: '编辑', value: 3, color: 'var(--color-status-warning)' },
+    { key: 'delete', label: '删除', value: 1, color: 'var(--color-status-error)' },
+    { key: 'export', label: '导出', value: 1, color: 'var(--color-accent-purple)' },
+    { key: 'view', label: '查看', value: 1, color: 'var(--color-neutral-06)' }
   ];
 
   // 模块分布
   const moduleDistribution = [
-    { module: '数据管理', count: 4 },
-    { module: '标签管理', count: 1 },
-    { module: '统计分析', count: 1 },
-    { module: '数据可视化', count: 1 },
-    { module: '系统配置', count: 3 }
+    { key: 'data', label: '数据管理', value: 4, color: 'var(--color-brand-primary-hover)' },
+    { key: 'tag', label: '标签管理', value: 1, color: 'var(--color-status-success)' },
+    { key: 'stats', label: '统计分析', value: 1, color: 'var(--color-status-warning)' },
+    { key: 'visual', label: '数据可视化', value: 1, color: 'var(--color-accent-purple)' },
+    { key: 'settings', label: '系统配置', value: 3, color: 'var(--color-neutral-06)' }
   ];
 
   const TYPE_BADGE_CONFIG: Record<string, { label: string; tone: StatusTone }> = {
@@ -233,35 +303,21 @@ export function LogManagement() {
           <CardDescription className={MUTED_TEXT_CLASS}>按操作类型与所属模块统计</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-            <div>
-              <p className={`mb-3 text-sm font-medium ${MUTED_TEXT_CLASS}`}>操作类型</p>
-              <div className="space-y-3">
-                {typeDistribution.map((item) => (
-                  <div key={item.type} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: item.color }}
-                      />
-                      <span className="text-sm text-[var(--color-neutral-10)]">{item.label}</span>
-                    </div>
-                    <Badge variant="outline" className={INFO_BADGE_CLASS}>{item.count}</Badge>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className={`mb-3 text-sm font-medium ${MUTED_TEXT_CLASS}`}>模块分布</p>
-              <div className="space-y-2">
-                {moduleDistribution.map((item) => (
-                  <div key={item.module} className="flex items-center justify-between text-sm">
-                    <span className={MUTED_TEXT_CLASS}>{item.module}</span>
-                    <span className="font-medium tabular-nums text-[var(--color-neutral-11)]">{item.count}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <DistributionPie
+              title="操作类型分布"
+              items={typeDistribution}
+              chartTestId="log-type-pie"
+              legendTestId="log-type-legend-item"
+              tableLabel="日志操作类型分布数据"
+            />
+            <DistributionPie
+              title="模块分布"
+              items={moduleDistribution}
+              chartTestId="log-module-pie"
+              legendTestId="log-module-legend-item"
+              tableLabel="日志模块分布数据"
+            />
           </div>
         </CardContent>
       </Card>

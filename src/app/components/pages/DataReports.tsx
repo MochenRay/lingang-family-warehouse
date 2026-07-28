@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '../ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { FileText, Clock, Loader2, CheckCircle, FileBarChart, CalendarDays, Layers } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '../ui/card';
+import { Archive, FileText, Clock, Loader2, CheckCircle, FileBarChart, CalendarDays, Layers } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '../ui/card';
 import { Label } from '../ui/label';
 import { Badge } from '../ui/badge';
 import { toast } from 'sonner';
@@ -194,10 +194,9 @@ export function DataReports() {
         <Card data-testid="report-config-card" className={`h-full gap-0 lg:col-span-1 ${PANEL_CLASS}`}>
           <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 pb-3 pt-4">
             <CardTitle className="flex items-center gap-2 text-base font-semibold text-[var(--color-neutral-11)]">
-              <FileText className="h-5 w-5 text-[var(--color-brand-text)]" />
+              <Archive className="h-5 w-5 text-[var(--color-brand-text)]" />
               生成导出包
             </CardTitle>
-            <CardDescription className={MUTED_TEXT}>根据真实治理快照生成一个新的导出文件。</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 px-5 pt-4">
             <div className="space-y-2">
@@ -314,8 +313,8 @@ export function DataReports() {
             <CardHeader className="border-b border-[var(--color-neutral-03)] px-5 py-3">
               <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">本次导出记录</CardTitle>
             </CardHeader>
-            <CardContent className={`px-5 py-4 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center' : ''}`}>
-              <div className={`w-full space-y-2 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center' : ''}`}>
+            <CardContent className={`px-5 py-4 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center lg:justify-center' : ''}`}>
+              <div className={`w-full space-y-2 ${generatedReports.length === 0 ? 'lg:flex lg:min-h-0 lg:flex-1 lg:items-center lg:justify-center' : ''}`}>
                 {generatedReports.length === 0 ? (
                   <EmptyState
                     icon={FileText}

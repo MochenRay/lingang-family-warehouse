@@ -31,6 +31,8 @@ interface DetailDialogShellProps {
   maxWidth?: '3xl' | '4xl' | '5xl';
   /** 标记用途，便于 e2e 与可访问性区分 */
   contentLabel?: string;
+  /** 正文滚动容器的按需布局覆盖；默认仍为整体纵向滚动 */
+  bodyClassName?: string;
 }
 
 const MAX_WIDTH_CLASS: Record<NonNullable<DetailDialogShellProps['maxWidth']>, string> = {
@@ -50,6 +52,7 @@ export function DetailDialogShell({
   children,
   maxWidth = '4xl',
   contentLabel,
+  bodyClassName,
 }: DetailDialogShellProps) {
   const handleCloseAutoFocus = useReturnFocus(open);
 
@@ -64,10 +67,10 @@ export function DetailDialogShell({
           DIALOG_CLASS,
         )}
       >
-        <DialogHeader className="shrink-0 space-y-2 border-b border-[var(--color-neutral-03)] px-5 py-4 text-left">
+        <DialogHeader data-detail-dialog-header className="shrink-0 space-y-2 border-b border-[var(--color-neutral-03)] px-5 py-4 text-left">
           {badges ? <div className="flex flex-wrap items-center gap-2 pr-6">{badges}</div> : null}
           <div className="flex flex-wrap items-start justify-between gap-3 pr-6">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <DialogTitle className="text-lg font-semibold text-[var(--color-neutral-11)]">{title}</DialogTitle>
               {description ? (
                 <DialogDescription className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">
@@ -78,7 +81,7 @@ export function DetailDialogShell({
             {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
           </div>
         </DialogHeader>
-        <div data-detail-dialog-body className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
+        <div data-detail-dialog-body className={cn('min-h-0 flex-1 overflow-y-auto px-5 py-4', bodyClassName)}>
           {children}
         </div>
         {footer ? (
@@ -98,9 +101,19 @@ interface DetailSectionProps {
   description?: ReactNode;
   children: ReactNode;
   className?: string;
+  /** 内容区的按需布局覆盖；默认仍为 p-4 */
+  contentClassName?: string;
 }
 
-export function DetailSection({ icon: Icon, title, trailing, description, children, className }: DetailSectionProps) {
+export function DetailSection({
+  icon: Icon,
+  title,
+  trailing,
+  description,
+  children,
+  className,
+  contentClassName,
+}: DetailSectionProps) {
   return (
     <section className={cn(PANEL_CLASS, className)}>
       <header className="flex flex-wrap items-center justify-between gap-2 border-b border-[var(--color-neutral-03)] px-4 py-2.5">
@@ -111,11 +124,11 @@ export function DetailSection({ icon: Icon, title, trailing, description, childr
         {trailing ? <div className="shrink-0">{trailing}</div> : null}
       </header>
       {description ? (
-        <p className="border-b border-[var(--color-neutral-03)]/60 px-4 py-2 text-xs leading-5 text-[var(--color-neutral-08)]">
+        <p className="px-4 py-2 text-xs leading-5 text-[var(--color-neutral-08)]">
           {description}
         </p>
       ) : null}
-      <div className="p-4">{children}</div>
+      <div className={cn('p-4', contentClassName)}>{children}</div>
     </section>
   );
 }
