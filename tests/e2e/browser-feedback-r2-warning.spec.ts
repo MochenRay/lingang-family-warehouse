@@ -314,15 +314,14 @@ test.describe('K5 预警热区重设计（deterministic routes）', () => {
     await gotoWarningZones(page);
     await expect(page.getByTestId('zone-board')).toHaveCount(14);
 
-    // K4 移动端设计稿为内容区全宽（无侧栏）；桌面壳在 390 默认展开侧栏会把内容区
-    // 压到约 100px。收起侧边导航（用户可达的确定性操作）后按 AC-04 检查内容区布局。
-    await page.getByRole('button', { name: '收起侧边导航' }).click();
-    await expect.poll(() => page.locator('main').evaluate((el) => el.clientWidth)).toBeGreaterThan(200);
+    // K4 移动端设计稿为内容区全宽（无侧栏）；全局壳层在 390 默认将侧栏移出视口，
+    // 无需用户先手动收起即可按 AC-04 检查内容区布局。
+    await expect.poll(() => page.locator('main').evaluate((el) => el.clientWidth)).toBeGreaterThanOrEqual(389);
     expect(await distinctColumnCount(page.getByTestId('warning-stat-grid').locator(':scope > *'))).toBe(2);
     expect(await distinctColumnCount(page.getByTestId('zone-group'))).toBe(1);
 
     // K4 批准稿：两个筛选同一行，导出按钮折行占满下一行。
-    // 等侧栏收起过渡结束再测量，避免动画中间态的亚像素差异
+    // 等初始抽屉过渡结束再测量，避免动画中间态的亚像素差异
     await page.waitForTimeout(400);
     const comboboxes = page.getByRole('combobox');
     await expect(comboboxes).toHaveCount(2);
@@ -486,6 +485,31 @@ test.describe('K5 预警热区重设计（deterministic routes）', () => {
     expect(boardOutline!.width).toBe('2px');
     expect(railBoxShadow).not.toBeNull();
     expect(railBoxShadow).not.toBe('none');
+  });
+
+  test('390px 全局壳层：侧栏默认收起为抽屉，主内容保持完整宽度且可重新打开', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await gotoWarningZones(page);
+
+    const sidebar = page.locator('[data-desktop-sidebar]');
+    const main = page.locator('main');
+    await expect.poll(async () => (await sidebar.boundingBox())?.x ?? 0).toBeLessThan(-200);
+    expect((await main.boundingBox())?.width).toBeGreaterThanOrEqual(389);
+    await expect(page.locator('[data-page-title]')).toHaveText('预警热区');
+
+    await page.getByRole('button', { name: '展开侧边导航' }).click();
+    await expect.poll(async () => Math.round((await sidebar.boundingBox())?.x ?? -999)).toBe(0);
+    await expect(page.getByRole('button', { name: '关闭侧边导航' })).toBeVisible();
+    await expect(page.getByRole('button', { name: '收起侧边导航' })).toHaveAttribute('aria-expanded', 'true');
+
+    await page.keyboard.press('Escape');
+    await expect.poll(async () => (await sidebar.boundingBox())?.x ?? 0).toBeLessThan(-200);
+
+    await page.getByRole('button', { name: '展开侧边导航' }).click();
+    await expect.poll(async () => Math.round((await sidebar.boundingBox())?.x ?? -999)).toBe(0);
+    await page.getByRole('button', { name: '关闭侧边导航' }).click();
+    await expect.poll(async () => (await sidebar.boundingBox())?.x ?? 0).toBeLessThan(-200);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(390);
   });
 
   test('reduced-motion：全局压平，无持久动画', async ({ page }) => {

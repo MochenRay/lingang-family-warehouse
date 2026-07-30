@@ -50,21 +50,23 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
     : '尚未记录';
 
   return (
-    <header className="h-16 bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] flex items-center justify-between px-6 transition-colors duration-200">
+    <header className="flex h-16 items-center justify-between border-b border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 transition-colors duration-200 sm:px-6">
       {/* 左侧：菜单切换按钮 */}
-      <div className="flex items-center gap-4">
+      <div className="flex min-w-0 items-center gap-2 sm:gap-4">
         <Button
           variant="ghost"
           size="icon"
           onClick={onToggleSidebar}
           aria-label={sidebarCollapsed ? '展开侧边导航' : '收起侧边导航'}
+          aria-controls="desktop-sidebar"
+          aria-expanded={!sidebarCollapsed}
           className="text-[var(--color-neutral-10)] hover:text-[var(--color-neutral-11)]"
         >
           <Menu className="w-5 h-5" />
         </Button>
         
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--color-neutral-08)]">当前辖区:</span>
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="hidden text-sm text-[var(--color-neutral-08)] sm:inline">当前辖区:</span>
           <Badge variant="outline" className="text-[var(--color-brand-text)] border-[var(--color-brand-primary)] bg-[var(--color-neutral-02)]">
             烟台市
           </Badge>
@@ -102,7 +104,7 @@ export function Header({ onToggleSidebar, sidebarCollapsed }: HeaderProps) {
       </div>
 
       {/* 右侧：通知 + 用户信息 */}
-      <div className="flex items-center gap-3">
+      <div className="hidden items-center gap-3 sm:flex">
         <Button
           variant="ghost"
           size="icon"
