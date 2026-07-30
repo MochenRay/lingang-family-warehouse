@@ -57,7 +57,7 @@ def risk_scan(session: Session, context_id: str | None = None) -> dict[str, obje
         [
             f"网格：{grid.get('name', context.get('context_id'))}",
             f"人口 / 房屋 / 走访 / 纠纷：{counts.get('people', 0)} / {counts.get('houses', 0)} / {counts.get('visits', 0)} / {counts.get('conflicts', 0)}",
-            f"风险分布：High={risk_counts.get('High', 0)}，Medium={risk_counts.get('Medium', 0)}，Low={risk_counts.get('Low', 0)}",
+            f"风险分布：高风险={risk_counts.get('High', 0)}，中风险={risk_counts.get('Medium', 0)}，低风险={risk_counts.get('Low', 0)}",
             f"未化解纠纷：{counts.get('active_conflicts', 0)}",
         ]
     )

@@ -523,6 +523,10 @@ def _build_grid_items(
     people_counts = Counter(person.gridId for person in people)
     house_counts = Counter(house.gridId for house in houses)
     visit_counts = Counter(visit.gridId for visit in visits)
+    visited_people_by_grid: dict[str, set[str]] = defaultdict(set)
+    for visit in visits:
+        if visit.targetType == "person":
+            visited_people_by_grid[visit.gridId].add(visit.targetId)
     conflict_counts = Counter(conflict.gridId for conflict in conflicts)
 
     grid_index = {grid.id: grid for grid in grids}
@@ -552,6 +556,7 @@ def _build_grid_items(
                 peopleCount=people_counts.get(grid_id, 0),
                 houseCount=house_counts.get(grid_id, 0),
                 visitCount=visit_counts.get(grid_id, 0),
+                visitedPersonCount=len(visited_people_by_grid.get(grid_id, set())),
                 conflictCount=conflict_counts.get(grid_id, 0),
             )
         )

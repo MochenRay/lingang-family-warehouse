@@ -10,6 +10,7 @@ import { personRepository } from '../../services/repositories/personRepository';
 import { visitRepository } from '../../services/repositories/visitRepository';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import { toast } from 'sonner';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 interface MobilePersonDetailProps {
   id: string;
@@ -126,12 +127,6 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
     if (risk === 'High') return 'text-[var(--color-status-error-text)] bg-[var(--color-status-error-soft)] border-[var(--color-status-error)]/35';
     if (risk === 'Medium') return 'text-[var(--color-status-warning-text)] bg-[var(--color-status-warning-soft)] border-[var(--color-status-warning)]/35';
     return 'text-[var(--color-status-success-text)] bg-[var(--color-status-success-soft)] border-[var(--color-status-success)]/35';
-  };
-
-  const getRiskLabel = (risk: string) => {
-    if (risk === 'High') return '高风险';
-    if (risk === 'Medium') return '中风险';
-    return '低风险';
   };
 
   const visitPrep = [
@@ -299,7 +294,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                   <div className="flex-1">
                     <div className="text-xs text-[var(--color-neutral-08)] mb-0.5">风险等级</div>
                     <Badge className={`text-xs font-normal mt-1 ${getRiskColor(person.risk)}`}>
-                      {getRiskLabel(person.risk)}
+                      {getRiskLevelLabel(person.risk)}
                     </Badge>
                   </div>
                 </div>

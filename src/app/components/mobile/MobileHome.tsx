@@ -7,6 +7,7 @@ import {
   FileText,
   ChevronRight,
   Scan,
+  Scale,
   ShieldAlert,
   Building2,
   ClipboardList,
@@ -14,7 +15,8 @@ import {
   PenTool,
   PieChart,
   Sparkles,
-  X
+  X,
+  type LucideIcon
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { MobileLayout } from './MobileLayout';
@@ -32,6 +34,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   const [dashboard, setDashboard] = useState<DashboardStatsResponse | null>(null);
   const [taskSummary, setTaskSummary] = useState<{ pending: number; overdue: number; completed: number; completionRate: number } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const username = mobileContextRepository.getCurrentWorkerName();
   const currentGridSelection = mobileContextRepository.getCurrentGridSelection();
@@ -53,6 +56,13 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
         }
         setDashboard(response);
         setTaskSummary(nextTaskSummary);
+        setLoadFailed(false);
+      } catch (error) {
+        // 加载失败不得留下看似真实的 0 指标：标记失败态，指标区展示占位符
+        console.error('Failed to load mobile dashboard', error);
+        if (active) {
+          setLoadFailed(true);
+        }
       } finally {
         if (active) {
           setLoading(false);
@@ -84,6 +94,12 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
 
   const formatMetricValue = (value: number) => (value >= 100 ? '99+' : String(value));
   const metricValueClass = 'text-[1.35rem] leading-none tracking-normal';
+  // 四张指标卡共用同一份类名，保证等高、同内边距、数字 tabular-nums 且基线一致
+  const metricCardClass = 'flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center';
+  const metricValueBaseClass = `${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums`;
+  const metricLabelClass = 'text-xs text-[var(--color-neutral-08)] font-medium';
+  // loading / 失败期间指标区只显示统一占位符，避免假 0 冒充真实台账
+  const metricsReady = !loading && !loadFailed && dashboard !== null && taskSummary !== null;
 
   const currentGridName =
     (fallbackGridId ? dashboard?.grids.find((item) => item.id === fallbackGridId)?.name : undefined) ??
@@ -97,9 +113,11 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     highRisk: dashboard?.mobilePeopleStats.highRisk ?? 0,
   };
 
-  const syncLabel = dashboard?.metadata.generatedAt
-    ? `最近同步 ${dashboard.metadata.generatedAt.slice(5, 16)}`
-    : '正在同步最新台账';
+  const syncLabel = loadFailed
+    ? '台账同步失败，请稍后重试'
+    : dashboard?.metadata.generatedAt
+      ? `最近同步 ${dashboard.metadata.generatedAt.slice(5, 16)}`
+      : '正在同步最新台账';
   const busiestGrid = dashboard
     ? [...dashboard.grids].sort(
         (left, right) => (right.conflictCount + right.visitCount) - (left.conflictCount + left.visitCount),
@@ -176,6 +194,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     dashboard?.riskTagsSummary[0]
       ? {
           id: 'risk-primary',
+          icon: ShieldAlert,
           title: `${dashboard.riskTagsSummary[0].name}需优先跟进`,
           detail: `当前 ${dashboard.riskTagsSummary[0].count} 人，建议先进入人口台账筛查。`,
           route: 'people',
@@ -184,6 +203,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     dashboard?.conflictStats
       ? {
           id: 'conflict-active',
+          icon: Scale,
           title: `当前待化解矛盾 ${dashboard.conflictStats.active} 起`,
           detail: `已化解 ${dashboard.conflictStats.resolved} 起，可从矛盾调解链路继续跟进。`,
           route: 'conflict',
@@ -192,12 +212,13 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
     busiestGrid
       ? {
           id: 'grid-focus',
+          icon: Building2,
           title: `${busiestGrid.name}是当前重点网格`,
           detail: `人口 ${busiestGrid.peopleCount} 人，房屋 ${busiestGrid.houseCount} 套。`,
           route: 'people',
         }
       : null,
-  ].filter(Boolean) as { id: string; title: string; detail: string; route: string }[];
+  ].filter(Boolean) as { id: string; icon: LucideIcon; title: string; detail: string; route: string }[];
 
   const aiSummary = dashboard
     ? [
@@ -227,7 +248,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
   return (
     <MobileLayout currentRoute="home" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
       {/* 顶部渐变背景区域 */}
-      <div className="relative bg-gradient-to-br from-[var(--color-neutral-00)] via-[var(--color-neutral-01)] to-[var(--color-neutral-02)] px-4 pt-2 pb-6 border-b border-[var(--color-neutral-03)]">
+      <div className="relative bg-gradient-to-br from-[var(--color-neutral-00)] via-[var(--color-neutral-01)] to-[var(--color-neutral-02)] px-4 pt-2 pb-4 border-b border-[var(--color-neutral-03)]">
         {/* 装饰性背景元素 */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-[var(--color-brand-primary)] opacity-5 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 left-0 w-48 h-48 bg-[var(--color-brand-primary-hover)] opacity-5 rounded-full blur-3xl"></div>
@@ -261,7 +282,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
           <button 
             onClick={() => onRouteChange('scan')}
             aria-label="扫一扫"
-            className="p-3 bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] border border-[var(--color-neutral-03)] rounded-xl transition-all active:scale-95 shadow-sm"
+            className="p-3 bg-[var(--color-neutral-02)] hover:bg-[var(--color-neutral-03)] border border-[var(--color-neutral-03)] rounded-lg transition-all active:scale-95 shadow-sm"
           >
             <Scan className="w-5 h-5 text-[var(--color-neutral-10)]" />
           </button>
@@ -282,46 +303,50 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                 <span className="text-base font-bold text-[var(--color-neutral-11)]">治理总览</span>
               </div>
               <div className="flex items-center gap-1 text-[var(--color-neutral-08)] bg-[var(--color-neutral-01)] px-2.5 py-1 rounded-lg">
-                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <AlertCircle className="w-3.5 h-3.5" />}
+                {loading ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <AlertCircle className={`w-3.5 h-3.5 ${loadFailed ? 'text-[var(--color-status-error)]' : ''}`} />
+                )}
                 <span className="text-xs font-medium">{syncLabel}</span>
                 <ChevronRight className="w-3.5 h-3.5" />
               </div>
             </div>
             
-            <div className="grid grid-cols-4 gap-2">
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-warning-text)]`}>
-                  {formatMetricValue(workSummary.pending)}
+            <div className="grid grid-cols-4 gap-3">
+              <div className={metricCardClass}>
+                <div data-testid="home-metric-value" className={`${metricValueBaseClass} ${metricsReady ? 'text-[var(--color-status-warning-text)]' : 'text-[var(--color-neutral-06)]'}`}>
+                  {metricsReady ? formatMetricValue(workSummary.pending) : '—'}
                 </div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">待跟进</div>
+                <div className={metricLabelClass}>待跟进</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-status-success-text)]`}>
-                  {formatMetricValue(workSummary.completed)}
+              <div className={metricCardClass}>
+                <div data-testid="home-metric-value" className={`${metricValueBaseClass} ${metricsReady ? 'text-[var(--color-status-success-text)]' : 'text-[var(--color-neutral-06)]'}`}>
+                  {metricsReady ? formatMetricValue(workSummary.completed) : '—'}
                 </div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">已完成</div>
+                <div className={metricLabelClass}>已完成</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-brand-primary)]`}>
-                  {formatMetricValue(workSummary.visited)}
+              <div className={metricCardClass}>
+                <div data-testid="home-metric-value" className={`${metricValueBaseClass} ${metricsReady ? 'text-[var(--color-brand-primary)]' : 'text-[var(--color-neutral-06)]'}`}>
+                  {metricsReady ? formatMetricValue(workSummary.visited) : '—'}
                 </div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">走访</div>
+                <div className={metricLabelClass}>走访</div>
               </div>
-              <div className="flex min-h-[72px] flex-col items-center justify-center rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-center">
-                <div className={`${metricValueClass} mb-1 flex h-7 w-full items-center justify-center font-bold tabular-nums text-[var(--color-accent-purple)]`}>
-                  {formatMetricValue(workSummary.highRisk)}
+              <div className={metricCardClass}>
+                <div data-testid="home-metric-value" className={`${metricValueBaseClass} ${metricsReady ? 'text-[var(--color-accent-purple)]' : 'text-[var(--color-neutral-06)]'}`}>
+                  {metricsReady ? formatMetricValue(workSummary.highRisk) : '—'}
                 </div>
-                <div className="text-xs text-[var(--color-neutral-08)] font-medium">高风险</div>
+                <div className={metricLabelClass}>高风险</div>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      <div className="px-4 pt-4 pb-2">
+      <div className="px-4 pt-2 pb-6">
         {/* 快捷功能 */}
         <div className="mb-6">
-          <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3">快捷功能</h3>
+          <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3 px-1">快捷功能</h3>
           <div className="grid grid-cols-3 gap-3">
             {quickActions.map((action, index) => {
               const Icon = action.icon;
@@ -331,7 +356,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                   className="bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)] rounded-[4px] p-3 h-24 flex flex-col items-center justify-center shadow-sm cursor-pointer active:scale-95 transition-transform"
                   onClick={() => onRouteChange(action.path)}
                 >
-                  <div className={`w-11 h-11 ${action.color} rounded-xl flex items-center justify-center shrink-0 shadow-lg mb-2`}>
+                  <div className={`w-11 h-11 ${action.color} rounded-lg flex items-center justify-center shrink-0 shadow-lg mb-2`}>
                     <Icon className="w-6 h-6 text-white" />
                   </div>
                   <span className="font-semibold text-xs text-[var(--color-neutral-10)] text-center">{action.label}</span>
@@ -359,12 +384,12 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
                 <div 
                   key={item.id}
                   onClick={() => onRouteChange(item.route)}
-                  className={`p-3.5 flex items-center gap-3 cursor-pointer active:bg-[var(--color-neutral-03)] transition-colors ${
+                  className={`p-3 flex items-center gap-3 cursor-pointer active:bg-[var(--color-neutral-03)] transition-colors ${
                     index !== focusItems.length - 1 ? 'border-b border-[var(--color-neutral-03)]' : ''
                   }`}
                 >
                   <div className="w-8 h-8 rounded-full bg-[rgba(78,134,223,0.15)] border border-[rgba(78,134,223,0.3)] flex items-center justify-center shrink-0">
-                    <ShieldAlert className="w-4 h-4 text-[var(--color-brand-text)]" />
+                    <item.icon className="w-4 h-4 text-[var(--color-brand-text)]" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="text-sm font-medium text-[var(--color-neutral-11)] truncate">{item.title}</div>
@@ -380,7 +405,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
           </Card>
         </div>
 
-        <div className="mb-6">
+        <div className="mb-0">
           <div className="flex items-center gap-2 mb-3 px-1">
             <Sparkles className="w-4 h-4 text-[var(--color-brand-text)]" />
             <h3 className="text-sm font-bold text-[var(--color-neutral-11)]">AI 提示</h3>
@@ -398,7 +423,7 @@ export function MobileHome({ onRouteChange, onExitMobile }: MobileHomeProps) {
               <button
                 type="button"
                 onClick={() => onRouteChange('tasks?mode=today')}
-                className="w-full rounded-xl bg-[var(--color-brand-primary)] px-4 py-3 text-sm font-semibold text-white shadow-sm active:scale-[0.99]"
+                className="w-full rounded-lg bg-[var(--color-brand-primary)] px-4 py-3 text-sm font-semibold text-white shadow-sm active:scale-[0.99]"
               >
                 查看待办清单
               </button>

@@ -96,7 +96,7 @@ test.describe('台账页体验回归', () => {
       .getByText('风险等级', { exact: true })
       .locator('xpath=following-sibling::div[1]//span');
     await expect(riskPill).toHaveClass(/rounded-full/);
-    await expect(riskPill).toHaveText(/^(Low|Medium|High)$/);
+    await expect(riskPill).toHaveText(/^(低风险|中风险|高风险)$/);
   });
 
   test('共享 Card 标题与正文之间不再叠加大段空白', async ({ page }) => {

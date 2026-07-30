@@ -160,7 +160,6 @@ export function BatchImport() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importType, setImportType] = useState<'人口数据' | '房屋数据' | '人房关系'>('人口数据');
   const [showHistoryDialog, setShowHistoryDialog] = useState(false);
-  const [selectedErrorRecord, setSelectedErrorRecord] = useState<string | null>(null);
   const [latestSubmissionId, setLatestSubmissionId] = useState<string | null>(null);
   const [errorDetails] = useState<Record<string, ErrorDetail[]>>({
     '1': [
@@ -539,10 +538,11 @@ export function BatchImport() {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => setSelectedErrorRecord(record.id)}
+                          onClick={() => handleDownloadErrorReport(record.id)}
                           className="text-[var(--color-status-error-text)] hover:bg-[var(--color-status-error)]/12 hover:text-[var(--color-status-error-text)]"
                         >
-                          查看错误
+                          <Download className="mr-2 h-4 w-4" />
+                          下载错误报告
                         </Button>
                       )}
                     </TableCell>
@@ -554,57 +554,6 @@ export function BatchImport() {
         </DialogContent>
       </Dialog>
 
-      {/* 错误详情对话框 */}
-      <Dialog open={!!selectedErrorRecord} onOpenChange={() => setSelectedErrorRecord(null)}>
-        <DialogContent className={`max-w-4xl ${DIALOG_CLASS}`}>
-          <DialogHeader>
-            <DialogTitle className="text-[var(--color-neutral-11)] flex items-center gap-2">
-              <CircleX className="w-5 h-5 text-[var(--color-status-error-text)]" />
-              导入错误详情
-            </DialogTitle>
-            <DialogDescription className="text-[var(--color-neutral-08)]">
-              以下数据未能成功导入，请修正后重新导入
-            </DialogDescription>
-          </DialogHeader>
-          
-          <ScrollArea className="max-h-[400px]">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-[var(--color-neutral-03)] hover:bg-transparent">
-                  <TableHead className="text-[var(--color-neutral-10)]">行号</TableHead>
-                  <TableHead className="text-[var(--color-neutral-10)]">字段</TableHead>
-                  <TableHead className="text-[var(--color-neutral-10)]">错误值</TableHead>
-                  <TableHead className="text-[var(--color-neutral-10)]">错误原因</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {selectedErrorRecord && errorDetails[selectedErrorRecord]?.map((error, index) => (
-                  <TableRow key={index} className="border-[var(--color-neutral-03)]/45 hover:bg-[var(--color-brand-primary)]/8">
-                    <TableCell className="text-[var(--color-neutral-10)]">第 {error.row} 行</TableCell>
-                    <TableCell className="text-[var(--color-neutral-10)]">{error.field}</TableCell>
-                    <TableCell className="font-mono text-sm text-[var(--color-neutral-08)]">
-                      {error.value || '(空值)'}
-                    </TableCell>
-                    <TableCell className="text-[var(--color-status-error-text)]">{error.error}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </ScrollArea>
-
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={() => setSelectedErrorRecord(null)} className="border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-brand-primary-hover)]/12 hover:text-[var(--color-neutral-11)]">
-              关闭
-            </Button>
-            <Button 
-              onClick={() => selectedErrorRecord && handleDownloadErrorReport(selectedErrorRecord)}
-            >
-              <Download className="w-4 h-4 mr-2" />
-              下载错误报告
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

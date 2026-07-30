@@ -10,7 +10,7 @@ from app.config import Settings
 from app.security.write_policy import WriteProtectionMiddleware
 
 
-def _build_app(*, mode: str, token: str = "") -> FastAPI:
+def _build_app(*, mode: str, token: str = "", tag_token: str = "") -> FastAPI:
     app = FastAPI()
     app.add_middleware(
         WriteProtectionMiddleware,
@@ -18,6 +18,8 @@ def _build_app(*, mode: str, token: str = "") -> FastAPI:
         token=token,
         header_name="X-Demo-Write-Token",
         api_prefix="/api",
+        tag_token=tag_token,
+        tag_header_name="X-Tag-Write-Token",
     )
 
     @app.get("/api/people")
@@ -42,6 +44,10 @@ def _build_app(*, mode: str, token: str = "") -> FastAPI:
 
     @app.post("/api/ai/chat")
     def chat() -> dict[str, bool]:
+        return {"ok": True}
+
+    @app.post("/api/tags")
+    def create_tag() -> dict[str, bool]:
         return {"ok": True}
 
     return app
@@ -104,6 +110,24 @@ def test_token_mode_requires_the_configured_write_token() -> None:
     assert accepted.status_code == 200
 
 
+def test_readonly_allows_only_tag_mutations_with_the_dedicated_token() -> None:
+    client = TestClient(_build_app(mode="readonly", tag_token="tag-secret"))
+
+    assert client.post("/api/tags").status_code == 403
+    assert client.post(
+        "/api/tags",
+        headers={"X-Tag-Write-Token": "wrong"},
+    ).status_code == 403
+    assert client.post(
+        "/api/tags",
+        headers={"X-Tag-Write-Token": "tag-secret"},
+    ).status_code == 200
+    assert client.post(
+        "/api/people",
+        headers={"X-Tag-Write-Token": "tag-secret"},
+    ).status_code == 403
+
+
 def test_write_policy_configuration_defaults_local_development_to_enabled(monkeypatch) -> None:
     monkeypatch.delenv("APP_ENV", raising=False)
     monkeypatch.delenv("DEMO_WRITE_MODE", raising=False)
@@ -120,6 +144,11 @@ def test_write_policy_configuration_defaults_local_development_to_enabled(monkey
     assert defaults.demo_write_token == ""
     assert token_mode.effective_demo_write_mode == "token"
     assert token_mode.demo_write_token == "configured-secret"
+    assert defaults.tag_write_token == ""
+
+    tag_mode = Settings(_env_file=None, TAG_WRITE_TOKEN="tag-secret")
+    assert tag_mode.tag_write_token == "tag-secret"
+    assert tag_mode.tag_write_token_header == "X-Tag-Write-Token"
 
 
 def test_write_policy_configuration_defaults_non_local_environments_to_readonly(

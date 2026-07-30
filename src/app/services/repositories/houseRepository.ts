@@ -162,14 +162,21 @@ export const houseRepository = {
   },
 
   async getHousingHistory(houseId: string): Promise<HousingHistory[]> {
-    return callWithFallback(
+    const records = await callWithFallback(
       () => fetchJson<HousingHistory[]>(`/houses/${houseId}/history`),
       () => db.getHousingHistory((item) => item.houseId === houseId),
     );
+    return records.sort((left, right) => {
+      const leftPeriod = left.period ?? '';
+      const rightPeriod = right.period ?? '';
+      const leftCurrent = leftPeriod.split('~').slice(-1)[0]?.trim() === '至今' ? 1 : 0;
+      const rightCurrent = rightPeriod.split('~').slice(-1)[0]?.trim() === '至今' ? 1 : 0;
+      return rightCurrent - leftCurrent || rightPeriod.localeCompare(leftPeriod);
+    });
   },
 
   async getHousingHistoryRecords(gridId?: string): Promise<HousingHistory[]> {
-    return callWithFallback(
+    const records = await callWithFallback(
       () =>
         fetchJson<HousingHistory[]>(
           `/houses/history-records${buildQueryString({
@@ -185,6 +192,13 @@ export const houseRepository = {
         return house?.gridId === gridId;
       }),
     );
+    return records.sort((left, right) => {
+      const leftPeriod = left.period ?? '';
+      const rightPeriod = right.period ?? '';
+      const leftCurrent = leftPeriod.split('~').slice(-1)[0]?.trim() === '至今' ? 1 : 0;
+      const rightCurrent = rightPeriod.split('~').slice(-1)[0]?.trim() === '至今' ? 1 : 0;
+      return rightCurrent - leftCurrent || rightPeriod.localeCompare(leftPeriod);
+    });
   },
 
   async deleteHouse(id: string): Promise<void> {
@@ -209,7 +223,7 @@ export const houseRepository = {
   },
 
   async getGrids(): Promise<Grid[]> {
-    return callWithFallback(
+    return callWithFallback<Grid[]>(
       async () => {
         const response = await fetchJson<GridStatsResponse>('/stats/grids');
         return response.grids.map((grid) => ({

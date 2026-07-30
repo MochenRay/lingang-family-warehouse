@@ -113,27 +113,26 @@ function numericTicks(values: string[]) {
   return values.map((value) => Number(value.replace('%', '').trim())).filter(Number.isFinite);
 }
 
-test('R51：饼图图例与标签颜色一一对应，散点坐标域由样本驱动且 tooltip 可读', async ({ page }) => {
+test('R51：环图外置图例与扇区颜色一一对应，散点坐标域由样本驱动且 tooltip 可读', async ({ page }) => {
   await gotoFactorPage(page);
 
   const categoryChart = page.getByTestId('factor-category-chart');
-  const categoryLabels = (await categoryChart.locator('.recharts-pie-label-text').allTextContents())
-    .map((text) => text.trim().split(/\s+/)[0]);
-  const legendItems = await categoryChart.locator('.recharts-legend-item').evaluateAll((items) =>
+  const legendItems = await categoryChart.locator('[data-testid="factor-category-legend-item"]').evaluateAll((items) =>
     items.map((item) => ({
-      name: item.querySelector('.recharts-legend-item-text')?.textContent?.trim() ?? '',
-      color: item.querySelector('path')?.getAttribute('fill') ?? '',
+      name: item.textContent?.trim().replace(/\s+\d+(\.\d)?%$/, '') ?? '',
+      color: item.getAttribute('data-color') ?? '',
     })),
   );
   const sectors = await categoryChart.locator('path.recharts-sector').evaluateAll((items) =>
     items.map((item) => item.getAttribute('fill') ?? ''),
   );
 
-  expect(new Set(categoryLabels)).toEqual(new Set(EXPECTED_CATEGORIES));
+  await expect(categoryChart.locator('.recharts-pie-label-text')).toHaveCount(0);
+  await expect(categoryChart.locator('.recharts-pie-label-line')).toHaveCount(0);
   expect(new Set(legendItems.map((item) => item.name))).toEqual(new Set(EXPECTED_CATEGORIES));
   expect(legendItems).toHaveLength(sectors.length);
-  for (const [index, category] of categoryLabels.entries()) {
-    expect(legendItems.find((item) => item.name === category)?.color).toBe(sectors[index]);
+  for (const [index, legendItem] of legendItems.entries()) {
+    expect(legendItem.color).toBe(sectors[index]);
   }
 
   const scatterChart = page.getByTestId('factor-scatter-chart');
@@ -144,7 +143,7 @@ test('R51：饼图图例与标签颜色一一对应，散点坐标域由样本�
   expect(Math.max(...xTicks)).toBeGreaterThanOrEqual(90);
   expect(Math.min(...yTicks)).toBeGreaterThan(0);
   expect(Math.min(...yTicks)).toBeLessThanOrEqual(36);
-  expect(Math.max(...yTicks)).toBeGreaterThanOrEqual(100);
+  expect(Math.max(...yTicks)).toBeGreaterThanOrEqual(42);
 
   await scatterChart.locator('path.recharts-symbols[name*="丙社区"]').hover();
   const tooltip = scatterChart.locator('.recharts-tooltip-wrapper');
@@ -153,7 +152,7 @@ test('R51：饼图图例与标签颜色一一对应，散点坐标域由样本�
   await expect(tooltip).toContainText('走访覆盖率');
   await expect(tooltip).toContainText('90%');
   await expect(tooltip).toContainText('热度');
-  await expect(tooltip).toContainText('100');
+  await expect(tooltip).toContainText('42');
 });
 
 test('R51：当前 12 个网格样本均保留，边界气泡不被绘图区裁切', async ({ page }) => {

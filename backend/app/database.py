@@ -18,6 +18,10 @@ engine = create_engine(
 
 def init_database() -> None:
     SQLModel.metadata.create_all(engine)
+    from app.services.tags import ensure_system_tags
+
+    with Session(engine) as session:
+        ensure_system_tags(session)
 
 
 def get_session() -> Generator[Session, None, None]:

@@ -11,7 +11,7 @@ from app.models.person import Person
 from app.models.visit import VisitRecord
 from app.demo_data.regions import REGION_GRID_CATALOG
 
-TODAY = date(2026, 4, 15)
+TODAY = date(2026, 7, 30)
 MIGRATION_REFERENCE_DATE = date(2026, 7, 23)
 VISITORS = {item.id: item.manager_name for item in REGION_GRID_CATALOG}
 PROPERTY_ORG = {"type": "organization", "id": "PROPERTY_MGMT", "name": "海梦苑物业"}
@@ -25,6 +25,19 @@ COMMUNITIES = {
     item.id: {"community": item.short_community, "buildings": list(item.buildings)}
     for item in REGION_GRID_CATALOG
 }
+REGIONAL_HOUSE_TARGETS = {
+    "g_zf_1": 76,
+    "g_fs_1": 52,
+    "g_mp_1": 61,
+    "g_ls_1": 45,
+    "g_lk_1": 74,
+    "g_ly_1": 55,
+    "g_lz_1": 66,
+    "g_zy_1": 49,
+    "g_qx_1": 57,
+    "g_hy_1": 65,
+}
+BACKGROUND_POPULATION_TARGET = 1898
 RECENT_MIGRATION_MONTHS = (
     ("2026-02", 8, 5),
     ("2026-03", 10, 7),
@@ -94,25 +107,26 @@ def build_background_bundle(hero_bundle: DemoSeedBundle, seed: int = 20260415) -
     house_people: dict[str, list[Person]] = {}
 
     for grid_id, layout in COMMUNITIES.items():
-        for building in layout["buildings"]:
-            for unit in range(1, 3):
-                for floor in range(1, 6):
-                    for room in range(1, 4):
-                        house = _make_house(
-                            state=state,
-                            grid_id=grid_id,
-                            community=layout["community"],
-                            building=building,
-                            unit=f"{unit}单元",
-                            room=f"{floor}{room:02d}",
-                        )
-                        generated_houses.append(house)
-                        bundle.houses.append(house)
-                        people, histories = _build_household(state, house)
-                        house.memberCount = len(people)
-                        bundle.people.extend(people)
-                        bundle.housing_histories.extend(histories)
-                        house_people[house.id] = people
+        target_count = REGIONAL_HOUSE_TARGETS.get(
+            grid_id,
+            len(layout["buildings"]) * 2 * 5 * 3,
+        )
+        for building, unit, room in _iter_house_slots(layout["buildings"], target_count):
+            house = _make_house(
+                state=state,
+                grid_id=grid_id,
+                community=layout["community"],
+                building=building,
+                unit=unit,
+                room=room,
+            )
+            generated_houses.append(house)
+            bundle.houses.append(house)
+            people, histories = _build_household(state, house)
+            house.memberCount = len(people)
+            bundle.people.extend(people)
+            bundle.housing_histories.extend(histories)
+            house_people[house.id] = people
 
     bundle.visits.extend(_build_visits(state, generated_houses, house_people))
     bundle.conflicts.extend(_build_conflicts(state, generated_houses, house_people))
@@ -120,7 +134,66 @@ def build_background_bundle(hero_bundle: DemoSeedBundle, seed: int = 20260415) -
     bundle.housing_histories.extend(
         _build_recent_migration_histories(state, generated_houses, house_people)
     )
+    _restore_background_population_total(state, bundle, generated_houses, house_people)
     return bundle
+
+
+def _iter_house_slots(
+    buildings: list[str],
+    target_count: int,
+) -> list[tuple[str, str, str]]:
+    """Generate stable, unique room slots while preserving the requested district total."""
+    slots: list[tuple[str, str, str]] = []
+    floor = 1
+    while len(slots) < target_count:
+        for building in buildings:
+            for unit in range(1, 3):
+                for room in range(1, 4):
+                    slots.append((building, f"{unit}单元", f"{floor}{room:02d}"))
+                    if len(slots) == target_count:
+                        return slots
+        floor += 1
+    return slots
+
+
+def _restore_background_population_total(
+    state: SeedState,
+    bundle: DemoSeedBundle,
+    houses: list[House],
+    house_people: dict[str, list[Person]],
+) -> None:
+    """Preserve the canonical city population after redistributing houses by district."""
+    deficit = BACKGROUND_POPULATION_TARGET - len(bundle.people)
+    if deficit <= 0:
+        return
+
+    eligible_houses = sorted(
+        (house for house in houses if house.type == "自住" and house_people.get(house.id)),
+        key=lambda house: (house.gridId, house.id),
+    )
+    if not eligible_houses:
+        raise RuntimeError("Cannot restore background population without occupied owner homes")
+
+    for index in range(deficit):
+        house = eligible_houses[index * len(eligible_houses) // deficit]
+        existing_resident = house_people[house.id][0]
+        person = _make_person(
+            state,
+            grid_id=house.gridId,
+            house_id=house.id,
+            address=house.address,
+            gender="男" if index % 2 == 0 else "女",
+            age=28 + index % 35,
+            person_type="户籍",
+            tags=["家庭成员"],
+            risk="Low",
+        )
+        person.familyRelations = [
+            {"relatedPersonId": existing_resident.id, "relationType": "其他亲属"}
+        ]
+        bundle.people.append(person)
+        house_people[house.id].append(person)
+        house.memberCount += 1
 
 
 def _make_house(
@@ -147,7 +220,7 @@ def _make_house(
         residence_type = "闲置"
     elif house_type == "出租":
         tags.append("出租房")
-        occupancy_status = "户在人不在"
+        occupancy_status = "其他"
         residence_type = "租住"
         owner_address = "烟台市蓬莱区随机产权人地址"
     elif house_type == "经营":
@@ -430,6 +503,7 @@ def _build_rental_household(state: SeedState, house: House) -> tuple[list[Person
 
     if member_count >= 4:
         house.tags = _merge_tags(house.tags, ["流动人口聚集", "群租线索"])
+        house.occupancyStatus = "户在人不在"
     histories = [
         HousingHistory(
             id=state.next_history_id(),

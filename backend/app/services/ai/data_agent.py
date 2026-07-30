@@ -5,6 +5,14 @@ from sqlmodel import Session
 from app.services.ai.context_builder import build_person_context
 
 
+RISK_LABELS = {"High": "高风险", "Medium": "中风险", "Low": "低风险"}
+
+
+def _risk_label(value: object) -> str:
+    normalized = str(value or "")
+    return RISK_LABELS.get(normalized, normalized or "风险未评估")
+
+
 def _person_name(context: dict[str, object]) -> str:
     person = context.get("person")
     if isinstance(person, dict):
@@ -20,7 +28,7 @@ def _build_tag_suggestions(context: dict[str, object]) -> list[dict[str, object]
     suggestions: list[dict[str, object]] = []
 
     if person.get("risk") == "High":
-        suggestions.append({"tag": "重点关注", "reason": "当前风险等级为 High，需进入重点跟进视图。"})
+        suggestions.append({"tag": "重点关注", "reason": "当前为高风险，需进入重点跟进视图。"})
     if person.get("age", 0) and int(person.get("age", 0)) >= 65:
         suggestions.append({"tag": "老年人", "reason": "年龄达到老年人服务关注范围。"})
     if "独居老人" in signals:
@@ -67,7 +75,7 @@ def profile_summary(session: Session, context_id: str | None = None) -> dict[str
 
     content = "\n".join(
         [
-            f"{name}，{person.get('age')} 岁，{person.get('type')}，风险等级 {person.get('risk')}。",
+            f"{name}，{person.get('age')} 岁，{person.get('type')}，风险等级 {_risk_label(person.get('risk'))}。",
             f"居住信息：{house_text}。",
             f"标签信号：{'、'.join(context.get('signals') or []) or '暂无显式标签'}。",
             f"最近走访：{visits[0].get('date') + ' ' + visits[0].get('content') if visits else '暂无走访记录'}",

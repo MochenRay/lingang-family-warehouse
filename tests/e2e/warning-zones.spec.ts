@@ -12,11 +12,10 @@ const backendPort = Number(process.env.BACKEND_PORT ?? '8000');
  *     组内 heatScore 降序、同名社区（海梦苑第一/第二网格）板面 gridLabel 可区分。
  *  3. R07 摘要（mock fixture）：严格按高风险对象、超期待办、走访覆盖三项生成；
  *     零值字段省略、整行全零不占位、摘要单行且不溢出。
- *  4. 预警清单四级确定性排序（mock fixture）：severityRank 降序 → grid.heatScore 降序
+ *  4. 预警清单四级确定性排序（mock fixture）：先保留严重/中等/轻微各一条，再按 severityRank 降序 → grid.heatScore 降序
  *     → gridName zh-CN 升序 → warning.id 升序，排序后 .slice(0, 12)。
- *     fixture 构造 14 条预警：1 high（丁，heat 60）+ 2 medium（丙，heat 98，同网格
- *     验证 id 升序）+ 11 medium（heat 68，甲/乙验证 gridName zh-CN 升序，综合 01-09
- *     验证截断）。期望序见 EXPECTED_WARNING_IDS。
+ *     fixture 构造多档预警：丁网格的严重跟进和轻微对象、丙网格的中等纠纷与跟进，以及其余中等跟进；
+ *     保留轻微代表项后再截断。期望序见 EXPECTED_WARNING_IDS。
  *  5. 行为回归（mock fixture）：类型筛选生效、点击热区板弹出预警详情 Dialog。
  *
  * mock 面（仅 GET，驱动 analysisRepository.getGovernanceSnapshot 的最小集合）：
@@ -174,7 +173,7 @@ const EXPECTED_WARNING_IDS = [
   'g_fill_04-overdue',
   'g_fill_05-overdue',
   'g_fill_06-overdue',
-  'g_fill_07-overdue',
+  'g_high-risk',
 ];
 
 function dismissJourneyOverlay(page: Page) {
@@ -355,9 +354,9 @@ test.describe('P5-T7 方案一 预警清单排序与行为回归（mock fixture�
     const ids = await page
       .getByTestId('warning-list-item')
       .evaluateAll((elements) => elements.map((element) => String(element.getAttribute('data-warning-id'))));
-    // 一条断言锁全序：14 条 fixture 截断为 12 条，两个 tie-break 与截断全部蕴含在期望序中
+    // 一条断言锁全序：三档代表项、两个 tie-break 与截断全部蕴含在期望序中
     expect(ids).toEqual(EXPECTED_WARNING_IDS);
-    // 首条为唯一 high（丁社区热度低于丙网格 → 验证 severity 主键优先）
+    // 首条为严重级丁社区跟进任务，验证 severity 主键优先
     const first = page.getByTestId('warning-list-item').first();
     await expect(first).toContainText('丁社区');
     await expect(first).toContainText('严重');
@@ -399,28 +398,30 @@ test.describe('P5-T7 方案一 预警清单排序与行为回归（mock fixture�
   test('回归：类型筛选生效（跟进超期）', async ({ page }) => {
     await page.getByRole('combobox').first().click();
     await page.getByRole('option', { name: '跟进超期' }).click();
-    // 截断后 12 条中仅 g_tie_c-conflict 为「矛盾压力集中」，筛出 11 条「跟进超期」
+    // 截断后含一条矛盾压力和一条轻微重点对象，筛出其余 10 条「跟进超期」
     const items = page.getByTestId('warning-list-item');
-    await expect(items).toHaveCount(11);
+    await expect(items).toHaveCount(10);
     for (const item of await items.all()) {
       await expect(item).toContainText('跟进超期');
     }
     // 筛选后仍保持四级序（filter 保序）
     const ids = await items.evaluateAll((elements) =>
       elements.map((element) => String(element.getAttribute('data-warning-id'))));
-    expect(ids).toEqual(EXPECTED_WARNING_IDS.filter((id) => id !== 'g_tie_c-conflict'));
+    expect(ids).toEqual(EXPECTED_WARNING_IDS.filter((id) => (
+      id !== 'g_tie_c-conflict' && id !== 'g_high-risk'
+    )));
   });
 
   test('回归：点击热区板弹出预警详情 Dialog，Esc 关闭', async ({ page }) => {
-    // mock fixture 单分组（蓬莱示范片区/登州街道），首板 = 热度最高的丙社区
+    // 归一化热度模型下，丁社区同时包含高风险对象和 2 条超期待办，首板应为丁社区
     const firstBoard = page.getByTestId('zone-board').first();
-    await expect(firstBoard).toContainText('丙社区');
+    await expect(firstBoard).toContainText('丁社区');
     await firstBoard.click();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toBeVisible();
-    // 丙网格首条预警 = g_tie_c-conflict（矛盾压力集中）
-    await expect(dialog).toContainText('矛盾压力集中');
-    await expect(dialog).toContainText('登州街道丙社区第一网格');
+    // 丁网格首条预警 = g_high-overdue（跟进超期）
+    await expect(dialog).toContainText('跟进超期');
+    await expect(dialog).toContainText('登州街道丁社区第一网格');
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
   });

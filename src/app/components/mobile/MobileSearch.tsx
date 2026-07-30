@@ -33,6 +33,7 @@ import { mobileContextRepository } from '../../services/repositories/mobileConte
 import { personRepository } from '../../services/repositories/personRepository';
 import { searchRepository } from '../../services/repositories/searchRepository';
 import { tagRepository } from '../../services/repositories/tagRepository';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 interface MobileSearchProps {
   onBack: () => void;
@@ -324,9 +325,9 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                         <SelectTrigger><SelectValue placeholder="全部" /></SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">全部等级</SelectItem>
-                          <SelectItem value="High">高危 (红)</SelectItem>
-                          <SelectItem value="Medium">关注 (黄)</SelectItem>
-                          <SelectItem value="Low">正常 (绿)</SelectItem>
+                          <SelectItem value="High">高风险</SelectItem>
+                          <SelectItem value="Medium">中风险</SelectItem>
+                          <SelectItem value="Low">低风险</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -424,7 +425,7 @@ export function MobileSearch({ onBack, onRouteChange }: MobileSearchProps) {
                       <Badge variant="secondary" className="text-xs font-normal h-5">{person.type}</Badge>
                     </div>
                     <Badge variant={person.risk === 'High' ? 'destructive' : 'outline'} className="text-xs">
-                      {person.risk === 'High' ? '重点关注' : person.risk === 'Medium' ? '中风险' : '正常'}
+                      {getRiskLevelLabel(person.risk)}
                     </Badge>
                   </div>
 

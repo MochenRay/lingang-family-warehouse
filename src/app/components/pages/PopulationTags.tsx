@@ -17,13 +17,18 @@ import { Button } from '../ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { DARK_TOOLTIP_CURSOR, DarkChartTooltip } from '../statistics/DarkChartTooltip';
 import { CHART_COLORS, CHART_GRID_PROPS, CHART_RISK_COLORS, CHART_TICK } from '../../config/chartConfig';
-import { tagRepository, type TagSnapshot } from '../../services/repositories/tagRepository';
+import {
+  millisecondsUntilNextShanghaiMidnight,
+  tagRepository,
+  type TagSnapshot,
+} from '../../services/repositories/tagRepository';
 import { StatCard } from '../patterns/StatCard';
 import { StatusBadge, type StatusTone } from '../patterns/StatusBadge';
 import { EmptyState, ErrorState, LoadingState } from '../patterns/states';
 import { PANEL_CLASS } from '../patterns/surfaces';
 import { DetailDialogShell } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 const MUTED_TEXT = 'text-[var(--color-neutral-08)]';
 const RISK_LEVEL_COLORS: Record<string, string> = {
@@ -65,7 +70,7 @@ function PersonMatchCard({ record, selectedTagIds }: { record: TaggedPersonRecor
           </div>
         </div>
         <StatusBadge tone={RISK_BADGE_TONE[record.person.risk] ?? 'neutral'}>
-          {record.person.risk}
+          {getRiskLevelLabel(record.person.risk)}
         </StatusBadge>
       </div>
 
@@ -123,6 +128,34 @@ export function PopulationTags() {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    let midnightTimer = 0;
+    const refresh = async () => {
+      try {
+        const nextSnapshot = await tagRepository.getSnapshot();
+        if (!cancelled) setSnapshot(nextSnapshot);
+      } catch {
+        // Keep the last successful analysis visible; the initial load still exposes errors.
+      }
+    };
+    const scheduleMidnightRefresh = () => {
+      midnightTimer = window.setTimeout(() => {
+        void refresh().finally(scheduleMidnightRefresh);
+      }, millisecondsUntilNextShanghaiMidnight());
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    scheduleMidnightRefresh();
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(midnightTimer);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
+
   const topTags = useMemo(
     () =>
       (snapshot?.tags ?? [])
@@ -166,7 +199,7 @@ export function PopulationTags() {
       });
 
     return ['High', 'Medium', 'Low'].map((risk) => ({
-      name: risk,
+      name: getRiskLevelLabel(risk),
       value: riskMap.get(risk) ?? 0,
       fill: RISK_LEVEL_COLORS[risk],
     }));
@@ -216,10 +249,10 @@ export function PopulationTags() {
         <StatCard label="标签数量" value={snapshot?.tags.length ?? '--'} icon={Tags} tone="brand" />
         <StatCard label="覆盖率" value={`${coverageRate}%`} icon={Percent} tone="success" />
         <StatCard
-          label="规则标签命中"
+          label="普通标签命中"
           value={
             snapshot?.tags
-              .filter((tag) => tag.type === '规则标签')
+              .filter((tag) => tag.type === '普通标签')
               .reduce((sum, tag) => sum + tag.coverageCount, 0) ?? '--'
           }
           icon={Tag}
@@ -269,7 +302,7 @@ export function PopulationTags() {
         <Card className={PANEL_CLASS}>
           <CardHeader className="px-5 pb-2 pt-5">
             <CardTitle className="text-base font-semibold text-[var(--color-neutral-11)]">标签类型命中</CardTitle>
-            <CardDescription className={MUTED_TEXT}>对比规则标签与智能标签的覆盖规模。</CardDescription>
+            <CardDescription className={MUTED_TEXT}>对比普通标签与智能标签的覆盖规模。</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] px-5 pb-5">
             {loading ? (

@@ -15,6 +15,8 @@ interface GridStatsResponse {
     name: string;
     parentId?: string | null;
     managerName?: string | null;
+    visitCount?: number;
+    visitedPersonCount?: number;
   }>;
 }
 
@@ -184,6 +186,8 @@ export const personRepository = {
           name: grid.name,
           parentId: grid.parentId ?? undefined,
           managerName: grid.managerName ?? undefined,
+          visitCount: grid.visitCount,
+          visitedPersonCount: grid.visitedPersonCount,
         }));
       },
       () => db.getGrids(),

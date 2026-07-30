@@ -26,6 +26,11 @@ class Settings(BaseSettings):
         default="X-Demo-Write-Token",
         alias="DEMO_WRITE_TOKEN_HEADER",
     )
+    tag_write_token: str = Field(default="", alias="TAG_WRITE_TOKEN")
+    tag_write_token_header: str = Field(
+        default="X-Tag-Write-Token",
+        alias="TAG_WRITE_TOKEN_HEADER",
+    )
 
     ai_enabled: bool = Field(default=True, alias="AI_ENABLED")
     llm_model: str = Field(default="gemini-3.6-flash", alias="LLM_MODEL")

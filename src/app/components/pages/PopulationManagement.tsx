@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, type ReactNode } from "react";
 import {
   Plus,
   Download,
@@ -23,6 +23,8 @@ import {
   AlertCircle,
   Loader2,
   History as HistoryIcon,
+  Check,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -73,10 +75,15 @@ import {
 } from "../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
 import { ScrollArea } from "../ui/scroll-area";
-import { tagStore } from "../../utils/tagStore";
+import { getRiskLevelLabel } from "../../utils/riskLevel";
 import { houseRepository } from "../../services/repositories/houseRepository";
 import { personRepository } from "../../services/repositories/personRepository";
 import { visitRepository } from "../../services/repositories/visitRepository";
+import {
+  millisecondsUntilNextShanghaiMidnight,
+  tagRepository,
+  type TagSnapshot,
+} from "../../services/repositories/tagRepository";
 import {
   getPopulationLedgerSnapshot,
   invalidatePopulationLedgerCache,
@@ -114,6 +121,20 @@ interface Population extends Person {
 const HIGH_RISK_KEYWORDS = ["矫正", "信访", "涉诉", "精神障碍", "吸毒", "邪教"];
 const MEDIUM_RISK_KEYWORDS = ["独居", "失业", "残疾", "低保", "困境", "留守"];
 const PAGE_SIZE = 20;
+
+function isTagAuthorizationError(error: unknown): boolean {
+  return error instanceof Error
+    && (
+      error.message.includes("A valid tag administrator token is required")
+      || error.message.includes("标签管理员口令")
+    );
+}
+
+function haveSameIds(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const rightIds = new Set(right);
+  return left.every((id) => rightIds.has(id));
+}
 
 const RISK_BADGE_TONE: Record<string, StatusTone> = {
   High: "error",
@@ -253,6 +274,54 @@ const getRiskSummary = (person: Population, visits: VisitRecord[]) => {
   return "当前风险较低，但尚缺最近走访记录，建议补一轮基础核验。";
 };
 
+/**
+ * 新增/编辑人口表单的单开手风琴分区（type="single"、collapsible 语义）：
+ * 任一时刻只展开一组，点击已展开组可全部折叠；折叠只卸载面板 DOM，
+ * 表单值全部受控于父组件 formData/selectedPersonTags，切换分组不丢未保存输入。
+ */
+function FormAccordionSection({
+  id,
+  title,
+  openSection,
+  onToggle,
+  children,
+}: {
+  id: string;
+  title: string;
+  openSection: string;
+  onToggle: (id: string) => void;
+  children: ReactNode;
+}) {
+  const open = openSection === id;
+  return (
+    <div data-form-accordion-item={id} className={PANEL_CLASS}>
+      <h3>
+        <button
+          type="button"
+          id={`form-section-trigger-${id}`}
+          aria-expanded={open}
+          aria-controls={`form-section-panel-${id}`}
+          onClick={() => onToggle(id)}
+          className="flex w-full items-center justify-between gap-2 rounded-[2px] px-4 py-2.5 text-left text-sm font-semibold text-[var(--color-neutral-11)] outline-none transition-colors hover:bg-[var(--color-neutral-02)] focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-1"
+        >
+          <span>{title}</span>
+          {open ? <ChevronUp className="h-4 w-4 shrink-0" /> : <ChevronDown className="h-4 w-4 shrink-0" />}
+        </button>
+      </h3>
+      {open ? (
+        <div
+          id={`form-section-panel-${id}`}
+          role="region"
+          aria-labelledby={`form-section-trigger-${id}`}
+          className="border-t border-[var(--color-neutral-03)] p-4"
+        >
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function PopulationManagement() {
   const [populations, setPopulations] = useState<Population[]>([]);
   const [populationTotal, setPopulationTotal] = useState(0);
@@ -291,19 +360,22 @@ export function PopulationManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
   const ledgerLoadGeneration = useRef(0);
-  
-  // 标签管理状态
-  const [recommendedTags, setRecommendedTags] = useState<string[]>([]); // 推荐的标签名称
-  const [selectedPersonTags, setSelectedPersonTags] = useState<string[]>([]); // 当前选中的所有标签
+  const tagSnapshotLoadGeneration = useRef(0);
 
-  // 编辑表单折叠状态
-  const [expandedSections, setExpandedSections] = useState({
-    detail: false,
-    biography: false,
-    activity: false,
-    health: false,
-    events: false,
-  });
+  // 兼容既有人口字段；新标签系统单独使用定义与关联表，不能混写到 person.tags。
+  const [selectedPersonTags, setSelectedPersonTags] = useState<string[]>([]);
+  const [tagSnapshot, setTagSnapshot] = useState<TagSnapshot | null>(null);
+  const [isTagSnapshotLoading, setIsTagSnapshotLoading] = useState(false);
+  const [tagSnapshotError, setTagSnapshotError] = useState<string | null>(null);
+  const [initialOrdinaryTagIds, setInitialOrdinaryTagIds] = useState<string[]>([]);
+  const [selectedOrdinaryTagIds, setSelectedOrdinaryTagIds] = useState<string[]>([]);
+  const [tagSelectionInitializedFor, setTagSelectionInitializedFor] = useState<string | null>(null);
+  const [isTagAuthorizationDialogOpen, setIsTagAuthorizationDialogOpen] = useState(false);
+  const [tagAuthorizationInput, setTagAuthorizationInput] = useState("");
+
+  // 编辑表单单开手风琴状态：任一时刻只展开一组，再次点击已展开组则全部折叠
+  const [openFormSection, setOpenFormSection] = useState<string>('basic');
+  const toggleFormSection = (id: string) => setOpenFormSection((prev) => (prev === id ? '' : id));
 
   // 列显示设置
   const [visibleColumns, setVisibleColumns] = useState({
@@ -322,54 +394,6 @@ export function PopulationManagement() {
     type: false, // 默认收起
     status: false, // 默认收起
   });
-
-  // 获取所有标签
-  const allTags = tagStore.getTags();
-  const enabledTags = allTags.filter((t) => t.status === "启用");
-
-  // 智能标签推测函数
-  const getRecommendedTagsFromFormData = (data: Partial<Population>): string[] => {
-    const recommended: string[] = [];
-    
-    // 根据年龄推测
-    if (data.age !== undefined) {
-      if (data.age >= 60) {
-        const tag = enabledTags.find(t => t.name === '60岁及以上老年人');
-        if (tag) recommended.push(tag.name);
-      }
-      if (data.age >= 6 && data.age <= 18) {
-        const tag = enabledTags.find(t => t.name === '学龄儿童');
-        if (tag) recommended.push(tag.name);
-      }
-    }
-    
-    // 根据居住类型推测
-    if (data.type === '流动') {
-      const tag = enabledTags.find(t => t.name === '流动人口');
-      if (tag) recommended.push(tag.name);
-    }
-    
-    return recommended;
-  };
-
-  // 监听formData变化，自动更新推荐标签
-  useEffect(() => {
-    if (isAddDialogOpen || isEditDialogOpen) {
-      const newRecommended = getRecommendedTagsFromFormData(formData);
-      
-      setRecommendedTags(prevRecommended => {
-        // 找出新增的推荐标签
-        const addedRecommended = newRecommended.filter(t => !prevRecommended.includes(t));
-        
-        // 新推荐的标签自动添加到选中列表
-        if (addedRecommended.length > 0) {
-          setSelectedPersonTags(prev => [...new Set([...prev, ...addedRecommended])]);
-        }
-        
-        return newRecommended;
-      });
-    }
-  }, [formData.age, formData.type, isAddDialogOpen, isEditDialogOpen]);
 
   // 房屋级联选择相关函数
   const getAvailableCommunities = () => {
@@ -552,6 +576,65 @@ export function PopulationManagement() {
     };
   }, []);
 
+  const refreshTagSnapshot = useCallback(async (showLoading = true) => {
+    const generation = ++tagSnapshotLoadGeneration.current;
+    if (showLoading) setIsTagSnapshotLoading(true);
+    setTagSnapshotError(null);
+    try {
+      const snapshot = await tagRepository.getSnapshot();
+      if (generation !== tagSnapshotLoadGeneration.current) return;
+      setTagSnapshot(snapshot);
+    } catch (error) {
+      if (generation !== tagSnapshotLoadGeneration.current) return;
+      setTagSnapshotError(error instanceof Error ? error.message : "标签数据读取失败");
+    } finally {
+      if (generation === tagSnapshotLoadGeneration.current && showLoading) {
+        setIsTagSnapshotLoading(false);
+      }
+    }
+  }, []);
+
+  // 标签定义在表单打开时按需读取；表单长时间停留时也按上海时区零点和可见性刷新。
+  useEffect(() => {
+    if (!isAddDialogOpen && !isEditDialogOpen) return;
+
+    void refreshTagSnapshot(true);
+    let midnightTimer = 0;
+    const scheduleMidnightRefresh = () => {
+      midnightTimer = window.setTimeout(() => {
+        void refreshTagSnapshot(false).finally(scheduleMidnightRefresh);
+      }, millisecondsUntilNextShanghaiMidnight());
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") void refreshTagSnapshot(false);
+    };
+    scheduleMidnightRefresh();
+    document.addEventListener("visibilitychange", handleVisibility);
+    return () => {
+      window.clearTimeout(midnightTimer);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [isAddDialogOpen, isEditDialogOpen, refreshTagSnapshot]);
+
+  // 快照可能晚于编辑弹窗返回；只初始化一次，避免后台刷新覆盖尚未保存的勾选。
+  useEffect(() => {
+    if (
+      !isEditDialogOpen
+      || !selectedPopulation
+      || !tagSnapshot
+      || tagSelectionInitializedFor === selectedPopulation.id
+    ) {
+      return;
+    }
+    const record = tagSnapshot.people.find((item) => item.person.id === selectedPopulation.id);
+    const ordinaryIds = record?.matchedTags
+      .filter((match) => match.source === "manual")
+      .map((match) => match.tagId) ?? [];
+    setInitialOrdinaryTagIds(ordinaryIds);
+    setSelectedOrdinaryTagIds(ordinaryIds);
+    setTagSelectionInitializedFor(selectedPopulation.id);
+  }, [isEditDialogOpen, selectedPopulation, tagSelectionInitializedFor, tagSnapshot]);
+
   const clearPersonFocusQuery = () => {
     if (typeof window === 'undefined') {
       return;
@@ -689,6 +772,17 @@ export function PopulationManagement() {
     map.set(visit.targetId, current);
     return map;
   }, new Map<string, VisitRecord[]>());
+  const ordinaryManagedTags = tagSnapshot?.tags.filter((tag) => tag.type === "普通标签") ?? [];
+  const smartManagedTags = tagSnapshot?.tags.filter((tag) => tag.type === "智能标签") ?? [];
+  const selectedTagRecord = selectedPopulation
+    ? tagSnapshot?.people.find((record) => record.person.id === selectedPopulation.id)
+    : undefined;
+  const smartMatchesById = new Map(
+    (selectedTagRecord?.matchedTags ?? [])
+      .filter((match) => match.source === "smart")
+      .map((match) => [match.tagId, match]),
+  );
+  const hasOrdinaryTagChanges = !haveSameIds(initialOrdinaryTagIds, selectedOrdinaryTagIds);
 
   const getPopulationTags = (tagIds?: string[]) => {
     if (!tagIds || tagIds.length === 0) return [];
@@ -767,14 +861,14 @@ export function PopulationManagement() {
   const handleEdit = (pop: Population) => {
     setSelectedPopulation(pop);
     setFormData(pop);
-    
-    // 编辑时，根据当前信息推测推荐标签
-    const currentRecommended = getRecommendedTagsFromFormData(pop);
-    setRecommendedTags(currentRecommended);
-    
-    // 将现有标签设置为选中状态
+    setOpenFormSection('basic');
+
+    // person.tags 只作历史兼容；普通/智能标签由独立快照和关联表初始化。
     setSelectedPersonTags(pop.tags || []);
-    
+    setInitialOrdinaryTagIds([]);
+    setSelectedOrdinaryTagIds([]);
+    setTagSelectionInitializedFor(null);
+    setTagSnapshotError(null);
     setIsEditDialogOpen(true);
   };
 
@@ -817,9 +911,35 @@ export function PopulationManagement() {
       houseUnit: undefined,
       houseRoom: undefined
     });
-    setRecommendedTags([]);
     setSelectedPersonTags([]);
+    setInitialOrdinaryTagIds([]);
+    setSelectedOrdinaryTagIds([]);
+    setTagSelectionInitializedFor("__new__");
+    setTagSnapshotError(null);
+    setOpenFormSection('basic');
     setIsAddDialogOpen(true);
+  };
+
+  const resetManagedTagForm = () => {
+    setInitialOrdinaryTagIds([]);
+    setSelectedOrdinaryTagIds([]);
+    setTagSelectionInitializedFor(null);
+    setTagSnapshotError(null);
+    setIsTagAuthorizationDialogOpen(false);
+    setTagAuthorizationInput("");
+  };
+
+  const syncOrdinaryTagAssignments = async (personId: string, token?: string) => {
+    const additions = selectedOrdinaryTagIds.filter((id) => !initialOrdinaryTagIds.includes(id));
+    const removals = initialOrdinaryTagIds.filter((id) => !selectedOrdinaryTagIds.includes(id));
+
+    for (const tagId of additions) {
+      await tagRepository.assignOrdinaryTag(tagId, personId, token);
+    }
+    for (const tagId of removals) {
+      await tagRepository.removeOrdinaryTag(tagId, personId, token);
+    }
+    setInitialOrdinaryTagIds(selectedOrdinaryTagIds);
   };
 
   const handleSaveAdd = async () => {
@@ -866,8 +986,8 @@ export function PopulationManagement() {
       await loadData();
       setIsAddDialogOpen(false);
       setFormData({});
-      setRecommendedTags([]);
       setSelectedPersonTags([]);
+      resetManagedTagForm();
     } catch (error) {
       console.error("Failed to add person", error);
       alert("新增人口失败，请稍后重试。");
@@ -876,11 +996,17 @@ export function PopulationManagement() {
     }
   };
 
-  const handleSaveEdit = async () => {
+  const handleSaveEdit = async (tagToken?: string) => {
     if (selectedPopulation) {
       setIsSaving(true);
+      let tagAssignmentsSaved = false;
       try {
-        await personRepository.updatePerson(selectedPopulation.id, {
+        if (hasOrdinaryTagChanges) {
+          await syncOrdinaryTagAssignments(selectedPopulation.id, tagToken);
+          tagAssignmentsSaved = true;
+        }
+
+        const personUpdates: Partial<Person> = {
           name: formData.name,
           idCard: formData.idCard,
           phone: formData.phone,
@@ -894,7 +1020,6 @@ export function PopulationManagement() {
           houseId: formData.houseId,
           tags: selectedPersonTags,
           risk: inferRiskLevel(selectedPersonTags, formData.careLabels),
-          updatedAt: new Date().toISOString(),
           birthDate: formData.birthDate,
           birthplace: formData.birthplace,
           maritalStatus: formData.maritalStatus,
@@ -912,28 +1037,72 @@ export function PopulationManagement() {
           activityParticipation: formData.activityParticipation,
           healthRecord: formData.healthRecord,
           importantEvents: formData.importantEvents,
-        });
+        };
+        const personFieldsChanged = (Object.keys(personUpdates) as Array<keyof Person>).some((key) =>
+          JSON.stringify(personUpdates[key] ?? null) !== JSON.stringify(selectedPopulation[key] ?? null),
+        );
+        if (personFieldsChanged) {
+          await personRepository.updatePerson(selectedPopulation.id, {
+            ...personUpdates,
+            updatedAt: new Date().toISOString(),
+          });
+        }
+
         invalidatePopulationLedgerCache();
-        await loadData();
+        await Promise.all([loadData(), refreshTagSnapshot(false)]);
         setIsEditDialogOpen(false);
         setSelectedPopulation(null);
         setFormData({});
-        setRecommendedTags([]);
         setSelectedPersonTags([]);
-        setExpandedSections({
-          detail: false,
-          biography: false,
-          activity: false,
-          health: false,
-          events: false,
-        });
+        resetManagedTagForm();
+        setOpenFormSection('basic');
+        toast.success(
+          hasOrdinaryTagChanges && !personFieldsChanged
+            ? "人员标签已更新"
+            : "人口信息已保存",
+        );
       } catch (error) {
+        if (isTagAuthorizationError(error)) {
+          tagRepository.clearWriteToken();
+          setTagAuthorizationInput("");
+          setIsTagAuthorizationDialogOpen(true);
+          toast.error("标签管理员口令无效，请重新输入");
+          return;
+        }
         console.error("Failed to update person", error);
-        alert("更新人口信息失败，请稍后重试。");
+        if (tagAssignmentsSaved) {
+          toast.error("普通标签已保存，但人口基础信息未更新；请检查当前部署的人员写入权限");
+        } else {
+          toast.error(error instanceof Error ? error.message : "更新人口信息失败，请稍后重试");
+        }
       } finally {
         setIsSaving(false);
       }
     }
+  };
+
+  const requestFormSave = () => {
+    if (isAddDialogOpen) {
+      void handleSaveAdd();
+      return;
+    }
+    if (!isEditDialogOpen) return;
+    if (hasOrdinaryTagChanges && !tagRepository.getStoredWriteToken()) {
+      setTagAuthorizationInput("");
+      setIsTagAuthorizationDialogOpen(true);
+      return;
+    }
+    void handleSaveEdit(tagRepository.getStoredWriteToken() || undefined);
+  };
+
+  const submitTagAuthorization = async () => {
+    const token = tagAuthorizationInput.trim();
+    if (!token) {
+      toast.error("请输入标签专用管理员口令");
+      return;
+    }
+    tagRepository.storeWriteToken(token);
+    await handleSaveEdit(token);
   };
 
   const handleBatchTag = () => {
@@ -1182,19 +1351,19 @@ export function PopulationManagement() {
                       <SelectItem value="High">
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[var(--color-status-error)]" />
-                          高危
+                          {getRiskLevelLabel("High")}
                         </span>
                       </SelectItem>
                       <SelectItem value="Medium">
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[var(--color-status-warning)]" />
-                          关注
+                          {getRiskLevelLabel("Medium")}
                         </span>
                       </SelectItem>
                       <SelectItem value="Low">
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-[var(--color-status-success)]" />
-                          正常
+                          {getRiskLevelLabel("Low")}
                         </span>
                       </SelectItem>
                     </SelectContent>
@@ -1376,7 +1545,7 @@ export function PopulationManagement() {
                             pop.risk === 'High' ? 'bg-[var(--color-status-error)] shadow-[0_0_0_3px_var(--color-status-error-soft)]' :
                             pop.risk === 'Medium' ? 'bg-[var(--color-status-warning)] shadow-[0_0_0_3px_var(--color-status-warning-soft)]' :
                             'bg-[var(--color-status-success)] shadow-[0_0_0_3px_var(--color-status-success-soft)]'
-                          }`} title={`风险等级: ${pop.risk}`} />
+                          }`} title={`风险等级: ${getRiskLevelLabel(pop.risk)}`} />
                           <span className="font-medium text-[var(--color-neutral-11)]">{pop.name}</span>
                         </div>
                       </TableCell>
@@ -1507,10 +1676,11 @@ export function PopulationManagement() {
         onOpenChange={handleViewDialogOpenChange}
         maxWidth="5xl"
         contentLabel="人口详情"
+        headerLayout="title-first"
         badges={selectedPopulation ? (
           <>
             <StatusBadge tone={RESIDENCE_TYPE_TONE[selectedPopulation.type] ?? 'neutral'}>{selectedPopulation.type}</StatusBadge>
-            <StatusBadge tone={RISK_BADGE_TONE[selectedPopulation.risk] ?? 'neutral'}>{selectedPopulation.risk}</StatusBadge>
+            <StatusBadge tone={RISK_BADGE_TONE[selectedPopulation.risk] ?? 'neutral'}>{getRiskLevelLabel(selectedPopulation.risk)}</StatusBadge>
             <StatusBadge tone={STATUS_BADGE_TONE[selectedPopulation.status] ?? 'neutral'}>{selectedPopulation.status}</StatusBadge>
           </>
         ) : undefined}
@@ -1586,7 +1756,7 @@ export function PopulationManagement() {
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <StatusBadge tone={RISK_BADGE_TONE[selectedPopulation.risk] ?? 'neutral'}>
-                            {selectedPopulation.risk}
+                            {getRiskLevelLabel(selectedPopulation.risk)}
                           </StatusBadge>
                           <span className="text-sm text-[var(--color-neutral-08)]">
                             最近走访：{getLastVisitDate(selectedPopulationVisits) ?? "暂无记录"}
@@ -1768,7 +1938,8 @@ export function PopulationManagement() {
                 </TabsContent>
 
                 <TabsContent value="relation" className="space-y-4">
-                  <>
+                  {/* 同住与血缘关系：桌面端横向双列、窄屏单列 */}
+                  <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                         {/* 同住关系 */}
                         <DetailSection
                           icon={Home}
@@ -1840,8 +2011,9 @@ export function PopulationManagement() {
                               <p className="text-[var(--color-neutral-08)] text-sm text-center py-4">暂无血缘关系记录</p>
                             )}
                         </DetailSection>
+                  </div>
 
-                        {/* 关系网络图 */}
+                        {/* 关系网络图：占满整行，位于双列关系区下方 */}
                         <DetailSection icon={Network} title="关系网络" description="以该人员为中心展示血缘与同住关系">
                             <div className="relative w-full h-64 bg-gradient-to-br from-[var(--color-brand-primary-hover)]/12 to-[var(--color-accent-purple)]/10 rounded-[4px] flex items-center justify-center">
                               {/* 中心节点 */}
@@ -1979,7 +2151,6 @@ export function PopulationManagement() {
                               </div>
                             </div>
                         </DetailSection>
-                  </>
                 </TabsContent>
 
                 <TabsContent value="history" className="space-y-4">
@@ -2019,7 +2190,20 @@ export function PopulationManagement() {
       </DetailDialogShell>
    
       {/* 新增/编辑对话框 */}
-      <Dialog open={isAddDialogOpen || isEditDialogOpen} onOpenChange={(open) => { if (!open) { setIsAddDialogOpen(false); setIsEditDialogOpen(false); setFormData({}); setRecommendedTags([]); setSelectedPersonTags([]); setExpandedSections({ detail: false, biography: false, activity: false, health: false, events: false }); } }}>
+      <Dialog
+        open={isAddDialogOpen || isEditDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && isTagAuthorizationDialogOpen) return;
+          if (!open) {
+            setIsAddDialogOpen(false);
+            setIsEditDialogOpen(false);
+            setFormData({});
+            setSelectedPersonTags([]);
+            resetManagedTagForm();
+            setOpenFormSection('basic');
+          }
+        }}
+      >
         <DialogContent className={`max-w-2xl max-h-[90vh] flex flex-col ${DIALOG_CLASS} shadow-2xl`}>
           <DialogHeader>
             <DialogTitle>{isAddDialogOpen ? "新增人口" : "编辑人口"}</DialogTitle>
@@ -2027,8 +2211,10 @@ export function PopulationManagement() {
               {isAddDialogOpen ? "录入新的人口信息。" : "修改现有人口信息。"}
             </DialogDescription>
           </DialogHeader>
-          <ScrollArea className="flex-1 pr-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
-          <div className="grid grid-cols-2 gap-4 py-4">
+          <ScrollArea data-form-scroll-body className="flex-1 pr-4 overflow-y-auto" style={{ maxHeight: 'calc(90vh - 180px)' }}>
+          <div className="space-y-3 py-4">
+          <FormAccordionSection id="basic" title="基础信息" openSection={openFormSection} onToggle={toggleFormSection}>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
              <div><Label>姓名 *</Label><Input value={formData.name || ""} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
              <div>
                <Label>身份证号 *</Label>
@@ -2142,21 +2328,12 @@ export function PopulationManagement() {
                  )}
                </div>
              </div>
-             <div className="col-span-2"><Label>详细地址</Label><Input value={formData.address || ""} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
+             <div className="sm:col-span-2"><Label>详细地址</Label><Input value={formData.address || ""} onChange={(e) => setFormData({ ...formData, address: e.target.value })} /></div>
+          </div>
+          </FormAccordionSection>
 
-             {/* 详细信息折叠区 */}
-             <div className="col-span-2">
-               <Button
-                 type="button"
-                 variant="outline"
-                 className="w-full justify-between"
-                 onClick={() => setExpandedSections({ ...expandedSections, detail: !expandedSections.detail })}
-               >
-                 <span>详细信息</span>
-                 {expandedSections.detail ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-               </Button>
-               {expandedSections.detail && (
-                 <div className={`grid grid-cols-2 gap-4 mt-4 p-4 ${PANEL_CLASS}`}>
+          <FormAccordionSection id="detail" title="详细信息" openSection={openFormSection} onToggle={toggleFormSection}>
+                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                    <div><Label>出生年月</Label><Input value={formData.birthDate || ""} onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })} placeholder="例:1989-01" /></div>
                    <div><Label>籍贯</Label><Input value={formData.birthplace || ""} onChange={(e) => setFormData({ ...formData, birthplace: e.target.value })} /></div>
                    <div>
@@ -2181,8 +2358,8 @@ export function PopulationManagement() {
                      />
                      <Label htmlFor="militaryService" className="cursor-pointer">曾服役</Label>
                    </div>
-                   <div className="col-span-2"><Label>毕业院校及专业</Label><Input value={formData.graduationInfo || ""} onChange={(e) => setFormData({ ...formData, graduationInfo: e.target.value })} /></div>
-                   <div className="col-span-2"><Label>工作单位</Label><Input value={formData.workplace || ""} onChange={(e) => setFormData({ ...formData, workplace: e.target.value })} /></div>
+                   <div className="sm:col-span-2"><Label>毕业院校及专业</Label><Input value={formData.graduationInfo || ""} onChange={(e) => setFormData({ ...formData, graduationInfo: e.target.value })} /></div>
+                   <div className="sm:col-span-2"><Label>工作单位</Label><Input value={formData.workplace || ""} onChange={(e) => setFormData({ ...formData, workplace: e.target.value })} /></div>
                    <div className="flex items-center space-x-2">
                      <Checkbox
                        id="communityVolunteer"
@@ -2194,45 +2371,19 @@ export function PopulationManagement() {
                    <div><Label>技能特长</Label><Input value={formData.skills || ""} onChange={(e) => setFormData({ ...formData, skills: e.target.value })} /></div>
                    <div><Label>宠物情况</Label><Input value={formData.pets || ""} onChange={(e) => setFormData({ ...formData, pets: e.target.value })} /></div>
                  </div>
-               )}
-             </div>
+          </FormAccordionSection>
 
-             {/* 个人经历折叠区 */}
-             <div className="col-span-2">
-               <Button
-                 type="button"
-                 variant="outline"
-                 className="w-full justify-between"
-                 onClick={() => setExpandedSections({ ...expandedSections, biography: !expandedSections.biography })}
-               >
-                 <span>个人经历</span>
-                 {expandedSections.biography ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-               </Button>
-               {expandedSections.biography && (
-                 <div className={`mt-4 p-4 ${PANEL_CLASS}`}>
+          <FormAccordionSection id="biography" title="个人经历" openSection={openFormSection} onToggle={toggleFormSection}>
                    <Textarea
                      value={formData.biography || ""}
                      onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
                      placeholder="记录个人学习、工作经历等..."
                      rows={6}
                    />
-                 </div>
-               )}
-             </div>
+          </FormAccordionSection>
 
-             {/* 活动参与折叠区 */}
-             <div className="col-span-2">
-               <Button
-                 type="button"
-                 variant="outline"
-                 className="w-full justify-between"
-                 onClick={() => setExpandedSections({ ...expandedSections, activity: !expandedSections.activity })}
-               >
-                 <span>活动参与</span>
-                 {expandedSections.activity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-               </Button>
-               {expandedSections.activity && (
-                 <div className={`mt-4 p-4 space-y-3 ${PANEL_CLASS}`}>
+          <FormAccordionSection id="activity" title="活动参与" openSection={openFormSection} onToggle={toggleFormSection}>
+                 <div className="space-y-3">
                    <div>
                      <Label>参与活动</Label>
                      <Textarea
@@ -2264,22 +2415,10 @@ export function PopulationManagement() {
                      />
                    </div>
                  </div>
-               )}
-             </div>
+          </FormAccordionSection>
 
-             {/* 健康档案折叠区 */}
-             <div className="col-span-2">
-               <Button
-                 type="button"
-                 variant="outline"
-                 className="w-full justify-between"
-                 onClick={() => setExpandedSections({ ...expandedSections, health: !expandedSections.health })}
-               >
-                 <span>健康档案</span>
-                 {expandedSections.health ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-               </Button>
-               {expandedSections.health && (
-                 <div className={`mt-4 p-4 space-y-3 ${PANEL_CLASS}`}>
+          <FormAccordionSection id="health" title="健康档案" openSection={openFormSection} onToggle={toggleFormSection}>
+                 <div className="space-y-3">
                    <div className="flex items-center space-x-2">
                      <Checkbox
                        id="hasChronic"
@@ -2370,107 +2509,181 @@ export function PopulationManagement() {
                      />
                    </div>
                  </div>
-               )}
-             </div>
+          </FormAccordionSection>
 
-             {/* 重要事件记录折叠区 */}
-             <div className="col-span-2">
-               <Button
-                 type="button"
-                 variant="outline"
-                 className="w-full justify-between"
-                 onClick={() => setExpandedSections({ ...expandedSections, events: !expandedSections.events })}
-               >
-                 <span>重要事件记录</span>
-                 {expandedSections.events ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-               </Button>
-               {expandedSections.events && (
-                 <div className={`mt-4 p-4 ${PANEL_CLASS}`}>
+          <FormAccordionSection id="events" title="重要事件" openSection={openFormSection} onToggle={toggleFormSection}>
                    <Textarea
                      value={formData.importantEvents || ""}
                      onChange={(e) => setFormData({ ...formData, importantEvents: e.target.value })}
                      placeholder="记录重要事件、特殊情况等..."
                      rows={4}
                    />
-                 </div>
-               )}
-             </div>
+          </FormAccordionSection>
 
-             <div className="col-span-2">
-               <Label>人员标签</Label>
-               
-               {/* 推荐标签区域 - 始终显示 */}
-               <div className="mt-2 p-3 bg-[var(--color-brand-primary-hover)]/12 rounded-[4px] border border-[var(--color-brand-primary-hover)]/40">
-                 <div className="flex items-center justify-between mb-2">
-                   <span className="text-xs font-medium text-[var(--color-status-info-text)]">推荐标签</span>
-                   <span className="text-xs text-[var(--color-brand-text)]">
-                     {recommendedTags.length > 0 ? '点击可取消选中' : '暂无推荐'}
-                   </span>
-                 </div>
-                 <div className="flex flex-wrap gap-2 min-h-[32px]">
-                   {recommendedTags.length > 0 ? (
-                     recommendedTags.map((tagName, index) => {
-                       const isSelected = selectedPersonTags.includes(tagName);
-                       return (
-                         <Badge
-                           key={index}
-                           variant={isSelected ? "default" : "outline"}
-                           className="cursor-pointer bg-[var(--color-brand-primary-hover)] text-[var(--color-neutral-11)] hover:bg-[var(--color-brand-primary)]"
-                           onClick={() => {
-                             if (isSelected) {
-                               setSelectedPersonTags(selectedPersonTags.filter(t => t !== tagName));
-                             } else {
-                               setSelectedPersonTags([...selectedPersonTags, tagName]);
-                             }
-                           }}
-                         >
-                           {tagName}
-                         </Badge>
-                       );
-                     })
-                   ) : (
-                     <span className="text-xs text-[var(--color-neutral-08)] italic">根据填写内容自动推荐标签</span>
-                   )}
-                 </div>
-               </div>
-               
-               {/* 手动添加标签区域 - 始终显示 */}
-               <div className={`mt-2 p-3 ${PANEL_CLASS}`}>
-                 <div className="mb-2">
-                   <span className="text-xs font-medium text-[var(--color-neutral-10)]">手动添加</span>
-                 </div>
-                 <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-                   {enabledTags
-                     .filter(tag => !recommendedTags.includes(tag.name)) // 不显示已在推荐区的标签
-                     .map(tag => {
-                       const isSelected = selectedPersonTags.includes(tag.name);
-                       
-                       return (
-                         <Badge
-                           key={tag.id}
-                           variant={isSelected ? "default" : "outline"}
-                           className="cursor-pointer hover:opacity-80"
-                           onClick={() => {
-                             if (isSelected) {
-                               setSelectedPersonTags(selectedPersonTags.filter(t => t !== tag.name));
-                             } else {
-                               setSelectedPersonTags([...selectedPersonTags, tag.name]);
-                             }
-                           }}
-                         >
-                           {tag.name}
-                         </Badge>
-                       );
-                     })}
-                 </div>
-               </div>
-             </div>
+          <FormAccordionSection id="tags" title="人员标签" openSection={openFormSection} onToggle={toggleFormSection}>
+            <div className="space-y-3" data-managed-tag-editor>
+              {isTagSnapshotLoading ? (
+                <div className="flex items-center gap-2 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3 text-sm text-[var(--color-neutral-08)]" aria-live="polite">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  正在读取标签规则...
+                </div>
+              ) : tagSnapshotError ? (
+                <div className="rounded-[4px] border border-[var(--color-status-error)]/45 bg-[var(--color-status-error)]/10 p-3">
+                  <p className="text-sm font-medium text-[var(--color-status-error-text)]">标签数据读取失败</p>
+                  <p className="mt-1 break-words text-xs text-[var(--color-status-error-text)]">{tagSnapshotError}</p>
+                  <Button type="button" size="sm" variant="outline" className="mt-3" onClick={() => void refreshTagSnapshot(true)}>
+                    重新读取
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <section className={`p-3 ${PANEL_CLASS}`} aria-labelledby="ordinary-tags-title">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p id="ordinary-tags-title" className="text-sm font-medium text-[var(--color-neutral-11)]">普通标签</p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">由工作人员根据线下核实结果人工维护。</p>
+                      </div>
+                      <Badge variant="outline" className="border-[var(--color-brand-primary-hover)]/45 bg-[var(--color-brand-primary)]/10 text-[var(--color-status-info-text)]">
+                        人工分配
+                      </Badge>
+                    </div>
+                    {isAddDialogOpen ? (
+                      <p className="mt-3 rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-2 text-xs leading-5 text-[var(--color-neutral-08)]">
+                        请先保存人员，再在“编辑人口”中分配普通标签，避免人员与标签产生半保存状态。
+                      </p>
+                    ) : null}
+                    <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                      {ordinaryManagedTags.length > 0 ? ordinaryManagedTags.map((tag) => {
+                        const selected = selectedOrdinaryTagIds.includes(tag.id);
+                        return (
+                          <button
+                            key={tag.id}
+                            type="button"
+                            data-managed-ordinary-tag={tag.id}
+                            aria-pressed={selected}
+                            disabled={isAddDialogOpen || isSaving}
+                            onClick={() => setSelectedOrdinaryTagIds((current) =>
+                              selected ? current.filter((id) => id !== tag.id) : [...current, tag.id])}
+                            className={`min-w-0 rounded-[4px] border p-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] disabled:cursor-not-allowed disabled:opacity-60 ${
+                              selected
+                                ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/15"
+                                : "border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] hover:border-[var(--color-brand-primary-hover)]/60"
+                            }`}
+                          >
+                            <span className="flex items-start gap-2">
+                              <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-sm border ${selected ? "border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)] text-white" : "border-[var(--color-neutral-05)]"}`}>
+                                {selected ? <Check className="h-3 w-3" /> : null}
+                              </span>
+                              <span className="min-w-0">
+                                <span className="block text-sm font-medium text-[var(--color-neutral-11)]">{tag.name}</span>
+                                <span className="mt-1 block text-xs leading-5 text-[var(--color-neutral-08)]">{tag.description}</span>
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      }) : (
+                        <p className="text-xs text-[var(--color-neutral-08)]">暂无可用普通标签。</p>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className={`p-3 ${PANEL_CLASS}`} aria-labelledby="smart-tags-title">
+                    <div className="flex flex-wrap items-start justify-between gap-2">
+                      <div>
+                        <p id="smart-tags-title" className="flex items-center gap-2 text-sm font-medium text-[var(--color-neutral-11)]">
+                          <Sparkles className="h-4 w-4 text-[var(--color-accent-purple-text)]" />
+                          智能标签
+                        </p>
+                        <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">
+                          系统按已保存事实动态计算，只读展示，不能人工勾选。
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="border-[var(--color-accent-purple)]/45 bg-[var(--color-accent-purple)]/10 text-[var(--color-accent-purple-text)]">
+                        自动判断
+                      </Badge>
+                    </div>
+                    <div className="mt-3 space-y-2">
+                      {smartManagedTags.length > 0 ? smartManagedTags.map((tag) => {
+                        const match = smartMatchesById.get(tag.id);
+                        return (
+                          <div key={tag.id} data-managed-smart-tag={tag.id} className="rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-3">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <p className="text-sm font-medium text-[var(--color-neutral-11)]">{tag.name}</p>
+                              <StatusBadge tone={isAddDialogOpen ? "neutral" : match ? "success" : "neutral"}>
+                                {isAddDialogOpen ? "保存后计算" : match ? "已自动命中" : "未命中"}
+                              </StatusBadge>
+                            </div>
+                            <p className="mt-1 text-xs leading-5 text-[var(--color-neutral-08)]">{tag.description}</p>
+                            {tag.rules?.length ? (
+                              <div className="mt-2 flex flex-wrap gap-1.5" aria-label={`${tag.name}规则`}>
+                                {tag.rules.map((rule) => <Badge key={rule} variant="outline" className="text-[11px]">{rule}</Badge>)}
+                              </div>
+                            ) : null}
+                            {match?.reasons.length ? (
+                              <p className="mt-2 text-xs leading-5 text-[var(--color-status-success-text)]">命中依据：{match.reasons.join("；")}</p>
+                            ) : null}
+                          </div>
+                        );
+                      }) : (
+                        <p className="text-xs text-[var(--color-neutral-08)]">暂无启用的智能标签。</p>
+                      )}
+                    </div>
+                    {isEditDialogOpen ? (
+                      <p className="mt-3 text-xs leading-5 text-[var(--color-neutral-08)]">当前结果基于已保存信息；本次修改保存后，系统会按新年龄、住房和风险事实重新计算。</p>
+                    ) : null}
+                  </section>
+                </>
+              )}
+            </div>
+          </FormAccordionSection>
           </div>
           </ScrollArea>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); setIsEditDialogOpen(false); }}>取消</Button>
-            <Button onClick={() => void (isAddDialogOpen ? handleSaveAdd() : handleSaveEdit())} disabled={isSaving}>
+            <Button variant="outline" onClick={() => { setIsAddDialogOpen(false); setIsEditDialogOpen(false); resetManagedTagForm(); }}>取消</Button>
+            <Button onClick={requestFormSave} disabled={isSaving || (isEditDialogOpen && isTagSnapshotLoading)}>
               {isSaving ? "保存中..." : "保存"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={isTagAuthorizationDialogOpen}
+        onOpenChange={(open) => {
+          if (isSaving) return;
+          setIsTagAuthorizationDialogOpen(open);
+          if (!open) setTagAuthorizationInput("");
+        }}
+      >
+        <DialogContent className={`max-w-md ${DIALOG_CLASS} shadow-2xl`}>
+          <DialogHeader>
+            <DialogTitle>标签管理员授权</DialogTitle>
+            <DialogDescription>
+              普通标签属于独立写权限。口令只保留在当前浏览器会话，不会写入本地长期存储、日志或人员资料。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="population-tag-write-token">标签专用管理员口令</Label>
+            <Input
+              id="population-tag-write-token"
+              type="password"
+              autoComplete="current-password"
+              value={tagAuthorizationInput}
+              onChange={(event) => setTagAuthorizationInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void submitTagAuthorization();
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" disabled={isSaving} onClick={() => {
+              setIsTagAuthorizationDialogOpen(false);
+              setTagAuthorizationInput("");
+            }}>
+              取消
+            </Button>
+            <Button type="button" disabled={isSaving} onClick={() => void submitTagAuthorization()}>
+              {isSaving ? "正在验证..." : "验证并保存"}
             </Button>
           </DialogFooter>
         </DialogContent>

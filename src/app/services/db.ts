@@ -10,7 +10,7 @@ const STORAGE_KEYS = {
   NOTIFICATIONS: 'app_data_notifications',
   HOUSING_HISTORY: 'app_data_housing_history',
   CONFLICTS: 'app_data_conflicts',
-  INIT: 'app_data_v16_demographics_migration_initialized' // 新 seed 版本会覆盖旧演示快照
+  INIT: 'app_data_v17_browser_feedback_r2_initialized' // 新 seed 版本会覆盖旧演示快照
 };
 
 class DBService {

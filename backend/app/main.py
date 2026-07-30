@@ -29,6 +29,8 @@ app.add_middleware(
     token=settings.demo_write_token,
     header_name=settings.demo_write_token_header,
     api_prefix=settings.api_prefix,
+    tag_token=settings.tag_write_token,
+    tag_header_name=settings.tag_write_token_header,
 )
 app.add_middleware(
     CORSMiddleware,

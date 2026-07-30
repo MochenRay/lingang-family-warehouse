@@ -28,6 +28,7 @@ import { conflictRepository, type ConflictContext } from '../../../services/repo
 import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
 import type { ConflictRecord } from '../../../types/core';
 import { toast } from 'sonner';
+import { getRiskLevelLabel } from '../../../utils/riskLevel';
 
 interface MobileConflictDetailProps {
   id: string;
@@ -120,7 +121,7 @@ function buildPolicyCards(conflict: ConflictRecord, context: ConflictContext): P
 
 function buildScriptCards(conflict: ConflictRecord, context: ConflictContext): ScriptCard[] {
   const primaryPerson = context.relatedPeople[0];
-  const primaryTarget = primaryPerson ? `${primaryPerson.name}${primaryPerson.risk ? `（${primaryPerson.risk}风险）` : ''}` : '当事人';
+  const primaryTarget = primaryPerson ? `${primaryPerson.name}${primaryPerson.risk ? `（${getRiskLevelLabel(primaryPerson.risk)}）` : ''}` : '当事人';
   const cards: ScriptCard[] = [
     {
       scenario: '首次接触',
