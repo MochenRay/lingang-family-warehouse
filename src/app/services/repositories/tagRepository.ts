@@ -44,8 +44,8 @@ export interface TaggedPersonMatch {
 }
 
 export interface TaggedPersonRecord {
-  person: Person;
-  house?: House;
+  person: Pick<Person, 'id' | 'name' | 'gender' | 'age' | 'address' | 'type' | 'risk'>;
+  house?: Pick<House, 'communityName' | 'building' | 'unit' | 'room'>;
   lastVisitAt?: string;
   totalConflictCount: number;
   activeConflictCount: number;

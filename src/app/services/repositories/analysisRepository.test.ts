@@ -123,7 +123,7 @@ describe('analysisRepository warning levels', () => {
     vi.restoreAllMocks();
   });
 
-  it('loads the complete visit ledger and preserves severe, medium and mild thresholds', async () => {
+  it('uses the compact visit window and preserves severe, medium and mild thresholds', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2026-07-30T12:00:00+08:00'));
     const grids = [
@@ -156,7 +156,7 @@ describe('analysisRepository warning levels', () => {
     const snapshot = await analysisRepository.getGovernanceSnapshot();
     const levels = Object.fromEntries(snapshot.grids.map((grid) => [grid.id, grid.statusLevel]));
 
-    expect(getVisits).toHaveBeenCalledWith();
+    expect(getVisits).toHaveBeenCalledWith({ limit: 500 });
     expect(levels).toEqual({
       'grid-high': 'high',
       'grid-medium': 'medium',

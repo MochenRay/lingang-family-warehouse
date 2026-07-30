@@ -264,7 +264,7 @@ function buildGridMetric(
   const { districtName, streetName, communityName, gridLabel } = parseGridHierarchy(grid.name, grid.id);
   const peopleCount = people.length;
   const houseCount = houses.length;
-  const visitCount = visits.length;
+  const visitCount = grid.visitCount ?? visits.length;
   const conflictCount = conflicts.length;
   const activeConflictCount = conflicts.filter((item) => item.status !== '已化解').length;
   const resolvedConflictCount = conflictCount - activeConflictCount;
@@ -283,13 +283,14 @@ function buildGridMetric(
   }).length;
   const completedTaskCount = completedTasks.length;
 
-  const visitedPeople = new Set(
+  const sampledVisitedPeople = new Set(
     visits
       .filter((item) => item.targetType === 'person')
       .map((item) => item.targetId),
   );
+  const visitedPersonCount = grid.visitedPersonCount ?? sampledVisitedPeople.size;
   const visitCoverage = peopleCount
-    ? Number(((visitedPeople.size / peopleCount) * 100).toFixed(1))
+    ? Number(((visitedPersonCount / peopleCount) * 100).toFixed(1))
     : 0;
   const infoCompleteness = Number((
     average([
@@ -488,7 +489,7 @@ export const analysisRepository = {
       personRepository.getGrids(),
       personRepository.getPeople(),
       houseRepository.getHouses(),
-      visitRepository.getVisits(),
+      visitRepository.getVisits({ limit: 500 }),
       conflictRepository.getConflicts({ limit: 500 }),
       taskRepository.getTaskFeed(),
       houseRepository.getHousingHistoryRecords(),

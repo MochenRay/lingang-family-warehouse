@@ -11,12 +11,12 @@ from app.models.house import House
 from app.models.person import Person
 from app.models.tag import PersonTagAssignment, TagDefinition
 from app.models.visit import VisitRecord
-from app.schemas.house import HouseRead
-from app.schemas.person import PersonRead
 from app.schemas.tag import (
     TagDefinitionRead,
+    TaggedHouseSummaryRead,
     TagMatchRead,
     TagSnapshotRead,
+    TaggedPersonSummaryRead,
     TaggedPersonRead,
 )
 
@@ -351,14 +351,15 @@ def build_tag_snapshot(session: Session, *, now: datetime | None = None) -> TagS
                 matches.append(TagMatchRead(tagId=tag.id, tagName=tag.name, reasons=reasons, source="smart"))
                 coverage[tag.id] += 1
 
-        tagged_people.append(TaggedPersonRead(
-            person=PersonRead.model_validate(person),
-            house=HouseRead.model_validate(house) if house else None,
-            lastVisitAt=last_visit,
-            totalConflictCount=len(related_conflicts),
-            activeConflictCount=sum(conflict.status != "已化解" for conflict in related_conflicts),
-            matchedTags=matches,
-        ))
+        if matches:
+            tagged_people.append(TaggedPersonRead(
+                person=TaggedPersonSummaryRead.model_validate(person),
+                house=TaggedHouseSummaryRead.model_validate(house) if house else None,
+                lastVisitAt=last_visit,
+                totalConflictCount=len(related_conflicts),
+                activeConflictCount=sum(conflict.status != "已化解" for conflict in related_conflicts),
+                matchedTags=matches,
+            ))
 
     tag_reads = [
         TagDefinitionRead(**tag.model_dump(), coverageCount=coverage[tag.id])

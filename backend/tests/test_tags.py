@@ -11,6 +11,7 @@ from app.database import get_session
 from app.models.grid import Grid
 from app.models.house import House
 from app.models.person import Person
+from app.models.visit import VisitRecord
 from app.services.tags import _identity_card_birth_date, build_tag_snapshot, ensure_system_tags
 
 
@@ -119,6 +120,48 @@ def test_high_age_living_alone_requires_a_valid_current_house() -> None:
     names = {match.tagName for match in snapshot.people[0].matchedTags}
     assert "高龄老人" in names
     assert "高龄独居" not in names
+
+
+def test_snapshot_keeps_total_population_but_omits_people_without_matches() -> None:
+    engine = build_engine()
+    SQLModel.metadata.create_all(engine)
+    with Session(engine) as session:
+        seed_people(session)
+        session.add(Person(
+            id="p-unmatched",
+            gridId="g1",
+            houseId="h1",
+            name="无标签居民",
+            idCard="370602199001010018",
+            gender="女",
+            age=36,
+            address="测试社区1号楼101",
+            type="户籍",
+            tags=[],
+            risk="Low",
+            updatedAt="2026-07-30",
+            birthDate="1990-01-01",
+        ))
+        session.add(VisitRecord(
+            id="v-unmatched-recent",
+            targetId="p-unmatched",
+            targetType="person",
+            gridId="g1",
+            visitorName="张三峰",
+            date="2026-07-30",
+            content="近期常规走访，无需纳入重点标签。",
+            images=[],
+            tags=["常规走访"],
+        ))
+        session.commit()
+
+        snapshot = build_tag_snapshot(
+            session,
+            now=datetime(2026, 7, 30, 12, 0, tzinfo=ZoneInfo("Asia/Shanghai")),
+        )
+
+    assert snapshot.totalPeople == 2
+    assert all(record.person.id != "p-unmatched" for record in snapshot.people)
 
 
 def test_tag_api_creates_unique_tags_and_rejects_manual_smart_assignment() -> None:

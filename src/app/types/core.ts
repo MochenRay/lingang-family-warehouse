@@ -7,6 +7,8 @@ export interface Grid {
   name: string;
   parentId?: string; // For hierarchy (e.g. Community -> Grid)
   managerName?: string;
+  visitCount?: number;
+  visitedPersonCount?: number;
 }
 
 export interface Tag {

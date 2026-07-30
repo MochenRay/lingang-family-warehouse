@@ -70,6 +70,7 @@ export interface StatsGridItem {
   peopleCount: number;
   houseCount: number;
   visitCount: number;
+  visitedPersonCount: number;
   conflictCount: number;
 }
 
@@ -655,6 +656,11 @@ function buildFallbackDashboard(): DashboardStatsResponse {
       peopleCount: people.filter((person) => person.gridId === grid.id).length,
       houseCount: houses.filter((house) => house.gridId === grid.id).length,
       visitCount: visits.filter((visit) => visit.gridId === grid.id).length,
+      visitedPersonCount: new Set(
+        visits
+          .filter((visit) => visit.gridId === grid.id && visit.targetType === 'person')
+          .map((visit) => visit.targetId),
+      ).size,
       conflictCount: conflicts.filter((conflict) => conflict.gridId === grid.id).length,
     };
   });
@@ -836,7 +842,7 @@ export const statsRepository = {
   },
 
   async getGrids(): Promise<Grid[]> {
-    return callWithFallback(
+    return callWithFallback<Grid[]>(
       async () => {
         const response = await fetchJson<GridStatsResponse>('/stats/grids');
         return response.grids.map((grid) => ({

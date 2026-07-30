@@ -223,7 +223,7 @@ export const houseRepository = {
   },
 
   async getGrids(): Promise<Grid[]> {
-    return callWithFallback(
+    return callWithFallback<Grid[]>(
       async () => {
         const response = await fetchJson<GridStatsResponse>('/stats/grids');
         return response.grids.map((grid) => ({

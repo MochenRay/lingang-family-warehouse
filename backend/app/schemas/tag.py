@@ -4,9 +4,6 @@ from pydantic import field_validator, model_validator
 from sqlmodel import Field, SQLModel
 
 from app.schemas.base import ReadSchema
-from app.schemas.house import HouseRead
-from app.schemas.person import PersonRead
-
 TagType = Literal["ordinary", "smart"]
 TagConditionField = Literal["age", "household_size", "person_type", "risk"]
 TagConditionOperator = Literal["eq", "neq", "gt", "gte", "lt", "lte"]
@@ -80,9 +77,26 @@ class TagMatchRead(ReadSchema):
     source: Literal["manual", "smart"]
 
 
+class TaggedPersonSummaryRead(ReadSchema):
+    id: str
+    name: str
+    gender: str
+    age: int
+    address: str
+    type: str
+    risk: RiskLevel
+
+
+class TaggedHouseSummaryRead(ReadSchema):
+    communityName: str
+    building: str
+    unit: str
+    room: str
+
+
 class TaggedPersonRead(ReadSchema):
-    person: PersonRead
-    house: HouseRead | None = None
+    person: TaggedPersonSummaryRead
+    house: TaggedHouseSummaryRead | None = None
     lastVisitAt: str | None = None
     totalConflictCount: int = 0
     activeConflictCount: int = 0

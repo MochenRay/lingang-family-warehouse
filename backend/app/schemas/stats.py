@@ -89,6 +89,7 @@ class StatsGridItemRead(ReadSchema):
     peopleCount: int
     houseCount: int
     visitCount: int
+    visitedPersonCount: int
     conflictCount: int
 
 
