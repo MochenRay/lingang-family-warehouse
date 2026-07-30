@@ -33,6 +33,11 @@ interface DetailDialogShellProps {
   contentLabel?: string;
   /** 正文滚动容器的按需布局覆盖；默认仍为整体纵向滚动 */
   bodyClassName?: string;
+  /**
+   * 头部行序：`default` 保持「徽标行 + 标题/操作行（说明嵌在标题下）」原布局；
+   * `title-first` 改为「标题+操作行 → 徽标行 → 说明行」，仅人口详情按需启用。
+   */
+  headerLayout?: 'default' | 'title-first';
 }
 
 const MAX_WIDTH_CLASS: Record<NonNullable<DetailDialogShellProps['maxWidth']>, string> = {
@@ -53,6 +58,7 @@ export function DetailDialogShell({
   maxWidth = '4xl',
   contentLabel,
   bodyClassName,
+  headerLayout = 'default',
 }: DetailDialogShellProps) {
   const handleCloseAutoFocus = useReturnFocus(open);
 
@@ -68,18 +74,37 @@ export function DetailDialogShell({
         )}
       >
         <DialogHeader data-detail-dialog-header className="shrink-0 space-y-2 border-b border-[var(--color-neutral-03)] px-5 py-4 text-left">
-          {badges ? <div className="flex flex-wrap items-center gap-2 pr-6">{badges}</div> : null}
-          <div className="flex flex-wrap items-start justify-between gap-3 pr-6">
-            <div className="min-w-0 flex-1">
-              <DialogTitle className="text-lg font-semibold text-[var(--color-neutral-11)]">{title}</DialogTitle>
+          {headerLayout === 'title-first' ? (
+            <>
+              <div className="flex flex-wrap items-start justify-between gap-3 pr-6">
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="text-lg font-semibold text-[var(--color-neutral-11)]">{title}</DialogTitle>
+                </div>
+                {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+              </div>
+              {badges ? <div className="flex flex-wrap items-center gap-2 pr-6">{badges}</div> : null}
               {description ? (
-                <DialogDescription className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">
+                <DialogDescription className="text-sm leading-6 text-[var(--color-neutral-08)]">
                   {description}
                 </DialogDescription>
               ) : null}
-            </div>
-            {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
-          </div>
+            </>
+          ) : (
+            <>
+              {badges ? <div className="flex flex-wrap items-center gap-2 pr-6">{badges}</div> : null}
+              <div className="flex flex-wrap items-start justify-between gap-3 pr-6">
+                <div className="min-w-0 flex-1">
+                  <DialogTitle className="text-lg font-semibold text-[var(--color-neutral-11)]">{title}</DialogTitle>
+                  {description ? (
+                    <DialogDescription className="mt-1 text-sm leading-6 text-[var(--color-neutral-08)]">
+                      {description}
+                    </DialogDescription>
+                  ) : null}
+                </div>
+                {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+              </div>
+            </>
+          )}
         </DialogHeader>
         <div data-detail-dialog-body className={cn('min-h-0 flex-1 overflow-y-auto px-5 py-4', bodyClassName)}>
           {children}

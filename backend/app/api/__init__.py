@@ -9,6 +9,7 @@ from app.api.notices import router as notices_router
 from app.api.people import router as people_router
 from app.api.stats import router as stats_router
 from app.api.task_rules import router as task_rules_router
+from app.api.tags import router as tags_router
 from app.api.visits import router as visits_router
 
 api_router = APIRouter()
@@ -22,3 +23,4 @@ api_router.include_router(visits_router)
 api_router.include_router(conflicts_router)
 api_router.include_router(stats_router)
 api_router.include_router(task_rules_router)
+api_router.include_router(tags_router)

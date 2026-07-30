@@ -105,14 +105,18 @@ test.describe('B01-B09 / B12 分析与报表集中修复', () => {
     });
   }
 
-  test('B06 预警清单仅在 xl 宽屏两列，1024 回落单列', async ({ page }) => {
-    await page.setViewportSize({ width: 1573, height: 1324 });
+  test('B06 预警清单在 1507 堆叠区两列、2xl 右栏与 1024 均为单列', async ({ page }) => {
+    await page.setViewportSize({ width: 1507, height: 1324 });
     await goto(page, '/analysis/warning-map', '预警热区');
     const items = page.getByTestId('warning-list-item');
     await expect(items.first()).toBeVisible({ timeout: 20_000 });
     expect(await items.count()).toBeGreaterThan(1);
     const [wideFirst, wideSecond] = await Promise.all([items.nth(0).boundingBox(), items.nth(1).boundingBox()]);
     expect(Math.abs(wideFirst!.y - wideSecond!.y)).toBeLessThanOrEqual(2);
+
+    await page.setViewportSize({ width: 1573, height: 1324 });
+    const [railFirst, railSecond] = await Promise.all([items.nth(0).boundingBox(), items.nth(1).boundingBox()]);
+    expect(railSecond!.y).toBeGreaterThan(railFirst!.y + railFirst!.height - 2);
 
     await page.setViewportSize({ width: 1024, height: 768 });
     const [narrowFirst, narrowSecond] = await Promise.all([items.nth(0).boundingBox(), items.nth(1).boundingBox()]);

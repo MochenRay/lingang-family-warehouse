@@ -17,6 +17,7 @@ import { Label } from '../ui/label';
 import { toast } from 'sonner';
 import { MobileDetailHeader } from './MobileDetailHeader';
 import { taskRepository, type MobileTaskDetail as MobileTaskDetailData } from '../../services/repositories/taskRepository';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 interface MobileTaskDetailProps {
   taskId: string;
@@ -227,7 +228,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     className="px-3 py-1.5 rounded-full bg-[var(--color-neutral-01)] text-xs text-[var(--color-neutral-10)] disabled:cursor-default"
                   >
                     {person.name}
-                    {person.risk ? ` · ${person.risk}` : ''}
+                    {person.risk ? ` · ${getRiskLevelLabel(person.risk)}` : ''}
                   </button>
                 ))}
                 {detail.context.house && (

@@ -18,6 +18,11 @@ class HousesListResponse(SQLModel):
     total: int
 
 
+def _history_sort_key(record: HousingHistory) -> tuple[int, str]:
+    end = record.period.split("~", maxsplit=1)[-1].strip()
+    return (1 if end == "至今" else 0, record.period)
+
+
 @router.get("", response_model=HousesListResponse)
 def list_houses(
     session: Session = Depends(get_session),
@@ -72,7 +77,7 @@ def list_housing_history_records(
         }
         records = [record for record in records if record.houseId in house_ids]
 
-    records.sort(key=lambda record: record.period, reverse=True)
+    records.sort(key=_history_sort_key, reverse=True)
     return [HousingHistoryRead.model_validate(record) for record in records[:limit]]
 
 
@@ -114,6 +119,7 @@ def get_house_history(house_id: str, session: Session = Depends(get_session)) ->
         raise HTTPException(status_code=404, detail=f"House '{house_id}' not found")
 
     records = list(session.exec(select(HousingHistory).where(HousingHistory.houseId == house_id)))
+    records.sort(key=_history_sort_key, reverse=True)
     return [HousingHistoryRead.model_validate(record) for record in records]
 
 

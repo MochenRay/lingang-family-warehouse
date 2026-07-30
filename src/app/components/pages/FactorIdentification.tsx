@@ -27,7 +27,7 @@ import { StatCard } from '../patterns/StatCard';
 import { StatusBadge } from '../patterns/StatusBadge';
 import { LoadingState } from '../patterns/states';
 import { PANEL_CLASS } from '../patterns/surfaces';
-import { CHART_COLORS, CHART_GRID, CHART_LABEL, CHART_LEGEND, CHART_PRIMARY, CHART_TICK } from '../../config/chartConfig';
+import { CHART_COLORS, CHART_GRID, CHART_LEGEND, CHART_PRIMARY, CHART_TICK } from '../../config/chartConfig';
 
 type TargetVariable = 'pressure' | 'visitCoverage' | 'conflictFollowup' | 'rentalRisk';
 
@@ -423,38 +423,45 @@ export function FactorIdentification() {
         <div className="xl:col-span-2 space-y-6">
           <ChartCard title="分类贡献结构" description="按固定分类聚合当前目标的因子贡献。">
             <div
-              className="h-[280px]"
               data-testid="factor-category-chart"
               role="group"
               aria-label="当前目标下各类因子贡献占比及颜色图例"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categoryChartData}
-                    dataKey="contribution"
-                    nameKey="category"
-                    cx="50%"
-                    cy="43%"
-                    outerRadius={72}
-                    isAnimationActive={false}
-                    labelLine={{ stroke: CHART_LABEL }}
-                    label={({ category, contribution }) => `${String(category)} ${Number(contribution).toFixed(1)}%`}
+              <div className="h-[260px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={categoryChartData}
+                      dataKey="contribution"
+                      nameKey="category"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      isAnimationActive={false}
+                    >
+                      {categoryChartData.map((item) => (
+                        <Cell key={item.category} fill={item.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+              <div aria-label="分类贡献图例" className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+                {categoryChartData.map((entry) => (
+                  <span
+                    key={entry.category}
+                    data-testid="factor-category-legend-item"
+                    data-color={entry.color}
+                    className="inline-flex items-center gap-2 text-xs text-[var(--color-neutral-09)]"
                   >
-                    {categoryChartData.map((item) => (
-                      <Cell key={item.category} fill={item.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip content={<DarkChartTooltip />} cursor={DARK_TOOLTIP_CURSOR} />
-                  <Legend
-                    align="center"
-                    verticalAlign="bottom"
-                    iconType="circle"
-                    wrapperStyle={{ color: CHART_LEGEND, fontSize: 12 }}
-                    formatter={(value) => <span style={{ color: 'var(--color-neutral-10)' }}>{value}</span>}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+                    <span aria-hidden="true" className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: entry.color }} />
+                    {entry.category} {entry.contribution.toFixed(1)}%
+                  </span>
+                ))}
+              </div>
             </div>
           </ChartCard>
 

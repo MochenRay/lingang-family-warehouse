@@ -3,7 +3,7 @@ import { ArrowLeftRight, Download, TrendingDown, TrendingUp } from 'lucide-react
 import { ChartCard } from '../statistics/ChartCard';
 import { StatCard } from '../patterns/StatCard';
 import { LoadingState } from '../patterns/states';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { Button } from '../ui/button';
 import {
   AreaChart,
   Area,
@@ -30,12 +30,9 @@ import {
 import { HorizontalBarList } from '../statistics/HorizontalBarList';
 import { PageHeader } from './PageHeader';
 
-type ScopeKey = 'all' | 'hot' | 'stable';
-
 export function MigrationTrends() {
   const [snapshot, setSnapshot] = useState<GovernanceAnalysisSnapshot | null>(null);
   const [loading, setLoading] = useState(true);
-  const [scope, setScope] = useState<ScopeKey>('all');
 
   const loadSnapshot = async () => {
     setLoading(true);
@@ -62,38 +59,9 @@ export function MigrationTrends() {
     }));
   }, [snapshot]);
 
-  const filteredInbound = useMemo(() => {
-    if (!snapshot) {
-      return [];
-    }
-    const items = snapshot.migration.inboundHotspots;
-    if (scope === 'stable') {
-      return items.filter((item) => item.value <= 3);
-    }
-    if (scope === 'hot') {
-      return items.filter((item) => item.value >= 3);
-    }
-    return items;
-  }, [scope, snapshot]);
-
-  const filteredOutbound = useMemo(() => {
-    if (!snapshot) {
-      return [];
-    }
-    const items = snapshot.migration.outboundHotspots;
-    if (scope === 'stable') {
-      return items.filter((item) => item.value <= 3);
-    }
-    if (scope === 'hot') {
-      return items.filter((item) => item.value >= 3);
-    }
-    return items;
-  }, [scope, snapshot]);
-
   const handleExport = () => {
     downloadJson(`migration-trends-${new Date().toISOString().slice(0, 10)}.json`, {
       generatedAt: snapshot?.generatedAt,
-      scope,
       migration: snapshot?.migration,
       monthly: snapshot?.monthly,
     });
@@ -107,20 +75,6 @@ export function MigrationTrends() {
           eyebrow="MIGRATION ANALYTICS"
           title="人口流动趋势"
           description="识别流动人口变化和重点迁入迁出片区，辅助安排走访与出租房复核。"
-          actions={
-            <div className="flex gap-3">
-              <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
-                <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">全部区县</SelectItem>
-                  <SelectItem value="hot">高活跃区县</SelectItem>
-                  <SelectItem value="stable">低波动区县</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          }
         />
         <LoadingState />
       </div>
@@ -134,18 +88,10 @@ export function MigrationTrends() {
         title="人口流动趋势"
         description="识别流动人口变化和重点迁入迁出片区，辅助安排走访与出租房复核。"
         actions={
-          <div className="flex gap-3">
-          <Select value={scope} onValueChange={(value: ScopeKey) => setScope(value)}>
-            <SelectTrigger className="w-[180px] border-[var(--color-neutral-03)] bg-[var(--color-neutral-02)] text-[var(--color-neutral-10)]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">全部区县</SelectItem>
-              <SelectItem value="hot">高活跃区县</SelectItem>
-              <SelectItem value="stable">低波动区县</SelectItem>
-            </SelectContent>
-          </Select>
-          </div>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            导出
+          </Button>
         }
       />
 
@@ -176,11 +122,6 @@ export function MigrationTrends() {
       <ChartCard
         title="近六个月迁入迁出对比"
         description="按住房历史记录聚合近六个月迁入迁出，热点默认汇总到区县层级。"
-        action={(
-          <button type="button" aria-label="导出数据" className="inline-flex h-8 w-8 items-center justify-center rounded-sm text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-03)] hover:text-[var(--color-neutral-11)]" onClick={handleExport}>
-            <Download className="h-4 w-4" />
-          </button>
-        )}
       >
         <div className="h-[400px] w-full">
           <ResponsiveContainer width="100%" height="100%">
@@ -210,7 +151,7 @@ export function MigrationTrends() {
       <div className="grid gap-4 md:grid-cols-2">
         <ChartCard title="迁入活跃区县 (Top 5)">
           <HorizontalBarList
-            items={filteredInbound.map((item) => ({
+            items={(snapshot?.migration.inboundHotspots ?? []).map((item) => ({
               label: item.name,
               value: item.value,
               color: CHART_PRIMARY,
@@ -221,7 +162,7 @@ export function MigrationTrends() {
 
         <ChartCard title="迁出活跃区县 (Top 5)">
           <HorizontalBarList
-            items={filteredOutbound.map((item) => ({
+            items={(snapshot?.migration.outboundHotspots ?? []).map((item) => ({
               label: item.name,
               value: item.value,
               color: CHART_WARNING,

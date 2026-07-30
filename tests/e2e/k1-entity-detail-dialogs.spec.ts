@@ -173,7 +173,7 @@ test.describe('K1-A 实体与标签详情', () => {
       .getByText('风险等级', { exact: true })
       .locator('xpath=following-sibling::div[1]//span');
     await expect(riskPill).toHaveClass(/rounded-full/);
-    await expect(riskPill).toHaveText(/^(Low|Medium|High)$/);
+    await expect(riskPill).toHaveText(/^(低风险|中风险|高风险)$/);
 
     await expect(page.locator('[data-detail-dialog-body]')).toBeVisible();
     await page.keyboard.press('Escape');
@@ -190,9 +190,23 @@ test.describe('K1-A 实体与标签详情', () => {
     await expect(viewButtons.first()).toBeVisible();
     expect(await viewButtons.count()).toBeGreaterThanOrEqual(5);
 
+    // 新标签真值允许普通标签覆盖 0 人；明确选择一个有覆盖对象的标签。
+    const tagRows = page.locator('tbody tr');
+    let coveredViewButton = viewButtons.first();
+    let foundCoveredTag = false;
+    for (let index = 0; index < await tagRows.count(); index += 1) {
+      const row = tagRows.nth(index);
+      const coverage = Number.parseInt((await row.locator('td').nth(3).textContent()) ?? '0', 10);
+      if (coverage > 0) {
+        coveredViewButton = row.getByRole('button', { name: /查看.+详情/ });
+        foundCoveredTag = true;
+        break;
+      }
+    }
+    expect(foundCoveredTag).toBe(true);
+
     // 键盘 Enter 打开
-    const firstViewButton = viewButtons.first();
-    await firstViewButton.focus();
+    await coveredViewButton.focus();
     await page.keyboard.press('Enter');
 
     const dialog = page.getByRole('dialog');
@@ -212,15 +226,15 @@ test.describe('K1-A 实体与标签详情', () => {
     const firstCard = grid.locator('> div').first();
     const riskPill = firstCard.locator('span.rounded-full').first();
     await expect(riskPill).toBeVisible();
-    await expect(riskPill).toHaveText(/^(Low|Medium|High)$/);
+    await expect(riskPill).toHaveText(/^(低风险|中风险|高风险)$/);
     await expect(firstCard.getByText('最近走访：')).toBeVisible();
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
-    await expect(firstViewButton).toBeFocused();
+    await expect(coveredViewButton).toBeFocused();
 
     // 鼠标点击同样可打开（R31 行为不回退）
-    await firstViewButton.click();
+    await coveredViewButton.click();
     await expect(page.getByRole('heading', { name: '标签详情' })).toBeVisible();
     await page.keyboard.press('Escape');
   });

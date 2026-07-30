@@ -41,10 +41,11 @@ async function loadFreshFallbackSnapshot() {
   stubFallbackBrowser(storage);
   const { statsRepository } = await import('./repositories/statsRepository');
   const { analysisRepository } = await import('./repositories/analysisRepository');
+  const { db } = await import('./db');
 
   const dashboard = await statsRepository.getDashboard();
   const analysis = await analysisRepository.getGovernanceSnapshot();
-  return { dashboard, analysis, storage };
+  return { dashboard, analysis, storage, db };
 }
 
 describe('versioned deterministic fallback seed', () => {
@@ -73,7 +74,7 @@ describe('versioned deterministic fallback seed', () => {
     );
   });
 
-  it('replaces a v15 localStorage snapshot when the v16 seed marker is absent', async () => {
+  it('replaces an older localStorage snapshot when the v17 seed marker is absent', async () => {
     vi.resetModules();
     const storage = createMemoryStorage({
       app_data_v15_phase10_city_dashboard_initialized: 'true',
@@ -84,12 +85,56 @@ describe('versioned deterministic fallback seed', () => {
 
     const { db } = await import('./db');
 
-    expect(storage.getItem('app_data_v16_demographics_migration_initialized')).toBe('true');
+    expect(storage.getItem('app_data_v17_browser_feedback_r2_initialized')).toBe('true');
     expect(db.getPeople().some((person) => person.id === 'stale-person')).toBe(false);
     expect(db.getPeople().some((person) => person.type === '留守')).toBe(true);
     expect(db.getPeople().some((person) => person.type === '境外')).toBe(true);
     expect(db.getPeople().some((person) => person.tags.includes('严重精神障碍'))).toBe(true);
     expect(db.getPeople().some((person) => person.tags.includes('社区矫正'))).toBe(true);
     expect(db.getHousingHistory().some((history) => history.period.startsWith('2026-07'))).toBe(true);
+  });
+
+  it('keeps district housing varied and detail records logically complete', async () => {
+    const { dashboard, analysis, db } = await loadFreshFallbackSnapshot();
+    const districts = dashboard.regionSummaries.filter((item) => item.level === 'district');
+
+    expect(new Set(districts.map((item) => item.houseCount)).size).toBeGreaterThanOrEqual(5);
+    expect(districts.filter((item) => item.rentalCount !== item.warningCount).length).toBeGreaterThanOrEqual(5);
+    expect(new Set(analysis.anomalies.map((item) => item.severity))).toEqual(new Set(['high', 'medium', 'low']));
+
+    const people = db.getPeople();
+    const visits = db.getVisits();
+    const houses = db.getHouses();
+    const histories = db.getHousingHistory();
+    const { SEED_HOUSES, SEED_PEOPLE } = await import('../data/seeds');
+    expect(houses).toHaveLength(SEED_HOUSES.length + 100);
+    expect(people).toHaveLength(SEED_PEOPLE.length + 130);
+    const currentHistoryKeys = histories
+      .filter((history) => history.period.split('~').slice(-1)[0]?.trim() === '至今')
+      .map((history) => `${history.houseId}::${history.personName}`);
+    expect(new Set(currentHistoryKeys).size).toBe(currentHistoryKeys.length);
+    const peopleByHouse = new Map<string, number>();
+    people.forEach((person) => {
+      if (person.houseId) peopleByHouse.set(person.houseId, (peopleByHouse.get(person.houseId) ?? 0) + 1);
+    });
+    const visitsByPerson = new Map<string, number>();
+    visits.forEach((visit) => {
+      if (visit.targetType === 'person') visitsByPerson.set(visit.targetId, (visitsByPerson.get(visit.targetId) ?? 0) + 1);
+    });
+
+    for (const person of people.slice(0, 20)) {
+      const minimum = person.risk === 'High' ? 3 : person.risk === 'Medium' ? 2 : 1;
+      expect(visitsByPerson.get(person.id) ?? 0).toBeGreaterThanOrEqual(minimum);
+      expect((peopleByHouse.get(person.houseId ?? '') ?? 0) > 1 || Boolean(person.familyRelations?.length)).toBe(true);
+    }
+    for (const person of people.filter((item) => item.houseId)) {
+      expect(histories.some((history) => (
+        history.houseId === person.houseId
+        && history.personName === person.name
+        && history.period.split('~').slice(-1)[0]?.trim() === '至今'
+      ))).toBe(true);
+    }
+    expect(houses.some((house) => house.type === '空置' && histories.some((history) => history.houseId === house.id))).toBe(true);
+    expect(houses.some((house) => house.type === '空置' && !histories.some((history) => history.houseId === house.id))).toBe(true);
   });
 });

@@ -4,7 +4,9 @@ export interface CurrentGridSelection {
 }
 
 const DEFAULT_GRID_NAME = '登州街道海梦苑社区第一网格';
-const DEFAULT_WORKER_NAME = '网格员';
+const DEFAULT_WORKER_NAME = '张三峰';
+// 迁移前的出厂默认名；仅当本地值仍是该默认值（即用户从未自定义）时才迁移。
+const LEGACY_DEFAULT_WORKER_NAME = '网格员';
 
 export const mobileContextRepository = {
   getCurrentGridSelection(): CurrentGridSelection {
@@ -32,7 +34,21 @@ export const mobileContextRepository = {
     if (typeof window === 'undefined') {
       return DEFAULT_WORKER_NAME;
     }
-    return window.localStorage.getItem('mobile_user') || DEFAULT_WORKER_NAME;
+    const stored = window.localStorage.getItem('mobile_user');
+    if (!stored) {
+      return DEFAULT_WORKER_NAME;
+    }
+    if (stored === LEGACY_DEFAULT_WORKER_NAME) {
+      // 用户未自定义过：把旧默认名一次性迁移为新默认名；已自定义的值原样保留。
+      // 写回失败（隐私模式/配额）不影响本次返回新默认名。
+      try {
+        window.localStorage.setItem('mobile_user', DEFAULT_WORKER_NAME);
+      } catch (error) {
+        console.warn('Failed to persist migrated worker name', error);
+      }
+      return DEFAULT_WORKER_NAME;
+    }
+    return stored;
   },
 
   setCurrentGridSelection(selection: CurrentGridSelection): void {

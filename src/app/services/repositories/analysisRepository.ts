@@ -247,6 +247,10 @@ function severityRank(value: AnalysisSeverity): number {
   }
 }
 
+function maxSeverity(values: AnalysisSeverity[]): AnalysisSeverity {
+  return values.sort((left, right) => severityRank(right) - severityRank(left))[0] ?? 'low';
+}
+
 function buildGridMetric(
   grid: Grid,
   people: Person[],
@@ -294,15 +298,19 @@ function buildGridMetric(
     ]) * 100
   ).toFixed(1));
   const rentalRate = houseCount ? Number(((rentalCount / houseCount) * 100).toFixed(1)) : 0;
-  const heatScore = Number(clamp(
-    highRiskCount * 12
-      + activeConflictCount * 15
-      + overdueTaskCount * 18
-      + pendingTaskCount * 6
-      + rentalRate * 0.45
-      + vacantCount * 4
-      + Math.max(0, 55 - visitCoverage) * 0.8,
-  ).toFixed(1));
+  const highRiskRate = peopleCount ? highRiskCount / peopleCount : 0;
+  const pendingRate = pendingTaskCount + completedTaskCount
+    ? pendingTaskCount / (pendingTaskCount + completedTaskCount)
+    : 0;
+  const coverageGap = Math.max(0, 60 - visitCoverage) / 60;
+  const heatScore = Number(clamp(100 * (
+    0.3 * highRiskRate
+      + 0.2 * Math.min(activeConflictCount / 3, 1)
+      + 0.2 * Math.min(overdueTaskCount / 3, 1)
+      + 0.1 * pendingRate
+      + 0.1 * (rentalRate / 100)
+      + 0.1 * coverageGap
+  )).toFixed(1));
 
   const primarySignals = [
     highRiskCount > 0 ? `高风险对象 ${highRiskCount} 人` : null,
@@ -312,12 +320,22 @@ function buildGridMetric(
     visitCoverage < 45 && peopleCount > 0 ? `走访覆盖 ${visitCoverage}%` : null,
   ].filter((item): item is string => Boolean(item));
 
-  const statusLevel: AnalysisSeverity =
-    heatScore >= 75 || overdueTaskCount >= 2 || activeConflictCount >= 2
-      ? 'high'
-      : heatScore >= 45 || pendingTaskCount > 0 || rentalRate >= 25
-        ? 'medium'
-        : 'low';
+  const statusSignals: AnalysisSeverity[] = [];
+  if (overdueTaskCount >= 2) statusSignals.push('high');
+  else if (overdueTaskCount === 1) statusSignals.push('medium');
+  if (activeConflictCount >= 3) statusSignals.push('high');
+  else if (activeConflictCount === 2) statusSignals.push('medium');
+  else if (activeConflictCount === 1) statusSignals.push('low');
+  if (peopleCount >= 20 && visitCoverage < 30) statusSignals.push('high');
+  else if (peopleCount >= 20 && visitCoverage < 45) statusSignals.push('medium');
+  else if (peopleCount >= 20 && visitCoverage < 60) statusSignals.push('low');
+  if (rentalRate >= 45) statusSignals.push('high');
+  else if (rentalRate >= 35) statusSignals.push('medium');
+  else if (rentalRate >= 20) statusSignals.push('low');
+  if (highRiskCount >= 5) statusSignals.push('high');
+  else if (highRiskCount >= 3) statusSignals.push('medium');
+  else if (highRiskCount >= 1) statusSignals.push('low');
+  const statusLevel = maxSeverity(statusSignals);
 
   return {
     id: grid.id,
@@ -370,7 +388,7 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         impact: '会直接拉高自由浏览时的风险感知，并影响督导闭环。',
       });
     }
-    if (grid.activeConflictCount >= 2) {
+    if (grid.activeConflictCount >= 1) {
       items.push({
         id: `${grid.id}-conflict`,
         gridId: grid.id,
@@ -379,13 +397,13 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         indicator: '调解中纠纷',
         value: `${grid.activeConflictCount} 起`,
         baseline: '1 起以内',
-        severity: grid.activeConflictCount >= 3 ? 'high' : 'medium',
+        severity: grid.activeConflictCount >= 3 ? 'high' : grid.activeConflictCount === 2 ? 'medium' : 'low',
         date: new Date().toISOString().slice(0, 10),
         reason: '近期未化解矛盾集中在同一网格，说明治理压力存在堆积。',
         impact: '需要优先安排回访、复盘责任分工与后续动作。',
       });
     }
-    if (grid.visitCoverage < 45 && grid.peopleCount >= 20) {
+    if (grid.visitCoverage < 60 && grid.peopleCount >= 20) {
       items.push({
         id: `${grid.id}-coverage`,
         gridId: grid.id,
@@ -393,14 +411,14 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         type: '走访覆盖偏低',
         indicator: '人员触达率',
         value: `${grid.visitCoverage}%`,
-        baseline: '45% 以上',
-        severity: grid.visitCoverage < 30 ? 'high' : 'medium',
+        baseline: '60% 以上',
+        severity: grid.visitCoverage < 30 ? 'high' : grid.visitCoverage < 45 ? 'medium' : 'low',
         date: new Date().toISOString().slice(0, 10),
         reason: '实际入户触达不足，导致画像、风险和任务闭环难以互证。',
         impact: '人物详情、待办和统计页之间的口径会更容易打架。',
       });
     }
-    if (grid.rentalRate >= 35) {
+    if (grid.rentalRate >= 20) {
       items.push({
         id: `${grid.id}-rental`,
         gridId: grid.id,
@@ -409,13 +427,13 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         indicator: '出租占比',
         value: `${grid.rentalRate}%`,
         baseline: '30% 以内',
-        severity: grid.rentalRate >= 45 ? 'high' : 'medium',
+        severity: grid.rentalRate >= 45 ? 'high' : grid.rentalRate >= 35 ? 'medium' : 'low',
         date: new Date().toISOString().slice(0, 10),
         reason: '出租房集中会放大群租、流动人口和秩序整治的治理压力。',
         impact: '房屋支持页、矛盾调解和移动待办会更频繁联动。',
       });
     }
-    if (grid.highRiskCount >= 3) {
+    if (grid.highRiskCount >= 1) {
       items.push({
         id: `${grid.id}-risk`,
         gridId: grid.id,
@@ -423,8 +441,8 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         type: '重点对象密集',
         indicator: '高风险对象',
         value: `${grid.highRiskCount} 人`,
-        baseline: '2 人以内',
-        severity: grid.highRiskCount >= 5 ? 'high' : 'medium',
+        baseline: '0 人',
+        severity: grid.highRiskCount >= 5 ? 'high' : grid.highRiskCount >= 3 ? 'medium' : 'low',
         date: new Date().toISOString().slice(0, 10),
         reason: '高风险对象集中分布在单网格，需要更高频的走访和规则跟进。',
         impact: '如果不及时跟进，会同步拉高预警热度和绩效压力。',
@@ -433,8 +451,7 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
   }
 
   const heatScoreByGrid = new Map(grids.map((grid) => [grid.id, grid.heatScore]));
-  return items
-    .sort((left, right) => {
+  const sorted = items.sort((left, right) => {
       const severityDiff = severityRank(right.severity) - severityRank(left.severity);
       if (severityDiff !== 0) {
         return severityDiff;
@@ -448,8 +465,21 @@ function buildAnomalies(grids: AnalysisGridMetric[]): AnalysisAnomalyItem[] {
         return nameDiff;
       }
       return left.id.localeCompare(right.id);
-    })
-    .slice(0, 12);
+    });
+  const selected: AnalysisAnomalyItem[] = [];
+  for (const severity of ['high', 'medium', 'low'] as const) {
+    const candidate = sorted.find((item) => item.severity === severity);
+    if (candidate) selected.push(candidate);
+  }
+  for (const item of sorted) {
+    if (selected.length >= 12) break;
+    if (!selected.some((candidate) => candidate.id === item.id)) selected.push(item);
+  }
+  return selected.sort((left, right) => {
+    const severityDiff = severityRank(right.severity) - severityRank(left.severity);
+    if (severityDiff !== 0) return severityDiff;
+    return sorted.indexOf(left) - sorted.indexOf(right);
+  });
 }
 
 export const analysisRepository = {
@@ -458,7 +488,7 @@ export const analysisRepository = {
       personRepository.getGrids(),
       personRepository.getPeople(),
       houseRepository.getHouses(),
-      visitRepository.getVisits({ limit: 500 }),
+      visitRepository.getVisits(),
       conflictRepository.getConflicts({ limit: 500 }),
       taskRepository.getTaskFeed(),
       houseRepository.getHousingHistoryRecords(),

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type KeyboardEvent } from 'react';
 import {
   Clock,
   CheckCircle,
@@ -167,10 +167,31 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
     };
   }, [displayCompleted, displayPending]);
 
+  // 任务卡键盘与焦点：div 卡补齐 button 语义，Enter/Space 与点击同路径，focus-visible 环可见
+  const taskCardFocusClass =
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-neutral-00)]';
+  const activateTask = (taskId: string) => {
+    onRouteChange(`/mobile/tasks/${taskId}`);
+  };
+  const handleTaskCardKeyDown = (event: KeyboardEvent<HTMLDivElement>, taskId: string) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      activateTask(taskId);
+    }
+  };
+
+  // 五层卡片结构共享样式：③ 辅助区（关爱背景 / 反馈）明确但不抢眼，④ 分隔线，⑤ 来源行
+  const taskCardContextClass =
+    'rounded-[4px] border border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-2.5 py-2 text-xs leading-relaxed text-[var(--color-neutral-09)] mb-3';
+  const taskCardFooterClass =
+    'flex items-center justify-between gap-2 pt-3 border-t border-[var(--color-neutral-03)]';
+  const taskCardSourceClass =
+    'text-xs text-[var(--color-neutral-08)] font-medium flex items-center gap-1 min-w-0';
+
   return (
     <MobileLayout currentRoute="tasks" onRouteChange={onRouteChange} onExitMobile={onExitMobile} title="工作清单">
       <div className="bg-[var(--color-neutral-01)] min-h-full flex flex-col">
-        <div className="px-4 py-3 border-b border-[var(--color-neutral-03)] flex items-center justify-between sticky top-0 bg-[var(--color-neutral-01)] z-10">
+        <div data-testid="tasks-viewmode-bar" className="px-4 py-3 border-b border-[var(--color-neutral-03)] flex items-center justify-between sticky top-0 bg-[var(--color-neutral-01)] z-20">
           <div className="flex items-center gap-1 bg-[var(--color-neutral-03)] p-1 rounded-lg w-full">
             <button
               onClick={() => setViewMode('today')}
@@ -246,9 +267,10 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
           </div>
         )}
 
-        <div className="flex-1 overflow-hidden flex flex-col bg-[var(--color-neutral-00)]">
+        <div className="flex-1 flex flex-col bg-[var(--color-neutral-00)]">
           <Tabs defaultValue="pending" className="w-full flex flex-col h-full">
-            <div className="bg-[var(--color-neutral-01)] sticky top-0 z-10">
+            {/* 吸顶偏移 = 上方 viewMode 条渲染高度：py-3(24) + p-1(8) + text-xs 行高(20，theme.css 档位) + py-1.5(12) + 边框(1) = 65px */}
+            <div data-testid="tasks-tabs-sticky" className="bg-[var(--color-neutral-01)] sticky top-[65px] z-20">
               <TabsList className="w-full flex h-12 bg-transparent p-0 border-b border-[var(--color-neutral-03)]">
                 <TabsTrigger
                   value="pending"
@@ -282,7 +304,8 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-y-auto bg-[var(--color-neutral-00)] p-4">
+            {/* 唯一主滚动容器是 MobileLayout 内容区；此处不再另起 overflow 滚动 */}
+            <div className="flex-1 bg-[var(--color-neutral-00)] p-4">
               {loading ? (
                 <div className="flex h-full items-center justify-center text-[var(--color-neutral-08)]">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
@@ -297,20 +320,25 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                       return (
                         <Card
                           key={task.id}
-                          className={`cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] border border-[var(--color-neutral-03)] shadow-none overflow-hidden bg-[var(--color-neutral-02)] ${
+                          data-testid="task-card-pending"
+                          role="button"
+                          tabIndex={0}
+                          className={`cursor-pointer hover:shadow-md transition-shadow active:scale-[0.99] border border-[var(--color-neutral-03)] shadow-none overflow-hidden bg-[var(--color-neutral-02)] ${taskCardFocusClass} ${
                             isOverdue ? 'border-l-2 border-l-[var(--color-status-error)]' : ''
                           }`}
-                          onClick={() => onRouteChange(`/mobile/tasks/${task.id}`)}
+                          onClick={() => activateTask(task.id)}
+                          onKeyDown={(event) => handleTaskCardKeyDown(event, task.id)}
                         >
                           <CardContent className="p-4">
-                            <div className="flex items-center gap-3 mb-3">
+                            {/* ① 类型 / 紧急度 / 状态：紧凑且可换行，390px 下不横向溢出 */}
+                            <div data-task-region="badges" className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
                               <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
                                 isOverdue ? 'bg-[var(--color-status-error)]/20 text-[var(--color-status-error-text)]' : (task.urgent ? 'bg-[var(--color-status-error)]/15 text-[var(--color-status-error-text)]' : 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]')
                               }`}>
                                 {isOverdue ? <AlertCircle className="w-4.5 h-4.5" /> : <Clock className="w-4.5 h-4.5" />}
                               </div>
 
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2 min-w-0">
                                 <Badge variant="secondary" className={`rounded text-xs font-medium border-0 px-2 py-0.5 ${getTypeColor(task.type)}`}>
                                   {task.type}
                                 </Badge>
@@ -325,20 +353,23 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                               </div>
                             </div>
 
-                            <div className="text-[16px] font-bold text-[var(--color-neutral-11)] leading-snug mb-2">
+                            {/* ② 人员姓名 + 动作（主视觉，不截断） */}
+                            <div data-task-region="subject" className="text-[16px] font-bold text-[var(--color-neutral-11)] leading-snug mb-2">
                               {task.title}
                             </div>
 
-                            <div className="text-sm text-[var(--color-neutral-08)] leading-relaxed mb-4 line-clamp-2">
+                            {/* ③ 关爱标签与距上次走访天数等背景：辅助区，完整可读 */}
+                            <div data-task-region="context" className={taskCardContextClass}>
                               {task.description}
                             </div>
 
-                            <div className="flex items-center justify-between pt-3 border-t border-[var(--color-neutral-03)]">
-                              <div className="text-xs text-[var(--color-neutral-08)] font-medium flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-neutral-04)]" />
-                                下发：{task.assignedBy}
+                            {/* ④ 分隔线 + ⑤ 下发来源 / 逾期状态 */}
+                            <div data-task-region="footer" className={taskCardFooterClass}>
+                              <div className={taskCardSourceClass}>
+                                <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-neutral-04)] shrink-0" />
+                                <span className="truncate">下发：{task.assignedBy}</span>
                               </div>
-                              <div className={`text-xs font-bold flex items-center gap-1.5 ${deadlineStatus.color}`}>
+                              <div className={`text-xs font-bold flex items-center gap-1.5 shrink-0 ${deadlineStatus.color}`}>
                                 {deadlineStatus.text}
                               </div>
                             </div>
@@ -362,23 +393,28 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                     {displayCompleted.map((task) => (
                       <Card
                         key={task.id}
-                        className="cursor-pointer hover:shadow-md transition-shadow border border-[var(--color-neutral-03)] shadow-none opacity-90 bg-[var(--color-neutral-02)]"
-                        onClick={() => onRouteChange(`/mobile/tasks/${task.id}`)}
+                        data-testid="task-card-completed"
+                        role="button"
+                        tabIndex={0}
+                        className={`cursor-pointer hover:shadow-md transition-shadow border border-[var(--color-neutral-03)] shadow-none opacity-90 bg-[var(--color-neutral-02)] ${taskCardFocusClass}`}
+                        onClick={() => activateTask(task.id)}
+                        onKeyDown={(event) => handleTaskCardKeyDown(event, task.id)}
                       >
                         <CardContent className="p-4">
-                          <div className="flex items-center gap-3 mb-3">
+                          {/* ① 类型 / 状态：紧凑且可换行 */}
+                          <div data-task-region="badges" className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
                             <div className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center ${
                               task.onTime ? 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]' : 'bg-[var(--color-status-warning)]/15 text-[var(--color-status-warning-text)]'
                             }`}>
                               {task.onTime ? <CheckCircle className="w-4.5 h-4.5" /> : <AlertCircle className="w-4.5 h-4.5" />}
                             </div>
-                            <div className="flex items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 min-w-0">
                               <Badge variant="secondary" className={`rounded text-xs font-medium border-0 px-2 py-0.5 ${getTypeColor(task.type)}`}>
                                 {task.type}
                               </Badge>
                               <Badge
                                 variant="outline"
-                                className={`text-[10px] px-2 py-0.5 rounded border-0 ${
+                                className={`text-xs px-2 py-0.5 rounded border-0 ${
                                   task.onTime ? 'bg-[var(--color-status-success)]/15 text-[var(--color-status-success-text)]' : 'bg-[var(--color-status-warning)]/20 text-[var(--color-status-warning-text)]'
                                 }`}
                               >
@@ -387,18 +423,25 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                             </div>
                           </div>
 
-                          <div className="text-[15px] font-bold text-[var(--color-neutral-10)] mb-2 line-clamp-2">
+                          {/* ② 人员姓名 + 动作（主视觉，不截断） */}
+                          <div data-task-region="subject" className="text-[16px] font-bold text-[var(--color-neutral-11)] leading-snug mb-2">
                             {task.title}
                           </div>
 
+                          {/* ③ 走访 / 调解反馈背景：辅助区，完整可读 */}
                           {task.feedback && (
-                            <div className="bg-[var(--color-neutral-03)] rounded p-2 text-xs text-[var(--color-neutral-10)] mb-3">
+                            <div data-task-region="context" className={taskCardContextClass}>
                               <span className="font-medium text-[var(--color-neutral-10)]">反馈：</span>{task.feedback}
                             </div>
                           )}
 
-                          <div className="flex items-center justify-between pt-2 border-t border-[var(--color-neutral-03)]">
-                            <div className="text-xs text-[var(--color-neutral-08)]">
+                          {/* ④ 分隔线 + ⑤ 下发来源 / 完成时间 */}
+                          <div data-task-region="footer" className={taskCardFooterClass}>
+                            <div className={taskCardSourceClass}>
+                              <span className="w-1.5 h-1.5 rounded-full bg-[var(--color-neutral-04)] shrink-0" />
+                              <span className="truncate">下发：{task.assignedBy}</span>
+                            </div>
+                            <div className="text-xs font-medium text-[var(--color-neutral-08)] shrink-0">
                               完成时间：{task.completedAt}
                             </div>
                           </div>

@@ -15,6 +15,7 @@ import { SearchInput } from '../patterns/FilterBar';
 import { PANEL_CLASS } from '../patterns/surfaces';
 import { DetailDialogShell, DetailField, DetailSection } from '../patterns/DetailDialog';
 import { PageHeader } from './PageHeader';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 type RelationType = '现居' | '历史';
 type OccupancyRelationship = '业主' | '家属' | '租客' | '其他';
@@ -309,7 +310,7 @@ export function RelationshipManagement() {
                       </TableCell>
                       <TableCell>
                         <StatusBadge tone={RISK_BADGE_TONE[relationship.risk ?? 'Low'] ?? 'neutral'}>
-                          {relationship.risk ?? 'Low'}
+                          {getRiskLevelLabel(relationship.risk ?? 'Low')}
                         </StatusBadge>
                       </TableCell>
                       <TableCell className="text-sm text-[var(--color-neutral-08)]">{relationship.moveInDate}</TableCell>
@@ -397,7 +398,7 @@ export function RelationshipManagement() {
                 {selectedRelationship.relationship}
               </StatusBadge>
               {selectedRelationship.risk ? (
-                <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.risk] ?? 'neutral'}>{selectedRelationship.risk}</StatusBadge>
+                <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.risk] ?? 'neutral'}>{getRiskLevelLabel(selectedRelationship.risk)}</StatusBadge>
               ) : null}
             </span>
           </span>
@@ -427,7 +428,7 @@ export function RelationshipManagement() {
                         label="风险等级"
                         value={
                           <StatusBadge tone={RISK_BADGE_TONE[selectedRelationship.person.risk] ?? 'neutral'}>
-                            {selectedRelationship.person.risk}
+                            {getRiskLevelLabel(selectedRelationship.person.risk)}
                           </StatusBadge>
                         }
                       />

@@ -48,6 +48,7 @@ import { Textarea } from "../ui/textarea";
 import { conflictRepository, type ConflictContext } from "../../services/repositories/conflictRepository";
 import { personRepository } from "../../services/repositories/personRepository";
 import { ConflictRecord, Grid, Person } from "../../types/core";
+import { getRiskLevelLabel } from "../../utils/riskLevel";
 import { toast } from "sonner";
 import { PageHeader } from "./PageHeader";
 import { StatCard } from "../patterns/StatCard";
@@ -825,7 +826,7 @@ export function ConflictManagement({ onRouteChange }: ConflictManagementProps) {
                       <div className="min-w-0 space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <p className="font-medium text-[var(--color-neutral-11)]">{person.name}</p>
-                          <StatusBadge tone={getRiskTone(person.risk)}>{person.risk}</StatusBadge>
+                          <StatusBadge tone={getRiskTone(person.risk)}>{getRiskLevelLabel(person.risk)}</StatusBadge>
                           <Badge variant="outline" className="border-[var(--color-neutral-03)] text-[var(--color-neutral-10)]">
                             {person.type}
                           </Badge>

@@ -1,4 +1,5 @@
 import type { House, KnowledgeEntry, Person } from '../../types/core';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 import { houseRepository } from './houseRepository';
 import { knowledgeRepository } from './knowledgeRepository';
 import { noticeRepository, type NoticeRecord } from './noticeRepository';
@@ -103,7 +104,7 @@ export const searchRepository = {
           kind: 'person' as const,
           title: person.name,
           subtitle: compactSummary([person.type, `${person.age}岁`, person.address]),
-          summary: compactSummary([`风险 ${person.risk}`, ...(person.tags ?? []).slice(0, 2)]),
+          summary: compactSummary([getRiskLevelLabel(person.risk), ...(person.tags ?? []).slice(0, 2)]),
           tags: person.tags ?? [],
           route: route.route,
           routeLabel: route.routeLabel,

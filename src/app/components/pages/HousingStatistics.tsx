@@ -56,8 +56,15 @@ function createDistrictRow(name: string): DistrictHousingItem {
   };
 }
 
-function getPressureScore(row: Pick<DistrictHousingItem, 'warningCount' | 'rentalCount' | 'vacantCount' | 'floatingCount'>) {
-  return Math.min(100, Number((row.warningCount * 9 + row.rentalCount * 1.8 + row.vacantCount * 1.2 + row.floatingCount * 0.4).toFixed(1)));
+function getPressureScore(row: Pick<DistrictHousingItem, 'houseCount' | 'peopleCount' | 'warningCount' | 'rentalCount' | 'vacantCount' | 'floatingCount'>) {
+  const houseTotal = Math.max(1, row.houseCount);
+  const peopleTotal = Math.max(1, row.peopleCount);
+  return Math.min(100, Number((100 * (
+    (row.warningCount / houseTotal) * 0.4
+    + (row.rentalCount / houseTotal) * 0.25
+    + (row.vacantCount / houseTotal) * 0.15
+    + (row.floatingCount / peopleTotal) * 0.2
+  )).toFixed(1)));
 }
 
 function createDistrictRowFromSummary(summary: StatsRegionSummary): DistrictHousingItem {
@@ -229,10 +236,10 @@ export function HousingStatistics() {
                     </TooltipTrigger>
                     <TooltipContent className="max-w-sm space-y-2 text-xs leading-5">
                       <p className="font-medium text-[var(--color-neutral-11)]">压力系数反映该片区的综合治理关注程度，分数越高，越需要优先投入网格精力。</p>
-                      <p>系统按四类线索加权：预警事件权重最高，其次是出租房屋、空置房屋和流动人口，总分封顶 100 分。</p>
+                      <p>系统按各类线索在片区内的占比加权，避免房屋较多的区县仅因规模更大就被判为高压。</p>
                       <p className="text-[var(--color-neutral-08)]">参考：80 分以上为高压片区，55 分以上为中压片区，其余为常规关注。</p>
                       <p className="border-t border-[var(--color-neutral-03)] pt-2 font-mono text-[var(--color-neutral-08)]">
-                        公式：min(100, 预警x9 + 出租x1.8 + 空置x1.2 + 流动x0.4)
+                        公式：预警占比×40% + 出租占比×25% + 空置占比×15% + 流动人口占比×20%
                       </p>
                     </TooltipContent>
                   </Tooltip>

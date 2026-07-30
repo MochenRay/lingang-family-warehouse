@@ -18,6 +18,7 @@ import { Button } from '../ui/button';
 import { cn } from '../ui/utils';
 import type { House, HousingHistory, Person, RiskLevel } from '../../types/core';
 import { DetailField, DetailFieldGrid, DetailSection } from '../patterns/DetailDialog';
+import { getRiskLevelLabel } from '../../utils/riskLevel';
 
 export interface HouseDetailPanelProps {
   house?: House | null;
@@ -229,7 +230,7 @@ export function HouseDetailPanel({
 
                 <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
                   <Badge variant="outline" className={cn('border', riskBadgeClass[person.risk])}>
-                    {person.risk === 'High' ? '高风险' : person.risk === 'Medium' ? '中风险' : '低风险'}
+                    {getRiskLevelLabel(person.risk)}
                   </Badge>
                   {person.tags.slice(0, 2).map((tag) => (
                     <Badge key={`${person.id}-${tag}`} variant="outline" className={neutralBadgeClass}>
@@ -295,7 +296,7 @@ export function HouseDetailPanel({
           <div className="rounded border border-dashed border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] px-3 py-6 text-center">
             <History className="mx-auto mb-2 h-8 w-8 text-[var(--color-neutral-08)]" />
             <p className="text-sm font-medium text-[var(--color-neutral-11)]">暂无居住历史</p>
-            <p className="mt-1 text-xs text-[var(--color-neutral-08)]">历史记录为空不代表房屋不可用，需以现居人员和房屋状态继续判断。</p>
+            <p className="mt-1 text-xs text-[var(--color-neutral-08)]">该房屋当前为空置状态，且未查询到过往入住记录。</p>
           </div>
         )}
       </DetailSection>

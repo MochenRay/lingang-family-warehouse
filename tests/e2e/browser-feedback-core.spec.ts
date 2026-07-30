@@ -108,7 +108,7 @@ test.describe('B10/B11/B18 核心修复', () => {
     await page.goto('/tags');
     await expect(page.getByText('标签目录')).toBeVisible();
     const rows = page.locator('tbody tr');
-    await expect(rows.first()).toBeVisible();
+    await expect(page.getByRole('button', { name: /^查看.+详情$/ }).first()).toBeVisible();
     const coverageCounts = await rows.evaluateAll((elements) =>
       elements.map((element) => Number(element.querySelectorAll('td')[3]?.textContent?.trim() ?? 0)));
     const maxCoverageIndex = coverageCounts.indexOf(Math.max(...coverageCounts));

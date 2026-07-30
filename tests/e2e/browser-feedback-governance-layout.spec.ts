@@ -91,13 +91,18 @@ test.describe('B13-B17 治理详情与日志展示', () => {
     const title = dialog.locator('[data-detail-dialog-header] h2');
     const statuses = dialog.getByTestId('conflict-detail-statuses');
     await expect(statuses.locator('span.rounded-full')).toHaveCount(3);
+    await expect.poll(async () => {
+      const [titleBox, statusesBox] = await boxes([title, statuses]);
+      return titleBox && statusesBox ? Math.abs(statusesBox.y - titleBox.y) : Number.POSITIVE_INFINITY;
+    }).toBeLessThanOrEqual(5);
     const [wideTitle, wideStatuses] = await boxes([title, statuses]);
     expect(wideStatuses!.x).toBeGreaterThan(wideTitle!.x + wideTitle!.width);
-    expect(Math.abs(wideStatuses!.y - wideTitle!.y)).toBeLessThanOrEqual(5);
 
     await page.setViewportSize({ width: 480, height: 900 });
-    const [narrowTitle, narrowStatuses] = await boxes([title, statuses]);
-    expect(narrowStatuses!.y).toBeGreaterThanOrEqual(narrowTitle!.y + narrowTitle!.height - 2);
+    await expect.poll(async () => {
+      const [titleBox, statusesBox] = await boxes([title, statuses]);
+      return titleBox && statusesBox ? statusesBox.y - (titleBox.y + titleBox.height) : Number.NEGATIVE_INFINITY;
+    }).toBeGreaterThanOrEqual(-2);
   });
 
   test('B16 公告七字段宽屏两等列、窄屏单列且无跨列特例', async ({ page }) => {
