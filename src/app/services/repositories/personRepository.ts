@@ -20,6 +20,10 @@ interface GridStatsResponse {
   }>;
 }
 
+export interface GridReadOptions {
+  allowFallback?: boolean;
+}
+
 export interface PersonQuery {
   q?: string;
   search?: string;
@@ -177,20 +181,21 @@ export const personRepository = {
     );
   },
 
-  async getGrids(): Promise<Grid[]> {
-    return callWithFallback(
-      async () => {
-        const response = await fetchJson<GridStatsResponse>('/stats/grids');
-        return response.grids.map((grid) => ({
-          id: grid.id,
-          name: grid.name,
-          parentId: grid.parentId ?? undefined,
-          managerName: grid.managerName ?? undefined,
-          visitCount: grid.visitCount,
-          visitedPersonCount: grid.visitedPersonCount,
-        }));
-      },
-      () => db.getGrids(),
-    );
+  async getGrids(options: GridReadOptions = {}): Promise<Grid[]> {
+    const getApiGrids = async () => {
+      const response = await fetchJson<GridStatsResponse>('/stats/grids');
+      return response.grids.map((grid) => ({
+        id: grid.id,
+        name: grid.name,
+        parentId: grid.parentId ?? undefined,
+        managerName: grid.managerName ?? undefined,
+        visitCount: grid.visitCount,
+        visitedPersonCount: grid.visitedPersonCount,
+      }));
+    };
+    if (options.allowFallback === false) {
+      return getApiGrids();
+    }
+    return callWithFallback(getApiGrids, () => db.getGrids());
   },
 };

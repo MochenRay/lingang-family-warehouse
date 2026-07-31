@@ -11,6 +11,7 @@ import {
   type MobileSessionEventV1,
 } from './types';
 import type { MobilePersonCreatePayload } from './personVisitPayloads';
+import type { MobileConflictCreatePayload } from './conflictPayloads';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -51,6 +52,26 @@ function personPayload(): MobilePersonCreatePayload {
     tags: [],
     risk: 'Low',
     updatedAt: '2026-07-31T12:00:00.000Z',
+  };
+}
+
+function conflictPayload(
+  overrides: Partial<MobileConflictCreatePayload> = {},
+): MobileConflictCreatePayload {
+  return {
+    source: '自行发现',
+    title: '新线索',
+    type: '邻里纠纷',
+    description: '邻里噪音需要协调。',
+    involvedParties: [{ type: 'organization', id: 'org-property', name: '物业公司' }],
+    status: '调解中',
+    gridId: 'grid-1',
+    location: '海梦苑一号楼',
+    timeline: [{ date: '2026-08-01', content: '收到线索', operator: '网格员甲' }],
+    images: [],
+    createdAt: '2026-08-01',
+    updatedAt: '2026-08-01',
+    ...overrides,
   };
 }
 
@@ -322,23 +343,31 @@ describe('mobile session store', () => {
   });
 
   it('replays create, update, status and tombstone without inventing targets', () => {
+    const createdPayload = conflictPayload();
+    const seedOne = { id: 'seed-1', ...conflictPayload({ title: '原题' }) };
+    const seedTwo = { id: 'seed-2', ...conflictPayload({ title: '删除项' }) };
     const events: MobileSessionEventV1[] = [
-      event({ entity: 'conflict', targetId: 'session:conflict:33333333-3333-4333-8333-333333333333', tempId: 'session:conflict:33333333-3333-4333-8333-333333333333', payload: { title: '新线索', status: '待处理' } }),
-      event({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', entity: 'conflict', action: 'update', targetId: 'seed-1', tempId: undefined, payload: { title: '已更新' } }),
+      event({ entity: 'conflict', targetId: 'session:conflict:33333333-3333-4333-8333-333333333333', tempId: 'session:conflict:33333333-3333-4333-8333-333333333333', payload: createdPayload }),
+      event({ id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', entity: 'conflict', action: 'update', targetId: 'seed-1', tempId: undefined, payload: { timeline: [{ date: '2026-08-02', content: '已更新', operator: '网格员乙' }], updatedAt: '2026-08-02' } }),
       event({ id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', entity: 'conflict', action: 'status', targetId: 'session:conflict:33333333-3333-4333-8333-333333333333', tempId: undefined, payload: { status: '调解中' } }),
       event({ id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', entity: 'conflict', action: 'tombstone', targetId: 'seed-2', tempId: undefined, payload: null }),
     ];
 
-    expect(applyMobileSessionEvents([
-      { id: 'seed-1', title: '原题', status: '待处理' },
-      { id: 'seed-2', title: '删除项', status: '待处理' },
-    ], 'conflict', events)).toEqual([
-      { id: 'seed-1', title: '已更新', status: '待处理' },
-      { id: 'session:conflict:33333333-3333-4333-8333-333333333333', title: '新线索', status: '调解中' },
+    expect(applyMobileSessionEvents([seedOne, seedTwo], 'conflict', events)).toEqual([
+      {
+        ...seedOne,
+        timeline: [{ date: '2026-08-02', content: '已更新', operator: '网格员乙' }],
+        updatedAt: '2026-08-02',
+      },
+      {
+        id: 'session:conflict:33333333-3333-4333-8333-333333333333',
+        ...createdPayload,
+        status: '调解中',
+      },
     ]);
 
     expect(() => applyMobileSessionEvents([], 'conflict', [
-      event({ entity: 'conflict', action: 'update', targetId: 'missing', tempId: undefined, payload: { title: '禁止凭空创建' } }),
+      event({ entity: 'conflict', action: 'update', targetId: 'missing', tempId: undefined, payload: { updatedAt: '2026-08-03' } }),
     ])).toThrow('Unknown update target');
   });
 });
