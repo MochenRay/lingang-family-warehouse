@@ -59,6 +59,12 @@ test('enabled mode uses only the API branch and never creates sandbox data', asy
   await page.goto('/mobile');
   await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toHaveCount(0);
 
+  await expect.poll(() => page.evaluate(async () => {
+    const modulePath = '/src/app/services/mobileSandbox/mode.ts';
+    const { getActiveMobileSandboxMode } = await import(/* @vite-ignore */ modulePath);
+    return (await getActiveMobileSandboxMode()).mode;
+  })).toBe('api');
+
   const result = await page.evaluate(async () => {
     const modulePath = '/src/app/services/mobileSandbox/mutation.ts';
     const { executeMobileMutation } = await import(/* @vite-ignore */ modulePath);

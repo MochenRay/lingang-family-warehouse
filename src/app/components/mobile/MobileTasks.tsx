@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Input } from '../ui/input';
 import { MobileLayout } from './MobileLayout';
@@ -113,12 +114,15 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
   const [searchQuery, setSearchQuery] = useState('');
   const [feed, setFeed] = useState<MobileTaskFeed | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const nextFeed = await taskRepository.getTaskFeed();
         if (!active) {
@@ -128,7 +132,8 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
       } catch (error) {
         console.error('Failed to load mobile task feed', error);
         if (active) {
-          setFeed({ pending: [], completed: [], summary: { pending: 0, overdue: 0, completed: 0, completionRate: 0 } });
+          setFeed(null);
+          setLoadError(error instanceof Error ? error.message : '任务列表加载失败');
         }
       } finally {
         if (active) {
@@ -146,7 +151,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
       active = false;
       window.removeEventListener('db-change', handleRefresh);
     };
-  }, []);
+  }, [reloadToken]);
 
   const displayPending = useMemo(
     () => filterPendingTasks(feed?.pending ?? [], viewMode, searchQuery),
@@ -192,26 +197,32 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
     <MobileLayout currentRoute="tasks" onRouteChange={onRouteChange} onExitMobile={onExitMobile} title="工作清单">
       <div className="bg-[var(--color-neutral-01)] min-h-full flex flex-col">
         <div data-testid="tasks-viewmode-bar" className="px-4 py-3 border-b border-[var(--color-neutral-03)] flex items-center justify-between sticky top-0 bg-[var(--color-neutral-01)] z-20">
-          <div className="flex items-center gap-1 bg-[var(--color-neutral-03)] p-1 rounded-lg w-full">
+          <div className="flex items-center gap-1 bg-[var(--color-neutral-03)] p-1 rounded-lg w-full" role="group" aria-label="任务时间范围">
             <button
+              type="button"
+              aria-pressed={viewMode === 'today'}
               onClick={() => setViewMode('today')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
+              className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
               今日待办
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'month'}
               onClick={() => setViewMode('month')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
+              className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
               本月工作
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'all'}
               onClick={() => setViewMode('all')}
-              className={`flex-1 px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
+              className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
               }`}
             >
@@ -249,15 +260,17 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-06)]" />
               <Input
                 type="text"
+                id="tasks-search"
+                aria-label="搜索任务或来源对象"
                 placeholder="搜索任务或来源对象..."
                 value={searchQuery}
                 onChange={(event) => setSearchQuery(event.target.value)}
-                className="pl-9 pr-9 h-9 text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-0 transition-all"
+                className="pl-9 pr-12 min-h-[44px] text-sm bg-[var(--color-neutral-02)] border-[var(--color-neutral-03)] text-[var(--color-neutral-10)] placeholder:text-[var(--color-neutral-08)] focus-visible:bg-[var(--color-neutral-02)] focus-visible:border-[var(--color-brand-primary)] focus-visible:ring-0 transition-all"
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)] p-1"
+                  className="absolute right-1 top-1/2 -translate-y-1/2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--color-neutral-08)]"
                 >
                   <span className="sr-only">清除</span>
                   ×
@@ -269,12 +282,12 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
 
         <div className="flex-1 flex flex-col bg-[var(--color-neutral-00)]">
           <Tabs defaultValue="pending" className="w-full flex flex-col h-full">
-            {/* 吸顶偏移 = 上方 viewMode 条渲染高度：py-3(24) + p-1(8) + text-xs 行高(20，theme.css 档位) + py-1.5(12) + 边框(1) = 65px */}
-            <div data-testid="tasks-tabs-sticky" className="bg-[var(--color-neutral-01)] sticky top-[65px] z-20">
+            {/* 吸顶偏移 = 上方 viewMode 条渲染高度：py-3(24) + p-1(8) + 按钮 min-h-[44px](44) + 边框(1) = 77px */}
+            <div data-testid="tasks-tabs-sticky" className="bg-[var(--color-neutral-01)] sticky top-[77px] z-20">
               <TabsList className="w-full flex h-12 bg-transparent p-0 border-b border-[var(--color-neutral-03)]">
                 <TabsTrigger
                   value="pending"
-                  className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
+                  className="group relative flex-1 min-h-[44px] rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="text-[15px] font-medium text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)] group-data-[state=active]:text-[var(--color-brand-text)]">
@@ -289,7 +302,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
 
                 <TabsTrigger
                   value="completed"
-                  className="group relative flex-1 rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
+                  className="group relative flex-1 min-h-[44px] rounded-none border-none bg-transparent px-0 data-[state=active]:shadow-none"
                 >
                   <div className="flex items-center justify-center gap-1.5">
                     <span className="text-[15px] font-medium text-[var(--color-neutral-10)] transition-colors hover:text-[var(--color-neutral-11)] group-data-[state=active]:text-[var(--color-brand-text)]">
@@ -310,6 +323,19 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                 <div className="flex h-full items-center justify-center text-[var(--color-neutral-08)]">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   正在同步任务工作台...
+                </div>
+              ) : loadError ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                  <AlertCircle className="w-8 h-8 text-[var(--color-status-error-text)]" />
+                  <p className="text-sm font-medium text-[var(--color-neutral-10)]">任务列表加载失败</p>
+                  <p className="text-xs text-[var(--color-neutral-08)] break-all">{loadError}</p>
+                  <Button
+                    variant="outline"
+                    className="min-h-[44px] px-6"
+                    onClick={() => setReloadToken((token) => token + 1)}
+                  >
+                    重试
+                  </Button>
                 </div>
               ) : (
                 <>

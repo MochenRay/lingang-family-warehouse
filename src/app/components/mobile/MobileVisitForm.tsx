@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { Calendar, User, Camera, MapPin, Home, CheckCircle2, AlertCircle, Lightbulb, Mic, Square, Loader2, Sparkles, RefreshCw, Clock } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Calendar, User, MapPin, Home, CheckCircle2, AlertCircle, Lightbulb, Loader2, Sparkles, Clock } from 'lucide-react';
 import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Card } from '../ui/card';
@@ -9,73 +9,50 @@ import { Textarea } from '../ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Person, VisitRecord } from '../../types/core';
 import { toast } from 'sonner';
-import { personRepository } from '../../services/repositories/personRepository';
-import { visitRepository } from '../../services/repositories/visitRepository';
 import {
-  secondaryAiRepository,
-  type SecondaryAiStatus,
-} from '../../services/repositories/secondaryAiRepository';
+  personVisitFacade,
+  type PersonAiPolicy,
+} from '../../services/mobileSandbox/personVisitFacade';
+import type { SecondaryAiChatResult } from '../../services/repositories/secondaryAiRepository';
+import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobileVisitFormProps {
   personId: string;
   onBack: () => void;
+  onSaved?: () => void;
 }
 
-const MOCK_SPEECH_SEGMENTS = [
-  "今天过来看看您身体怎么样？",
-  "最近降温了，家里暖气热不热啊？",
-  "高血压的药还在按时吃着吗？",
-  "我看这厨房的燃气软管有点老化了，回头得换一下。",
-  "儿子女儿最近回来的勤吗？",
-  "有什么困难及时跟我们网格员说。",
-  "那个高龄补贴的申请资料我们已经交上去了。",
-  "行，那您多注意休息，我们改天再来看您。"
-];
-
-type VisitAiStatus = 'idle' | 'loading' | SecondaryAiStatus;
-
-const VISIT_AI_STATUS_LABELS: Record<VisitAiStatus, string> = {
-  idle: '待生成',
-  loading: '请求中',
-  live: 'Gemini live',
-  degraded: '安全降级',
-  disabled: 'AI 已关闭',
-  unconfigured: 'AI 未配置',
-  placeholder: '样例结果',
-};
-
-export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
-  const { canUseLegacyApiMutation } = useMobileSandbox();
+export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormProps) {
+  const { mode, canMutate } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [recentVisits, setRecentVisits] = useState<VisitRecord[]>([]);
+  const [aiPolicy, setAiPolicy] = useState<PersonAiPolicy | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [visitAiStatus, setVisitAiStatus] = useState<VisitAiStatus>('idle');
-  const [visitAiContent, setVisitAiContent] = useState('');
-  const [visitAiModel, setVisitAiModel] = useState<string | null>(null);
-  
-  // 录音相关状态
-  const [recordingStatus, setRecordingStatus] = useState<'idle' | 'recording' | 'processing' | 'done'>('idle');
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [transcript, setTranscript] = useState('');
-  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const speechIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const processingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  // 必填字段级错误：提交无效时逐字段提示并聚焦首个错误字段，不只 toast
+  const [fieldErrors, setFieldErrors] = useState<{ visitorName?: string; visitDate?: string; visitPurpose?: string; notHomeReason?: string }>({});
+  const [aiRequesting, setAiRequesting] = useState(false);
+  const [aiResult, setAiResult] = useState<SecondaryAiChatResult | null>(null);
+  const [aiGrounded, setAiGrounded] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
-  // 表单数据
-  const [formData, setFormData] = useState({
-    visitorName: '李网格', // 默认当前网格员
+  // 表单数据；走访人默认取当前登录网格员，输入框可见且必填，不静默硬编码
+  const [formData, setFormData] = useState(() => ({
+    visitorName: mobileContextRepository.getCurrentWorkerName(),
     visitDate: new Date().toISOString().split('T')[0],
     visitTime: new Date().toTimeString().slice(0, 5),
     visitPurpose: '',
     visitType: '日常走访',
-    
+
     // 人员在家情况
     isHome: 'yes',
     notHomeReason: '',
-    
-    // 走访内容（演示转写结果，提交前由网格员核对）
+
+    // 走访详情（网格员手工填写，提交时原样写入走访内容）
     healthStatus: '',
     livingSituation: '',
     needsAssistance: '',
@@ -85,29 +62,44 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     houseRisk: '',
     otherInfo: '',
     nextVisitPlan: '',
-    
-    // 图片
-    images: [] as string[],
-  });
+  }));
 
   useEffect(() => {
+    // facade 以当前数据模式为准；模式未确认前不发起任何读取
+    if (mode === 'checking') {
+      return;
+    }
     let alive = true;
 
     const loadContext = async () => {
       setIsLoading(true);
+      setLoadError(null);
 
       try {
-        const [personData, visitData] = await Promise.all([
-          personRepository.getPerson(personId),
-          visitRepository.getVisits({ targetId: personId, targetType: 'person', limit: 20 }),
+        const personData = await personVisitFacade.getPerson(personId);
+        if (!alive) {
+          return;
+        }
+
+        if (!personData) {
+          setPerson(null);
+          setRecentVisits([]);
+          setAiPolicy(null);
+          return;
+        }
+
+        const [visitData, policy] = await Promise.all([
+          personVisitFacade.listVisits({ targetId: personId, targetType: 'person', limit: 20 }),
+          personVisitFacade.getPersonAiPolicy(personId),
         ]);
 
         if (!alive) {
           return;
         }
 
-        setPerson(personData ?? null);
-        setRecentVisits([...visitData].sort((left, right) => right.date.localeCompare(left.date)));
+        setPerson(personData);
+        setRecentVisits([...visitData.items].sort((left, right) => right.date.localeCompare(left.date)));
+        setAiPolicy(policy);
       } catch (error) {
         console.error('Failed to load mobile visit form context', error);
         if (!alive) {
@@ -115,6 +107,8 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
         }
         setPerson(null);
         setRecentVisits([]);
+        setAiPolicy(null);
+        setLoadError(error instanceof Error ? error.message : '走访对象信息加载失败');
       } finally {
         if (alive) {
           setIsLoading(false);
@@ -123,123 +117,42 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     };
 
     void loadContext();
-    const handleRefresh = () => {
+    const unsubscribe = personVisitFacade.subscribe(() => {
       void loadContext();
-    };
-    window.addEventListener('db-change', handleRefresh);
+    });
     return () => {
       alive = false;
-      window.removeEventListener('db-change', handleRefresh);
+      unsubscribe();
     };
-  }, [personId]);
+  }, [personId, mode, reloadToken]);
 
-  useEffect(() => {
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-      if (speechIntervalRef.current) {
-        clearInterval(speechIntervalRef.current);
-      }
-      if (processingTimeoutRef.current) {
-        clearTimeout(processingTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  // 录音逻辑
-  const startRecording = () => {
-    setRecordingStatus('recording');
-    setTranscript('');
-    setRecordingTime(0);
-
-    // 计时器
-    const timer = setInterval(() => {
-      setRecordingTime(prev => prev + 1);
-    }, 1000);
-    timerIntervalRef.current = timer;
-
-    // 逐段回填录音整理结果
-    let segmentIndex = 0;
-    const speech = setInterval(() => {
-      if (segmentIndex < MOCK_SPEECH_SEGMENTS.length) {
-        const text = MOCK_SPEECH_SEGMENTS[segmentIndex];
-        setTranscript(prev => prev + (prev ? " " : "") + text);
-        segmentIndex++;
-      }
-    }, 1500);
-    speechIntervalRef.current = speech;
-  };
-
-  const stopRecording = () => {
-    if (timerIntervalRef.current) {
-      clearInterval(timerIntervalRef.current);
-      timerIntervalRef.current = null;
-    }
-    if (speechIntervalRef.current) {
-      clearInterval(speechIntervalRef.current);
-      speechIntervalRef.current = null;
-    }
-    setRecordingStatus('processing');
-
-    // 录音结束后整理为走访草稿
-    processingTimeoutRef.current = setTimeout(() => {
-      processingTimeoutRef.current = null;
-      setRecordingStatus('done');
-      // 回填整理后的字段草稿
-      setFormData(prev => ({
-        ...prev,
-        healthStatus: "老人自述身体状况良好，血压控制稳定，坚持按时服药。",
-        livingSituation: "家中供暖正常，室内温度适宜；近期饮食起居规律。",
-        safetyCheck: "检查发现厨房燃气软管轻微老化，已提醒老人注意，并计划联系维修人员上门更换。",
-        familyRelationship: "子女周末常回来探望，家庭关系和睦。",
-        needsAssistance: "询问了高龄补贴申请进度，已告知资料已提交。",
-        nextVisitPlan: "下周回访检查燃气软管更换情况。",
-        visitPurpose: "日常巡访，重点关注冬季取暖及用气安全。" // 自动填充目的
-      }));
-      toast.success("录音整理完成，已生成走访记录草稿");
-    }, 2000);
-  };
-
-  const resetRecording = () => {
-    setRecordingStatus('idle');
-    setTranscript('');
-    setRecordingTime(0);
-  };
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-  };
-
-  const getVisitGuidance = (person: Person) => {
+  const getVisitGuidance = (currentPerson: Person) => {
     const guidance: string[] = [];
 
     // Age based
-    if (person.age >= 60) {
+    if (currentPerson.age >= 60) {
       guidance.push("老年人走访：重点关注身体状况、饮食起居及用气用电安全。");
     }
 
     // Tags based
-    if (person.tags.some(t => t.includes('失独'))) {
+    if (currentPerson.tags.some(t => t.includes('失独'))) {
       guidance.push("失独家庭：避免主动谈及子女话题，多倾听，给予精神慰藉，避免触景生情。");
     }
-    if (person.tags.some(t => t.includes('慢性病') || t.includes('重病') || t.includes('高血压') || t.includes('糖尿病'))) {
+    if (currentPerson.tags.some(t => t.includes('慢性病') || t.includes('重病') || t.includes('高血压') || t.includes('糖尿病'))) {
       guidance.push("患病人员：关心近期病情变化、服药情况，询问是否需要医疗救助。");
     }
-    if (person.tags.some(t => t.includes('孕妇'))) {
+    if (currentPerson.tags.some(t => t.includes('孕妇'))) {
       guidance.push("孕产妇：关心预产期及产检情况，宣传优生优育知识，了解是否有特殊需求。");
     }
-    if (person.tags.some(t => t.includes('残疾'))) {
+    if (currentPerson.tags.some(t => t.includes('残疾'))) {
       guidance.push("残疾人：了解康复需求及辅助器具使用情况，查看无障碍设施是否便利。");
     }
-    if (person.tags.some(t => t.includes('低保') || t.includes('困难'))) {
+    if (currentPerson.tags.some(t => t.includes('低保') || t.includes('困难'))) {
       guidance.push("困难群体：核实各项救助政策落实情况，了解近期生活是否有新困难。");
     }
-    
+
     // Family situation
-    if (person.familyRelations && person.familyRelations.length === 0 && person.age > 60) {
+    if (currentPerson.familyRelations && currentPerson.familyRelations.length === 0 && currentPerson.age > 60) {
        guidance.push("独居老人：家中无其他关联亲属，需特别留意居家安全及精神状态。");
     }
 
@@ -251,41 +164,93 @@ export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
     return guidance;
   };
 
-  const requestGeminiVisitOutline = async () => {
-    setVisitAiStatus('loading');
-    setVisitAiContent('');
-    setVisitAiModel(null);
+  const handleGenerateOutline = async () => {
+    // AI 请求进行中禁止重复提交
+    if (aiRequesting || !person || !aiPolicy?.allowed) {
+      return;
+    }
+    setAiRequesting(true);
+    setAiError(null);
+    // 新请求开始时即清除旧结果与对象化标记，等待或失败期间不得残留上一次成功态
+    setAiResult(null);
+    setAiGrounded(false);
 
-    const result = await secondaryAiRepository.sendMessage(
-      'writing',
-      '请依据已裁剪的对象上下文，生成本次入户走访提纲。只给出需核验事项、建议提问和闭环动作，不得推断未提供的隐私事实。',
-      personId,
-    );
-
-    setVisitAiStatus(result.status);
-    setVisitAiContent(result.content);
-    setVisitAiModel(result.model ?? null);
-
-    if (result.status === 'live') {
-      toast.success('Gemini 走访提纲已生成');
-    } else {
-      toast.info('Gemini 当前不可用，已显示安全降级提纲');
+    try {
+      const response = await personVisitFacade.requestVisitOutline(person.id);
+      setAiPolicy(response.policy);
+      if (!response.allowed) {
+        setAiResult(null);
+        setAiGrounded(false);
+        return;
+      }
+      setAiResult(response.result);
+      setAiGrounded(response.grounded);
+    } catch (error) {
+      console.error('Failed to request visit outline', error);
+      setAiResult(null);
+      setAiGrounded(false);
+      setAiError(error instanceof Error ? error.message : '未知错误');
+    } finally {
+      setAiRequesting(false);
     }
   };
 
+  // 仅当 facade 判定 grounded（live + gemini + context_applied）时才标示 Gemini 对象化；
+  // 其他状态按真实 provider/model/status 表达
+  const aiStatusText = aiRequesting
+    ? '请求中…'
+    : aiResult
+      ? aiGrounded
+        ? 'Gemini live · 对象化'
+        : `${aiResult.provider ?? '本地'} ${aiResult.status}${aiResult.model ? ` · ${aiResult.model}` : ''}`
+      : aiError
+        ? '生成失败'
+        : aiPolicy && !aiPolicy.allowed
+          ? '会话新建人员不可用'
+          : '待生成';
+
+  const clearFieldError = (field: 'visitorName' | 'visitDate' | 'visitPurpose' | 'notHomeReason') => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  };
+
   const handleSubmit = async () => {
-    // 验证必填项
-    if (!formData.visitPurpose) {
-      toast.error('请填写走访目的');
+    if (isSubmitting || !person) {
       return;
     }
 
-    if (formData.isHome === 'no' && !formData.notHomeReason) {
-      toast.error('请填写不在家原因');
+    const visitorName = formData.visitorName.trim();
+    // 必填校验：字段级错误 + 首个错误字段聚焦（按 DOM 顺序），不再只 toast
+    const errors: { visitorName?: string; visitDate?: string; visitPurpose?: string; notHomeReason?: string } = {};
+    if (!visitorName) {
+      errors.visitorName = '请填写走访人姓名';
+    }
+    if (!formData.visitDate) {
+      errors.visitDate = '请选择走访日期';
+    }
+    if (!formData.visitPurpose.trim()) {
+      errors.visitPurpose = '请填写走访目的';
+    }
+    if (formData.isHome === 'no' && !formData.notHomeReason.trim()) {
+      errors.notHomeReason = '请填写不在家原因';
+    }
+    setFieldErrors(errors);
+    const firstInvalidId = errors.visitorName
+      ? 'visit-visitor-name'
+      : errors.visitDate
+        ? 'visit-date'
+        : errors.visitPurpose
+          ? 'visit-purpose'
+          : errors.notHomeReason
+            ? 'visit-not-home-reason'
+            : null;
+    if (firstInvalidId) {
+      setSubmitError(null);
+      document.getElementById(firstInvalidId)?.focus();
       return;
     }
 
     setIsSubmitting(true);
+    setSubmitError(null);
 
     // 构建走访内容
     const content = `
@@ -306,36 +271,55 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
     `.trim();
 
     try {
-      await visitRepository.addPersonVisit(personId, {
-        gridId: person?.gridId || 'g1',
-        visitorName: formData.visitorName,
+      await personVisitFacade.createPersonVisit(person.id, {
+        visitorName,
         date: `${formData.visitDate} ${formData.visitTime}`,
         content,
-        images: formData.images,
-        tags: [formData.visitType, ...(formData.houseRisk ? ['房屋隐患'] : [])],
+        images: [],
+        tags: [formData.visitType, ...(formData.houseRisk.trim() ? ['房屋隐患'] : [])],
       });
       toast.success('走访记录已保存');
-      onBack();
+      onSaved?.();
     } catch (error) {
       console.error('Failed to submit visit record', error);
-      toast.error('走访记录保存失败，请稍后重试');
+      setSubmitError('走访记录保存失败，请稍后重试');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const todoSuggestions = [
-    person?.risk === 'High' ? '建议提交后自动生成高风险回访任务，并同步给网格长。' : null,
-    recentVisits[0] ? `最近一次走访在 ${recentVisits[0].date}，本次重点跟进上次未闭环事项。` : '暂无历史走访，建议本次同步补齐联系电话、居住状态和主要诉求。',
-    formData.isHome === 'no' ? '建议补一条未见面走访说明，并安排再次上门时间。' : '若发现隐患或救助需求，提交后同步生成待办和回访计划。',
-  ].filter((item): item is string => Boolean(item));
+  const visitTips = person ? [
+    person.risk === 'High' ? '高风险对象：本次走访请重点复核近况、用药与居家安全。' : null,
+    recentVisits[0]
+      ? `最近一次走访在 ${recentVisits[0].date}，本次重点跟进上次未闭环事项。`
+      : '暂无历史走访，建议本次同步补齐联系电话、居住状态和主要诉求。',
+    formData.isHome === 'no'
+      ? '人员不在家：请说明去向，并约定下次上门时间。'
+      : '如发现隐患或救助需求，请在走访详情中记录清楚，便于后续跟进。',
+  ].filter((item): item is string => Boolean(item)) : [];
 
-  if (isLoading) {
+  if (isLoading || mode === 'checking') {
     return (
       <div className="h-full bg-[var(--color-bg-primary)] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-[var(--color-brand-text)] animate-spin mx-auto mb-2" />
           <p className="text-[var(--color-text-tertiary)]">正在加载走访对象信息...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="h-full bg-[var(--color-bg-primary)] flex items-center justify-center px-6">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-[var(--color-status-error-text)] mx-auto mb-2" />
+          <p className="font-medium text-[var(--color-text-primary)]">走访对象信息加载失败</p>
+          <p className="text-xs text-[var(--color-text-tertiary)] mt-1 break-all">{loadError}</p>
+          <div className="flex justify-center gap-3 mt-4">
+            <Button variant="outline" className="min-h-[44px]" onClick={() => setReloadToken((token) => token + 1)}>重试</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+          </div>
         </div>
       </div>
     );
@@ -347,7 +331,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-[var(--color-text-quaternary)] mx-auto mb-2" />
           <p className="text-[var(--color-text-tertiary)]">未找到人员信息</p>
-          <Button onClick={onBack} className="mt-4">返回</Button>
+          <Button onClick={onBack} className="mt-4 min-h-[44px] min-w-[44px]">返回</Button>
         </div>
       </div>
     );
@@ -377,7 +361,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 <div className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
                   {person.gender} · {person.age}岁 · {person.type}
                 </div>
-                <div className="text-xs text-[var(--color-text-quaternary)] mt-0.5 flex items-center gap-1">
+                <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
                   {person.address}
                 </div>
@@ -397,50 +381,65 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 space-y-4">
             {/* 走访人 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访人 <span className="text-[var(--color-status-error-text)]">*</span>
+              <Label htmlFor="visit-visitor-name" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                走访人 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Input
+                id="visit-visitor-name"
                 value={formData.visitorName}
-                onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, visitorName: e.target.value }); clearFieldError('visitorName'); }}
                 placeholder="请输入走访人姓名"
-                className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                required
+                aria-invalid={fieldErrors.visitorName ? true : undefined}
+                aria-describedby={fieldErrors.visitorName ? 'visit-visitor-name-error' : undefined}
+                className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
               />
+              {fieldErrors.visitorName && (
+                <p id="visit-visitor-name-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitorName}</p>
+              )}
             </div>
 
             {/* 走访日期和时间 */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  走访日期 <span className="text-[var(--color-status-error-text)]">*</span>
+                <Label htmlFor="visit-date" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                  走访日期 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
                 </Label>
                 <Input
+                  id="visit-date"
                   type="date"
                   value={formData.visitDate}
-                  onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  onChange={(e) => { setFormData({ ...formData, visitDate: e.target.value }); clearFieldError('visitDate'); }}
+                  required
+                  aria-invalid={fieldErrors.visitDate ? true : undefined}
+                  aria-describedby={fieldErrors.visitDate ? 'visit-date-error' : undefined}
+                  className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                 />
+                {fieldErrors.visitDate && (
+                  <p id="visit-date-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitDate}</p>
+                )}
               </div>
               <div>
-                <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                <Label htmlFor="visit-time" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
                   走访时间
                 </Label>
                 <Input
+                  id="visit-time"
                   type="time"
                   value={formData.visitTime}
                   onChange={(e) => setFormData({ ...formData, visitTime: e.target.value })}
-                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                 />
               </div>
             </div>
 
             {/* 走访类型 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访类型 <span className="text-[var(--color-status-error-text)]">*</span>
+              <Label htmlFor="visit-type" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                走访类型 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Select value={formData.visitType} onValueChange={(value) => setFormData({ ...formData, visitType: value })}>
-                <SelectTrigger className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
+                <SelectTrigger id="visit-type" className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -456,16 +455,24 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
 
             {/* 走访目的 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访目的 <span className="text-[var(--color-status-error-text)]">*</span>
+              <Label htmlFor="visit-purpose" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                走访目的 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Textarea
+                id="visit-purpose"
+                data-testid="visit-purpose"
                 value={formData.visitPurpose}
-                onChange={(e) => setFormData({ ...formData, visitPurpose: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, visitPurpose: e.target.value }); clearFieldError('visitPurpose'); }}
                 placeholder="请简要说明本次走访的目的"
                 rows={3}
+                required
+                aria-invalid={fieldErrors.visitPurpose ? true : undefined}
+                aria-describedby={fieldErrors.visitPurpose ? 'visit-purpose-error' : undefined}
                 className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
               />
+              {fieldErrors.visitPurpose && (
+                <p id="visit-purpose-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitPurpose}</p>
+              )}
             </div>
           </div>
         </Card>
@@ -497,38 +504,55 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 <div>
                   <div className="flex items-center gap-2 text-sm font-semibold text-[var(--color-text-primary)]">
                     <Sparkles className="h-4 w-4 text-[var(--color-accent-purple-text)]" />
-                    Gemini 对象化走访提纲
+                    走访提纲（AI 辅助）
                   </div>
                   <p className="mt-1 text-xs text-[var(--color-text-tertiary)]">
-                    仅向模型发送年龄、风险及由标签映射出的固定分类信号，不发送原始标签、姓名、电话、证件号、地址或走访原文。
+                    {aiPolicy
+                      ? aiPolicy.allowed
+                        ? `${aiPolicy.disclosure}仅向模型发送经裁剪的对象信号，不发送姓名、电话、证件号、地址或走访原文。`
+                        : aiPolicy.disclosure
+                      : '正在确认 AI 可用性…'}
                   </p>
                 </div>
-                <span className="shrink-0 rounded-full border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] px-2 py-1 text-[10px] text-[var(--color-accent-purple-text)]">
-                  {VISIT_AI_STATUS_LABELS[visitAiStatus]}
+                <span
+                  data-testid="visit-ai-status"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy={aiRequesting}
+                  className="shrink-0 rounded-full border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] px-2 py-1 text-[10px] text-[var(--color-accent-purple-text)]"
+                >
+                  {aiStatusText}
                 </span>
               </div>
               <Button
                 type="button"
                 variant="outline"
-                className="w-full border-[var(--color-accent-purple)]/35 text-[var(--color-accent-purple-text)]"
-                disabled={visitAiStatus === 'loading'}
-                onClick={() => void requestGeminiVisitOutline()}
+                data-testid="visit-ai-generate"
+                className="w-full min-h-[44px] border-[var(--color-accent-purple)]/35 text-[var(--color-accent-purple-text)]"
+                disabled={aiRequesting || !aiPolicy?.allowed}
+                onClick={() => void handleGenerateOutline()}
               >
-                {visitAiStatus === 'loading' ? (
+                {aiRequesting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Sparkles className="mr-2 h-4 w-4" />
                 )}
-                {visitAiStatus === 'loading' ? '正在请求 Gemini' : '生成走访提纲'}
+                {aiRequesting ? '正在生成走访提纲' : '生成走访提纲'}
               </Button>
-              {visitAiContent && (
-                <div className="mt-3 rounded-lg border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] p-3">
-                  <div className="mb-2 flex items-center justify-between gap-2 text-[10px] text-[var(--color-accent-purple-text)]">
-                    <span>{visitAiStatus === 'live' ? '真实模型结果' : '安全降级结果'}</span>
-                    {visitAiModel && <span>model: {visitAiModel}</span>}
+              {aiError && (
+                <div role="alert" className="mt-3 rounded-lg border border-[var(--color-status-error)]/35 bg-[var(--color-status-error-soft)] p-3 text-xs text-[var(--color-status-error-text)]">
+                  走访提纲生成失败：{aiError}
+                </div>
+              )}
+              {aiResult && (
+                <div data-testid="visit-ai-result" role="status" aria-live="polite" aria-busy={aiRequesting} className="mt-3 rounded-lg border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] p-3">
+                  <div className="mb-2 text-[10px] text-[var(--color-accent-purple-text)]">
+                    {aiGrounded
+                      ? `Gemini 对象化结果（已应用服务器对象上下文）${aiResult.model ? ` · model: ${aiResult.model}` : ''}`
+                      : `非对象化结果 · provider: ${aiResult.provider ?? '本地'} · status: ${aiResult.status}${aiResult.model ? ` · model: ${aiResult.model}` : ''} · 未应用对象上下文`}
                   </div>
                   <p className="whitespace-pre-wrap text-sm leading-relaxed text-[var(--color-text-primary)]">
-                    {visitAiContent}
+                    {aiResult.content}
                   </p>
                 </div>
               )}
@@ -569,7 +593,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
-                待办建议
+                走访提示
               </h3>
               <span className="text-[10px] px-2 py-1 rounded-full bg-[var(--color-accent-purple-soft)] text-[var(--color-accent-purple-text)] border border-[var(--color-accent-purple)]/35">
                 规则建议
@@ -577,7 +601,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             </div>
           </div>
           <div className="p-4 space-y-2">
-            {todoSuggestions.map((item) => (
+            {visitTips.map((item) => (
               <div key={item} className="flex gap-2 text-sm text-[var(--color-text-primary)]">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-[var(--color-accent-purple)]" />
                 <span className="leading-relaxed">{item}</span>
@@ -597,11 +621,13 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 space-y-4">
             {/* 是否在家 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span>
+              <Label id="visit-is-home-label" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="visit-is-home-label">
                 <button
+                  type="button"
+                  aria-pressed={formData.isHome === 'yes'}
                   onClick={() => setFormData({ ...formData, isHome: 'yes', notHomeReason: '' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'yes'
@@ -613,6 +639,8 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   在家
                 </button>
                 <button
+                  type="button"
+                  aria-pressed={formData.isHome === 'no'}
                   onClick={() => setFormData({ ...formData, isHome: 'no' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'no'
@@ -629,238 +657,155 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 不在家原因 */}
             {formData.isHome === 'no' && (
               <div>
-                <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  不在家原因 <span className="text-[var(--color-status-error-text)]">*</span>
+                <Label htmlFor="visit-not-home-reason" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+                  不在家原因 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
                 </Label>
                 <Textarea
+                  id="visit-not-home-reason"
                   value={formData.notHomeReason}
-                  onChange={(e) => setFormData({ ...formData, notHomeReason: e.target.value })}
+                  onChange={(e) => { setFormData({ ...formData, notHomeReason: e.target.value }); clearFieldError('notHomeReason'); }}
                   placeholder="请说明人员不在家的原因及去向"
                   rows={2}
+                  required
+                  aria-invalid={fieldErrors.notHomeReason ? true : undefined}
+                  aria-describedby={fieldErrors.notHomeReason ? 'visit-not-home-reason-error' : undefined}
                   className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
                 />
+                {fieldErrors.notHomeReason && (
+                  <p id="visit-not-home-reason-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.notHomeReason}</p>
+                )}
               </div>
             )}
           </div>
         </Card>
 
-        {/* 智能走访记录 (仅在人员在家时显示) */}
+        {/* 走访详情 (仅在人员在家时展示；全部由网格员手工填写) */}
         {formData.isHome === 'yes' && (
-          <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)] overflow-hidden">
-            <div className="p-4 border-b border-[var(--color-border-primary)] flex items-center justify-between">
+          <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
+            <div className="p-4 border-b border-[var(--color-border-primary)]">
               <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-                <Mic className="w-4 h-4 text-[var(--color-accent-purple-text)]" />
-                走访记录
+                <CheckCircle2 className="w-4 h-4 text-[var(--color-brand-text)]" />
+                走访详情
               </h3>
-              {recordingStatus === 'done' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)]"
-                  onClick={resetRecording}
-                >
-                  <RefreshCw className="w-3.5 h-3.5 mr-1" />
-                  重新录制
-                </Button>
-              )}
             </div>
-            
-            <div className="p-6">
-              {/* 状态：空闲 */}
-              {recordingStatus === 'idle' && (
-                <div className="text-center py-6">
-                  <div className="w-20 h-20 bg-[var(--color-accent-purple-soft)] rounded-full flex items-center justify-center mx-auto mb-6 relative group">
-                    <div className="absolute inset-0 bg-[var(--color-accent-purple)]/30 rounded-full opacity-30 group-hover:scale-110 transition-transform duration-500"></div>
-                    <Mic className="w-8 h-8 text-[var(--color-accent-purple-text)] relative z-10" />
-                  </div>
-                  <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">开始语音记录</h4>
-                  <p className="text-sm text-[var(--color-text-tertiary)] mb-6 max-w-[240px] mx-auto">
-                    演示模式将模拟现场转写，并按固定规则整理为可编辑走访草稿
-                  </p>
-                  <Button 
-                    size="lg" 
-                    className="w-full h-12 rounded-full bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple-text)] text-white shadow-lg shadow-[var(--color-accent-purple)]/20"
-                    onClick={startRecording}
-                  >
-                    开始记录
-                  </Button>
+            <div className="p-4 space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="visit-health-status" className="text-sm text-[var(--color-text-secondary)]">健康状况</Label>
+                <Textarea
+                  id="visit-health-status"
+                  value={formData.healthStatus}
+                  onChange={(e) => setFormData({ ...formData, healthStatus: e.target.value })}
+                  placeholder="身体状况、用药情况等"
+                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="visit-living-situation" className="text-sm text-[var(--color-text-secondary)]">生活情况</Label>
+                <Textarea
+                  id="visit-living-situation"
+                  value={formData.livingSituation}
+                  onChange={(e) => setFormData({ ...formData, livingSituation: e.target.value })}
+                  placeholder="饮食起居、取暖供电等"
+                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="visit-needs-assistance" className="text-sm text-[var(--color-text-secondary)]">需求协助</Label>
+                <Textarea
+                  id="visit-needs-assistance"
+                  value={formData.needsAssistance}
+                  onChange={(e) => setFormData({ ...formData, needsAssistance: e.target.value })}
+                  placeholder="政策咨询、救助申请等诉求"
+                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="visit-safety-check" className="text-sm text-[var(--color-text-secondary)]">安全检查</Label>
+                <Textarea
+                  id="visit-safety-check"
+                  value={formData.safetyCheck}
+                  onChange={(e) => setFormData({ ...formData, safetyCheck: e.target.value })}
+                  placeholder="用气用电、房屋安全等检查情况"
+                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="visit-family-relationship" className="text-sm text-[var(--color-text-secondary)]">家庭关系</Label>
+                  <Input
+                    id="visit-family-relationship"
+                    value={formData.familyRelationship}
+                    onChange={(e) => setFormData({ ...formData, familyRelationship: e.target.value })}
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  />
                 </div>
-              )}
-
-              {/* 状态：录音中 */}
-              {recordingStatus === 'recording' && (
-                <div className="flex flex-col items-center py-4">
-                  <div className="mb-5 w-full rounded-[4px] border border-[var(--color-accent-purple)]/20 bg-[linear-gradient(180deg,var(--color-accent-purple-soft),rgba(139,59,204,0.06))] p-4">
-                    <div className="mb-5 flex items-center justify-between gap-3">
-                      <div className="inline-flex items-center gap-2 rounded-full border border-[var(--color-status-error)]/20 bg-[var(--color-status-error)]/10 px-3 py-1 text-xs font-medium text-[var(--color-status-error-text)]">
-                        <span className="visit-recording-dot h-2 w-2 rounded-full bg-[var(--color-status-error-text)]" />
-                        正在录音
-                      </div>
-                      <div className="rounded-full bg-[var(--color-bg-primary)] px-3 py-1 font-mono text-xl font-semibold tracking-wider text-[var(--color-text-title)]">
-                        {formatTime(recordingTime)}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-center gap-6">
-                      <div className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-[var(--color-accent-purple)] shadow-sm ring-8 ring-[var(--color-accent-purple)]/10">
-                        <Mic className="h-7 w-7 text-white" />
-                        <span className="absolute -right-1 -top-1 h-3 w-3 rounded-full border-2 border-[var(--color-bg-secondary)] bg-[var(--color-status-error-text)]" />
-                      </div>
-                      <div className="flex h-12 items-end gap-1.5" aria-hidden="true">
-                        {[16, 28, 40, 24, 34].map((height, index) => (
-                          <span
-                            key={`${height}-${index}`}
-                            className="visit-recording-bar w-1.5 rounded-full bg-[var(--color-accent-purple-text)]/80"
-                            style={{ height: `${height}px`, animationDelay: `${index * 0.16}s` }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="w-full bg-[var(--color-bg-primary)] rounded-[4px] p-4 mb-5 h-32 overflow-y-auto border border-[var(--color-border-primary)]">
-                    <p className="text-sm text-[var(--color-text-secondary)] leading-relaxed whitespace-pre-wrap">
-                      {transcript || "正在聆听现场对话..."}
-                    </p>
-                  </div>
-
-                  <Button 
-                    size="lg" 
-                    className="w-full h-12 rounded-full bg-[var(--color-accent-purple)] hover:bg-[var(--color-accent-purple-text)] text-white shadow-sm shadow-[var(--color-accent-purple)]/10"
-                    onClick={stopRecording}
-                  >
-                    <Square className="w-4 h-4 mr-2 fill-current" />
-                    停止录音
-                  </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="visit-next-plan" className="text-sm text-[var(--color-text-secondary)]">下次计划</Label>
+                  <Input
+                    id="visit-next-plan"
+                    value={formData.nextVisitPlan}
+                    onChange={(e) => setFormData({ ...formData, nextVisitPlan: e.target.value })}
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  />
                 </div>
-              )}
+              </div>
 
-              {/* 状态：处理中 */}
-              {recordingStatus === 'processing' && (
-                <div className="text-center py-12">
-                  <Loader2 className="w-12 h-12 text-[var(--color-accent-purple-text)] animate-spin mx-auto mb-6" />
-                  <h4 className="text-lg font-bold text-[var(--color-text-title)] mb-2">正在分析对话...</h4>
-                  <p className="text-sm text-[var(--color-text-tertiary)] animate-pulse">
-                    演示规则正在提取关键信息并生成走访草稿
-                  </p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="visit-house-condition" className="text-sm text-[var(--color-text-secondary)]">房屋情况</Label>
+                  <Input
+                    id="visit-house-condition"
+                    value={formData.houseCondition}
+                    onChange={(e) => setFormData({ ...formData, houseCondition: e.target.value })}
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  />
                 </div>
-              )}
-
-              {/* 状态：完成 (显示生成的表单) */}
-              {recordingStatus === 'done' && (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  <div className="bg-[var(--color-accent-purple-soft)] rounded-lg p-3 flex items-start gap-3 border border-[var(--color-accent-purple)]/20">
-                    <Sparkles className="w-5 h-5 text-[var(--color-accent-purple-text)] mt-0.5 shrink-0" />
-                    <div className="text-sm text-[var(--color-accent-purple-text)]">
-                      <span className="font-bold text-[var(--color-accent-purple-text)]">演示规则已完成整理：</span>
-                      请核对以下内容，如有误可直接点击文本框进行修改。
-                    </div>
-                  </div>
-
-                  {/* 自动生成的字段 */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
-                         健康状况
-                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
-                      </Label>
-                      <Textarea
-                        value={formData.healthStatus}
-                        onChange={(e) => setFormData({ ...formData, healthStatus: e.target.value })}
-                        className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
-                         生活情况
-                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
-                      </Label>
-                      <Textarea
-                        value={formData.livingSituation}
-                        onChange={(e) => setFormData({ ...formData, livingSituation: e.target.value })}
-                        className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
-                         需求协助
-                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
-                      </Label>
-                      <Textarea
-                        value={formData.needsAssistance}
-                        onChange={(e) => setFormData({ ...formData, needsAssistance: e.target.value })}
-                        className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-sm text-[var(--color-text-secondary)] flex items-center gap-2">
-                         安全检查
-                        <span className="text-[10px] text-[var(--color-accent-purple-text)] bg-[var(--color-accent-purple)]/30 px-1.5 py-0.5 rounded border border-[var(--color-accent-purple)]/20">演示填充</span>
-                      </Label>
-                      <Textarea
-                        value={formData.safetyCheck}
-                        onChange={(e) => setFormData({ ...formData, safetyCheck: e.target.value })}
-                        className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        rows={2}
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label className="text-sm text-[var(--color-text-secondary)]">家庭关系</Label>
-                        <Input
-                          value={formData.familyRelationship}
-                          onChange={(e) => setFormData({ ...formData, familyRelationship: e.target.value })}
-                          className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-sm text-[var(--color-text-secondary)]">下次计划</Label>
-                        <Input
-                          value={formData.nextVisitPlan}
-                          onChange={(e) => setFormData({ ...formData, nextVisitPlan: e.target.value })}
-                          className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label htmlFor="visit-house-risk" className="text-sm text-[var(--color-text-secondary)]">房屋隐患</Label>
+                  <Input
+                    id="visit-house-risk"
+                    value={formData.houseRisk}
+                    onChange={(e) => setFormData({ ...formData, houseRisk: e.target.value })}
+                    placeholder="如有隐患请填写"
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  />
                 </div>
-              )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="visit-other-info" className="text-sm text-[var(--color-text-secondary)]">其他信息</Label>
+                <Textarea
+                  id="visit-other-info"
+                  value={formData.otherInfo}
+                  onChange={(e) => setFormData({ ...formData, otherInfo: e.target.value })}
+                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
+                  rows={2}
+                />
+              </div>
             </div>
           </Card>
         )}
-
-        {/* 现场照片 */}
-        <Card className="border-none shadow-sm bg-[var(--color-bg-secondary)]">
-          <div className="p-4 border-b border-[var(--color-border-primary)]">
-            <h3 className="font-bold text-[var(--color-text-title)] flex items-center gap-2">
-              <Camera className="w-4 h-4 text-[var(--color-status-info-text)]" />
-              现场照片
-            </h3>
-          </div>
-          <div className="p-4">
-            <div className="grid grid-cols-3 gap-3">
-              {/* 照片上传按钮 */}
-              <button className="aspect-square rounded-lg border-2 border-dashed border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] flex flex-col items-center justify-center gap-2 text-[var(--color-text-tertiary)] active:bg-[var(--color-bg-primary)] transition-colors">
-                <Camera className="w-6 h-6" />
-                <span className="text-xs">添加照片</span>
-              </button>
-            </div>
-            <p className="text-xs text-[var(--color-text-quaternary)] mt-3">
-              建议拍摄：门牌号、房屋外观、室内环境、安全隐患等
-            </p>
-          </div>
-        </Card>
       </div>
 
       {/* Bottom Actions */}
-      <div className="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border-primary)] p-4 safe-area-bottom sticky bottom-0">
+      <div className="bg-[var(--color-bg-secondary)] border-t border-[var(--color-border-primary)] p-4 safe-area-bottom sticky bottom-0 space-y-3">
+        {submitError && (
+          <div
+            role="alert"
+            className="flex items-start gap-2 rounded-[4px] border border-[var(--color-status-error)]/35 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]"
+          >
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span className="leading-relaxed">{submitError}</span>
+          </div>
+        )}
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -871,9 +816,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             取消
           </Button>
           <Button
-            onClick={handleSubmit}
+            data-testid="visit-submit"
+            onClick={() => void handleSubmit()}
             className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-hover)]"
-            disabled={isSubmitting || !canUseLegacyApiMutation}
+            disabled={isSubmitting || !canMutate}
           >
             {isSubmitting ? '提交中...' : '提交记录'}
           </Button>

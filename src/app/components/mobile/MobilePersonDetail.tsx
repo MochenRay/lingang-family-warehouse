@@ -6,11 +6,9 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Person, VisitRecord } from '../../types/core';
-import { personRepository } from '../../services/repositories/personRepository';
-import { visitRepository } from '../../services/repositories/visitRepository';
-import { houseRepository } from '../../services/repositories/houseRepository';
-import { toast } from 'sonner';
+import { personVisitFacade } from '../../services/mobileSandbox/personVisitFacade';
 import { getRiskLevelLabel } from '../../utils/riskLevel';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobilePersonDetailProps {
   id: string;
@@ -19,21 +17,29 @@ interface MobilePersonDetailProps {
 }
 
 export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDetailProps) {
+  const { mode } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [activeTab, setActiveTab] = useState('basic');
   const [relatedPeople, setRelatedPeople] = useState<Person[]>([]);
   const [cohabitants, setCohabitants] = useState<Person[]>([]);
   const [visits, setVisits] = useState<VisitRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    // facade 以当前数据模式为准；模式未确认前不发起任何读取
+    if (mode === 'checking') {
+      return;
+    }
     let alive = true;
 
     const loadPerson = async () => {
       setIsLoading(true);
+      setLoadError(null);
 
       try {
-        const personData = await personRepository.getPerson(id);
+        const personData = await personVisitFacade.getPerson(id);
         if (!alive) {
           return;
         }
@@ -50,19 +56,19 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
           personData.familyRelations && personData.familyRelations.length > 0
             ? Promise.all(
                 personData.familyRelations.map(async (relation) => {
-                  const nextPerson = await personRepository.getPerson(relation.relatedPersonId);
+                  const nextPerson = await personVisitFacade.getPerson(relation.relatedPersonId);
                   return nextPerson ?? null;
                 }),
               ).then((items) => items.filter((item): item is Person => item !== null))
             : Promise.resolve([] as Person[]),
           personData.houseId
-            ? houseRepository
-                .getHouseResidents(personData.houseId)
-                .then((items) => items.filter((item) => item.id !== personData.id))
+            ? personVisitFacade
+                .listPeople({ houseId: personData.houseId, limit: 500 })
+                .then((response) => response.items.filter((item) => item.id !== personData.id))
             : Promise.resolve([] as Person[]),
-          visitRepository
-            .getVisits({ targetId: personData.id, targetType: 'person', limit: 100 })
-            .then((items) => [...items].sort((left, right) => right.date.localeCompare(left.date))),
+          personVisitFacade
+            .listVisits({ targetId: personData.id, targetType: 'person', limit: 100 })
+            .then((response) => [...response.items].sort((left, right) => right.date.localeCompare(left.date))),
         ]);
 
         if (!alive) {
@@ -82,6 +88,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         setRelatedPeople([]);
         setCohabitants([]);
         setVisits([]);
+        setLoadError(error instanceof Error ? error.message : '人员档案加载失败');
       } finally {
         if (alive) {
           setIsLoading(false);
@@ -90,22 +97,37 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
     };
 
     void loadPerson();
-    const handleRefresh = () => {
+    const unsubscribe = personVisitFacade.subscribe(() => {
       void loadPerson();
-    };
-    window.addEventListener('db-change', handleRefresh);
+    });
     return () => {
       alive = false;
-      window.removeEventListener('db-change', handleRefresh);
+      unsubscribe();
     };
-  }, [id]);
+  }, [id, mode, reloadToken]);
 
-  if (isLoading) {
+  if (isLoading || mode === 'checking') {
     return (
       <div className="h-full bg-[var(--color-neutral-01)] flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-[var(--color-brand-text)] animate-spin mx-auto mb-3" />
           <p className="text-sm text-[var(--color-neutral-08)]">正在加载人员档案...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="h-full bg-[var(--color-neutral-01)] flex items-center justify-center px-6">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-[var(--color-status-error-text)] mx-auto mb-2" />
+          <p className="font-medium text-[var(--color-neutral-10)]">人员档案加载失败</p>
+          <p className="text-xs text-[var(--color-neutral-08)] mt-1 break-all">{loadError}</p>
+          <div className="flex justify-center gap-3 mt-4">
+            <Button variant="outline" className="min-h-[44px]" onClick={() => setReloadToken((token) => token + 1)}>重试</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+          </div>
         </div>
       </div>
     );
@@ -117,7 +139,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
           <p className="text-[var(--color-neutral-08)]">未找到该人员信息</p>
-          <Button onClick={onBack} className="mt-4">返回</Button>
+          <Button onClick={onBack} className="mt-4 min-h-[44px] min-w-[44px]">返回</Button>
         </div>
       </div>
     );
@@ -137,10 +159,10 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
   ].filter((item): item is string => Boolean(item));
 
   const todoSuggestions = [
-    person.risk === 'High' ? '建议生成高风险回访待办，并同步给网格长复核。' : null,
+    person.risk === 'High' ? '高风险对象：本次走访请优先复核近况与关爱措施落实情况。' : null,
     person.careLabels?.length ? `建议核验关爱对象政策落实情况：${person.careLabels.slice(0, 2).join('、')}。` : null,
     !person.phone ? '建议补齐联系电话，避免后续回访失联。' : null,
-    visits.length < 2 ? '建议在本周内完成二次回访，补齐连续走访记录。' : '建议根据本次记录更新下次回访计划和提醒时间。',
+    visits.length < 2 ? '建议在本周内完成二次回访，补齐连续走访记录。' : '建议根据本次记录安排下次回访时间。',
   ].filter((item): item is string => Boolean(item));
 
   return (
@@ -166,19 +188,20 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <TabsList className="w-full grid grid-cols-3 h-12 bg-transparent rounded-none border-b-0">
               <TabsTrigger 
                 value="basic" 
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 基础信息
               </TabsTrigger>
               <TabsTrigger 
                 value="relation" 
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 关系图谱
               </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+              <TabsTrigger
+                value="history"
+                data-testid="person-visit-history"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 历史记录
               </TabsTrigger>
@@ -192,7 +215,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <div className="bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center border-2 border-[var(--color-neutral-03)] text-2xl font-bold text-primary">
+                    <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center border-2 border-[var(--color-neutral-03)] text-2xl font-bold text-[var(--color-brand-text)]">
                       {person.name[0]}
                     </div>
                     <div>
@@ -331,7 +354,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                     待办建议
                   </h3>
                   <Badge variant="secondary" className="text-[10px]">
-                    AI 推荐
+                    规则建议
                   </Badge>
                 </div>
                 <div className="space-y-2">
@@ -801,7 +824,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
+                              className="text-xs text-[var(--color-brand-text)] min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                               onClick={() => onRouteChange?.(`person-detail/${relatedPerson.id}`)}
                             >
                               查看
@@ -845,7 +868,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
+                        className="text-xs text-[var(--color-brand-text)] min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                         onClick={() => onRouteChange?.(`person-detail/${cohabitant.id}`)}
                       >
                         查看
@@ -878,7 +901,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                 {visits.length > 0 ? (
                   <div className="space-y-0">
                     {visits.map((visit, index) => (
-                      <div key={visit.id} className={`relative pl-4 border-l-2 border-[var(--color-neutral-03)] pb-6 ${index === visits.length - 1 ? 'border-transparent pb-0' : ''}`}>
+                      <div key={visit.id} data-visit-id={visit.id} className={`relative pl-4 border-l-2 border-[var(--color-neutral-03)] pb-6 ${index === visits.length - 1 ? 'border-transparent pb-0' : ''}`}>
                         <div className="absolute -left-[5px] top-1.5 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)] ring-4 ring-[var(--color-neutral-11)]"></div>
                         <div className="flex justify-between items-start mb-1">
                           <span className="text-sm font-bold text-[var(--color-neutral-11)]">{visit.visitorName}</span>
@@ -937,8 +960,9 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
 
       {/* Bottom Action */}
       <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0 flex gap-3">
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
+          data-testid="person-add-visit"
           className="flex-1 h-11 text-[var(--color-neutral-10)]"
           onClick={() => onRouteChange?.(`visit-form/${id}`)}
         >
@@ -946,7 +970,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         </Button>
         <Button
           className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
-          onClick={() => toast.info('请通过人员编辑或专项采集页发起信息变更')}
+          onClick={() => onRouteChange?.(`person-edit/${id}`)}
         >
           信息采集变更
         </Button>

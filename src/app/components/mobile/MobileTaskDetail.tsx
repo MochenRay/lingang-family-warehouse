@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  AlertCircle,
   Calendar,
   CheckCircle,
   Clock,
@@ -48,6 +49,8 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
   const [detail, setDetail] = useState<MobileTaskDetailData | null>(null);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -55,6 +58,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
 
     const load = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const nextDetail = await taskRepository.getTaskDetail(taskId);
         if (!active) {
@@ -66,6 +70,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
         console.error('Failed to load mobile task detail', error);
         if (active) {
           setDetail(null);
+          setLoadError(error instanceof Error ? error.message : '任务详情加载失败');
         }
       } finally {
         if (active) {
@@ -83,10 +88,16 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
       active = false;
       window.removeEventListener('db-change', handleRefresh);
     };
-  }, [taskId]);
+  }, [taskId, reloadToken]);
 
   const handleSubmit = async () => {
     if (!detail || detail.status === 'completed') {
+      return;
+    }
+    // legacy completeTask 直写业务 API，仅 api 模式放行；
+    // checking/session/blocked 一律 fail closed：不得发送任何 business mutation，
+    // 不得写 session，也不得 toast 伪造成功
+    if (!canUseLegacyApiMutation) {
       return;
     }
     if (!feedback.trim()) {
@@ -123,16 +134,30 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
     );
   }
 
+  if (loadError) {
+    return (
+      <div className="min-h-screen bg-[var(--color-neutral-01)] flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <p className="font-medium text-[var(--color-neutral-10)]">任务详情加载失败</p>
+        <p className="text-xs text-[var(--color-neutral-08)] break-all">{loadError}</p>
+        <div className="flex gap-3">
+          <Button variant="outline" className="min-h-[44px]" onClick={() => setReloadToken((token) => token + 1)}>重试</Button>
+          <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+        </div>
+      </div>
+    );
+  }
+
   if (!detail) {
     return (
       <div className="min-h-screen bg-[var(--color-neutral-01)] flex flex-col items-center justify-center gap-4">
         <p className="text-[var(--color-neutral-08)]">未找到任务详情</p>
-        <Button onClick={onBack}>返回</Button>
+        <Button onClick={onBack} className="min-h-[44px] min-w-[44px]">返回</Button>
       </div>
     );
   }
 
   const isCompleted = detail.status === 'completed';
+  const isPersonTask = detail.sourceKind === 'person';
   const canSubmit = feedback.trim().length > 0 && !isSubmitting;
 
   return (
@@ -211,7 +236,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 text-xs"
+                  className="min-h-[44px] px-3 text-xs"
                   onClick={() => handleOpenSource(detail.secondaryRoute)}
                   disabled={!onRouteChange}
                 >
@@ -225,9 +250,11 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                   <button
                     key={person.id}
                     type="button"
+                    data-testid="task-person-link"
+                    data-person-id={person.id}
                     onClick={() => handleOpenSource(`person-detail/${person.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-[var(--color-neutral-01)] text-xs text-[var(--color-neutral-10)] disabled:cursor-default"
+                    className="inline-flex min-h-[44px] items-center px-3 py-1.5 rounded-full bg-[var(--color-neutral-01)] text-xs text-[var(--color-neutral-10)] disabled:cursor-default"
                   >
                     {person.name}
                     {person.risk ? ` · ${getRiskLevelLabel(person.risk)}` : ''}
@@ -238,7 +265,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     type="button"
                     onClick={() => handleOpenSource(`house-detail/${detail.context.house!.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-text)] disabled:cursor-default"
+                    className="inline-flex min-h-[44px] items-center px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-text)] disabled:cursor-default"
                   >
                     房屋 · {detail.context.house.address}
                   </button>
@@ -289,32 +316,57 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
         <div className="px-4 mb-6">
           <Card className="border-none shadow-sm">
             <CardContent className="p-4">
-              <div className="flex items-center gap-2 mb-3 font-semibold text-[var(--color-neutral-11)]">
-                <CheckCircle className="w-4 h-4 text-[var(--color-status-success-text)]" />
-                {isCompleted ? '处理结果' : '回填反馈'}
-              </div>
-
-              <div className="mb-4">
-                <Label className="text-xs text-[var(--color-neutral-08)] mb-1.5 block">情况说明</Label>
-                {isCompleted ? (
-                  <div className="p-3 bg-[var(--color-neutral-01)] rounded text-sm text-[var(--color-neutral-11)] whitespace-pre-wrap">
-                    {feedback || '暂无回填说明'}
+              {isPersonTask && !isCompleted ? (
+                <>
+                  <div className="flex items-center gap-2 mb-3 font-semibold text-[var(--color-neutral-11)]">
+                    <CheckCircle className="w-4 h-4 text-[var(--color-status-success-text)]" />
+                    办理方式
                   </div>
-                ) : (
-                  <Textarea
-                    placeholder="请输入本次处理结果、发现的问题或后续安排..."
-                    value={feedback}
-                    onChange={(event) => setFeedback(event.target.value)}
-                    className="min-h-[120px] resize-none bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] focus:bg-[var(--color-neutral-02)] transition-colors"
-                  />
-                )}
-              </div>
+                  <div className="space-y-2 text-sm text-[var(--color-neutral-10)] leading-relaxed">
+                    <p>走访任务不在此简化回填。请进入居民详情页，通过「添加走访记录」完成完整走访登记。</p>
+                    <p className="text-xs text-[var(--color-neutral-08)]">
+                      本会话走访只进入人物历史；工作清单保持服务器投影，本会话不重算。
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2 mb-3 font-semibold text-[var(--color-neutral-11)]">
+                    <CheckCircle className="w-4 h-4 text-[var(--color-status-success-text)]" />
+                    {isCompleted ? '处理结果' : '回填反馈'}
+                  </div>
 
-              {!isCompleted && (
-                <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
-                  <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
-                  提交后会写回真实走访记录或纠纷处置时间线。
-                </div>
+                  <div className="mb-4">
+                    <Label htmlFor="task-conflict-feedback" className="text-xs text-[var(--color-neutral-08)] mb-1.5 block">情况说明</Label>
+                    {isCompleted ? (
+                      <div className="p-3 bg-[var(--color-neutral-01)] rounded text-sm text-[var(--color-neutral-11)] whitespace-pre-wrap">
+                        {feedback || '暂无回填说明'}
+                      </div>
+                    ) : (
+                      <Textarea
+                        id="task-conflict-feedback"
+                        placeholder="请输入本次处理结果、发现的问题或后续安排..."
+                        value={feedback}
+                        onChange={(event) => setFeedback(event.target.value)}
+                        className="min-h-[120px] resize-none bg-[var(--color-neutral-01)] border-[var(--color-neutral-03)] focus:bg-[var(--color-neutral-02)] transition-colors"
+                      />
+                    )}
+                  </div>
+
+                  {!isCompleted && (
+                    canUseLegacyApiMutation ? (
+                      <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
+                        <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
+                        提交后会写回该矛盾的处置时间线。
+                      </div>
+                    ) : (
+                      <div className="text-xs text-[var(--color-status-warning-text)] flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        当前模式不可提交：矛盾回填仅支持服务器直写，未接入浏览会话暂存；已填写内容不会被提交或保存。
+                      </div>
+                    )
+                  )}
+                </>
               )}
             </CardContent>
           </Card>
@@ -323,22 +375,35 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
 
       {!isCompleted && (
         <div className="absolute bottom-0 left-0 right-0 z-20 space-y-3 border-t border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] p-4 safe-area-bottom">
-          <Button
-            variant="outline"
-            className="w-full h-11 text-base"
-            onClick={() => handleOpenSource(detail.route)}
-            disabled={!onRouteChange}
-          >
-            <ExternalLink className="w-4 h-4 mr-2" />
-            查看来源对象
-          </Button>
-          <Button
-            className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base disabled:bg-[var(--color-brand-primary)]/45 disabled:text-white/70"
-            onClick={handleSubmit}
-            disabled={!canSubmit || !canUseLegacyApiMutation}
-          >
-            {isSubmitting ? '提交中...' : detail.primaryActionLabel}
-          </Button>
+          {isPersonTask ? (
+            <Button
+              className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base"
+              onClick={() => handleOpenSource(detail.route)}
+              disabled={!onRouteChange}
+            >
+              <ExternalLink className="w-4 h-4 mr-2" />
+              进入居民详情登记走访
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outline"
+                className="w-full h-11 text-base"
+                onClick={() => handleOpenSource(detail.route)}
+                disabled={!onRouteChange}
+              >
+                <ExternalLink className="w-4 h-4 mr-2" />
+                查看来源对象
+              </Button>
+              <Button
+                className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base disabled:bg-[var(--color-brand-primary)]/45 disabled:text-white/70"
+                onClick={handleSubmit}
+                disabled={!canSubmit || !canUseLegacyApiMutation}
+              >
+                {isSubmitting ? '提交中...' : detail.primaryActionLabel}
+              </Button>
+            </>
+          )}
         </div>
       )}
     </div>
