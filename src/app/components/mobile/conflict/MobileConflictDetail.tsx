@@ -7,11 +7,13 @@ import {
   Loader2,
   BookOpen,
   ExternalLink,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Card, CardContent } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Textarea } from '../../ui/textarea';
+import { Label } from '../../ui/label';
 import {
   Dialog,
   DialogContent,
@@ -23,9 +25,13 @@ import {
   DialogDescription,
 } from '../../ui/dialog';
 import { MobileDetailHeader } from '../MobileDetailHeader';
-import { ConfirmDialog } from '../../patterns/ConfirmDialog';
-import { conflictRepository, type ConflictContext } from '../../../services/repositories/conflictRepository';
+import {
+  conflictFacade,
+  MobileConflictFacadeTargetNotFoundError,
+} from '../../../services/mobileSandbox/conflictFacade';
+import type { ConflictContext } from '../../../services/repositories/conflictRepository';
 import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
+import type { MobileNavigateOptions } from '../mobileNavigation';
 import type { ConflictRecord } from '../../../types/core';
 import { toast } from 'sonner';
 import { getRiskLevelLabel } from '../../../utils/riskLevel';
@@ -34,8 +40,14 @@ import { useMobileSandbox } from '../MobileSandboxProvider';
 interface MobileConflictDetailProps {
   id: string;
   onBack: () => void;
-  onRouteChange?: (route: string) => void;
+  onRouteChange?: (route: string, options?: MobileNavigateOptions) => void;
 }
+
+type DetailPhase =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'not-found' }
+  | { status: 'ready' };
 
 interface PolicyCard {
   title: string;
@@ -51,8 +63,19 @@ interface ScriptCard {
   tips: string;
 }
 
-function getCurrentWorkerName() {
-  return mobileContextRepository.getCurrentWorkerName();
+// 与种子数据一致的本地业务时间格式（YYYY-MM-DD HH:mm:ss）
+function formatNow() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof MobileConflictFacadeTargetNotFoundError) {
+    return true;
+  }
+  // api.ts 只抛普通 Error；404 只能通过消息前缀识别，其他状态一律按真实错误处理
+  return error instanceof Error && /^API 404[:\s]/.test(error.message);
 }
 
 function buildPolicyCards(conflict: ConflictRecord, context: ConflictContext): PolicyCard[] {
@@ -160,63 +183,92 @@ function buildScriptCards(conflict: ConflictRecord, context: ConflictContext): S
   return cards.slice(0, 3);
 }
 
-async function loadConflictDetail(id: string) {
-  const conflict = await conflictRepository.getConflict(id);
-  if (!conflict) {
-    return null;
-  }
-  const context = await conflictRepository.getConflictContext(id);
-  return { conflict, context };
-}
-
 export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConflictDetailProps) {
-  const { canUseLegacyApiMutation } = useMobileSandbox();
+  const { mode, canMutate } = useMobileSandbox();
   const [conflict, setConflict] = useState<ConflictRecord | null>(null);
   const [context, setContext] = useState<ConflictContext | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [phase, setPhase] = useState<DetailPhase>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
   const [progressContent, setProgressContent] = useState('');
+  const [progressError, setProgressError] = useState<string | null>(null);
   const [isSubmittingProgress, setIsSubmittingProgress] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiTab, setAiTab] = useState<'policy' | 'script'>('policy');
   const [resolveConfirmOpen, setResolveConfirmOpen] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
 
-  const reloadConflict = async () => {
-    const next = await loadConflictDetail(id);
-    setConflict(next?.conflict ?? null);
-    setContext(next?.context ?? null);
-    return next;
-  };
-
+  // 每轮加载只调用一次 facade.getConflictDetail，由 facade 返回 conflict + context；
+  // session temp id 由 facade 内部处理，绝不直接请求 temp-ID API。
   useEffect(() => {
-    let active = true;
+    if (mode === 'checking') {
+      return;
+    }
+    let alive = true;
 
-    const run = async () => {
-      setLoading(true);
+    const load = async () => {
+      setPhase({ status: 'loading' });
       try {
-        const next = await loadConflictDetail(id);
-        if (!active) {
+        const result = await conflictFacade.getConflictDetail(id);
+        if (!alive) {
           return;
         }
-        setConflict(next?.conflict ?? null);
-        setContext(next?.context ?? null);
-      } catch (error) {
-        console.error('Failed to load conflict detail', error);
-        if (active) {
+        if (!result) {
           setConflict(null);
           setContext(null);
+          setPhase({ status: 'not-found' });
+          return;
         }
-      } finally {
-        if (active) {
-          setLoading(false);
+        setConflict(result.conflict);
+        setContext(result.context);
+        setPhase({ status: 'ready' });
+      } catch (error) {
+        if (!alive) {
+          return;
+        }
+        setConflict(null);
+        setContext(null);
+        if (isNotFoundError(error)) {
+          // not-found 是常规业务状态，不是错误，不打 error 日志
+          setPhase({ status: 'not-found' });
+        } else {
+          console.error('Failed to load conflict detail', error);
+          setPhase({
+            status: 'error',
+            message: error instanceof Error ? error.message : '纠纷详情加载失败',
+          });
         }
       }
     };
 
-    void run();
+    void load();
+    const unsubscribe = conflictFacade.subscribe(() => {
+      void load();
+    });
     return () => {
-      active = false;
+      alive = false;
+      unsubscribe();
     };
-  }, [id]);
+  }, [id, mode, reloadToken]);
+
+  // mutation 成功后经 facade 真实读回；旧结果不得覆盖当前详情（id 变化后 alive 已失效）
+  const reloadAfterMutation = async (): Promise<boolean> => {
+    try {
+      const result = await conflictFacade.getConflictDetail(id);
+      if (!result) {
+        setConflict(null);
+        setContext(null);
+        setPhase({ status: 'not-found' });
+        return false;
+      }
+      setConflict(result.conflict);
+      setContext(result.context);
+      return true;
+    } catch (error) {
+      console.error('Failed to reload conflict detail after mutation', error);
+      return false;
+    }
+  };
 
   const relatedPolicies = useMemo(
     () => (conflict && context ? buildPolicyCards(conflict, context) : []),
@@ -228,33 +280,30 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   );
 
   const handleAddProgress = async () => {
-    if (!conflict || !progressContent.trim()) {
+    if (!conflict || !progressContent.trim() || isSubmittingProgress) {
       return;
     }
 
     setIsSubmittingProgress(true);
+    setProgressError(null);
     try {
-      const now = new Date().toLocaleString();
-      const nextTimeline = [
-        ...conflict.timeline,
-        {
-          date: now,
-          content: progressContent.trim(),
-          operator: getCurrentWorkerName(),
-        },
-      ];
-
-      await conflictRepository.updateConflict(conflict.id, {
-        timeline: nextTimeline,
-        updatedAt: now,
+      await conflictFacade.addProgress(conflict.id, {
+        date: formatNow(),
+        content: progressContent.trim(),
+        operator: mobileContextRepository.getCurrentWorkerName(),
       });
-
-      await reloadConflict();
+      const reloaded = await reloadAfterMutation();
+      if (!reloaded) {
+        setProgressError('进展已提交但读回失败，请返回列表重新进入确认');
+        toast.error('进展读回失败');
+        return;
+      }
       setProgressContent('');
       setIsDialogOpen(false);
       toast.success('进展记录已添加');
     } catch (error) {
       console.error('Failed to add progress', error);
+      setProgressError(error instanceof Error ? error.message : '进展记录添加失败，请稍后重试');
       toast.error('进展记录添加失败');
     } finally {
       setIsSubmittingProgress(false);
@@ -262,59 +311,81 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   };
 
   const handleMarkResolved = async () => {
-    if (!conflict) {
+    if (!conflict || isResolving) {
       return;
     }
 
+    setIsResolving(true);
+    setResolveError(null);
     try {
-      const now = new Date().toLocaleString();
-      const nextTimeline = [
-        ...conflict.timeline,
-        {
-          date: now,
-          content: '网格员标记该纠纷已化解',
-          operator: getCurrentWorkerName(),
-        },
-      ];
-
-      await conflictRepository.updateConflict(conflict.id, {
-        status: '已化解',
-        updatedAt: now,
-        timeline: nextTimeline,
+      await conflictFacade.markResolved(conflict.id, {
+        date: formatNow(),
+        content: '网格员标记该纠纷已化解',
+        operator: mobileContextRepository.getCurrentWorkerName(),
       });
-
-      await reloadConflict();
+      const reloaded = await reloadAfterMutation();
+      if (!reloaded) {
+        setResolveError('状态已提交但读回失败，请返回列表重新进入确认');
+        toast.error('状态读回失败');
+        return;
+      }
+      setResolveConfirmOpen(false);
       toast.success('状态已更新');
     } catch (error) {
       console.error('Failed to mark conflict resolved', error);
+      setResolveError(error instanceof Error ? error.message : '状态更新失败，请稍后重试');
       toast.error('状态更新失败');
+    } finally {
+      setIsResolving(false);
     }
   };
 
-  if (loading) {
+  if (mode === 'checking' || phase.status === 'loading') {
     return (
-      <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]">
+      <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]" data-testid="conflict-detail-loading" role="status">
         <Loader2 className="w-8 h-8 text-[var(--color-brand-text)] animate-spin" />
       </div>
     );
   }
 
-  if (!conflict || !context) {
+  if (phase.status === 'error') {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-[var(--color-neutral-01)] gap-4">
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[var(--color-neutral-01)] px-6" data-testid="conflict-detail-error">
+        <p role="alert" className="text-center text-sm text-[var(--color-status-error-text)]">
+          纠纷详情加载失败：{phase.message}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            data-testid="conflict-detail-retry"
+            onClick={() => setReloadToken((token) => token + 1)}
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--color-neutral-03)] px-4 text-sm text-[var(--color-neutral-10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+          >
+            <RotateCcw className="w-4 h-4" />
+            重新加载
+          </button>
+          <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.status === 'not-found' || !conflict || !context) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[var(--color-neutral-01)]" data-testid="conflict-detail-not-found">
         <p className="text-[var(--color-neutral-08)]">未找到记录</p>
-        <Button onClick={onBack}>返回</Button>
+        <Button className="min-h-[44px]" onClick={onBack}>返回</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]">
+    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]" data-testid="conflict-detail">
       <MobileDetailHeader
         title="纠纷详情"
         onBack={onBack}
         action={
-          <Badge className={conflict.status === '已化解' ? 'bg-[var(--color-status-success)] text-white border-0' : 'bg-[var(--color-status-warning)] text-white border-0'}>
+          <Badge data-testid="conflict-detail-status" className={conflict.status === '已化解' ? 'bg-[var(--color-status-success)] text-white border-0' : 'bg-[var(--color-status-warning)] text-white border-0'}>
             {conflict.status}
           </Badge>
         }
@@ -324,7 +395,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <Card className="border-none shadow-sm">
           <CardContent className="p-4 space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-[var(--color-neutral-11)] mb-2">{conflict.title}</h2>
+              <h2 className="text-xl font-bold text-[var(--color-neutral-11)] mb-2" data-testid="conflict-detail-title">{conflict.title}</h2>
               <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-08)] mb-4">
                 <span className="bg-[var(--color-neutral-02)] px-2 py-0.5 rounded text-[var(--color-neutral-10)]">{conflict.source}</span>
                 <span>•</span>
@@ -365,8 +436,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                     <button
                       key={person.id}
                       type="button"
+                      data-testid={`conflict-related-person-${person.id}`}
                       onClick={() => onRouteChange?.(`person-detail/${person.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs text-[var(--color-brand-text)] active:opacity-80"
+                      className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 text-xs text-[var(--color-brand-text)] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                     >
                       <Users className="w-3 h-3" />
                       {person.name}
@@ -376,8 +448,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                   {context.relatedHouse && (
                     <button
                       type="button"
-                      onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 py-1 text-xs text-[var(--color-status-success-text)] active:opacity-80"
+                      data-testid="conflict-related-house"
+                      onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse!.id}`)}
+                      className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 text-xs text-[var(--color-status-success-text)] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                     >
                       <MapPin className="w-3 h-3" />
                       {context.relatedHouse.address}
@@ -413,8 +486,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
             <div className="flex bg-[var(--color-neutral-01)] rounded-lg p-0.5 mb-4">
               <button
+                type="button"
                 onClick={() => setAiTab('policy')}
-                className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
+                aria-pressed={aiTab === 'policy'}
+                className={`flex-1 min-h-[44px] text-xs font-medium rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] ${
                   aiTab === 'policy'
                     ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
@@ -423,8 +498,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 关联政策法规
               </button>
               <button
+                type="button"
                 onClick={() => setAiTab('script')}
-                className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
+                aria-pressed={aiTab === 'script'}
+                className={`flex-1 min-h-[44px] text-xs font-medium rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] ${
                   aiTab === 'script'
                     ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
@@ -528,9 +605,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
         <div>
           <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3 ml-1">处理进度</h3>
-          <div className="space-y-4 pl-2">
+          <div className="space-y-4 pl-2" data-testid="conflict-timeline">
             {[...conflict.timeline].reverse().map((item, index) => (
-              <div key={`${item.date}-${index}`} className="relative pl-6 pb-2 border-l-2 border-[var(--color-neutral-03)] last:border-0">
+              <div key={`${item.date}-${index}`} data-testid="conflict-timeline-entry" className="relative pl-6 pb-2 border-l-2 border-[var(--color-neutral-03)] last:border-0">
                 <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)] ring-4 ring-[var(--color-brand-primary)]/10" />
                 <div className="text-xs text-[var(--color-neutral-08)] mb-1 flex justify-between pr-2">
                   <span>{item.date}</span>
@@ -548,60 +625,94 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       </div>
 
       {conflict.status !== '已化解' && (
-        <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20"
-                disabled={!canUseLegacyApiMutation}
-              >
-                <MessageSquarePlus className="w-4 h-4" /> 添加进展
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[90%] rounded-xl">
-              <DialogHeader>
-                <DialogTitle>添加调解进展</DialogTitle>
-                <DialogDescription className="sr-only">
-                  输入最新的调解进展记录
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <Textarea
-                  placeholder="请输入最新的调解情况、走访记录等..."
-                  value={progressContent}
-                  onChange={(event) => setProgressContent(event.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-              <DialogFooter className="flex-row gap-2 justify-end">
-                <DialogClose asChild>
-                  <Button variant="ghost">取消</Button>
-                </DialogClose>
-                <Button onClick={handleAddProgress} disabled={isSubmittingProgress || !canUseLegacyApiMutation}>
-                  {isSubmittingProgress ? '提交中...' : '提交'}
+        <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 space-y-2 sticky bottom-0 shadow-lg">
+          {resolveError && (
+            <div role="alert" data-testid="conflict-resolve-error" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
+              {resolveError}
+            </div>
+          )}
+          <div className="flex gap-3">
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setProgressError(null); }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  data-testid="conflict-add-progress"
+                  className="flex-1 min-h-[44px] gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20"
+                  disabled={!canMutate}
+                >
+                  <MessageSquarePlus className="w-4 h-4" /> 添加进展
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-[90%] rounded-xl" data-testid="conflict-progress-dialog">
+                <DialogHeader>
+                  <DialogTitle>添加调解进展</DialogTitle>
+                  <DialogDescription>
+                    记录最新的调解情况、走访结果或下一步安排，提交后将写入处理进度。
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-2">
+                  <Label htmlFor="conflict-progress-input" className="sr-only">进展内容</Label>
+                  <Textarea
+                    id="conflict-progress-input"
+                    data-testid="conflict-progress-input"
+                    placeholder="请输入最新的调解情况、走访记录等..."
+                    value={progressContent}
+                    onChange={(event) => { setProgressContent(event.target.value); setProgressError(null); }}
+                    className="min-h-[100px]"
+                  />
+                  {progressError && (
+                    <p role="alert" data-testid="conflict-progress-error" className="text-xs text-[var(--color-status-error-text)]">{progressError}</p>
+                  )}
+                </div>
+                <DialogFooter className="flex-row gap-2 justify-end">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="min-h-[44px]" data-testid="conflict-progress-cancel">取消</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={handleAddProgress}
+                    data-testid="conflict-progress-submit"
+                    className="min-h-[44px]"
+                    disabled={isSubmittingProgress || !canMutate || !progressContent.trim()}
+                  >
+                    {isSubmittingProgress ? '提交中...' : '提交'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
-          <Button
-            className="flex-1 gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
-            onClick={() => setResolveConfirmOpen(true)}
-            disabled={!canUseLegacyApiMutation}
-          >
-            <ShieldCheck className="w-4 h-4" /> 标记化解
-          </Button>
+            <Button
+              className="flex-1 min-h-[44px] gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
+              data-testid="conflict-mark-resolved"
+              onClick={() => { setResolveError(null); setResolveConfirmOpen(true); }}
+              disabled={!canMutate || isResolving}
+            >
+              <ShieldCheck className="w-4 h-4" /> {isResolving ? '提交中...' : '标记化解'}
+            </Button>
 
-          {/* 化解确认弹窗（替代原生 confirm） */}
-          <ConfirmDialog
-            open={resolveConfirmOpen}
-            onOpenChange={setResolveConfirmOpen}
-            title="标记已化解"
-            description="确认将此纠纷标记为已化解吗？"
-            confirmText="标记化解"
-            onConfirm={() => void handleMarkResolved()}
-          />
+            <Dialog open={resolveConfirmOpen} onOpenChange={(open) => { setResolveConfirmOpen(open); if (!open) setResolveError(null); }}>
+              <DialogContent className="max-w-[90%] rounded-xl" data-testid="conflict-resolve-dialog">
+                <DialogHeader>
+                  <DialogTitle>标记已化解</DialogTitle>
+                  <DialogDescription>
+                    确认将此纠纷标记为已化解吗？该操作会同步更新处理进度记录。
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter className="flex-row gap-2 justify-end">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="min-h-[44px]" data-testid="conflict-resolve-cancel">取消</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={() => void handleMarkResolved()}
+                    data-testid="conflict-resolve-confirm"
+                    className="min-h-[44px] bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
+                    disabled={isResolving}
+                  >
+                    {isResolving ? '提交中...' : '标记化解'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       )}
     </div>

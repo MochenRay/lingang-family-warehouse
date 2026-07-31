@@ -8,20 +8,34 @@ import {
   MapPin,
   Clock,
   Loader2,
+  RotateCcw,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
-import { Card, CardContent } from '../../ui/card';
+import { CardContent } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Tabs, TabsList, TabsTrigger } from '../../ui/tabs';
 import { Input } from '../../ui/input';
 import { MobileLayout } from '../MobileLayout';
-import { conflictRepository } from '../../../services/repositories/conflictRepository';
+import { conflictFacade } from '../../../services/mobileSandbox/conflictFacade';
+import { useMobileSandbox } from '../MobileSandboxProvider';
+import type { MobileNavigateOptions } from '../mobileNavigation';
 import type { ConflictRecord } from '../../../types/core';
 
 interface MobileConflictListProps {
-  onRouteChange: (route: string) => void;
+  onRouteChange: (route: string, options?: MobileNavigateOptions) => void;
   onExitMobile?: () => void;
 }
+
+type ConflictListTab = 'all' | 'processing' | 'resolved';
+
+type ListLoadState =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'ready' };
+
+// 列表视图状态（tab/搜索词）在页内跳转详情返回后保持；整页刷新才回到默认。
+// 模块级缓存只保存视图状态，不缓存业务数据，列表内容始终来自 facade 真实读取。
+let persistedListView: { tab: ConflictListTab; query: string } = { tab: 'all', query: '' };
 
 function getStatusClassName(status: ConflictRecord['status']) {
   if (status === '已化解') {
@@ -46,6 +60,7 @@ function getTypeClassName(type: ConflictRecord['type']) {
   }
 }
 
+// 与 facade matchesConflictQuery 相同的关键词语义：标题/描述/地点/当事人姓名
 function matchesQuery(conflict: ConflictRecord, keyword: string) {
   const text = keyword.trim();
   if (!text) {
@@ -56,51 +71,65 @@ function matchesQuery(conflict: ConflictRecord, keyword: string) {
     conflict.title,
     conflict.description,
     conflict.location,
-    conflict.source,
     ...conflict.involvedParties.map((party) => party.name),
   ].some((value) => value.includes(text));
 }
 
 export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConflictListProps) {
-  const [activeTab, setActiveTab] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const { mode } = useMobileSandbox();
+  const [activeTab, setActiveTab] = useState<ConflictListTab>(persistedListView.tab);
+  const [searchQuery, setSearchQuery] = useState(persistedListView.query);
   const [conflicts, setConflicts] = useState<ConflictRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loadState, setLoadState] = useState<ListLoadState>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
+    persistedListView = { tab: activeTab, query: searchQuery };
+  }, [activeTab, searchQuery]);
+
+  useEffect(() => {
+    // sandbox mode 未就绪时保持 loading，不得提前打 facade（fail closed）；
+    // mode resolve 后 effect 重跑，再真实加载。
+    if (mode === 'checking') {
+      setLoadState({ status: 'loading' });
+      return;
+    }
     let active = true;
 
     const loadConflicts = async () => {
-      setLoading(true);
+      if (active) {
+        setLoadState({ status: 'loading' });
+      }
       try {
-        const items = await conflictRepository.getConflicts({ limit: 500 });
+        // facade 返回 API seed + session overlay 的完整集合，顺序为 updatedAt 降序、id 破同值；
+        // 本组件不再另行排序，保持 facade 的确定性顺序。
+        const result = await conflictFacade.listConflicts();
         if (active) {
-          setConflicts(items);
+          setConflicts(result.items);
+          setLoadState({ status: 'ready' });
         }
       } catch (error) {
         console.error('Failed to load conflicts', error);
         if (active) {
-          setConflicts([]);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
+          setLoadState({
+            status: 'error',
+            message: error instanceof Error ? error.message : '纠纷清单加载失败',
+          });
         }
       }
     };
 
     void loadConflicts();
 
-    const handleDbChange = () => {
+    // session mutation（本页或其他页）后真实刷新
+    const unsubscribe = conflictFacade.subscribe(() => {
       void loadConflicts();
-    };
-
-    window.addEventListener('db-change', handleDbChange);
+    });
     return () => {
       active = false;
-      window.removeEventListener('db-change', handleDbChange);
+      unsubscribe();
     };
-  }, []);
+  }, [reloadToken, mode]);
 
   const displayConflicts = useMemo(() => {
     let filtered = conflicts;
@@ -118,6 +147,7 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
     return filtered;
   }, [activeTab, conflicts, searchQuery]);
 
+  // 计数基于完整真实集合，不使用分页片段
   const tabCounts = useMemo(() => ({
     all: conflicts.length,
     processing: conflicts.filter((conflict) => conflict.status === '调解中').length,
@@ -126,22 +156,25 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
 
   return (
     <MobileLayout currentRoute="conflict" onRouteChange={onRouteChange} onExitMobile={onExitMobile} title="矛盾调解">
-      <div className="bg-[var(--color-neutral-01)] h-full flex flex-col">
+      <div className="bg-[var(--color-neutral-01)] h-full flex flex-col" data-testid="conflict-list">
         <div className="bg-[var(--color-neutral-01)] px-4 py-3 border-b border-[var(--color-neutral-03)] sticky top-0 z-10 shadow-sm space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-neutral-08)]" />
             <Input
               type="text"
+              data-testid="conflict-search-input"
+              aria-label="搜索纠纷记录"
               placeholder="搜索纠纷记录..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4 h-9 text-sm bg-[var(--color-neutral-02)] border-transparent focus-visible:bg-[var(--color-neutral-01)] focus-visible:border-[var(--color-brand-primary)] transition-all rounded-xl w-full"
+              className="pl-9 pr-4 min-h-[44px] text-sm bg-[var(--color-neutral-02)] border-transparent focus-visible:bg-[var(--color-neutral-01)] focus-visible:border-[var(--color-brand-primary)] transition-all rounded-xl w-full"
             />
           </div>
 
           <Button
+            data-testid="conflict-create-button"
             onClick={() => onRouteChange('conflict-form')}
-            className="w-full h-9 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white shadow-sm"
+            className="w-full min-h-[44px] bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white shadow-sm"
           >
             <Plus className="w-4 h-4 mr-1.5" />
             上报纠纷
@@ -149,17 +182,18 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
         </div>
 
         <div className="bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)]">
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full flex h-10 bg-transparent p-0">
-              {[
-                ['all', '全部', tabCounts.all],
-                ['processing', '调解中', tabCounts.processing],
-                ['resolved', '已化解', tabCounts.resolved],
-              ].map(([tab, label, count]) => (
+          <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as ConflictListTab)} className="w-full">
+            <TabsList className="w-full flex h-auto bg-transparent p-0">
+              {([
+                ['all', '全部', tabCounts.all, 'conflict-tab-all'],
+                ['processing', '调解中', tabCounts.processing, 'conflict-tab-processing'],
+                ['resolved', '已化解', tabCounts.resolved, 'conflict-tab-resolved'],
+              ] as const).map(([tab, label, count, testId]) => (
                 <TabsTrigger
-                  key={String(tab)}
-                  value={String(tab)}
-                  className="flex-1 rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] text-[var(--color-neutral-08)] font-medium text-sm transition-colors"
+                  key={tab}
+                  value={tab}
+                  data-testid={testId}
+                  className="flex-1 min-h-[44px] rounded-none border-b-2 border-transparent data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:text-[var(--color-brand-text)] text-[var(--color-neutral-08)] font-medium text-sm transition-colors"
                 >
                   <span>{label}</span>
                   <span className="ml-1 text-[10px] text-[var(--color-neutral-08)]">{count}</span>
@@ -170,23 +204,48 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-16 text-[var(--color-neutral-08)]">
+          {loadState.status === 'loading' ? (
+            <div
+              data-testid="conflict-list-loading"
+              role="status"
+              className="flex flex-col items-center justify-center py-16 text-[var(--color-neutral-08)]"
+            >
               <Loader2 className="w-6 h-6 animate-spin mb-2" />
               <p className="text-sm">正在加载纠纷清单...</p>
             </div>
+          ) : loadState.status === 'error' ? (
+            <div className="flex flex-col items-center justify-center py-12 gap-3" data-testid="conflict-list-error">
+              <div role="alert" className="text-sm text-[var(--color-status-error-text)] text-center px-6">
+                纠纷清单加载失败：{loadState.message}
+              </div>
+              <button
+                type="button"
+                data-testid="conflict-list-retry"
+                onClick={() => setReloadToken((token) => token + 1)}
+                className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--color-neutral-03)] px-4 text-sm text-[var(--color-neutral-10)] active:bg-[var(--color-neutral-02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+              >
+                <RotateCcw className="w-4 h-4" />
+                重新加载
+              </button>
+            </div>
           ) : displayConflicts.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12 text-[var(--color-neutral-08)]">
+            <div
+              data-testid="conflict-list-empty"
+              className="flex flex-col items-center justify-center py-12 text-[var(--color-neutral-08)]"
+            >
               <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center mb-3">
                 <ShieldAlert className="w-8 h-8 text-[var(--color-neutral-08)]" />
               </div>
-              <p className="text-sm">暂无相关记录</p>
+              <p className="text-sm">{conflicts.length === 0 ? '暂无相关记录' : '没有符合条件的记录'}</p>
             </div>
           ) : (
             displayConflicts.map((conflict) => (
-              <Card
+              <button
                 key={conflict.id}
-                className="border-none shadow-sm active:scale-[0.99] transition-transform cursor-pointer overflow-hidden"
+                type="button"
+                data-testid={`conflict-card-${conflict.id}`}
+                aria-label={`查看纠纷详情：${conflict.title}`}
+                className="block w-full rounded-xl border-none bg-[var(--color-neutral-01)] text-left shadow-sm transition-transform active:scale-[0.99] overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                 onClick={() => onRouteChange(`conflict-detail/${conflict.id}`)}
               >
                 <CardContent className="p-4 relative">
@@ -237,7 +296,7 @@ export function MobileConflictList({ onRouteChange, onExitMobile }: MobileConfli
                     <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
                   </div>
                 </CardContent>
-              </Card>
+              </button>
             ))
           )}
         </div>
