@@ -17,6 +17,7 @@ import { MobileLayout } from './MobileLayout';
 import { toast } from 'sonner';
 import { conflictRepository } from '../../services/repositories/conflictRepository';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobilePatrolProps {
   onRouteChange: (route: string) => void;
@@ -35,6 +36,7 @@ function mapPatrolCategoryToConflictType(category: string): '邻里纠纷' | '�
 }
 
 export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [photos, setPhotos] = useState<string[]>([]);
   const [locationObtained, setLocationObtained] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -323,7 +325,7 @@ export function MobilePatrol({ onRouteChange, onExitMobile }: MobilePatrolProps)
           <Button
             className="w-full h-12 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canUseLegacyApiMutation}
           >
             <Send className="w-5 h-5 mr-2" />
             {isSubmitting ? '提交中...' : '提交上报'}

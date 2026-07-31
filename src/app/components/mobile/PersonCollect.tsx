@@ -20,12 +20,14 @@ import { MobileStatusBar } from './MobileStatusBar';
 import { Person, PersonType } from '../../types/core';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { personRepository } from '../../services/repositories/personRepository';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface PersonCollectProps {
   onBack: () => void;
 }
 
 export function PersonCollect({ onBack }: PersonCollectProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [photo, setPhoto] = useState<string>('');
   const [idScanned, setIdScanned] = useState(false);
   const [expandedSections, setExpandedSections] = useState({
@@ -644,6 +646,7 @@ export function PersonCollect({ onBack }: PersonCollectProps) {
           <Button
             className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
+            disabled={!canUseLegacyApiMutation}
           >
             <Save className="w-5 h-5 mr-2" />
             提交采集

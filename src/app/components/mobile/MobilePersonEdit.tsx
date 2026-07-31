@@ -12,6 +12,7 @@ import { Badge } from '../ui/badge';
 import { Person, PersonType } from '../../types/core';
 import { personRepository } from '../../services/repositories/personRepository';
 import { tagRepository, type ManagedTagSummary } from '../../services/repositories/tagRepository';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobilePersonEditProps {
   id: string;
@@ -20,6 +21,7 @@ interface MobilePersonEditProps {
 }
 
 export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [personTags, setPersonTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<ManagedTagSummary[]>([]);
@@ -724,6 +726,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
         <Button 
           className="w-full h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
           onClick={handleSave}
+          disabled={!canUseLegacyApiMutation}
         >
           <Save className="w-4 h-4 mr-2" />
           保存修改

@@ -19,6 +19,7 @@ import { Input } from '../ui/input';
 import { personRepository } from '../../services/repositories/personRepository';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import type { Person } from '../../types/core';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface QuickNoteProps {
   onBack: () => void;
@@ -49,6 +50,7 @@ function extractSuggestedTags(content: string, associatedPerson: Person | null):
 }
 
 export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [content, setContent] = useState('今天走访海梦苑小区时，8号楼的陈强情绪非常激动，因为楼上漏水的事情跟邻居大吵了一架。据周围居民反映，他平时脾气就比较暴躁，经常因为一些小事跟人起冲突，在业主群里也总是抱怨物业服务不到位，邻居们对他意见很大。');
   const [suggestedTags, setSuggestedTags] = useState<string[]>([]);
   const [showAnalysis, setShowAnalysis] = useState(false);
@@ -352,7 +354,7 @@ export function QuickNote({ onBack, onRouteChange }: QuickNoteProps) {
         <Button 
           className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-active)] text-lg py-6 shadow-sm"
           onClick={handleSave}
-          disabled={!content.trim() || suggestedTags.length === 0}
+          disabled={!content.trim() || suggestedTags.length === 0 || !canUseLegacyApiMutation}
         >
           <Save className="w-5 h-5 mr-2" />
           关联标签

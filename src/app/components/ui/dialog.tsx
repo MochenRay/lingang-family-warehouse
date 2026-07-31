@@ -12,6 +12,21 @@ const DialogPortal = DialogPrimitive.Portal
 
 const DialogClose = DialogPrimitive.Close
 
+const DialogPortalContainerContext = React.createContext<HTMLElement | null | undefined>(undefined)
+
+interface DialogPortalContainerProviderProps {
+  container: HTMLElement | null;
+  children: React.ReactNode;
+}
+
+function DialogPortalContainerProvider({ container, children }: DialogPortalContainerProviderProps) {
+  return (
+    <DialogPortalContainerContext.Provider value={container}>
+      {children}
+    </DialogPortalContainerContext.Provider>
+  )
+}
+
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -27,28 +42,56 @@ const DialogOverlay = React.forwardRef<
 ))
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName
 
+interface DialogContentProps extends React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> {
+  portalContainer?: HTMLElement | null;
+}
+
 const DialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
->(({ className, children, ...props }, ref) => (
-  <DialogPortal>
-    <DialogOverlay />
-    <DialogPrimitive.Content
-      ref={ref}
-      className={cn(
-        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-03 duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
-        className
-      )}
-      {...props}
-    >
-      {children}
-      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
-        <X className="h-4 w-4" />
-        <span className="sr-only">Close</span>
-      </DialogPrimitive.Close>
-    </DialogPrimitive.Content>
-  </DialogPortal>
-))
+  DialogContentProps
+>(({ className, children, portalContainer, style, onOpenAutoFocus, onCloseAutoFocus, ...props }, ref) => {
+  const hostContainer = React.useContext(DialogPortalContainerContext);
+  const returnFocusRef = React.useRef<HTMLElement | null>(
+    typeof document === 'undefined' ? null : document.activeElement as HTMLElement | null,
+  );
+  const resolvedContainer = portalContainer === undefined ? hostContainer : portalContainer;
+
+  return (
+    <DialogPortal container={resolvedContainer ?? undefined}>
+      <DialogOverlay style={resolvedContainer ? { position: 'absolute' } : undefined} />
+      <DialogPrimitive.Content
+        ref={ref}
+        onOpenAutoFocus={(event) => {
+          returnFocusRef.current = document.activeElement as HTMLElement | null;
+          onOpenAutoFocus?.(event);
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event);
+          const returnTarget = returnFocusRef.current;
+          if (!event.defaultPrevented && returnTarget?.isConnected) {
+            event.preventDefault();
+            returnTarget.focus();
+          }
+        }}
+        style={style}
+        className={cn(
+          "z-50 grid w-full max-w-lg gap-4 border bg-background p-6 shadow-03 sm:rounded-lg",
+          resolvedContainer
+            ? "absolute left-1/2 top-1/2 translate-x-[-50%] translate-y-[-50%]"
+            : "fixed left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%] duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]",
+          className
+        )}
+        {...props}
+      >
+        {children}
+        <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+          <X className="h-4 w-4" />
+          <span className="sr-only">Close</span>
+        </DialogPrimitive.Close>
+      </DialogPrimitive.Content>
+    </DialogPortal>
+  )
+})
 DialogContent.displayName = DialogPrimitive.Content.displayName
 
 const DialogHeader = ({
@@ -117,4 +160,5 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  DialogPortalContainerProvider,
 }

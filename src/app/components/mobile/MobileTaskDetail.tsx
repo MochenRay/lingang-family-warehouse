@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { MobileDetailHeader } from './MobileDetailHeader';
 import { taskRepository, type MobileTaskDetail as MobileTaskDetailData } from '../../services/repositories/taskRepository';
 import { getRiskLevelLabel } from '../../utils/riskLevel';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobileTaskDetailProps {
   taskId: string;
@@ -43,6 +44,7 @@ function getDeadlineTone(detail: MobileTaskDetailData) {
 }
 
 export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDetailProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [detail, setDetail] = useState<MobileTaskDetailData | null>(null);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
@@ -333,7 +335,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
           <Button
             className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base disabled:bg-[var(--color-brand-primary)]/45 disabled:text-white/70"
             onClick={handleSubmit}
-            disabled={!canSubmit}
+            disabled={!canSubmit || !canUseLegacyApiMutation}
           >
             {isSubmitting ? '提交中...' : detail.primaryActionLabel}
           </Button>

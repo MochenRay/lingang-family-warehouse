@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
+from app.config import get_settings
 from app.database import check_database
 from app.services.ai import get_ai_capabilities
 
@@ -17,6 +18,11 @@ def read_health() -> JSONResponse:
         "database": "ok" if database_ok else "error",
         "ai": ai_status,
         "error": database_error,
+        "demo_write_mode": get_settings().effective_demo_write_mode,
     }
     status_code = status.HTTP_200_OK if database_ok else status.HTTP_503_SERVICE_UNAVAILABLE
-    return JSONResponse(status_code=status_code, content=payload)
+    return JSONResponse(
+        status_code=status_code,
+        content=payload,
+        headers={"Cache-Control": "no-store"},
+    )

@@ -71,6 +71,10 @@ jobs:
         env:
           CI: 'true'
           PYTHON_BIN: python
+      - run: npm run test:e2e:public
+        env:
+          CI: 'true'
+          PYTHON_BIN: python
       - name: Upload Playwright report on failure
         if: failure()
         uses: actions/upload-artifact@v4
@@ -79,6 +83,8 @@ jobs:
           path: |
             playwright-report/
             test-results/playwright/
+            playwright-report-public/
+            test-results/playwright-public/
           if-no-files-found: ignore
           retention-days: 7
 

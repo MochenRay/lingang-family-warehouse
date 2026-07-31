@@ -29,6 +29,7 @@ import { mobileContextRepository } from '../../../services/repositories/mobileCo
 import type { ConflictRecord } from '../../../types/core';
 import { toast } from 'sonner';
 import { getRiskLevelLabel } from '../../../utils/riskLevel';
+import { useMobileSandbox } from '../MobileSandboxProvider';
 
 interface MobileConflictDetailProps {
   id: string;
@@ -169,6 +170,7 @@ async function loadConflictDetail(id: string) {
 }
 
 export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConflictDetailProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [conflict, setConflict] = useState<ConflictRecord | null>(null);
   const [context, setContext] = useState<ConflictContext | null>(null);
   const [loading, setLoading] = useState(true);
@@ -549,7 +551,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20">
+              <Button
+                variant="outline"
+                className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20"
+                disabled={!canUseLegacyApiMutation}
+              >
                 <MessageSquarePlus className="w-4 h-4" /> 添加进展
               </Button>
             </DialogTrigger>
@@ -572,7 +578,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 <DialogClose asChild>
                   <Button variant="ghost">取消</Button>
                 </DialogClose>
-                <Button onClick={handleAddProgress} disabled={isSubmittingProgress}>
+                <Button onClick={handleAddProgress} disabled={isSubmittingProgress || !canUseLegacyApiMutation}>
                   {isSubmittingProgress ? '提交中...' : '提交'}
                 </Button>
               </DialogFooter>
@@ -582,6 +588,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
           <Button
             className="flex-1 gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
             onClick={() => setResolveConfirmOpen(true)}
+            disabled={!canUseLegacyApiMutation}
           >
             <ShieldCheck className="w-4 h-4" /> 标记化解
           </Button>
