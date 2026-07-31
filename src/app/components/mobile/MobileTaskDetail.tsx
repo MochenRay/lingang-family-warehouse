@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
+  AlertCircle,
   Calendar,
   CheckCircle,
   Clock,
@@ -44,7 +45,7 @@ function getDeadlineTone(detail: MobileTaskDetailData) {
 }
 
 export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDetailProps) {
-  const { canMutate } = useMobileSandbox();
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [detail, setDetail] = useState<MobileTaskDetailData | null>(null);
   const [feedback, setFeedback] = useState('');
   const [loading, setLoading] = useState(true);
@@ -91,6 +92,12 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
 
   const handleSubmit = async () => {
     if (!detail || detail.status === 'completed') {
+      return;
+    }
+    // legacy completeTask 直写业务 API，仅 api 模式放行；
+    // checking/session/blocked 一律 fail closed：不得发送任何 business mutation，
+    // 不得写 session，也不得 toast 伪造成功
+    if (!canUseLegacyApiMutation) {
       return;
     }
     if (!feedback.trim()) {
@@ -229,7 +236,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                 <Button
                   variant="outline"
                   size="sm"
-                  className="h-8 px-3 text-xs"
+                  className="min-h-[44px] px-3 text-xs"
                   onClick={() => handleOpenSource(detail.secondaryRoute)}
                   disabled={!onRouteChange}
                 >
@@ -258,7 +265,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     type="button"
                     onClick={() => handleOpenSource(`house-detail/${detail.context.house!.id}`)}
                     disabled={!onRouteChange}
-                    className="px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-text)] disabled:cursor-default"
+                    className="inline-flex min-h-[44px] items-center px-3 py-1.5 rounded-full bg-[var(--color-brand-primary)]/10 text-xs text-[var(--color-brand-text)] disabled:cursor-default"
                   >
                     房屋 · {detail.context.house.address}
                   </button>
@@ -318,7 +325,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                   <div className="space-y-2 text-sm text-[var(--color-neutral-10)] leading-relaxed">
                     <p>走访任务不在此简化回填。请进入居民详情页，通过「添加走访记录」完成完整走访登记。</p>
                     <p className="text-xs text-[var(--color-neutral-08)]">
-                      走访记录保存后，工作清单将依据最新走访情况更新。
+                      本会话走访只进入人物历史；工作清单保持服务器投影，本会话不重算。
                     </p>
                   </div>
                 </>
@@ -347,10 +354,17 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                   </div>
 
                   {!isCompleted && (
-                    <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
-                      <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
-                      提交后会写回真实走访记录或纠纷处置时间线。
-                    </div>
+                    canUseLegacyApiMutation ? (
+                      <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
+                        <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
+                        提交后会写回真实走访记录或纠纷处置时间线。
+                      </div>
+                    ) : (
+                      <div className="text-xs text-[var(--color-status-warning-text)] flex items-center gap-2">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        当前模式不可提交：矛盾回填仅支持服务器直写，未接入浏览会话暂存；已填写内容不会被提交或保存。
+                      </div>
+                    )
                   )}
                 </>
               )}
@@ -384,7 +398,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
               <Button
                 className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] h-11 text-base disabled:bg-[var(--color-brand-primary)]/45 disabled:text-white/70"
                 onClick={handleSubmit}
-                disabled={!canSubmit || !canMutate}
+                disabled={!canSubmit || !canUseLegacyApiMutation}
               >
                 {isSubmitting ? '提交中...' : detail.primaryActionLabel}
               </Button>

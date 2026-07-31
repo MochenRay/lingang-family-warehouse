@@ -33,6 +33,8 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
   const [reloadToken, setReloadToken] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  // 必填字段级错误：提交无效时逐字段提示并聚焦首个错误字段，不只 toast
+  const [fieldErrors, setFieldErrors] = useState<{ visitorName?: string; visitDate?: string; visitPurpose?: string; notHomeReason?: string }>({});
   const [aiRequesting, setAiRequesting] = useState(false);
   const [aiResult, setAiResult] = useState<SecondaryAiChatResult | null>(null);
   const [aiGrounded, setAiGrounded] = useState(false);
@@ -207,26 +209,43 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
           ? '会话新建人员不可用'
           : '待生成';
 
+  const clearFieldError = (field: 'visitorName' | 'visitDate' | 'visitPurpose' | 'notHomeReason') => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: undefined } : prev));
+  };
+
   const handleSubmit = async () => {
     if (isSubmitting || !person) {
       return;
     }
 
     const visitorName = formData.visitorName.trim();
+    // 必填校验：字段级错误 + 首个错误字段聚焦（按 DOM 顺序），不再只 toast
+    const errors: { visitorName?: string; visitDate?: string; visitPurpose?: string; notHomeReason?: string } = {};
     if (!visitorName) {
-      toast.error('请填写走访人姓名');
-      return;
+      errors.visitorName = '请填写走访人姓名';
     }
     if (!formData.visitDate) {
-      toast.error('请选择走访日期');
-      return;
+      errors.visitDate = '请选择走访日期';
     }
     if (!formData.visitPurpose.trim()) {
-      toast.error('请填写走访目的');
-      return;
+      errors.visitPurpose = '请填写走访目的';
     }
     if (formData.isHome === 'no' && !formData.notHomeReason.trim()) {
-      toast.error('请填写不在家原因');
+      errors.notHomeReason = '请填写不在家原因';
+    }
+    setFieldErrors(errors);
+    const firstInvalidId = errors.visitorName
+      ? 'visit-visitor-name'
+      : errors.visitDate
+        ? 'visit-date'
+        : errors.visitPurpose
+          ? 'visit-purpose'
+          : errors.notHomeReason
+            ? 'visit-not-home-reason'
+            : null;
+    if (firstInvalidId) {
+      setSubmitError(null);
+      document.getElementById(firstInvalidId)?.focus();
       return;
     }
 
@@ -363,30 +382,42 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访人 */}
             <div>
               <Label htmlFor="visit-visitor-name" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访人 <span className="text-[var(--color-status-error-text)]">*</span>
+                走访人 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Input
                 id="visit-visitor-name"
                 value={formData.visitorName}
-                onChange={(e) => setFormData({ ...formData, visitorName: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, visitorName: e.target.value }); clearFieldError('visitorName'); }}
                 placeholder="请输入走访人姓名"
-                className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                required
+                aria-invalid={fieldErrors.visitorName ? true : undefined}
+                aria-describedby={fieldErrors.visitorName ? 'visit-visitor-name-error' : undefined}
+                className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
               />
+              {fieldErrors.visitorName && (
+                <p id="visit-visitor-name-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitorName}</p>
+              )}
             </div>
 
             {/* 走访日期和时间 */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label htmlFor="visit-date" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  走访日期 <span className="text-[var(--color-status-error-text)]">*</span>
+                  走访日期 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
                 </Label>
                 <Input
                   id="visit-date"
                   type="date"
                   value={formData.visitDate}
-                  onChange={(e) => setFormData({ ...formData, visitDate: e.target.value })}
-                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  onChange={(e) => { setFormData({ ...formData, visitDate: e.target.value }); clearFieldError('visitDate'); }}
+                  required
+                  aria-invalid={fieldErrors.visitDate ? true : undefined}
+                  aria-describedby={fieldErrors.visitDate ? 'visit-date-error' : undefined}
+                  className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                 />
+                {fieldErrors.visitDate && (
+                  <p id="visit-date-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitDate}</p>
+                )}
               </div>
               <div>
                 <Label htmlFor="visit-time" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
@@ -397,7 +428,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                   type="time"
                   value={formData.visitTime}
                   onChange={(e) => setFormData({ ...formData, visitTime: e.target.value })}
-                  className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                  className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                 />
               </div>
             </div>
@@ -405,10 +436,10 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访类型 */}
             <div>
               <Label htmlFor="visit-type" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访类型 <span className="text-[var(--color-status-error-text)]">*</span>
+                走访类型 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Select value={formData.visitType} onValueChange={(value) => setFormData({ ...formData, visitType: value })}>
-                <SelectTrigger id="visit-type" className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
+                <SelectTrigger id="visit-type" className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -425,17 +456,23 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 走访目的 */}
             <div>
               <Label htmlFor="visit-purpose" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                走访目的 <span className="text-[var(--color-status-error-text)]">*</span>
+                走访目的 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <Textarea
                 id="visit-purpose"
                 data-testid="visit-purpose"
                 value={formData.visitPurpose}
-                onChange={(e) => setFormData({ ...formData, visitPurpose: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, visitPurpose: e.target.value }); clearFieldError('visitPurpose'); }}
                 placeholder="请简要说明本次走访的目的"
                 rows={3}
+                required
+                aria-invalid={fieldErrors.visitPurpose ? true : undefined}
+                aria-describedby={fieldErrors.visitPurpose ? 'visit-purpose-error' : undefined}
                 className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
               />
+              {fieldErrors.visitPurpose && (
+                <p id="visit-purpose-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.visitPurpose}</p>
+              )}
             </div>
           </div>
         </Card>
@@ -479,6 +516,9 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 </div>
                 <span
                   data-testid="visit-ai-status"
+                  role="status"
+                  aria-live="polite"
+                  aria-busy={aiRequesting}
                   className="shrink-0 rounded-full border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] px-2 py-1 text-[10px] text-[var(--color-accent-purple-text)]"
                 >
                   {aiStatusText}
@@ -505,7 +545,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 </div>
               )}
               {aiResult && (
-                <div data-testid="visit-ai-result" className="mt-3 rounded-lg border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] p-3">
+                <div data-testid="visit-ai-result" role="status" aria-live="polite" aria-busy={aiRequesting} className="mt-3 rounded-lg border border-[var(--color-accent-purple)]/35 bg-[var(--color-accent-purple-soft)] p-3">
                   <div className="mb-2 text-[10px] text-[var(--color-accent-purple-text)]">
                     {aiGrounded
                       ? `Gemini 对象化结果（已应用服务器对象上下文）${aiResult.model ? ` · model: ${aiResult.model}` : ''}`
@@ -582,7 +622,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {/* 是否在家 */}
             <div>
               <Label id="visit-is-home-label" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span>
+                人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
               </Label>
               <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="visit-is-home-label">
                 <button
@@ -618,16 +658,22 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
             {formData.isHome === 'no' && (
               <div>
                 <Label htmlFor="visit-not-home-reason" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
-                  不在家原因 <span className="text-[var(--color-status-error-text)]">*</span>
+                  不在家原因 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
                 </Label>
                 <Textarea
                   id="visit-not-home-reason"
                   value={formData.notHomeReason}
-                  onChange={(e) => setFormData({ ...formData, notHomeReason: e.target.value })}
+                  onChange={(e) => { setFormData({ ...formData, notHomeReason: e.target.value }); clearFieldError('notHomeReason'); }}
                   placeholder="请说明人员不在家的原因及去向"
                   rows={2}
+                  required
+                  aria-invalid={fieldErrors.notHomeReason ? true : undefined}
+                  aria-describedby={fieldErrors.notHomeReason ? 'visit-not-home-reason-error' : undefined}
                   className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)] resize-none"
                 />
+                {fieldErrors.notHomeReason && (
+                  <p id="visit-not-home-reason-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.notHomeReason}</p>
+                )}
               </div>
             )}
           </div>
@@ -698,7 +744,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     id="visit-family-relationship"
                     value={formData.familyRelationship}
                     onChange={(e) => setFormData({ ...formData, familyRelationship: e.target.value })}
-                    className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -707,7 +753,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     id="visit-next-plan"
                     value={formData.nextVisitPlan}
                     onChange={(e) => setFormData({ ...formData, nextVisitPlan: e.target.value })}
-                    className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                   />
                 </div>
               </div>
@@ -719,7 +765,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     id="visit-house-condition"
                     value={formData.houseCondition}
                     onChange={(e) => setFormData({ ...formData, houseCondition: e.target.value })}
-                    className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                   />
                 </div>
                 <div className="space-y-2">
@@ -729,7 +775,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                     value={formData.houseRisk}
                     onChange={(e) => setFormData({ ...formData, houseRisk: e.target.value })}
                     placeholder="如有隐患请填写"
-                    className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
+                    className="min-h-[44px] bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]"
                   />
                 </div>
               </div>

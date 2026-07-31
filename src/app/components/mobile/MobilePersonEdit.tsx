@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Save, ChevronDown, ChevronUp, X, Plus, Search, Tag, AlertCircle, Loader2 } from 'lucide-react';
 import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
@@ -9,6 +9,7 @@ import { Card } from '../ui/card';
 import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../ui/dialog';
 import { Person, PersonType } from '../../types/core';
 import { personVisitFacade } from '../../services/mobileSandbox/personVisitFacade';
 import { tagRepository, type ManagedTagSummary } from '../../services/repositories/tagRepository';
@@ -29,10 +30,15 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
   const [reloadToken, setReloadToken] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  // 必填字段级错误：name/address，提交无效时聚焦首个错误字段
+  const [fieldErrors, setFieldErrors] = useState<{ name?: string; address?: string }>({});
   const [personTags, setPersonTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<ManagedTagSummary[]>([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [tagSearch, setTagSearch] = useState('');
+  const tagSearchRef = useRef<HTMLInputElement>(null);
+  // 触发器引用：Dialog 关闭后焦点确定性地回到「关联标签」按钮
+  const tagTriggerRef = useRef<HTMLButtonElement>(null);
   const [expandedSections, setExpandedSections] = useState({
     detail: false,
     work: false,
@@ -78,6 +84,10 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const clearFieldError = (field: 'name' | 'address') => {
+    setFieldErrors(prev => (prev[field] ? { ...prev, [field]: undefined } : prev));
   };
 
   useEffect(() => {
@@ -166,8 +176,23 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
       return;
     }
 
-    if (!formData.name.trim() || !formData.address.trim()) {
-      setSaveError('姓名与居住地址为必填项，不能为空。');
+    // 必填校验：字段级错误 + 首个错误字段聚焦，不用笼统底部 alert 代替
+    const errors: { name?: string; address?: string } = {};
+    if (!formData.name.trim()) {
+      errors.name = '请填写姓名';
+    }
+    if (!formData.address.trim()) {
+      errors.address = '请填写居住地址';
+    }
+    setFieldErrors(errors);
+    const firstInvalidId = errors.name
+      ? 'person-edit-name'
+      : errors.address
+        ? 'person-edit-address'
+        : null;
+    if (firstInvalidId) {
+      setSaveError(null);
+      document.getElementById(firstInvalidId)?.focus();
       return;
     }
 
@@ -316,13 +341,22 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-4">基本信息</h3>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="person-edit-name" className="text-sm font-medium mb-2 block">姓名</Label>
+              <Label htmlFor="person-edit-name" className="text-sm font-medium mb-2 block">
+                姓名 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
+              </Label>
               <Input
                 id="person-edit-name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, name: e.target.value }); clearFieldError('name'); }}
                 placeholder="请输入姓名"
+                required
+                aria-invalid={fieldErrors.name ? true : undefined}
+                aria-describedby={fieldErrors.name ? 'person-edit-name-error' : undefined}
+                className="min-h-[44px]"
               />
+              {fieldErrors.name && (
+                <p id="person-edit-name-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.name}</p>
+              )}
             </div>
 
             <div>
@@ -333,23 +367,33 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="请输入联系电话"
                 type="tel"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
-              <Label htmlFor="person-edit-address" className="text-sm font-medium mb-2 block">居住地址</Label>
+              <Label htmlFor="person-edit-address" className="text-sm font-medium mb-2 block">
+                居住地址 <span className="text-[var(--color-status-error-text)]">*</span><span className="sr-only">（必填）</span>
+              </Label>
               <Input
                 id="person-edit-address"
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => { setFormData({ ...formData, address: e.target.value }); clearFieldError('address'); }}
                 placeholder="请输入居住地址"
+                required
+                aria-invalid={fieldErrors.address ? true : undefined}
+                aria-describedby={fieldErrors.address ? 'person-edit-address-error' : undefined}
+                className="min-h-[44px]"
               />
+              {fieldErrors.address && (
+                <p id="person-edit-address-error" className="mt-1 text-xs text-[var(--color-status-error-text)]">{fieldErrors.address}</p>
+              )}
             </div>
 
             <div>
               <Label htmlFor="person-edit-type" className="text-sm font-medium mb-2 block">人口类型</Label>
               <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger id="person-edit-type">
+                <SelectTrigger id="person-edit-type" className="min-h-[44px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -368,13 +412,14 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                 value={formData.nation}
                 onChange={(e) => setFormData({ ...formData, nation: e.target.value })}
                 placeholder="请输入民族"
+                className="min-h-[44px]"
               />
             </div>
 
             <div>
               <Label htmlFor="person-edit-education" className="text-sm font-medium mb-2 block">学历</Label>
               <Select value={formData.education || ''} onValueChange={(value) => setFormData({ ...formData, education: value })}>
-                <SelectTrigger id="person-edit-education">
+                <SelectTrigger id="person-edit-education" className="min-h-[44px]">
                   <SelectValue placeholder="请选择学历" />
                 </SelectTrigger>
                 <SelectContent>
@@ -399,8 +444,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               标签管理
             </h3>
             <button
+              ref={tagTriggerRef}
               onClick={() => { setShowTagPicker(true); setTagSearch(''); }}
-              className="text-xs text-[var(--color-brand-text)] flex items-center gap-1 active:opacity-70"
+              className="min-h-[44px] min-w-[44px] text-xs text-[var(--color-brand-text)] flex items-center gap-1 active:opacity-70"
             >
               <Plus className="w-3.5 h-3.5" />
               关联标签
@@ -421,7 +467,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   <button
                     onClick={() => handleRemoveTag(tag)}
                     aria-label={`移除标签${tag}`}
-                    className="ml-0.5 p-0.5 rounded-full hover:bg-[var(--color-brand-primary)]/20 active:scale-90 transition-transform"
+                    className="ml-0.5 -my-2 min-h-[44px] min-w-[44px] flex items-center justify-center rounded-full hover:bg-[var(--color-brand-primary)]/20 active:scale-90 transition-transform"
                   >
                     <X className="w-3 h-3" />
                   </button>
@@ -431,81 +477,95 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           )}
         </Card>
 
-        {/* 标签选择器 */}
-        {showTagPicker && (
-          <div className="fixed inset-0 z-50 bg-black/40 flex flex-col justify-end">
-            <div className="bg-[var(--color-neutral-01)] rounded-t-[4px] max-h-[75vh] flex flex-col">
-              <div className="flex items-center justify-between px-4 pt-4 pb-2">
-                <h3 className="text-base font-semibold text-[var(--color-neutral-11)]">关联标签</h3>
-                <button onClick={() => setShowTagPicker(false)} aria-label="关闭标签选择" className="p-1 rounded-full hover:bg-[var(--color-neutral-03)]">
-                  <X className="w-5 h-5 text-[var(--color-neutral-08)]" />
-                </button>
-              </div>
+        {/* 标签选择器：复用项目 Dialog（Radix）闭合 dialog 语义、aria-modal、焦点约束、Escape 与焦点返还；
+            不自绘 fixed 伪模态、不自绘重复关闭按钮（DialogContent 自带唯一关闭按钮，局部类放大到 44×44） */}
+        <Dialog open={showTagPicker} onOpenChange={(open) => { setShowTagPicker(open); if (open) setTagSearch(''); }}>
+          <DialogContent
+            className="flex max-h-[75vh] w-[calc(100%-2rem)] flex-col gap-0 rounded-[4px] p-0 [&>button]:flex [&>button]:min-h-[44px] [&>button]:min-w-[44px] [&>button]:items-center [&>button]:justify-center"
+            aria-modal="true"
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              tagSearchRef.current?.focus();
+            }}
+            onCloseAutoFocus={(event) => {
+              event.preventDefault();
+              // 等 Radix 完成卸载与 aria-hidden/inert 清理后再还焦，避免还焦被清理时序吞掉
+              requestAnimationFrame(() => tagTriggerRef.current?.focus());
+            }}
+          >
+            <DialogHeader className="px-4 pt-4 pb-2 text-left">
+              <DialogTitle className="text-base font-semibold text-[var(--color-neutral-11)]">关联标签</DialogTitle>
+              <DialogDescription className="sr-only">搜索并选择要关联到当前人员的标签，按 Escape 可关闭。</DialogDescription>
+            </DialogHeader>
 
-              <div className="px-4 pb-3">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]" />
-                  <Input
-                    id="person-edit-tag-search"
-                    aria-label="搜索标签"
-                    value={tagSearch}
-                    onChange={(e) => setTagSearch(e.target.value)}
-                    placeholder="搜索标签..."
-                    className="pl-9 h-9 text-sm"
-                  />
-                </div>
-              </div>
-
-              <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
-                {Object.keys(filteredGroupedTags).length === 0 ? (
-                  <p className="text-sm text-[var(--color-neutral-08)] text-center py-8">无匹配标签</p>
-                ) : (
-                  Object.entries(filteredGroupedTags).map(([type, categories]) => (
-                    <div key={type}>
-                      <div className="text-xs font-semibold text-[var(--color-neutral-08)] mb-2 sticky top-0 bg-[var(--color-neutral-01)] py-1">{type}</div>
-                      {Object.entries(categories).map(([category, tags]) => (
-                        <div key={category} className="mb-3">
-                          <div className="text-xs text-[var(--color-neutral-08)] mb-1.5 ml-1">{category}</div>
-                          <div className="flex flex-wrap gap-2">
-                            {tags.map(tag => {
-                              const isSelected = personTags.includes(tag);
-                              return (
-                                <button
-                                  key={tag}
-                                  onClick={() => isSelected ? handleRemoveTag(tag) : handleAddTag(tag)}
-                                  className={`text-xs px-2.5 py-1.5 rounded-full border transition-all active:scale-95 ${
-                                    isSelected
-                                      ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
-                                      : 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] hover:border-[var(--color-brand-primary)]'
-                                  }`}
-                                >
-                                  {tag}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ))
-                )}
+            <div className="px-4 pb-3">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]" />
+                <Input
+                  ref={tagSearchRef}
+                  id="person-edit-tag-search"
+                  aria-label="搜索标签"
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                  placeholder="搜索标签..."
+                  className="pl-9 min-h-[44px] text-sm"
+                />
               </div>
             </div>
-          </div>
-        )}
+
+            <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">
+              {Object.keys(filteredGroupedTags).length === 0 ? (
+                <p className="text-sm text-[var(--color-neutral-08)] text-center py-8">无匹配标签</p>
+              ) : (
+                Object.entries(filteredGroupedTags).map(([type, categories]) => (
+                  <div key={type}>
+                    <div className="text-xs font-semibold text-[var(--color-neutral-08)] mb-2 sticky top-0 bg-[var(--color-neutral-01)] py-1">{type}</div>
+                    {Object.entries(categories).map(([category, tags]) => (
+                      <div key={category} className="mb-3">
+                        <div className="text-xs text-[var(--color-neutral-08)] mb-1.5 ml-1">{category}</div>
+                        <div className="flex flex-wrap gap-2">
+                          {tags.map(tag => {
+                            const isSelected = personTags.includes(tag);
+                            return (
+                              <button
+                                key={tag}
+                                type="button"
+                                onClick={() => isSelected ? handleRemoveTag(tag) : handleAddTag(tag)}
+                                aria-pressed={isSelected}
+                                className={`min-h-[44px] inline-flex items-center text-xs px-2.5 rounded-full border transition-all active:scale-95 ${
+                                  isSelected
+                                    ? 'bg-[var(--color-brand-primary)] text-white border-[var(--color-brand-primary)]'
+                                    : 'bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] border-[var(--color-neutral-03)] hover:border-[var(--color-brand-primary)]'
+                                }`}
+                              >
+                                {tag}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* 详细信息 */}
         <Card className="p-4">
           <button
             type="button"
             onClick={() => toggleSection('detail')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
+            aria-expanded={expandedSections.detail}
+            aria-controls="person-edit-section-detail"
+            className="w-full min-h-[44px] flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)]"
           >
             <span>详细信息</span>
             {expandedSections.detail ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {expandedSections.detail && (
-            <div className="space-y-4">
+            <div id="person-edit-section-detail" className="space-y-4">
               <div>
                 <Label htmlFor="person-edit-birth-date" className="text-sm font-medium mb-2 block">出生年月</Label>
                 <Input
@@ -513,6 +573,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.birthDate}
                   onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                   placeholder="如：1989-01"
+                  className="min-h-[44px]"
                 />
               </div>
 
@@ -523,13 +584,14 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.birthplace}
                   onChange={(e) => setFormData({ ...formData, birthplace: e.target.value })}
                   placeholder="请输入籍贯"
+                  className="min-h-[44px]"
                 />
               </div>
 
               <div>
                 <Label htmlFor="person-edit-marital" className="text-sm font-medium mb-2 block">婚姻状况</Label>
                 <Select value={formData.maritalStatus} onValueChange={(value: any) => setFormData({ ...formData, maritalStatus: value })}>
-                  <SelectTrigger id="person-edit-marital">
+                  <SelectTrigger id="person-edit-marital" className="min-h-[44px]">
                     <SelectValue placeholder="请选择婚姻状况" />
                   </SelectTrigger>
                   <SelectContent>
@@ -548,6 +610,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.religion}
                   onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
                   placeholder="请输入宗教信仰（如无则填无）"
+                  className="min-h-[44px]"
                 />
               </div>
 
@@ -558,16 +621,17 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.politicalStatus}
                   onChange={(e) => setFormData({ ...formData, politicalStatus: e.target.value })}
                   placeholder="如：中共党员、群众等"
+                  className="min-h-[44px]"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="militaryService"
                   checked={formData.militaryService}
                   onCheckedChange={(checked) => setFormData({ ...formData, militaryService: !!checked })}
                 />
-                <Label htmlFor="militaryService" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="militaryService" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   服过兵役
                 </Label>
               </div>
@@ -579,6 +643,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.graduationInfo}
                   onChange={(e) => setFormData({ ...formData, graduationInfo: e.target.value })}
                   placeholder="如：山东大学 计算机科学与技术专业"
+                  className="min-h-[44px]"
                 />
               </div>
 
@@ -589,16 +654,17 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.workplace}
                   onChange={(e) => setFormData({ ...formData, workplace: e.target.value })}
                   placeholder="请输入工作单位及职务"
+                  className="min-h-[44px]"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="communityVolunteer"
                   checked={formData.communityVolunteer}
                   onCheckedChange={(checked) => setFormData({ ...formData, communityVolunteer: !!checked })}
                 />
-                <Label htmlFor="communityVolunteer" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="communityVolunteer" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   社区志愿力量
                 </Label>
               </div>
@@ -610,6 +676,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.skills}
                   onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                   placeholder="请输入特长、爱好"
+                  className="min-h-[44px]"
                 />
               </div>
 
@@ -620,6 +687,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.pets}
                   onChange={(e) => setFormData({ ...formData, pets: e.target.value })}
                   placeholder="如：无、养猫一只等"
+                  className="min-h-[44px]"
                 />
               </div>
             </div>
@@ -631,13 +699,15 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           <button
             type="button"
             onClick={() => toggleSection('work')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
+            aria-expanded={expandedSections.work}
+            aria-controls="person-edit-section-work"
+            className="w-full min-h-[44px] flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)]"
           >
             <span>个人经历</span>
             {expandedSections.work ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {expandedSections.work && (
-            <div>
+            <div id="person-edit-section-work">
               <Label htmlFor="person-edit-biography" className="text-sm font-medium mb-2 block">基本情况</Label>
               <Textarea
                 id="person-edit-biography"
@@ -659,13 +729,15 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           <button
             type="button"
             onClick={() => toggleSection('activity')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
+            aria-expanded={expandedSections.activity}
+            aria-controls="person-edit-section-activity"
+            className="w-full min-h-[44px] flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)]"
           >
             <span>活动参与</span>
             {expandedSections.activity ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {expandedSections.activity && (
-            <div className="space-y-4">
+            <div id="person-edit-section-activity" className="space-y-4">
               <div>
                 <Label htmlFor="person-edit-activities" className="text-sm font-medium mb-2 block">参加社区活动情况</Label>
                 <Textarea
@@ -698,20 +770,22 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           <button
             type="button"
             onClick={() => toggleSection('health')}
-            className="w-full flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)] mb-3"
+            aria-expanded={expandedSections.health}
+            aria-controls="person-edit-section-health"
+            className="w-full min-h-[44px] flex items-center justify-between text-sm font-semibold text-[var(--color-neutral-11)]"
           >
             <span>健康档案</span>
             {expandedSections.health ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
           {expandedSections.health && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
+            <div id="person-edit-section-health" className="space-y-4">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="hasChronic"
                   checked={formData.hasChronic}
                   onCheckedChange={(checked) => setFormData({ ...formData, hasChronic: !!checked })}
                 />
-                <Label htmlFor="hasChronic" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="hasChronic" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   有基础疾病
                 </Label>
               </div>
@@ -724,17 +798,18 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                     value={formData.chronicDetails}
                     onChange={(e) => setFormData({ ...formData, chronicDetails: e.target.value })}
                     placeholder="如：高血压、糖尿病等"
+                    className="min-h-[44px]"
                   />
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="needsRegularMedicine"
                   checked={formData.needsRegularMedicine}
                   onCheckedChange={(checked) => setFormData({ ...formData, needsRegularMedicine: !!checked })}
                 />
-                <Label htmlFor="needsRegularMedicine" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="needsRegularMedicine" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   需要定期购药
                 </Label>
               </div>
@@ -747,6 +822,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                     value={formData.medicineFrequency}
                     onChange={(e) => setFormData({ ...formData, medicineFrequency: e.target.value })}
                     placeholder="如：每月一次"
+                    className="min-h-[44px]"
                   />
                 </div>
               )}
@@ -758,27 +834,28 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                   value={formData.medicalVisitFrequency}
                   onChange={(e) => setFormData({ ...formData, medicalVisitFrequency: e.target.value })}
                   placeholder="如：每季度一次"
+                  className="min-h-[44px]"
                 />
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="isSeverePatient"
                   checked={formData.isSeverePatient}
                   onCheckedChange={(checked) => setFormData({ ...formData, isSeverePatient: !!checked })}
                 />
-                <Label htmlFor="isSeverePatient" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="isSeverePatient" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   重症患者
                 </Label>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="isPregnant"
                   checked={formData.isPregnant}
                   onCheckedChange={(checked) => setFormData({ ...formData, isPregnant: !!checked })}
                 />
-                <Label htmlFor="isPregnant" className="text-sm font-medium cursor-pointer">
+                <Label htmlFor="isPregnant" className="text-sm font-medium cursor-pointer flex-1 self-stretch flex items-center">
                   孕产妇
                 </Label>
               </div>
