@@ -35,6 +35,7 @@ import { conflictRepository } from '../../../services/repositories/conflictRepos
 import { personRepository } from '../../../services/repositories/personRepository';
 import type { ConflictRecord, Person } from '../../../types/core';
 import { toast } from 'sonner';
+import { useMobileSandbox } from '../MobileSandboxProvider';
 
 interface MobileConflictFormProps {
   onBack: () => void;
@@ -65,6 +66,7 @@ function deriveGridId(parties: Party[], residents: Person[], candidateResidents:
 }
 
 export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictFormProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [loading, setLoading] = useState(false);
   const [residentLoading, setResidentLoading] = useState(true);
   const [residents, setResidents] = useState<Person[]>([]);
@@ -356,7 +358,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
         <Button
           className="w-full bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)] text-white h-11 text-base shadow-lg shadow-blue-600/20"
           onClick={handleSubmit}
-          disabled={loading}
+          disabled={loading || !canUseLegacyApiMutation}
         >
           {loading ? (
             <>

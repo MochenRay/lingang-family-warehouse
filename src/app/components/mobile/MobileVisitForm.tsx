@@ -15,6 +15,7 @@ import {
   secondaryAiRepository,
   type SecondaryAiStatus,
 } from '../../services/repositories/secondaryAiRepository';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobileVisitFormProps {
   personId: string;
@@ -45,6 +46,7 @@ const VISIT_AI_STATUS_LABELS: Record<VisitAiStatus, string> = {
 };
 
 export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [recentVisits, setRecentVisits] = useState<VisitRecord[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -871,7 +873,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <Button
             onClick={handleSubmit}
             className="flex-1 h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-hover)]"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canUseLegacyApiMutation}
           >
             {isSubmitting ? '提交中...' : '提交记录'}
           </Button>

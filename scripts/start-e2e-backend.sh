@@ -6,6 +6,15 @@ BACKEND_PORT="${BACKEND_PORT:-8000}"
 FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 PYTHON_BIN="${PYTHON_BIN:-$ROOT_DIR/backend/.venv/bin/python}"
 DB_PATH="${PLAYWRIGHT_DB_PATH:-${TMPDIR:-/tmp}/lingang-phase13-playwright-${PPID}.db}"
+DEMO_WRITE_MODE="${DEMO_WRITE_MODE:-enabled}"
+
+case "$DEMO_WRITE_MODE" in
+  enabled|readonly) ;;
+  *)
+    echo "DEMO_WRITE_MODE 必须为 enabled 或 readonly，当前值：$DEMO_WRITE_MODE" >&2
+    exit 2
+    ;;
+esac
 
 if [[ ! -x "$PYTHON_BIN" ]] && ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
   echo "Playwright 后端解释器不可用：$PYTHON_BIN" >&2
@@ -32,7 +41,7 @@ rm -f "$DB_PATH" "$DB_PATH-shm" "$DB_PATH-wal"
 export PYTHONPATH="$ROOT_DIR/backend"
 export DATABASE_URL="sqlite:///$DB_PATH"
 export APP_ENV="development"
-export DEMO_WRITE_MODE="enabled"
+export DEMO_WRITE_MODE
 export CORS_ORIGINS="http://localhost:$FRONTEND_PORT,http://127.0.0.1:$FRONTEND_PORT"
 export AI_ENABLED="false"
 

@@ -32,83 +32,35 @@ import { MobilePolicyInterpretation } from './MobilePolicyInterpretation';
 import { MobileOfficialWriting } from './MobileOfficialWriting';
 import { MobileSmartQuery } from './MobileSmartQuery';
 import { ConfirmDialog } from '../patterns/ConfirmDialog';
+import { DialogPortalContainerProvider } from '../ui/dialog';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import { toast } from 'sonner';
+import { MobileSandboxNotice } from './MobileSandboxNotice';
+import { MobileSandboxProvider } from './MobileSandboxProvider';
+import {
+  createMobileBrowserHistoryState,
+  resolveMobileBackNavigation,
+  resolveMobileNavigation,
+  restoreMobileBrowserNavigation,
+  toMobilePath,
+  type MobileNavigateOptions,
+  type RestoredMobileNavigation,
+} from './mobileNavigation';
 
 interface MobileAppProps {
   onExitMobile?: () => void;
 }
 
 export function MobileApp({ onExitMobile }: MobileAppProps) {
-  const buildInitialHistory = (pathname = window.location.pathname, search = window.location.search) => {
-    const path = pathname.replace(/\/+$/, '') || '/mobile';
-    const params = new URLSearchParams(search);
-
-    if (path.startsWith('/mobile/tasks/')) return ['home', 'tasks?mode=today', path];
-    if (path === '/mobile/tasks') return ['home', `tasks?mode=${params.get('mode') || 'today'}`];
-    if (path.includes('/mobile/visit-form/')) {
-      const personId = path.split('/mobile/visit-form/')[1];
-      if (personId) {
-        return ['home', 'people', `person-detail/${personId}`, `visit-form/${personId}`];
-      }
-    }
-    if (path.includes('/mobile/person/') && path.endsWith('/edit')) {
-      const personId = path.split('/mobile/person/')[1]?.replace('/edit', '');
-      if (personId) return ['home', 'people', `person-detail/${personId}`, `person-edit/${personId}`];
-    }
-    if (path.includes('/mobile/person/')) {
-      const personId = path.split('/mobile/person/')[1];
-      if (personId) return ['home', 'people', `person-detail/${personId}`];
-    }
-    if (path.includes('/mobile/house/') && path.endsWith('/edit')) {
-      const houseId = path.split('/mobile/house/')[1]?.replace('/edit', '');
-      if (houseId) return ['home', 'housing', `house-detail/${houseId}`, `house-edit/${houseId}`];
-    }
-    if (path.includes('/mobile/house/')) {
-      const houseId = path.split('/mobile/house/')[1];
-      if (houseId) return ['home', 'housing', `house-detail/${houseId}`];
-    }
-    if (path.includes('/mobile/notices/')) {
-      const noticeId = path.split('/mobile/notices/')[1];
-      if (noticeId) return ['home', 'notices', `notice-detail/${noticeId}`];
-    }
-    if (path === '/mobile/notices') return ['home', 'notices'];
-    if (path.includes('/mobile/conflict/new')) return ['home', 'conflict', 'conflict-form'];
-    if (path.includes('/mobile/conflict/')) {
-      const id = path.split('/mobile/conflict/')[1];
-      if (id) {
-        return ['home', 'conflict', `conflict-detail/${id}`];
-      }
-    }
-    if (path.includes('/mobile/conflict')) return ['home', 'conflict'];
-    if (path.includes('/mobile/activity/new')) return ['home', 'activity', search ? `activity-form${search}` : 'activity-form'];
-    if (path.includes('/mobile/activity/')) {
-      const id = path.split('/mobile/activity/')[1];
-      if (id) return ['home', 'activity', `activity-detail/${id}${search}`];
-    }
-    if (path === '/mobile/activity') return ['home', 'activity'];
-    if (path.includes('/mobile/grid')) return ['home', 'grid-overview'];
-    if (path.includes('/mobile/housing')) return ['home', 'housing'];
-    if (path.includes('/mobile/people')) return ['home', 'people'];
-    if (path.includes('/mobile/profile')) return ['home', 'profile'];
-    if (path.includes('/mobile/patrol')) return ['home', 'patrol'];
-    if (path.includes('/mobile/collect-house')) return ['home', 'collect-house'];
-    if (path.includes('/mobile/collect-person')) return ['home', 'collect-person'];
-    if (path.includes('/mobile/quick-note-history')) return ['home', 'quick-note-history'];
-    if (path.includes('/mobile/quick-note')) return ['home', 'quick-note'];
-    if (path.includes('/mobile/scan')) return ['home', 'scan'];
-    if (path.includes('/mobile/search')) return ['home', 'search'];
-    if (path.includes('/mobile/stats')) return ['home', 'stats'];
-    if (path.includes('/mobile/update-history')) return ['home', 'update-history'];
-    if (path.includes('/mobile/policy-interpretation')) return ['home', 'policy-interpretation'];
-    if (path.includes('/mobile/official-writing')) return ['home', 'official-writing'];
-    if (path.includes('/mobile/smart-query')) return ['home', 'smart-query'];
-    return ['home'];
-  };
-
-  const [history, setHistory] = useState<string[]>(() => {
-    return buildInitialHistory();
-  });
+  const [portalContainer, setPortalContainer] = useState<HTMLDivElement | null>(null);
+  const [navigation, setNavigation] = useState<RestoredMobileNavigation>(() => (
+    restoreMobileBrowserNavigation(
+      window.history.state,
+      window.location.pathname,
+      window.location.search,
+    )
+  ));
+  const history = navigation.history;
 
   // 退出确认弹窗：'mobile'=退出移动端模式，'logout'=退出登录返回电脑端
   const [pendingExitAction, setPendingExitAction] = useState<'mobile' | 'logout' | null>(null);
@@ -116,100 +68,49 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
   // 获取当前路由（栈顶）
   const currentRoute = history[history.length - 1];
 
-  const toMobilePath = (route: string) => {
-    if (route.startsWith('/mobile')) return route;
-    if (route === 'home') return '/mobile';
-    if (route.startsWith('tasks')) {
-      const mode = route.includes('mode=month') ? 'month' : route.includes('mode=all') ? 'all' : 'today';
-      return `/mobile/tasks?mode=${mode}`;
-    }
-    if (route.startsWith('person-detail/')) return `/mobile/person/${route.split('/').pop()}`;
-    if (route.startsWith('house-detail/')) return `/mobile/house/${route.split('/').pop()}`;
-    if (route.startsWith('person-edit/')) return `/mobile/person/${route.split('/').pop()}/edit`;
-    if (route.startsWith('house-edit/')) return `/mobile/house/${route.split('/').pop()}/edit`;
-    if (route.startsWith('visit-form/')) return `/mobile/visit-form/${route.split('/').pop()}`;
-    if (route.startsWith('notice-detail/')) return `/mobile/notices/${route.split('/').pop()}`;
-    if (route.startsWith('conflict-detail/')) return `/mobile/conflict/${route.split('/').pop()}`;
-    if (route === 'conflict-form') return '/mobile/conflict/new';
-    if (route.startsWith('activity-detail/')) {
-      const [pathPart, queryPart] = route.split('?');
-      return `/mobile/activity/${pathPart.split('/').pop()}${queryPart ? `?${queryPart}` : ''}`;
-    }
-    if (route.startsWith('activity-form')) {
-      const query = route.includes('?') ? `?${route.split('?')[1]}` : '';
-      return `/mobile/activity/new${query}`;
-    }
-
-    const staticPaths: Record<string, string> = {
-      housing: '/mobile/housing',
-      people: '/mobile/people',
-      patrol: '/mobile/patrol',
-      profile: '/mobile/profile',
-      'collect-house': '/mobile/collect-house',
-      'collect-person': '/mobile/collect-person',
-      'quick-note': '/mobile/quick-note',
-      scan: '/mobile/scan',
-      notices: '/mobile/notices',
-      search: '/mobile/search',
-      'quick-note-history': '/mobile/quick-note-history',
-      stats: '/mobile/stats',
-      'update-history': '/mobile/update-history',
-      'grid-overview': '/mobile/grid',
-      conflict: '/mobile/conflict',
-      activity: '/mobile/activity',
-      'policy-interpretation': '/mobile/policy-interpretation',
-      'official-writing': '/mobile/official-writing',
-      'smart-query': '/mobile/smart-query',
-    };
-
-    return staticPaths[route] ?? '/mobile';
-  };
-
-  const normalizeMobileRoute = (route: string) => {
-    if (!route.startsWith('/mobile')) return route;
-    const [pathname, query = ''] = route.split('?');
-    const nextHistory = buildInitialHistory(pathname, query ? `?${query}` : '');
-    return nextHistory[nextHistory.length - 1];
-  };
-
   useEffect(() => {
-    const handlePopState = () => {
-      setHistory(buildInitialHistory(window.location.pathname, window.location.search));
+    const handlePopState = (event: PopStateEvent) => {
+      setNavigation(restoreMobileBrowserNavigation(
+        event.state,
+        window.location.pathname,
+        window.location.search,
+      ));
     };
 
     window.addEventListener('popstate', handlePopState);
-    window.history.replaceState({ route: 'mobile', mobileRoute: currentRoute }, '', toMobilePath(currentRoute));
+    window.history.replaceState(
+      createMobileBrowserHistoryState(navigation.history, navigation.mobileDepth),
+      '',
+      toMobilePath(currentRoute),
+    );
 
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  // 处理路由导航
-  const handleRouteChange = (route: string) => {
-    const nextRoute = normalizeMobileRoute(route);
-    // 如果是导航到首页，清空历史栈
-    if (nextRoute === 'home') {
-      setHistory(['home']);
-      window.history.pushState({ route: 'mobile', mobileRoute: 'home' }, '', '/mobile');
+  // 唯一的页内导航入口；浏览器 back/forward 由 popstate 恢复对应条目的完整来源栈。
+  const navigate = (route: string, options: MobileNavigateOptions = {}) => {
+    const result = resolveMobileNavigation(navigation.history, route, options);
+    if (result.method === 'none') return;
+    const nextDepth = result.method === 'push'
+      ? navigation.mobileDepth + 1
+      : navigation.mobileDepth;
+    setNavigation({ history: result.history, mobileDepth: nextDepth });
+    const browserState = createMobileBrowserHistoryState(result.history, nextDepth);
+    if (result.method === 'replace') {
+      window.history.replaceState(browserState, '', result.path);
       return;
     }
-    
-    // 避免重复推入相同的路由到栈顶
-    if (nextRoute === currentRoute) return;
-
-    // 简单的栈推入
-    setHistory(prev => [...prev, nextRoute]);
-    window.history.pushState({ route: 'mobile', mobileRoute: nextRoute }, '', toMobilePath(nextRoute));
+    window.history.pushState(browserState, '', result.path);
   };
 
   // 处理返回上一页
   const handleBack = () => {
-    setHistory(prev => {
-      if (prev.length <= 1) return prev; // 已经在首页或栈底，不处理
-      const nextHistory = prev.slice(0, -1);
-      const nextRoute = nextHistory[nextHistory.length - 1];
-      window.history.replaceState({ route: 'mobile', mobileRoute: nextRoute }, '', toMobilePath(nextRoute));
-      return nextHistory;
-    });
+    const result = resolveMobileBackNavigation(navigation.history, navigation.mobileDepth);
+    if (result.method === 'browser') {
+      window.history.back();
+      return;
+    }
+    if (result.method === 'replace') navigate(result.route, { replace: true });
   };
 
   // 退出移动端模式（确认弹窗替代原生 confirm）
@@ -225,7 +126,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     if (onExitMobile) {
       onExitMobile();
     } else {
-      setHistory(['home']);
+      navigate('home', { replace: true });
       toast.info(pendingExitAction === 'logout' ? '已退出登录' : '已返回移动端工作台首页');
     }
   };
@@ -235,17 +136,17 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     // Check for dynamic routes first
     if (currentRoute.startsWith('/mobile/tasks/')) {
       const taskId = currentRoute.split('/').pop();
-      return <MobileTaskDetail taskId={taskId || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
+      return <MobileTaskDetail taskId={taskId || ''} onBack={handleBack} onRouteChange={navigate} />;
     }
     
     if (currentRoute.startsWith('person-detail/')) {
       const id = currentRoute.split('/').pop();
-      return <MobilePersonDetail id={id || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
+      return <MobilePersonDetail id={id || ''} onBack={handleBack} onRouteChange={navigate} />;
     }
 
     if (currentRoute.startsWith('house-detail/')) {
       const id = currentRoute.split('/').pop();
-      return <MobileHouseDetail id={id || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
+      return <MobileHouseDetail id={id || ''} onBack={handleBack} onRouteChange={navigate} />;
     }
 
     if (currentRoute.startsWith('person-edit/')) {
@@ -270,7 +171,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
 
     if (currentRoute.startsWith('conflict-detail/')) {
       const id = currentRoute.split('/').pop();
-      return <MobileConflictDetail id={id || ''} onBack={handleBack} onRouteChange={handleRouteChange} />;
+      return <MobileConflictDetail id={id || ''} onBack={handleBack} onRouteChange={navigate} />;
     }
 
     if (currentRoute.startsWith('activity-detail/')) {
@@ -281,7 +182,7 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
         const params = new URLSearchParams(queryPart);
         mode = params.get('mode') || 'execution';
       }
-      return <MobileActivityDetail id={id || ''} mode={mode as 'execution' | 'application'} onBack={handleBack} onRouteChange={handleRouteChange} />;
+      return <MobileActivityDetail id={id || ''} mode={mode as 'execution' | 'application'} onBack={handleBack} onRouteChange={navigate} />;
     }
 
     if (currentRoute.startsWith('activity-form')) {
@@ -297,22 +198,22 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
     if (currentRoute.startsWith('tasks')) {
       const mode = currentRoute.includes('mode=month') ? 'month' : 
                    currentRoute.includes('mode=all') ? 'all' : 'today';
-      return <MobileTasks onRouteChange={handleRouteChange} initialViewMode={mode} onExitMobile={handleExitMobile} />;
+      return <MobileTasks onRouteChange={navigate} initialViewMode={mode} onExitMobile={handleExitMobile} />;
     }
 
     switch (currentRoute) {
       case 'home':
-        return <MobileHome onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobileHome onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       case 'housing':
-        return <MobileHousing onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobileHousing onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       case 'people':
-        return <MobilePeople onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobilePeople onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       // case 'tasks': handled above
       case 'patrol':
-        return <MobilePatrol onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobilePatrol onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       case 'profile':
         return <MobileProfile 
-          onRouteChange={handleRouteChange} 
+          onRouteChange={navigate}
           onLogout={() => setPendingExitAction('logout')}
           onExitMobile={handleExitMobile}
         />;
@@ -321,30 +222,30 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'collect-person':
         return <PersonCollect onBack={handleBack} />;
       case 'quick-note':
-        return <QuickNote onBack={handleBack} onRouteChange={handleRouteChange} />;
+        return <QuickNote onBack={handleBack} onRouteChange={navigate} />;
       case 'scan':
         return (
           <MobileScan
             onBack={handleBack}
             onResult={(result, type) => {
               if (type === 'person') {
-                handleRouteChange(`person-detail/${result}`);
+                navigate(`person-detail/${result}`);
                 return;
               }
               if (type === 'house') {
-                handleRouteChange(`house-detail/${result}`);
+                navigate(`house-detail/${result}`);
                 return;
               }
               if (type === 'ocr') {
-                handleRouteChange(result || 'collect-person');
+                navigate(result || 'collect-person');
               }
             }}
           />
         );
       case 'notices':
-        return <MobileNotices onBack={handleBack} onNoticeClick={(id) => handleRouteChange(`notice-detail/${id}`)} />;
+        return <MobileNotices onBack={handleBack} onNoticeClick={(id) => navigate(`notice-detail/${id}`)} />;
       case 'search':
-        return <MobileSearch onBack={handleBack} onRouteChange={handleRouteChange} />;
+        return <MobileSearch onBack={handleBack} onRouteChange={navigate} />;
       case 'quick-note-history':
         return <QuickNoteHistory onBack={handleBack} />;
       case 'stats':
@@ -354,11 +255,11 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'grid-overview':
         return <MobileGridOverview onBack={handleBack} />;
       case 'conflict':
-        return <MobileConflictList onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobileConflictList onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       case 'conflict-form':
-        return <MobileConflictForm onBack={handleBack} onRouteChange={handleRouteChange} />;
+        return <MobileConflictForm onBack={handleBack} onRouteChange={navigate} />;
       case 'activity':
-        return <MobileActivity onRouteChange={handleRouteChange} onExitMobile={handleExitMobile} />;
+        return <MobileActivity onRouteChange={navigate} onExitMobile={handleExitMobile} />;
       case 'policy-interpretation':
         return <MobilePolicyInterpretation onBack={handleBack} />;
       case 'official-writing':
@@ -366,29 +267,39 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
       case 'smart-query':
         return <MobileSmartQuery onBack={handleBack} />;
       default:
-        return <MobileHome onRouteChange={handleRouteChange} />;
+        return <MobileHome onRouteChange={navigate} />;
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[var(--color-neutral-00)] md:py-8 font-sans">
-      <div id="mobile-viewport" className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)] overflow-hidden relative shadow-black/20 ring-1 ring-white/5 transform-gpu">
-        {/* 顶部刘海模拟 (仅在桌面模式显示) */}
-        <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-[var(--color-neutral-03)] rounded-b-[1rem] z-[60]"></div>
-        
-        {renderPage()}
-      </div>
+      <MobileSandboxProvider>
+        <DialogPortalContainerProvider container={portalContainer}>
+          <div
+            id="mobile-viewport"
+            ref={setPortalContainer}
+            className="w-full h-[100dvh] md:w-[375px] md:h-[812px] md:shadow-2xl md:rounded-[2.5rem] md:border-[10px] md:border-[var(--color-neutral-03)] bg-[var(--color-neutral-00)] overflow-hidden relative shadow-black/20 ring-1 ring-white/5 transform-gpu"
+          >
+            {/* 顶部刘海模拟 (仅在桌面模式显示) */}
+            <div className="hidden md:block absolute top-0 left-1/2 -translate-x-1/2 w-[120px] h-[24px] bg-[var(--color-neutral-03)] rounded-b-[1rem] z-[60]"></div>
+            <div className="flex h-full min-h-0 flex-col">
+              <MobileSandboxNotice />
+              <div className="min-h-0 flex-1">{renderPage()}</div>
+            </div>
+          </div>
 
-      {/* 退出确认弹窗（替代原生 confirm） */}
-      <ConfirmDialog
-        open={pendingExitAction !== null}
-        onOpenChange={(open) => !open && setPendingExitAction(null)}
-        title={pendingExitAction === 'logout' ? '退出登录' : '退出移动端模式'}
-        description={pendingExitAction === 'logout' ? '确定要退出登录并返回电脑端吗？' : '确定要退出移动端模式吗？'}
-        confirmText="退出"
-        destructive
-        onConfirm={executePendingExit}
-      />
+          {/* 退出确认弹窗（替代原生 confirm） */}
+          <ConfirmDialog
+            open={pendingExitAction !== null}
+            onOpenChange={(open) => !open && setPendingExitAction(null)}
+            title={pendingExitAction === 'logout' ? '退出登录' : '退出移动端模式'}
+            description={pendingExitAction === 'logout' ? '确定要退出登录并返回电脑端吗？' : '确定要退出移动端模式吗？'}
+            confirmText="退出"
+            destructive
+            onConfirm={executePendingExit}
+          />
+        </DialogPortalContainerProvider>
+      </MobileSandboxProvider>
     </div>
   );
 }

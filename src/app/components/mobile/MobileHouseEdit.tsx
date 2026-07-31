@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Card } from '../ui/card';
 import { House, HouseType } from '../../types/core';
 import { houseRepository } from '../../services/repositories/houseRepository';
+import { useMobileSandbox } from './MobileSandboxProvider';
 
 interface MobileHouseEditProps {
   id: string;
@@ -16,6 +17,7 @@ interface MobileHouseEditProps {
 }
 
 export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [house, setHouse] = useState<House | null>(null);
   const [formData, setFormData] = useState({
     ownerName: '',
@@ -133,6 +135,7 @@ export function MobileHouseEdit({ id, onBack, onSave }: MobileHouseEditProps) {
         <Button 
           className="w-full h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
           onClick={handleSave}
+          disabled={!canUseLegacyApiMutation}
         >
           <Save className="w-4 h-4 mr-2" />
           保存修改

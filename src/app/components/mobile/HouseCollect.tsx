@@ -9,6 +9,7 @@ import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
 import { MobileStatusBar } from './MobileStatusBar';
 import { toast } from 'sonner';
+import { useMobileSandbox } from './MobileSandboxProvider';
 import { houseRepository } from '../../services/repositories/houseRepository';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 import type { HouseType } from '../../types/core';
@@ -28,6 +29,7 @@ function mapUsageToHouseType(usage: string): HouseType {
 }
 
 export function HouseCollect({ onBack }: HouseCollectProps) {
+  const { canUseLegacyApiMutation } = useMobileSandbox();
   const [photos, setPhotos] = useState<string[]>([]);
   const [locationObtained, setLocationObtained] = useState(false);
   const [locationSummary, setLocationSummary] = useState('');
@@ -424,7 +426,7 @@ export function HouseCollect({ onBack }: HouseCollectProps) {
           <Button
             className="flex-1 h-12 bg-primary hover:bg-[var(--color-brand-primary-hover)]"
             onClick={handleSubmit}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !canUseLegacyApiMutation}
           >
             <Save className="w-5 h-5 mr-2" />
             {isSubmitting ? '提交中...' : '提交审核'}
