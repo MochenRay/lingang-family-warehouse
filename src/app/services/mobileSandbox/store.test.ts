@@ -10,6 +10,7 @@ import {
   MOBILE_SANDBOX_STORAGE_KEY,
   type MobileSessionEventV1,
 } from './types';
+import type { MobilePersonCreatePayload } from './personVisitPayloads';
 
 class MemoryStorage implements Storage {
   private values = new Map<string, string>();
@@ -38,6 +39,21 @@ class MemoryStorage implements Storage {
 const PERSON_UUID = '11111111-1111-4111-8111-111111111111';
 const PERSON_TEMP_ID = `session:person:${PERSON_UUID}`;
 
+function personPayload(): MobilePersonCreatePayload {
+  return {
+    gridId: 'grid-1',
+    name: '测试居民',
+    idCard: '310000199001010001',
+    gender: '女',
+    age: 36,
+    address: '临港新片区',
+    type: '户籍',
+    tags: [],
+    risk: 'Low',
+    updatedAt: '2026-07-31T12:00:00.000Z',
+  };
+}
+
 function event(overrides: Partial<MobileSessionEventV1> = {}): MobileSessionEventV1 {
   const result: MobileSessionEventV1 = {
     id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -45,7 +61,7 @@ function event(overrides: Partial<MobileSessionEventV1> = {}): MobileSessionEven
     action: 'create',
     targetId: PERSON_TEMP_ID,
     tempId: PERSON_TEMP_ID,
-    payload: { name: '测试居民' },
+    payload: personPayload(),
     createdAt: '2026-07-31T12:00:00.000Z',
     ...overrides,
   };
@@ -146,7 +162,7 @@ describe('mobile session store', () => {
         tempId: undefined,
         payload: { name: undefined },
       }),
-    ], storage)).toThrow('JSON-compatible');
+    ], storage)).toThrow('mobile person/update payload');
 
     expect(() => appendMobileSessionTransaction([
       event({
@@ -176,6 +192,40 @@ describe('mobile session store', () => {
         payload: {},
       }),
     ], storage)).toThrow('tombstone payload');
+  });
+
+  it('uses exact person and visit payload validators before persisting', () => {
+    expect(() => appendMobileSessionTransaction([
+      event({ payload: { ...personPayload(), extra: true } }),
+    ], storage)).toThrow(MobileSessionStoreError);
+
+    expect(() => appendMobileSessionTransaction([
+      event({
+        action: 'update',
+        targetId: 'person-1',
+        tempId: undefined,
+        payload: { age: 37 },
+      }),
+    ], storage)).toThrow(MobileSessionStoreError);
+
+    const visitTempId = 'session:visit:22222222-2222-4222-8222-222222222222';
+    expect(() => appendMobileSessionTransaction([
+      event({
+        entity: 'visit',
+        targetId: visitTempId,
+        tempId: visitTempId,
+        payload: {
+          targetId: 'house-1',
+          targetType: 'house',
+          gridId: 'grid-1',
+          visitorName: '网格员',
+          date: '2026-07-31 12:00',
+          content: '走访记录',
+        },
+      }),
+    ], storage)).toThrow(MobileSessionStoreError);
+
+    expect(storage.writeCount).toBe(0);
   });
 
   it('rejects payload actions that are incompatible with the entity', () => {

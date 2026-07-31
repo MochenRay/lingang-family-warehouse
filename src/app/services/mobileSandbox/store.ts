@@ -9,6 +9,12 @@ import {
   type MobileSessionObjectPayloadV1,
   type MobileSessionStatusPayloadV1,
 } from './types';
+import {
+  PersonVisitPayloadValidationError,
+  assertMobilePersonCreatePayload,
+  assertMobilePersonUpdatePayload,
+  assertMobileVisitCreatePayload,
+} from './personVisitPayloads';
 
 const ENTITY_ACTIONS: Record<MobileSandboxEntity, ReadonlySet<MobileSandboxAction>> = {
   person: new Set(['create', 'update', 'tombstone']),
@@ -188,13 +194,34 @@ type PayloadValidator = (value: unknown) => void;
 const CREATE_PAYLOAD = (value: unknown) => assertNonEmptyObjectPayload(value, 'create');
 const UPDATE_PAYLOAD = (value: unknown) => assertNonEmptyObjectPayload(value, 'update');
 
+function asStorePayloadValidator(validator: PayloadValidator): PayloadValidator {
+  return (value) => {
+    try {
+      validator(value);
+    } catch (error) {
+      if (error instanceof PersonVisitPayloadValidationError) {
+        throw new MobileSessionStoreError(error.message);
+      }
+      throw error;
+    }
+  };
+}
+
+const PERSON_CREATE_PAYLOAD = asStorePayloadValidator(assertMobilePersonCreatePayload);
+const PERSON_UPDATE_PAYLOAD = asStorePayloadValidator(assertMobilePersonUpdatePayload);
+const VISIT_CREATE_PAYLOAD = asStorePayloadValidator(assertMobileVisitCreatePayload);
+
 const ENTITY_PAYLOAD_VALIDATORS: Record<
   MobileSandboxEntity,
   Partial<Record<MobileSandboxAction, PayloadValidator>>
 > = {
-  person: { create: CREATE_PAYLOAD, update: UPDATE_PAYLOAD, tombstone: assertTombstonePayload },
+  person: {
+    create: PERSON_CREATE_PAYLOAD,
+    update: PERSON_UPDATE_PAYLOAD,
+    tombstone: assertTombstonePayload,
+  },
   house: { create: CREATE_PAYLOAD, update: UPDATE_PAYLOAD, tombstone: assertTombstonePayload },
-  visit: { create: CREATE_PAYLOAD, tombstone: assertTombstonePayload },
+  visit: { create: VISIT_CREATE_PAYLOAD, tombstone: assertTombstonePayload },
   conflict: {
     create: CREATE_PAYLOAD,
     update: UPDATE_PAYLOAD,

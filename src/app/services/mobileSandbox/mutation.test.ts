@@ -74,4 +74,32 @@ describe('executeMobileMutation', () => {
     expect(api).not.toHaveBeenCalled();
     expect(session).not.toHaveBeenCalled();
   });
+
+  it('expires a session lease when the mounted capability session is replaced', async () => {
+    activate({ mode: 'session' });
+    let release!: () => void;
+    let markStarted!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const started = new Promise<void>((resolve) => { markStarted = resolve; });
+    const sideEffect = vi.fn();
+
+    const pending = executeMobileMutation({
+      api: vi.fn(),
+      session: async (lease) => {
+        markStarted();
+        await gate;
+        lease.assertActive();
+        sideEffect();
+        return 'session-result';
+      },
+    });
+    await started;
+
+    deactivate?.();
+    activate({ mode: 'api' });
+    release();
+
+    await expect(pending).rejects.toEqual(new MobileMutationBlockedError('mode-session-expired'));
+    expect(sideEffect).not.toHaveBeenCalled();
+  });
 });

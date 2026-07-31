@@ -20,6 +20,7 @@ import { useMobileSandbox } from './MobileSandboxProvider';
 interface MobileVisitFormProps {
   personId: string;
   onBack: () => void;
+  onSaved?: () => void;
 }
 
 const MOCK_SPEECH_SEGMENTS = [
@@ -45,7 +46,7 @@ const VISIT_AI_STATUS_LABELS: Record<VisitAiStatus, string> = {
   placeholder: '样例结果',
 };
 
-export function MobileVisitForm({ personId, onBack }: MobileVisitFormProps) {
+export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormProps) {
   const { canUseLegacyApiMutation } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [recentVisits, setRecentVisits] = useState<VisitRecord[]>([]);
@@ -315,7 +316,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         tags: [formData.visitType, ...(formData.houseRisk ? ['房屋隐患'] : [])],
       });
       toast.success('走访记录已保存');
-      onBack();
+      (onSaved ?? onBack)();
     } catch (error) {
       console.error('Failed to submit visit record', error);
       toast.error('走访记录保存失败，请稍后重试');

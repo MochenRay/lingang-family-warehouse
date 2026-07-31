@@ -151,7 +151,13 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
 
     if (currentRoute.startsWith('person-edit/')) {
       const id = currentRoute.split('/').pop();
-      return <MobilePersonEdit id={id || ''} onBack={handleBack} />;
+      return (
+        <MobilePersonEdit
+          id={id || ''}
+          onBack={handleBack}
+          onSaved={() => navigate(`person-detail/${id || ''}`, { replace: true })}
+        />
+      );
     }
 
     if (currentRoute.startsWith('house-edit/')) {
@@ -161,7 +167,13 @@ export function MobileApp({ onExitMobile }: MobileAppProps) {
 
     if (currentRoute.startsWith('visit-form/')) {
       const personId = currentRoute.split('/').pop();
-      return <MobileVisitForm personId={personId || ''} onBack={handleBack} />;
+      return (
+        <MobileVisitForm
+          personId={personId || ''}
+          onBack={handleBack}
+          onSaved={() => navigate(`person-detail/${personId || ''}`, { replace: true })}
+        />
+      );
     }
 
     if (currentRoute.startsWith('notice-detail/')) {

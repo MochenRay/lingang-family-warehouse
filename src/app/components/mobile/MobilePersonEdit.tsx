@@ -18,9 +18,10 @@ interface MobilePersonEditProps {
   id: string;
   onBack: () => void;
   onSave?: () => void;
+  onSaved?: () => void;
 }
 
-export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) {
+export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEditProps) {
   const { canUseLegacyApiMutation } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
   const [personTags, setPersonTags] = useState<string[]>([]);
@@ -183,7 +184,7 @@ export function MobilePersonEdit({ id, onBack, onSave }: MobilePersonEditProps) 
     });
 
     if (onSave) onSave();
-    onBack();
+    (onSaved ?? onBack)();
   };
 
   // 按 type + category 分组所有可用标签

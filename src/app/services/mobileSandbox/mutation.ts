@@ -1,4 +1,4 @@
-import { getActiveMobileSandboxMode } from './mode';
+import { acquireMobileSandboxModeLease } from './mode';
 
 export class MobileMutationBlockedError extends Error {
   constructor(public readonly reason: string) {
@@ -8,16 +8,30 @@ export class MobileMutationBlockedError extends Error {
 }
 export interface MobileMutationHandlers<T> {
   api(): Promise<T>;
-  session(): Promise<T> | T;
+  session(lease: MobileMutationLease): Promise<T> | T;
+}
+
+export interface MobileMutationLease {
+  assertActive(): void;
 }
 
 export async function executeMobileMutation<T>(handlers: MobileMutationHandlers<T>): Promise<T> {
-  const result = await getActiveMobileSandboxMode();
+  const lease = await acquireMobileSandboxModeLease();
+  const { result } = lease;
   if (result.mode === 'api') {
     return handlers.api();
   }
   if (result.mode === 'session') {
-    return handlers.session();
+    if (!lease.isActive()) {
+      throw new MobileMutationBlockedError('mode-session-expired');
+    }
+    return handlers.session({
+      assertActive() {
+        if (!lease.isActive()) {
+          throw new MobileMutationBlockedError('mode-session-expired');
+        }
+      },
+    });
   }
   throw new MobileMutationBlockedError(result.reason ?? 'mode-blocked');
 }

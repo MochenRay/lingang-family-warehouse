@@ -11,6 +11,11 @@ export interface MobileSandboxModeSession {
   resolve(): Promise<MobileSandboxModeResult>;
 }
 
+export interface MobileSandboxModeLease {
+  result: MobileSandboxModeResult;
+  isActive(): boolean;
+}
+
 function healthUrl(): string {
   return `${getApiBaseUrl().replace(/\/$/, '')}/health`;
 }
@@ -71,8 +76,20 @@ export function activateMobileSandboxModeSession(session: MobileSandboxModeSessi
 }
 
 export async function getActiveMobileSandboxMode(): Promise<MobileSandboxModeResult> {
-  if (!activeSession) {
-    return { mode: 'blocked', reason: 'mode-not-initialized' };
+  return (await acquireMobileSandboxModeLease()).result;
+}
+
+export async function acquireMobileSandboxModeLease(): Promise<MobileSandboxModeLease> {
+  const session = activeSession;
+  if (!session) {
+    return {
+      result: { mode: 'blocked', reason: 'mode-not-initialized' },
+      isActive: () => false,
+    };
   }
-  return activeSession.resolve();
+  const result = await session.resolve();
+  return {
+    result,
+    isActive: () => activeSession === session,
+  };
 }
