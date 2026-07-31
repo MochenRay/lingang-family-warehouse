@@ -14,6 +14,14 @@ interface PendingPersonTask {
   personId: string;
 }
 
+interface PendingConflictTask {
+  id: string;
+  title: string;
+  sourceKind: 'conflict';
+  status: 'pending';
+  conflictId: string;
+}
+
 interface SeedPerson {
   id: string;
   gridId: string;
@@ -90,6 +98,21 @@ async function getPendingPersonTask(
   expect(person.gridId).toBeTruthy();
 
   return { task, person };
+}
+
+async function getPendingConflictTask(request: APIRequestContext): Promise<PendingConflictTask> {
+  const projectionResponse = await request.get(`${apiBaseUrl}/task-rules/projection`);
+  expect(projectionResponse.ok()).toBe(true);
+  const projection = await projectionResponse.json() as { pending: Array<Partial<PendingConflictTask>> };
+  const candidate = projection.pending.find((item) => (
+    item.status === 'pending'
+    && item.sourceKind === 'conflict'
+    && typeof item.id === 'string'
+    && typeof item.title === 'string'
+    && typeof item.conflictId === 'string'
+  ));
+  expect(candidate, 'the seeded backend must expose a real pending conflict task').toBeTruthy();
+  return candidate as PendingConflictTask;
 }
 
 async function openVisitFormFromTask(
@@ -231,6 +254,26 @@ test.beforeEach(async ({ page }) => {
       originalSetItem.call(this, key, value);
     };
   }, { storageKey: mobileSessionKey });
+});
+
+test('public conflict task keeps legacy completion disabled and emits zero business mutations', async ({ page, request }) => {
+  const task = await getPendingConflictTask(request);
+  const businessMutations: string[] = [];
+  page.on('request', (apiRequest) => {
+    if (isBusinessMutation(apiRequest.url(), apiRequest.method())) {
+      businessMutations.push(`${apiRequest.method()} ${new URL(apiRequest.url()).pathname}`);
+    }
+  });
+
+  await page.goto(`/mobile/tasks/${task.id}`);
+  await expect(page.getByText('任务详情', { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+  await page.getByPlaceholder('请输入本次处理结果、发现的问题或后续安排...').fill('public readonly gate');
+
+  const submit = page.getByRole('button', { name: '记录处置并完成', exact: true });
+  await expect(submit).toBeDisabled();
+  expect(businessMutations).toEqual([]);
+  await expect.poll(() => page.evaluate((key) => window.sessionStorage.getItem(key), mobileSessionKey)).toBeNull();
 });
 
 test('public session failure is visible and cannot create fake visit history', async ({ page, request }) => {
