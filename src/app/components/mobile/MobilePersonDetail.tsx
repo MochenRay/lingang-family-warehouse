@@ -6,7 +6,6 @@ import { Badge } from '../ui/badge';
 import { Card } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Person, VisitRecord } from '../../types/core';
-import { houseRepository } from '../../services/repositories/houseRepository';
 import { personVisitFacade } from '../../services/mobileSandbox/personVisitFacade';
 import { getRiskLevelLabel } from '../../utils/riskLevel';
 import { useMobileSandbox } from './MobileSandboxProvider';
@@ -63,9 +62,9 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               ).then((items) => items.filter((item): item is Person => item !== null))
             : Promise.resolve([] as Person[]),
           personData.houseId
-            ? houseRepository
-                .getHouseResidents(personData.houseId)
-                .then((items) => items.filter((item) => item.id !== personData.id))
+            ? personVisitFacade
+                .listPeople({ houseId: personData.houseId, limit: 500 })
+                .then((response) => response.items.filter((item) => item.id !== personData.id))
             : Promise.resolve([] as Person[]),
           personVisitFacade
             .listVisits({ targetId: personData.id, targetType: 'person', limit: 100 })

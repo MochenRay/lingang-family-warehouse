@@ -169,6 +169,9 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
     }
     setAiRequesting(true);
     setAiError(null);
+    // 新请求开始时即清除旧结果与对象化标记，等待或失败期间不得残留上一次成功态
+    setAiResult(null);
+    setAiGrounded(false);
 
     try {
       const response = await personVisitFacade.requestVisitOutline(person.id);
@@ -182,6 +185,8 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
       setAiGrounded(response.grounded);
     } catch (error) {
       console.error('Failed to request visit outline', error);
+      setAiResult(null);
+      setAiGrounded(false);
       setAiError(error instanceof Error ? error.message : '未知错误');
     } finally {
       setAiRequesting(false);
@@ -196,9 +201,11 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
       ? aiGrounded
         ? 'Gemini live · 对象化'
         : `${aiResult.provider ?? '本地'} ${aiResult.status}${aiResult.model ? ` · ${aiResult.model}` : ''}`
-      : aiPolicy && !aiPolicy.allowed
-        ? '会话新建人员不可用'
-        : '待生成';
+      : aiError
+        ? '生成失败'
+        : aiPolicy && !aiPolicy.allowed
+          ? '会话新建人员不可用'
+          : '待生成';
 
   const handleSubmit = async () => {
     if (isSubmitting || !person) {
@@ -397,11 +404,11 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
 
             {/* 走访类型 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+              <Label htmlFor="visit-type" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
                 走访类型 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
               <Select value={formData.visitType} onValueChange={(value) => setFormData({ ...formData, visitType: value })}>
-                <SelectTrigger className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
+                <SelectTrigger id="visit-type" className="bg-[var(--color-bg-primary)] border-[var(--color-border-primary)] text-[var(--color-text-primary)]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -574,12 +581,13 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
           <div className="p-4 space-y-4">
             {/* 是否在家 */}
             <div>
-              <Label className="text-sm text-[var(--color-text-secondary)] mb-2 block">
+              <Label id="visit-is-home-label" className="text-sm text-[var(--color-text-secondary)] mb-2 block">
                 人员是否在家 <span className="text-[var(--color-status-error-text)]">*</span>
               </Label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="visit-is-home-label">
                 <button
                   type="button"
+                  aria-pressed={formData.isHome === 'yes'}
                   onClick={() => setFormData({ ...formData, isHome: 'yes', notHomeReason: '' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'yes'
@@ -592,6 +600,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 </button>
                 <button
                   type="button"
+                  aria-pressed={formData.isHome === 'no'}
                   onClick={() => setFormData({ ...formData, isHome: 'no' })}
                   className={`h-11 rounded-lg border-2 flex items-center justify-center gap-2 transition-all ${
                     formData.isHome === 'no'

@@ -330,13 +330,14 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                   </div>
 
                   <div className="mb-4">
-                    <Label className="text-xs text-[var(--color-neutral-08)] mb-1.5 block">情况说明</Label>
+                    <Label htmlFor="task-conflict-feedback" className="text-xs text-[var(--color-neutral-08)] mb-1.5 block">情况说明</Label>
                     {isCompleted ? (
                       <div className="p-3 bg-[var(--color-neutral-01)] rounded text-sm text-[var(--color-neutral-11)] whitespace-pre-wrap">
                         {feedback || '暂无回填说明'}
                       </div>
                     ) : (
                       <Textarea
+                        id="task-conflict-feedback"
                         placeholder="请输入本次处理结果、发现的问题或后续安排..."
                         value={feedback}
                         onChange={(event) => setFeedback(event.target.value)}

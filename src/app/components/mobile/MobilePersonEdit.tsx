@@ -347,9 +347,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">人口类型</Label>
+              <Label htmlFor="person-edit-type" className="text-sm font-medium mb-2 block">人口类型</Label>
               <Select value={formData.type} onValueChange={(value: any) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger>
+                <SelectTrigger id="person-edit-type">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -362,8 +362,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">民族</Label>
+              <Label htmlFor="person-edit-nation" className="text-sm font-medium mb-2 block">民族</Label>
               <Input
+                id="person-edit-nation"
                 value={formData.nation}
                 onChange={(e) => setFormData({ ...formData, nation: e.target.value })}
                 placeholder="请输入民族"
@@ -371,9 +372,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">学历</Label>
+              <Label htmlFor="person-edit-education" className="text-sm font-medium mb-2 block">学历</Label>
               <Select value={formData.education || ''} onValueChange={(value) => setFormData({ ...formData, education: value })}>
-                <SelectTrigger>
+                <SelectTrigger id="person-edit-education">
                   <SelectValue placeholder="请选择学历" />
                 </SelectTrigger>
                 <SelectContent>
@@ -445,6 +446,8 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--color-neutral-08)]" />
                   <Input
+                    id="person-edit-tag-search"
+                    aria-label="搜索标签"
                     value={tagSearch}
                     onChange={(e) => setTagSearch(e.target.value)}
                     placeholder="搜索标签..."
@@ -504,8 +507,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           {expandedSections.detail && (
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium mb-2 block">出生年月</Label>
+                <Label htmlFor="person-edit-birth-date" className="text-sm font-medium mb-2 block">出生年月</Label>
                 <Input
+                  id="person-edit-birth-date"
                   value={formData.birthDate}
                   onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                   placeholder="如：1989-01"
@@ -513,8 +517,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">籍贯</Label>
+                <Label htmlFor="person-edit-birthplace" className="text-sm font-medium mb-2 block">籍贯</Label>
                 <Input
+                  id="person-edit-birthplace"
                   value={formData.birthplace}
                   onChange={(e) => setFormData({ ...formData, birthplace: e.target.value })}
                   placeholder="请输入籍贯"
@@ -522,9 +527,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">婚姻状况</Label>
+                <Label htmlFor="person-edit-marital" className="text-sm font-medium mb-2 block">婚姻状况</Label>
                 <Select value={formData.maritalStatus} onValueChange={(value: any) => setFormData({ ...formData, maritalStatus: value })}>
-                  <SelectTrigger>
+                  <SelectTrigger id="person-edit-marital">
                     <SelectValue placeholder="请选择婚姻状况" />
                   </SelectTrigger>
                   <SelectContent>
@@ -537,8 +542,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">宗教信仰</Label>
+                <Label htmlFor="person-edit-religion" className="text-sm font-medium mb-2 block">宗教信仰</Label>
                 <Input
+                  id="person-edit-religion"
                   value={formData.religion}
                   onChange={(e) => setFormData({ ...formData, religion: e.target.value })}
                   placeholder="请输入宗教信仰（如无则填无）"
@@ -546,8 +552,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">政治面貌</Label>
+                <Label htmlFor="person-edit-political" className="text-sm font-medium mb-2 block">政治面貌</Label>
                 <Input
+                  id="person-edit-political"
                   value={formData.politicalStatus}
                   onChange={(e) => setFormData({ ...formData, politicalStatus: e.target.value })}
                   placeholder="如：中共党员、群众等"
@@ -566,8 +573,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">毕业院校及专业</Label>
+                <Label htmlFor="person-edit-graduation" className="text-sm font-medium mb-2 block">毕业院校及专业</Label>
                 <Input
+                  id="person-edit-graduation"
                   value={formData.graduationInfo}
                   onChange={(e) => setFormData({ ...formData, graduationInfo: e.target.value })}
                   placeholder="如：山东大学 计算机科学与技术专业"
@@ -575,8 +583,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">工作单位及职务</Label>
+                <Label htmlFor="person-edit-workplace" className="text-sm font-medium mb-2 block">工作单位及职务</Label>
                 <Input
+                  id="person-edit-workplace"
                   value={formData.workplace}
                   onChange={(e) => setFormData({ ...formData, workplace: e.target.value })}
                   placeholder="请输入工作单位及职务"
@@ -595,8 +604,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">特长、爱好</Label>
+                <Label htmlFor="person-edit-skills" className="text-sm font-medium mb-2 block">特长、爱好</Label>
                 <Input
+                  id="person-edit-skills"
                   value={formData.skills}
                   onChange={(e) => setFormData({ ...formData, skills: e.target.value })}
                   placeholder="请输入特长、爱好"
@@ -604,8 +614,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">宠物饲养情况</Label>
+                <Label htmlFor="person-edit-pets" className="text-sm font-medium mb-2 block">宠物饲养情况</Label>
                 <Input
+                  id="person-edit-pets"
                   value={formData.pets}
                   onChange={(e) => setFormData({ ...formData, pets: e.target.value })}
                   placeholder="如：无、养猫一只等"
@@ -627,8 +638,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           </button>
           {expandedSections.work && (
             <div>
-              <Label className="text-sm font-medium mb-2 block">基本情况</Label>
+              <Label htmlFor="person-edit-biography" className="text-sm font-medium mb-2 block">基本情况</Label>
               <Textarea
+                id="person-edit-biography"
                 value={formData.biography}
                 onChange={(e) => setFormData({ ...formData, biography: e.target.value })}
                 placeholder="请输入学习经历、工作经历等基本情况"
@@ -655,8 +667,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           {expandedSections.activity && (
             <div className="space-y-4">
               <div>
-                <Label className="text-sm font-medium mb-2 block">参加社区活动情况</Label>
+                <Label htmlFor="person-edit-activities" className="text-sm font-medium mb-2 block">参加社区活动情况</Label>
                 <Textarea
+                  id="person-edit-activities"
                   value={formData.activities}
                   onChange={(e) => setFormData({ ...formData, activities: e.target.value })}
                   placeholder="请输入参加社区及社会组织活动情况"
@@ -666,8 +679,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">家庭服务需求及诉求</Label>
+                <Label htmlFor="person-edit-needs" className="text-sm font-medium mb-2 block">家庭服务需求及诉求</Label>
                 <Textarea
+                  id="person-edit-needs"
                   value={formData.needs}
                   onChange={(e) => setFormData({ ...formData, needs: e.target.value })}
                   placeholder="请输入家庭服务需求及诉求"
@@ -704,8 +718,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
 
               {formData.hasChronic && (
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">疾病类型</Label>
+                  <Label htmlFor="person-edit-chronic-details" className="text-sm font-medium mb-2 block">疾病类型</Label>
                   <Input
+                    id="person-edit-chronic-details"
                     value={formData.chronicDetails}
                     onChange={(e) => setFormData({ ...formData, chronicDetails: e.target.value })}
                     placeholder="如：高血压、糖尿病等"
@@ -726,8 +741,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
 
               {formData.needsRegularMedicine && (
                 <div>
-                  <Label className="text-sm font-medium mb-2 block">购药频率</Label>
+                  <Label htmlFor="person-edit-medicine-frequency" className="text-sm font-medium mb-2 block">购药频率</Label>
                   <Input
+                    id="person-edit-medicine-frequency"
                     value={formData.medicineFrequency}
                     onChange={(e) => setFormData({ ...formData, medicineFrequency: e.target.value })}
                     placeholder="如：每月一次"
@@ -736,8 +752,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               )}
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">就医频率</Label>
+                <Label htmlFor="person-edit-medical-visit-frequency" className="text-sm font-medium mb-2 block">就医频率</Label>
                 <Input
+                  id="person-edit-medical-visit-frequency"
                   value={formData.medicalVisitFrequency}
                   onChange={(e) => setFormData({ ...formData, medicalVisitFrequency: e.target.value })}
                   placeholder="如：每季度一次"
@@ -767,8 +784,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               </div>
 
               <div>
-                <Label className="text-sm font-medium mb-2 block">特殊情况说明</Label>
+                <Label htmlFor="person-edit-special-notes" className="text-sm font-medium mb-2 block">特殊情况说明</Label>
                 <Textarea
+                  id="person-edit-special-notes"
                   value={formData.specialNotes}
                   onChange={(e) => setFormData({ ...formData, specialNotes: e.target.value })}
                   placeholder="请输入特殊情况说明"
@@ -782,9 +800,11 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
 
         {/* 重要事件记录 */}
         <Card className="p-4">
-          <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3">重要事件记录</h3>
+          <h3 id="person-edit-important-events-title" className="text-sm font-semibold text-[var(--color-neutral-11)] mb-3">重要事件记录</h3>
           <div>
             <Textarea
+              id="person-edit-important-events"
+              aria-labelledby="person-edit-important-events-title"
               value={formData.importantEvents}
               onChange={(e) => setFormData({ ...formData, importantEvents: e.target.value })}
               placeholder="请输入重要事件记录及其他"
