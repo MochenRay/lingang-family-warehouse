@@ -109,26 +109,81 @@ describe('conflict grid and party contract', () => {
     });
   });
 
-  it('clears resident parties on a grid switch while preserving organizations', async () => {
+  it('clears residents across a grid round trip while preserving organizations', async () => {
     vi.spyOn(personRepository, 'getGrids').mockResolvedValue(GRIDS);
     const options = await loadConflictGridOptions('grid-1');
-    const residentParty: MobileConflictParty = {
+    const gridOneResident: MobileConflictParty = {
       type: 'resident',
       id: 'person-1',
       name: '居民甲',
     };
+    const gridTwoResident: MobileConflictParty = {
+      type: 'resident',
+      id: 'person-2',
+      name: '居民乙',
+    };
 
-    const next = selectConflictGrid(options, 'grid-2', [residentParty, ORGANIZATION]);
+    const gridTwo = selectConflictGrid({
+      gridOptions: options,
+      currentSelectedGridId: 'grid-1',
+      nextGridId: 'grid-2',
+      parties: [gridOneResident, ORGANIZATION],
+    });
 
-    expect(next.selectedGridId).toBe('grid-2');
-    expect(next.parties).toEqual([ORGANIZATION]);
-    expect(next.residents).toEqual({
+    expect(gridTwo.selectedGridId).toBe('grid-2');
+    expect(gridTwo.parties).toEqual([ORGANIZATION]);
+    expect(gridTwo.residents).toEqual({
       status: 'loading',
       gridId: 'grid-2',
       residents: [],
       retryable: false,
     });
-    expect(() => selectConflictGrid(options, 'missing-grid', [ORGANIZATION])).toThrow('not an available option');
+
+    const gridOneAgain = selectConflictGrid({
+      gridOptions: options,
+      currentSelectedGridId: gridTwo.selectedGridId,
+      nextGridId: 'grid-1',
+      parties: [gridTwoResident, ...gridTwo.parties],
+    });
+
+    expect(gridOneAgain.selectedGridId).toBe('grid-1');
+    expect(gridOneAgain.parties).toEqual([ORGANIZATION]);
+    expect(gridOneAgain.residents).toEqual({
+      status: 'loading',
+      gridId: 'grid-1',
+      residents: [],
+      retryable: false,
+    });
+    expect(() => selectConflictGrid({
+      gridOptions: options,
+      currentSelectedGridId: 'grid-1',
+      nextGridId: 'missing-grid',
+      parties: [ORGANIZATION],
+    })).toThrow('not an available option');
+  });
+
+  it('preserves parties when the same grid is reselected', async () => {
+    vi.spyOn(personRepository, 'getGrids').mockResolvedValue(GRIDS);
+    const options = await loadConflictGridOptions('grid-1');
+    const parties: MobileConflictParty[] = [
+      { type: 'resident', id: 'person-1', name: '居民甲' },
+      ORGANIZATION,
+    ];
+
+    const sameGrid = selectConflictGrid({
+      gridOptions: options,
+      currentSelectedGridId: 'grid-1',
+      nextGridId: 'grid-1',
+      parties,
+    });
+
+    expect(sameGrid.parties).toEqual(parties);
+    expect(sameGrid.residents).toEqual({
+      status: 'loading',
+      gridId: 'grid-1',
+      residents: [],
+      retryable: false,
+    });
   });
 
   it('allows an organization-only subject and rejects silent resident/grid fallbacks', async () => {

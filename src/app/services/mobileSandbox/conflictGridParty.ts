@@ -69,6 +69,13 @@ export interface ConflictGridSelectionResult {
   residents: Extract<ConflictResidentsState, { status: 'loading' }>;
 }
 
+export interface ConflictGridSelectionInput {
+  gridOptions: ConflictGridOptionsState;
+  currentSelectedGridId: string | undefined;
+  nextGridId: string;
+  parties: readonly MobileConflictParty[];
+}
+
 export type ConflictGridPartyValidationCode =
   | 'grid-unavailable'
   | 'grid-required'
@@ -206,15 +213,16 @@ export async function loadConflictResidents(gridId: string): Promise<ConflictRes
   }
 }
 
-export function selectConflictGrid(
-  gridOptions: ConflictGridOptionsState,
-  nextGridId: string,
-  parties: readonly MobileConflictParty[],
-): ConflictGridSelectionResult {
+export function selectConflictGrid({
+  gridOptions,
+  currentSelectedGridId,
+  nextGridId,
+  parties,
+}: ConflictGridSelectionInput): ConflictGridSelectionResult {
   if (gridOptions.status !== 'ready' || !gridOptions.options.some((grid) => grid.id === nextGridId)) {
     throw new Error(`Conflict grid '${nextGridId}' is not an available option`);
   }
-  const switched = gridOptions.selectedGridId !== nextGridId;
+  const switched = currentSelectedGridId !== nextGridId;
   return {
     selectedGridId: nextGridId,
     parties: switched
