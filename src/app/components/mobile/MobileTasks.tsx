@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Input } from '../ui/input';
 import { MobileLayout } from './MobileLayout';
@@ -113,12 +114,15 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
   const [searchQuery, setSearchQuery] = useState('');
   const [feed, setFeed] = useState<MobileTaskFeed | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     let active = true;
 
     const load = async () => {
       setLoading(true);
+      setLoadError(null);
       try {
         const nextFeed = await taskRepository.getTaskFeed();
         if (!active) {
@@ -128,7 +132,8 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
       } catch (error) {
         console.error('Failed to load mobile task feed', error);
         if (active) {
-          setFeed({ pending: [], completed: [], summary: { pending: 0, overdue: 0, completed: 0, completionRate: 0 } });
+          setFeed(null);
+          setLoadError(error instanceof Error ? error.message : '任务列表加载失败');
         }
       } finally {
         if (active) {
@@ -146,7 +151,7 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
       active = false;
       window.removeEventListener('db-change', handleRefresh);
     };
-  }, []);
+  }, [reloadToken]);
 
   const displayPending = useMemo(
     () => filterPendingTasks(feed?.pending ?? [], viewMode, searchQuery),
@@ -310,6 +315,19 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
                 <div className="flex h-full items-center justify-center text-[var(--color-neutral-08)]">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
                   正在同步任务工作台...
+                </div>
+              ) : loadError ? (
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
+                  <AlertCircle className="w-8 h-8 text-[var(--color-status-error-text)]" />
+                  <p className="text-sm font-medium text-[var(--color-neutral-10)]">任务列表加载失败</p>
+                  <p className="text-xs text-[var(--color-neutral-08)] break-all">{loadError}</p>
+                  <Button
+                    variant="outline"
+                    className="min-h-[44px] px-6"
+                    onClick={() => setReloadToken((token) => token + 1)}
+                  >
+                    重试
+                  </Button>
                 </div>
               ) : (
                 <>

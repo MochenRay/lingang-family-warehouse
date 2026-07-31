@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Save, ChevronDown, ChevronUp, X, Plus, Search, Tag } from 'lucide-react';
+import { Save, ChevronDown, ChevronUp, X, Plus, Search, Tag, AlertCircle, Loader2 } from 'lucide-react';
 import { MobileDetailHeader } from './MobileDetailHeader';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -10,7 +10,7 @@ import { Textarea } from '../ui/textarea';
 import { Checkbox } from '../ui/checkbox';
 import { Badge } from '../ui/badge';
 import { Person, PersonType } from '../../types/core';
-import { personRepository } from '../../services/repositories/personRepository';
+import { personVisitFacade } from '../../services/mobileSandbox/personVisitFacade';
 import { tagRepository, type ManagedTagSummary } from '../../services/repositories/tagRepository';
 import { useMobileSandbox } from './MobileSandboxProvider';
 
@@ -22,8 +22,13 @@ interface MobilePersonEditProps {
 }
 
 export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEditProps) {
-  const { canUseLegacyApiMutation } = useMobileSandbox();
+  const { mode, canMutate } = useMobileSandbox();
   const [person, setPerson] = useState<Person | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [personTags, setPersonTags] = useState<string[]>([]);
   const [availableTags, setAvailableTags] = useState<ManagedTagSummary[]>([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
@@ -76,58 +81,77 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
   };
 
   useEffect(() => {
+    // facade 以当前数据模式为准；模式未确认前不发起任何读取
+    if (mode === 'checking') {
+      return;
+    }
     let active = true;
 
     const load = async () => {
-      const [personData, tagSnapshot] = await Promise.all([
-        personRepository.getPerson(id),
-        tagRepository.getSnapshot(),
-      ]);
+      setIsLoading(true);
+      setLoadError(null);
 
-      if (!active) {
-        return;
+      try {
+        const [personData, tagSnapshot] = await Promise.all([
+          personVisitFacade.getPerson(id),
+          tagRepository.getSnapshot(),
+        ]);
+
+        if (!active) {
+          return;
+        }
+
+        setAvailableTags(tagSnapshot.tags);
+
+        if (!personData) {
+          setPerson(null);
+          return;
+        }
+
+        setPerson(personData);
+        setPersonTags(personData.tags || []);
+        setFormData({
+          name: personData.name,
+          phone: personData.phone || '',
+          address: personData.address,
+          type: personData.type,
+          nation: personData.nation || '',
+          education: personData.education || '',
+          birthDate: personData.birthDate || '',
+          birthplace: personData.birthplace || '',
+          maritalStatus: personData.maritalStatus || '',
+          religion: personData.religion || '',
+          politicalStatus: personData.politicalStatus || '',
+          militaryService: personData.militaryService || false,
+          graduationInfo: personData.graduationInfo || '',
+          workplace: personData.workplace || '',
+          communityVolunteer: personData.communityVolunteer || false,
+          skills: personData.skills || '',
+          pets: personData.pets || '',
+          biography: personData.biography || '',
+          activities: personData.activityParticipation?.activities || '',
+          needs: personData.activityParticipation?.needs || '',
+          hasChronic: personData.healthRecord?.hasChronic || false,
+          chronicDetails: personData.healthRecord?.chronicDetails || '',
+          needsRegularMedicine: personData.healthRecord?.needsRegularMedicine || false,
+          medicineFrequency: personData.healthRecord?.medicineFrequency || '',
+          medicalVisitFrequency: personData.healthRecord?.medicalVisitFrequency || '',
+          isSeverePatient: personData.healthRecord?.isSeverePatient || false,
+          isPregnant: personData.healthRecord?.isPregnant || false,
+          specialNotes: personData.healthRecord?.specialNotes || '',
+          importantEvents: personData.importantEvents || '',
+        });
+      } catch (error) {
+        console.error('Failed to load mobile person edit', error);
+        if (active) {
+          setPerson(null);
+          setLoadError(error instanceof Error ? error.message : '人员信息加载失败');
+        }
+      } finally {
+        if (active) {
+          setIsLoading(false);
+        }
       }
-
-      setAvailableTags(tagSnapshot.tags);
-
-      if (!personData) {
-        setPerson(null);
-        return;
-      }
-
-      setPerson(personData);
-      setPersonTags(personData.tags || []);
-      setFormData({
-        name: personData.name,
-        phone: personData.phone || '',
-        address: personData.address,
-        type: personData.type,
-        nation: personData.nation || '',
-        education: personData.education || '',
-        birthDate: personData.birthDate || '',
-        birthplace: personData.birthplace || '',
-        maritalStatus: personData.maritalStatus || '',
-        religion: personData.religion || '',
-        politicalStatus: personData.politicalStatus || '',
-        militaryService: personData.militaryService || false,
-        graduationInfo: personData.graduationInfo || '',
-        workplace: personData.workplace || '',
-        communityVolunteer: personData.communityVolunteer || false,
-        skills: personData.skills || '',
-        pets: personData.pets || '',
-        biography: personData.biography || '',
-        activities: personData.activityParticipation?.activities || '',
-        needs: personData.activityParticipation?.needs || '',
-        hasChronic: personData.healthRecord?.hasChronic || false,
-        chronicDetails: personData.healthRecord?.chronicDetails || '',
-        needsRegularMedicine: personData.healthRecord?.needsRegularMedicine || false,
-        medicineFrequency: personData.healthRecord?.medicineFrequency || '',
-        medicalVisitFrequency: personData.healthRecord?.medicalVisitFrequency || '',
-        isSeverePatient: personData.healthRecord?.isSeverePatient || false,
-        isPregnant: personData.healthRecord?.isPregnant || false,
-        specialNotes: personData.healthRecord?.specialNotes || '',
-        importantEvents: personData.importantEvents || '',
-      });
     };
 
     void load();
@@ -135,56 +159,73 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, mode, reloadToken]);
 
   const handleSave = async () => {
-    if (!person) return;
+    if (!person || isSubmitting) {
+      return;
+    }
 
-    await personRepository.updatePerson(id, {
-      tags: personTags,
-      name: formData.name,
-      phone: formData.phone || undefined,
-      address: formData.address,
-      type: formData.type,
-      nation: formData.nation || undefined,
-      education: formData.education || undefined,
-      // 详细信息
-      birthDate: formData.birthDate || undefined,
-      birthplace: formData.birthplace || undefined,
-      maritalStatus: formData.maritalStatus || undefined,
-      religion: formData.religion || undefined,
-      politicalStatus: formData.politicalStatus || undefined,
-      militaryService: formData.militaryService,
-      graduationInfo: formData.graduationInfo || undefined,
-      workplace: formData.workplace || undefined,
-      communityVolunteer: formData.communityVolunteer,
-      skills: formData.skills || undefined,
-      pets: formData.pets || undefined,
-      // 个人经历
-      biography: formData.biography || undefined,
-      // 活动参与
-      activityParticipation: (formData.activities || formData.needs) ? {
-        activities: formData.activities || undefined,
-        needs: formData.needs || undefined,
-      } : undefined,
-      // 健康档案
-      healthRecord: {
-        hasChronic: formData.hasChronic,
-        chronicDetails: formData.chronicDetails || undefined,
-        needsRegularMedicine: formData.needsRegularMedicine,
-        medicineFrequency: formData.medicineFrequency || undefined,
-        medicalVisitFrequency: formData.medicalVisitFrequency || undefined,
-        isSeverePatient: formData.isSeverePatient,
-        isPregnant: formData.isPregnant,
-        specialNotes: formData.specialNotes || undefined,
-      },
-      // 重要事件
-      importantEvents: formData.importantEvents || undefined,
-      updatedAt: new Date().toISOString().split('T')[0],
-    });
+    if (!formData.name.trim() || !formData.address.trim()) {
+      setSaveError('姓名与居住地址为必填项，不能为空。');
+      return;
+    }
 
-    if (onSave) onSave();
-    (onSaved ?? onBack)();
+    setIsSubmitting(true);
+    setSaveError(null);
+
+    try {
+      await personVisitFacade.updatePerson(id, {
+        tags: personTags,
+        name: formData.name.trim(),
+        phone: formData.phone || undefined,
+        address: formData.address.trim(),
+        type: formData.type,
+        nation: formData.nation || undefined,
+        education: formData.education || undefined,
+        // 详细信息
+        birthDate: formData.birthDate || undefined,
+        birthplace: formData.birthplace || undefined,
+        maritalStatus: formData.maritalStatus || undefined,
+        religion: formData.religion || undefined,
+        politicalStatus: formData.politicalStatus || undefined,
+        militaryService: formData.militaryService,
+        graduationInfo: formData.graduationInfo || undefined,
+        workplace: formData.workplace || undefined,
+        communityVolunteer: formData.communityVolunteer,
+        skills: formData.skills || undefined,
+        pets: formData.pets || undefined,
+        // 个人经历
+        biography: formData.biography || undefined,
+        // 活动参与
+        activityParticipation: (formData.activities || formData.needs) ? {
+          activities: formData.activities || undefined,
+          needs: formData.needs || undefined,
+        } : undefined,
+        // 健康档案
+        healthRecord: {
+          hasChronic: formData.hasChronic,
+          chronicDetails: formData.chronicDetails || undefined,
+          needsRegularMedicine: formData.needsRegularMedicine,
+          medicineFrequency: formData.medicineFrequency || undefined,
+          medicalVisitFrequency: formData.medicalVisitFrequency || undefined,
+          isSeverePatient: formData.isSeverePatient,
+          isPregnant: formData.isPregnant,
+          specialNotes: formData.specialNotes || undefined,
+        },
+        // 重要事件
+        importantEvents: formData.importantEvents || undefined,
+        updatedAt: new Date().toISOString().split('T')[0],
+      });
+
+      if (onSave) onSave();
+      onSaved?.();
+    } catch (error) {
+      console.error('Failed to save mobile person edit', error);
+      setSaveError(error instanceof Error ? `保存失败：${error.message}` : '保存失败，请稍后重试');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // 按 type + category 分组所有可用标签
@@ -225,8 +266,43 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
     }
   };
 
+  if (isLoading || mode === 'checking') {
+    return (
+      <div className="h-full flex items-center justify-center bg-[var(--color-neutral-01)]">
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-[var(--color-brand-text)] animate-spin mx-auto mb-3" />
+          <p className="text-sm text-[var(--color-neutral-08)]">正在加载人员信息...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="h-full flex items-center justify-center bg-[var(--color-neutral-01)] px-6">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-[var(--color-status-error-text)] mx-auto mb-2" />
+          <p className="font-medium text-[var(--color-neutral-10)]">人员信息加载失败</p>
+          <p className="text-xs text-[var(--color-neutral-08)] mt-1 break-all">{loadError}</p>
+          <div className="flex justify-center gap-3 mt-4">
+            <Button variant="outline" className="min-h-[44px]" onClick={() => setReloadToken((token) => token + 1)}>重试</Button>
+            <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!person) {
-    return <div className="h-full flex items-center justify-center">加载中...</div>;
+    return (
+      <div className="h-full flex items-center justify-center bg-[var(--color-neutral-01)]">
+        <div className="text-center">
+          <AlertCircle className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
+          <p className="text-[var(--color-neutral-08)]">未找到该人员信息</p>
+          <Button onClick={onBack} className="mt-4">返回</Button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -240,8 +316,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
           <h3 className="text-sm font-semibold text-[var(--color-neutral-11)] mb-4">基本信息</h3>
           <div className="space-y-4">
             <div>
-              <Label className="text-sm font-medium mb-2 block">姓名</Label>
+              <Label htmlFor="person-edit-name" className="text-sm font-medium mb-2 block">姓名</Label>
               <Input
+                id="person-edit-name"
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="请输入姓名"
@@ -249,8 +326,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">联系电话</Label>
+              <Label htmlFor="person-edit-phone" className="text-sm font-medium mb-2 block">联系电话</Label>
               <Input
+                id="person-edit-phone"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="请输入联系电话"
@@ -259,8 +337,9 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
             </div>
 
             <div>
-              <Label className="text-sm font-medium mb-2 block">居住地址</Label>
+              <Label htmlFor="person-edit-address" className="text-sm font-medium mb-2 block">居住地址</Label>
               <Input
+                id="person-edit-address"
                 value={formData.address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="请输入居住地址"
@@ -723,14 +802,29 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
       </div>
 
       {/* Bottom Action */}
-      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0">
-        <Button 
+      <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-4 safe-area-bottom sticky bottom-0 space-y-3">
+        {saveError && (
+          <div
+            data-testid="person-edit-error"
+            role="alert"
+            className="flex items-start gap-2 rounded-[4px] border border-[var(--color-status-error)]/35 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]"
+          >
+            <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span className="leading-relaxed">{saveError}</span>
+          </div>
+        )}
+        <Button
+          data-testid="person-edit-save"
           className="w-full h-11 bg-[var(--color-brand-primary)] hover:bg-[var(--color-brand-primary-hover)]"
-          onClick={handleSave}
-          disabled={!canUseLegacyApiMutation}
+          onClick={() => void handleSave()}
+          disabled={isSubmitting || !canMutate}
         >
-          <Save className="w-4 h-4 mr-2" />
-          保存修改
+          {isSubmitting ? (
+            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="w-4 h-4 mr-2" />
+          )}
+          {isSubmitting ? '保存中...' : '保存修改'}
         </Button>
       </div>
     </div>
