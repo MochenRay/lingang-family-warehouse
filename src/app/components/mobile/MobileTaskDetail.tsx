@@ -151,7 +151,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
     return (
       <div className="min-h-screen bg-[var(--color-neutral-01)] flex flex-col items-center justify-center gap-4">
         <p className="text-[var(--color-neutral-08)]">未找到任务详情</p>
-        <Button onClick={onBack}>返回</Button>
+        <Button onClick={onBack} className="min-h-[44px] min-w-[44px]">返回</Button>
       </div>
     );
   }
@@ -357,7 +357,7 @@ export function MobileTaskDetail({ taskId, onBack, onRouteChange }: MobileTaskDe
                     canUseLegacyApiMutation ? (
                       <div className="text-xs text-[var(--color-neutral-08)] flex items-center gap-2">
                         <CheckCircle className="w-3.5 h-3.5 text-[var(--color-status-success-text)]" />
-                        提交后会写回真实走访记录或纠纷处置时间线。
+                        提交后会写回该矛盾的处置时间线。
                       </div>
                     ) : (
                       <div className="text-xs text-[var(--color-status-warning-text)] flex items-center gap-2">

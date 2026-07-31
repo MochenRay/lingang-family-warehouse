@@ -197,8 +197,10 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
     <MobileLayout currentRoute="tasks" onRouteChange={onRouteChange} onExitMobile={onExitMobile} title="工作清单">
       <div className="bg-[var(--color-neutral-01)] min-h-full flex flex-col">
         <div data-testid="tasks-viewmode-bar" className="px-4 py-3 border-b border-[var(--color-neutral-03)] flex items-center justify-between sticky top-0 bg-[var(--color-neutral-01)] z-20">
-          <div className="flex items-center gap-1 bg-[var(--color-neutral-03)] p-1 rounded-lg w-full">
+          <div className="flex items-center gap-1 bg-[var(--color-neutral-03)] p-1 rounded-lg w-full" role="group" aria-label="任务时间范围">
             <button
+              type="button"
+              aria-pressed={viewMode === 'today'}
               onClick={() => setViewMode('today')}
               className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'today' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
@@ -207,6 +209,8 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
               今日待办
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'month'}
               onClick={() => setViewMode('month')}
               className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'month' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'
@@ -215,6 +219,8 @@ export function MobileTasks({ onRouteChange, initialViewMode = 'today', onExitMo
               本月工作
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'all'}
               onClick={() => setViewMode('all')}
               className={`flex-1 min-h-[44px] px-3 py-1.5 text-xs font-medium rounded-md transition-all text-center ${
                 viewMode === 'all' ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm' : 'text-[var(--color-neutral-10)]'

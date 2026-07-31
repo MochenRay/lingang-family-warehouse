@@ -139,7 +139,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
           <p className="text-[var(--color-neutral-08)]">未找到该人员信息</p>
-          <Button onClick={onBack} className="mt-4">返回</Button>
+          <Button onClick={onBack} className="mt-4 min-h-[44px] min-w-[44px]">返回</Button>
         </div>
       </div>
     );
@@ -188,20 +188,20 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
             <TabsList className="w-full grid grid-cols-3 h-12 bg-transparent rounded-none border-b-0">
               <TabsTrigger 
                 value="basic" 
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 基础信息
               </TabsTrigger>
               <TabsTrigger 
                 value="relation" 
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 关系图谱
               </TabsTrigger>
               <TabsTrigger
                 value="history"
                 data-testid="person-visit-history"
-                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:shadow-none"
+                className="rounded-none border-b-2 border-transparent min-h-[44px] data-[state=active]:border-[var(--color-brand-primary)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--color-brand-text)] data-[state=active]:shadow-none"
               >
                 历史记录
               </TabsTrigger>
@@ -215,7 +215,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
               <div className="bg-[var(--color-neutral-01)] border-b border-[var(--color-neutral-03)] p-5">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center border-2 border-[var(--color-neutral-03)] text-2xl font-bold text-primary">
+                    <div className="w-16 h-16 bg-[var(--color-neutral-02)] rounded-full flex items-center justify-center border-2 border-[var(--color-neutral-03)] text-2xl font-bold text-[var(--color-brand-text)]">
                       {person.name[0]}
                     </div>
                     <div>
@@ -824,7 +824,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
+                              className="text-xs text-[var(--color-brand-text)] min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                               onClick={() => onRouteChange?.(`person-detail/${relatedPerson.id}`)}
                             >
                               查看
@@ -868,7 +868,7 @@ export function MobilePersonDetail({ id, onBack, onRouteChange }: MobilePersonDe
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-xs text-[var(--color-brand-text)] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
+                        className="text-xs text-[var(--color-brand-text)] min-h-[44px] min-w-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]/40"
                         onClick={() => onRouteChange?.(`person-detail/${cohabitant.id}`)}
                       >
                         查看

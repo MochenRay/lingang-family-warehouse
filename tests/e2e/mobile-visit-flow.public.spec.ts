@@ -1,4 +1,4 @@
-import { expect, test, type APIRequestContext, type Browser, type Page } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Browser, type Locator, type Page } from '@playwright/test';
 
 const backendPort = Number(process.env.BACKEND_PORT ?? '18001');
 const apiBaseUrl = `http://127.0.0.1:${backendPort}/api`;
@@ -45,6 +45,10 @@ interface VisitRecord {
 interface VisitsResponse {
   items: VisitRecord[];
   total: number;
+}
+
+interface PersonWithRelations extends SeedPerson {
+  familyRelations?: Array<{ relatedPersonId: string; relationType: string }>;
 }
 
 interface AiChatRequest {
@@ -113,6 +117,23 @@ async function getPendingConflictTask(request: APIRequestContext): Promise<Pendi
   ));
   expect(candidate, 'the seeded backend must expose a real pending conflict task').toBeTruthy();
   return candidate as PendingConflictTask;
+}
+
+async function getPersonWithRelations(request: APIRequestContext): Promise<PersonWithRelations> {
+  const response = await request.get(`${apiBaseUrl}/people?limit=500`);
+  expect(response.ok()).toBe(true);
+  const payload = await response.json() as { items: PersonWithRelations[] };
+  const candidate = payload.items.find((person) => (person.familyRelations?.length ?? 0) > 0);
+  expect(candidate, 'the seeded backend must expose a person with family relations').toBeTruthy();
+  return candidate!;
+}
+
+async function expectMinimumTouchTarget(locator: Locator): Promise<void> {
+  await expect(locator).toBeVisible();
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  expect(box!.width).toBeGreaterThanOrEqual(44);
+  expect(box!.height).toBeGreaterThanOrEqual(44);
 }
 
 async function openVisitFormFromTask(
@@ -254,6 +275,59 @@ test.beforeEach(async ({ page }) => {
       originalSetItem.call(this, key, value);
     };
   }, { storageKey: mobileSessionKey });
+});
+
+test('public task view controls expose their selected state', async ({ page }) => {
+  await page.goto('/mobile/tasks?mode=today');
+  await expect(page.getByTestId('task-card-pending').first()).toBeVisible({ timeout: 20_000 });
+
+  const today = page.getByRole('button', { name: '今日待办', exact: true });
+  const month = page.getByRole('button', { name: '本月工作', exact: true });
+  const all = page.getByRole('button', { name: '全部清单', exact: true });
+  await expect(today).toHaveAttribute('aria-pressed', 'true');
+  await expect(month).toHaveAttribute('aria-pressed', 'false');
+  await expect(all).toHaveAttribute('aria-pressed', 'false');
+
+  await month.click();
+  await expect(today).toHaveAttribute('aria-pressed', 'false');
+  await expect(month).toHaveAttribute('aria-pressed', 'true');
+  await expect(all).toHaveAttribute('aria-pressed', 'false');
+});
+
+test('public K01 exceptional and expanded states keep 44px touch targets', async ({ page, request }) => {
+  test.setTimeout(60_000);
+  const notFoundRoutes = [
+    { path: '/mobile/tasks/no-such-task', text: '未找到任务详情' },
+    { path: '/mobile/person/no-such-person', text: '未找到该人员信息' },
+    { path: '/mobile/person/no-such-person/edit', text: '未找到该人员信息' },
+    { path: '/mobile/visit-form/no-such-person', text: '未找到人员信息' },
+  ];
+
+  for (const route of notFoundRoutes) {
+    await page.goto(route.path);
+    await expect(page.getByText(route.text, { exact: true })).toBeVisible({ timeout: 20_000 });
+    await expectMinimumTouchTarget(page.getByRole('button', { name: '返回', exact: true }));
+  }
+
+  const relationPerson = await getPersonWithRelations(request);
+  await page.goto(`/mobile/person/${relationPerson.id}`);
+  await expect(page.getByText('人员详情', { exact: true })).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('tab', { name: '关系图谱', exact: true }).click();
+  const viewButtons = page.getByRole('button', { name: '查看', exact: true });
+  await expect(viewButtons.first()).toBeVisible();
+  for (const button of await viewButtons.all()) {
+    await expectMinimumTouchTarget(button);
+  }
+
+  await page.goto(`/mobile/person/${relationPerson.id}/edit`);
+  await expect(page.getByText('编辑人员信息', { exact: true })).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: '详细信息', exact: true }).click();
+  await page.getByRole('button', { name: '健康档案', exact: true }).click();
+  const checkboxes = page.getByRole('checkbox');
+  await expect(checkboxes).toHaveCount(6);
+  for (const checkbox of await checkboxes.all()) {
+    await expectMinimumTouchTarget(checkbox);
+  }
 });
 
 test('public conflict task keeps legacy completion disabled and emits zero business mutations', async ({ page, request }) => {

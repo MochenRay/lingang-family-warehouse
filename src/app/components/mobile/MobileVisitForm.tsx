@@ -331,7 +331,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-[var(--color-text-quaternary)] mx-auto mb-2" />
           <p className="text-[var(--color-text-tertiary)]">未找到人员信息</p>
-          <Button onClick={onBack} className="mt-4">返回</Button>
+          <Button onClick={onBack} className="mt-4 min-h-[44px] min-w-[44px]">返回</Button>
         </div>
       </div>
     );
@@ -361,7 +361,7 @@ ${formData.nextVisitPlan ? `【下次计划】${formData.nextVisitPlan}` : ''}
                 <div className="text-sm text-[var(--color-text-tertiary)] mt-0.5">
                   {person.gender} · {person.age}岁 · {person.type}
                 </div>
-                <div className="text-xs text-[var(--color-text-quaternary)] mt-0.5 flex items-center gap-1">
+                <div className="text-xs text-[var(--color-text-tertiary)] mt-0.5 flex items-center gap-1">
                   <MapPin className="w-3 h-3" />
                   {person.address}
                 </div>

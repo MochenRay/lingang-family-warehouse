@@ -15,6 +15,8 @@ import { personVisitFacade } from '../../services/mobileSandbox/personVisitFacad
 import { tagRepository, type ManagedTagSummary } from '../../services/repositories/tagRepository';
 import { useMobileSandbox } from './MobileSandboxProvider';
 
+const mobileCheckboxClass = "relative flex h-11 w-11 items-center justify-center border-0 bg-transparent before:pointer-events-none before:absolute before:h-4 before:w-4 before:rounded-[2px] before:border before:border-[var(--color-neutral-06)] before:content-[''] hover:border-transparent data-[state=checked]:border-0 data-[state=checked]:bg-transparent data-[state=checked]:before:border-[var(--color-brand-primary)] data-[state=checked]:before:bg-[var(--color-brand-primary)] [&>span]:relative [&>span]:z-10";
+
 interface MobilePersonEditProps {
   id: string;
   onBack: () => void;
@@ -324,7 +326,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
         <div className="text-center">
           <AlertCircle className="w-12 h-12 text-[var(--color-neutral-08)] mx-auto mb-2" />
           <p className="text-[var(--color-neutral-08)]">未找到该人员信息</p>
-          <Button onClick={onBack} className="mt-4">返回</Button>
+          <Button onClick={onBack} className="mt-4 min-h-[44px] min-w-[44px]">返回</Button>
         </div>
       </div>
     );
@@ -591,7 +593,10 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div>
                 <Label htmlFor="person-edit-marital" className="text-sm font-medium mb-2 block">婚姻状况</Label>
                 <Select value={formData.maritalStatus} onValueChange={(value: any) => setFormData({ ...formData, maritalStatus: value })}>
-                  <SelectTrigger id="person-edit-marital" className="min-h-[44px]">
+                  <SelectTrigger
+                    id="person-edit-marital"
+                    className="min-h-[44px] data-[placeholder]:text-[var(--color-neutral-10)]"
+                  >
                     <SelectValue placeholder="请选择婚姻状况" />
                   </SelectTrigger>
                   <SelectContent>
@@ -628,6 +633,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="militaryService"
+                  className={mobileCheckboxClass}
                   checked={formData.militaryService}
                   onCheckedChange={(checked) => setFormData({ ...formData, militaryService: !!checked })}
                 />
@@ -661,6 +667,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="communityVolunteer"
+                  className={mobileCheckboxClass}
                   checked={formData.communityVolunteer}
                   onCheckedChange={(checked) => setFormData({ ...formData, communityVolunteer: !!checked })}
                 />
@@ -782,6 +789,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="hasChronic"
+                  className={mobileCheckboxClass}
                   checked={formData.hasChronic}
                   onCheckedChange={(checked) => setFormData({ ...formData, hasChronic: !!checked })}
                 />
@@ -806,6 +814,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="needsRegularMedicine"
+                  className={mobileCheckboxClass}
                   checked={formData.needsRegularMedicine}
                   onCheckedChange={(checked) => setFormData({ ...formData, needsRegularMedicine: !!checked })}
                 />
@@ -841,6 +850,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="isSeverePatient"
+                  className={mobileCheckboxClass}
                   checked={formData.isSeverePatient}
                   onCheckedChange={(checked) => setFormData({ ...formData, isSeverePatient: !!checked })}
                 />
@@ -852,6 +862,7 @@ export function MobilePersonEdit({ id, onBack, onSave, onSaved }: MobilePersonEd
               <div className="flex items-center gap-2 min-h-[44px]">
                 <Checkbox
                   id="isPregnant"
+                  className={mobileCheckboxClass}
                   checked={formData.isPregnant}
                   onCheckedChange={(checked) => setFormData({ ...formData, isPregnant: !!checked })}
                 />
