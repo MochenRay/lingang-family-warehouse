@@ -94,6 +94,8 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
   // 绝不复用 gridOptions.selectedGridId（那只是初始化预选候选）。
   const selectedGridIdRef = useRef<string | undefined>(undefined);
   const partiesRef = useRef<MobileConflictParty[]>([]);
+  // 单调居民请求 generation：同网格 ABA（g1→g2→g1）时，旧 g1 迟到结果不得覆盖第二次 g1 结果
+  const residentRequestGenRef = useRef(0);
 
   const [formData, setFormData] = useState<{
     title: string;
@@ -115,15 +117,20 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
   const partyAddButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const loadResidentsFor = async (gridId: string) => {
+    // 每次网格切换、初始化预选加载与居民重试都经此启动新 generation
+    const generation = ++residentRequestGenRef.current;
+    const isStale = () => (
+      residentRequestGenRef.current !== generation || selectedGridIdRef.current !== gridId
+    );
     try {
       const result = await loadConflictResidents(gridId);
-      // 过期响应丢弃：返回时 gridId 已不是当前选中网格，不得覆盖新网格结果
-      if (selectedGridIdRef.current !== gridId) {
+      // 过期响应丢弃：generation 已失效或返回时 gridId 已不是当前选中网格，不得覆盖
+      if (isStale()) {
         return;
       }
       setResidents(result);
     } catch (error) {
-      if (selectedGridIdRef.current !== gridId) {
+      if (isStale()) {
         return;
       }
       setResidents({
@@ -135,6 +142,14 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
       });
     }
   };
+
+  // mode 改变或组件卸载时，所有在途居民请求的 generation 立即失效
+  useEffect(() => {
+    residentRequestGenRef.current += 1;
+  }, [mode]);
+  useEffect(() => () => {
+    residentRequestGenRef.current += 1;
+  }, []);
 
   // 初始化预选与用户交互共用同一条切换路径
   const applyGridSelection = (
@@ -432,24 +447,28 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
             {CONFLICT_TYPES.map((type) => {
               const isSelected = formData.type === type;
               return (
-                <button
+                <label
                   key={type}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
                   data-testid={`conflict-type-${type}`}
-                  onClick={() => {
-                    setFormData((prev) => ({ ...prev, type }));
-                    setFieldErrors((prev) => ({ ...prev, type: undefined }));
-                  }}
-                  className={`flex min-h-[44px] items-center justify-center rounded-xl border text-sm font-medium transition-all ${
+                  className={`flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border text-sm font-medium transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
                     isSelected
                       ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)]'
-                      : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]'
+                      : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)]'
                   }`}
                 >
+                  <input
+                    type="radio"
+                    name="conflict-type"
+                    value={type}
+                    checked={isSelected}
+                    onChange={() => {
+                      setFormData((prev) => ({ ...prev, type }));
+                      setFieldErrors((prev) => ({ ...prev, type: undefined }));
+                    }}
+                    className="sr-only"
+                  />
                   {type}
-                </button>
+                </label>
               );
             })}
           </div>

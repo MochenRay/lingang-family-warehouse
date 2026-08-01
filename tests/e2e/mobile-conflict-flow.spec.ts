@@ -21,7 +21,11 @@ function isBusinessMutation(url: string, method: string): boolean {
     return false;
   }
   const pathname = new URL(url).pathname;
-  return /^\/api\/(people|houses|visits|conflicts)(?:\/|$)/.test(pathname);
+  if (pathname !== '/api' && !pathname.startsWith('/api/')) {
+    return false;
+  }
+  // /api 下所有非安全方法都计入 spy；仅真正的 AI 端点除外
+  return pathname !== '/api/ai' && !pathname.startsWith('/api/ai/');
 }
 
 interface MutationLog {
@@ -172,6 +176,35 @@ function readSessionRaw(page: Page): Promise<string | null> {
 test.use({ viewport: { width: 390, height: 844 } });
 test.describe.configure({ retries: 0 });
 
+// vaul Drawer / Radix Dialog 打开有位移动画：边界量测须等位移稳定（连续两次采样一致），不用固定 timeout
+async function settledBox(locator: Locator, label: string) {
+  let previous: { x: number; y: number; width: number; height: number } | null = null;
+  await expect.poll(async () => {
+    const box = await locator.boundingBox();
+    if (!box) {
+      previous = null;
+      return false;
+    }
+    const stable = previous !== null
+      && Math.abs(box.x - previous.x) < 0.5
+      && Math.abs(box.y - previous.y) < 0.5
+      && Math.abs(box.width - previous.width) < 0.5
+      && Math.abs(box.height - previous.height) < 0.5;
+    previous = box;
+    return stable;
+  }, { message: `${label} 位移动画未稳定` }).toBe(true);
+  return previous!;
+}
+
+// 触控目标必须量实际可交互节点的宽和高，均 ≥44
+async function expectTouchTarget(page: Page, testId: string) {
+  const box = await page.getByTestId(testId).boundingBox();
+  expect(box, `${testId} 必须可量测`).toBeTruthy();
+  expect(box!.width, `${testId} 宽度必须 ≥44`).toBeGreaterThanOrEqual(44);
+  expect(box!.height, `${testId} 高度必须 ≥44`).toBeGreaterThanOrEqual(44);
+  return box!;
+}
+
 test.beforeEach(async ({ page }) => {
   issues.length = 0;
   allowlist.length = 0;
@@ -303,14 +336,20 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   await page.goto('/mobile/conflict/new');
   await expect(page.getByTestId('conflict-form')).toBeVisible();
   await expect(page.getByTestId('conflict-grid-trigger')).toContainText('请选择所属网格');
+  // 未选择时可访问名称同时包含“所属网格”与当前值“未选择”
+  await expect(page.getByRole('button', { name: '所属网格：未选择', exact: true })).toBeVisible();
   await expect(page.getByTestId('conflict-submit')).toBeDisabled();
   await expect(page.getByTestId('conflict-submit-hint')).toContainText('所属网格');
 
   // 显式选择网格后才加载居民
   await page.getByTestId('conflict-grid-trigger').click();
   await expect(page.getByTestId(`conflict-grid-option-${grid.id}`)).toBeVisible();
+  // 网格 options 为原生 radio，可按 role/name 定位
+  await expect(page.getByRole('radio', { name: grid.name, exact: true })).not.toBeChecked();
   await page.getByTestId(`conflict-grid-option-${grid.id}`).click();
   await expect(page.getByTestId('conflict-grid-trigger')).toContainText(grid.name);
+  // 切换后可访问名称同步为真实网格名
+  await expect(page.getByRole('button', { name: `所属网格：${grid.name}`, exact: true })).toBeVisible();
 
   // 选择居民前：发生地点不从居民地址/默认值静默补全
   await expect(page.getByTestId('conflict-location')).toHaveValue('');
@@ -329,6 +368,8 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   await page.getByTestId('conflict-title').click();
   await page.getByTestId('conflict-title').fill(`${marker} 标题`);
   await page.getByTestId('conflict-type-邻里纠纷').click();
+  // 纠纷类型为原生 radio，可按 role/name 断言选中态
+  await expect(page.getByRole('radio', { name: '邻里纠纷', exact: true })).toBeChecked();
   await page.getByTestId('conflict-location').fill('海梦苑 3 号楼 2 单元楼道');
 
   await expect(page.getByTestId('conflict-submit')).toBeEnabled();
@@ -426,62 +467,99 @@ test('网格 options 的 loading/error/empty 状态禁提交并可真实重试�
   expect(mutations.requests).toEqual([]);
 });
 
-test('切换网格立即清除旧居民 party，过期异步居民响应被丢弃', async ({ page, request }) => {
+test('居民 g1→g2→g1 ABA：旧 g1 迟到响应不得覆盖第二次 g1 结果，切网格仍清居民保机构', async ({ page, request }) => {
   const grids = await readGrids(request);
   const g1 = grids.find((item) => item.id === 'g1') ?? grids[0];
   const g2 = grids.find((item) => item.id === 'g2') ?? grids[1];
-  const g1Resident = (await readGridResidents(request, g1.id, 3))[0];
-  const g2Resident = (await readGridResidents(request, g2.id, 3))[0];
-  expect(g1Resident.id).not.toBe(g2Resident.id);
+  const g1Full = await readGridResidents(request, g1.id, 500);
+  expect(g1Full.length, 'g1 必须有至少两名居民以区分新旧集合').toBeGreaterThan(1);
+  const g1Old = g1Full[0];
+  const g1New = g1Full.find((resident) => resident.id !== g1Old.id)!;
 
   await page.addInitScript((selection) => {
     window.localStorage.setItem('current_grid', JSON.stringify(selection));
   }, { id: g1.id, name: g1.name });
 
-  // 人为延迟 g2 居民响应，制造过期响应窗口
+  // 真正的 ABA：第一次 g1 居民请求由 Promise gate 持有，释放后只返回“旧 g1”子集；
+  // 第二次 g1 请求直通真实后端返回“新 g1”全集；g2 直通。全程无固定 timeout。
+  let g1Requests = 0;
+  let g1ResponsesDone = 0;
+  let g2Requests = 0;
+  let releaseFirstG1!: () => void;
+  const firstG1Gate = new Promise<void>((resolve) => {
+    releaseFirstG1 = resolve;
+  });
+  const g1PeoplePattern = /\/api\/people\?.*gridId=g1(?:&|$)/;
   const g2PeoplePattern = /\/api\/people\?.*gridId=g2(?:&|$)/;
+  await page.route(g1PeoplePattern, async (route) => {
+    g1Requests += 1;
+    if (g1Requests === 1) {
+      await firstG1Gate;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ items: [g1Old], total: 1 }),
+      });
+      g1ResponsesDone += 1;
+      return;
+    }
+    await route.continue();
+    g1ResponsesDone += 1;
+  });
   await page.route(g2PeoplePattern, async (route) => {
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    g2Requests += 1;
     await route.continue();
   });
+
+  await page.goto('/mobile/conflict/new');
+  await expect(page.getByTestId('conflict-form')).toBeVisible();
+  await expect(page.getByTestId('conflict-grid-trigger')).toContainText(g1.name);
+
+  // 第一次 g1 居民请求仍在 gate 中：居民保持 loading；机构可先行选择
+  await page.getByTestId('conflict-party-add').click();
+  await expect(page.getByTestId('conflict-residents-loading')).toBeVisible();
+  await page.getByTestId('conflict-party-org-org_wy').click();
+  await page.getByTestId('conflict-party-confirm').click();
+  await expect(page.getByTestId('conflict-party-chip-organization-org_wy')).toBeVisible();
+
+  // 切到 g2：立即进入新网格加载，机构保留、无跨网格居民残留
   const g2ResponseArrived = page.waitForResponse((response) => (
     g2PeoplePattern.test(response.url()) && response.request().method() === 'GET'
   ));
-
-  await page.goto('/mobile/conflict/new');
-  await expect(page.getByTestId('conflict-grid-trigger')).toContainText(g1.name);
-
-  // g1 居民 + 机构各一
-  await page.getByTestId('conflict-party-add').click();
-  await expect(page.getByTestId(`conflict-party-resident-${g1Resident.id}`)).toBeVisible();
-  await page.getByTestId(`conflict-party-resident-${g1Resident.id}`).click();
-  await page.getByTestId('conflict-party-org-org_wy').click();
-  await page.getByTestId('conflict-party-confirm').click();
-  await expect(page.getByTestId(`conflict-party-chip-resident-${g1Resident.id}`)).toBeVisible();
-  await expect(page.getByTestId('conflict-party-chip-organization-org_wy')).toBeVisible();
-
-  // 切到 g2：立即清掉 g1 居民、保留机构
   await page.getByTestId('conflict-grid-trigger').click();
   await page.getByTestId(`conflict-grid-option-${g2.id}`).click();
   await expect(page.getByTestId('conflict-grid-trigger')).toContainText(g2.name);
-  await expect(page.getByTestId(`conflict-party-chip-resident-${g1Resident.id}`)).toHaveCount(0);
   await expect(page.getByTestId('conflict-party-chip-organization-org_wy')).toBeVisible();
+  await expect(page.getByTestId('conflict-party-chips').locator('[data-testid^="conflict-party-chip-resident-"]')).toHaveCount(0);
+  await g2ResponseArrived;
 
-  // g2 居民响应仍在飞行中，立即切回 g1
+  // 再切回 g1：第二次 g1 请求直通真实后端，先完成并显示“新 g1”全集
   await page.getByTestId('conflict-grid-trigger').click();
   await page.getByTestId(`conflict-grid-option-${g1.id}`).click();
+  await expect(page.getByTestId('conflict-grid-trigger')).toContainText(g1.name);
   await page.getByTestId('conflict-party-add').click();
-  await expect(page.getByTestId(`conflict-party-resident-${g1Resident.id}`)).toBeVisible();
+  await expect(page.getByTestId(`conflict-party-resident-${g1New.id}`)).toBeVisible();
+  await expect(page.locator('[data-testid^="conflict-party-resident-"]')).toHaveCount(g1Full.length);
 
-  // g2 的迟到响应到达后不得覆盖当前 g1 的居民结果
-  await g2ResponseArrived;
-  await expect(page.getByTestId(`conflict-party-resident-${g1Resident.id}`)).toBeVisible();
-  await expect(page.getByTestId(`conflict-party-resident-${g2Resident.id}`)).toHaveCount(0);
+  // 释放第一次旧 g1：迟到响应不得覆盖“新 g1”全集
+  releaseFirstG1();
+  await expect.poll(() => g1ResponsesDone, '第一次旧 g1 响应必须已到达并被组件处理').toBe(2);
+  await expect(page.getByTestId(`conflict-party-resident-${g1New.id}`)).toBeVisible();
+  await expect(page.locator('[data-testid^="conflict-party-resident-"]')).toHaveCount(g1Full.length);
+  expect(g1Requests, 'g1 居民请求必须恰为两次（ABA 各一次）').toBe(2);
+  expect(g2Requests, 'g2 居民请求必须恰为一次').toBe(1);
 
-  // 往返切换后无旧网格居民残留
+  // 显式选择“新 g1”居民后再切 g2：立即清除居民、保留机构；确认后无残留
+  await page.getByTestId(`conflict-party-resident-${g1New.id}`).click();
   await page.getByTestId('conflict-party-confirm').click();
+  await expect(page.getByTestId(`conflict-party-chip-resident-${g1New.id}`)).toBeVisible();
   await expect(page.getByTestId('conflict-party-chip-organization-org_wy')).toBeVisible();
-  await expect(page.getByTestId(`conflict-party-chip-resident-${g1Resident.id}`)).toHaveCount(0);
+
+  await page.getByTestId('conflict-grid-trigger').click();
+  await page.getByTestId(`conflict-grid-option-${g2.id}`).click();
+  await expect(page.getByTestId('conflict-grid-trigger')).toContainText(g2.name);
+  await expect(page.getByTestId(`conflict-party-chip-resident-${g1New.id}`)).toHaveCount(0);
+  await expect(page.getByTestId('conflict-party-chip-organization-org_wy')).toBeVisible();
   await expect(page.getByTestId('conflict-party-chips').locator('[data-testid^="conflict-party-chip-"]')).toHaveCount(1);
 });
 
@@ -721,27 +799,55 @@ test('390×844 直接 viewport：列表/详情无横向 overflow，触控目标 
   expect(overflow.page).toBeLessThanOrEqual(0);
   expect(overflow.frame).toBeLessThanOrEqual(0);
 
-  // 列表触控目标：量实际 focusable 节点
-  const measure = async (testId: string) => {
-    const box = await page.getByTestId(testId).boundingBox();
-    expect(box, `${testId} 必须可量测`).toBeTruthy();
-    return box!;
-  };
-  expect((await measure('conflict-search-input')).height).toBeGreaterThanOrEqual(44);
-  expect((await measure('conflict-create-button')).height).toBeGreaterThanOrEqual(44);
-  expect((await measure('conflict-tab-all')).height).toBeGreaterThanOrEqual(44);
-  expect((await measure('conflict-card-c_hero_001')).height).toBeGreaterThanOrEqual(44);
+  // 列表触控目标：量实际 focusable 节点，宽与高均 ≥44
+  await expectTouchTarget(page, 'conflict-search-input');
+  await expectTouchTarget(page, 'conflict-create-button');
+  await expectTouchTarget(page, 'conflict-tab-all');
+  await expectTouchTarget(page, 'conflict-card-c_hero_001');
 
   await page.screenshot({ path: '/tmp/lingang-k02-enabled-390-list.png' });
 
+  // 详情 GET 由 Promise gate 持有：loading 的 role=status 必须有可宣布中文文字，不得只剩旋转图标
+  let releaseDetailGate!: () => void;
+  const detailGate = new Promise<void>((resolve) => {
+    releaseDetailGate = resolve;
+  });
+  await page.route(/\/api\/conflicts\/c_hero_001$/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await detailGate;
+    await route.continue();
+  });
+
   // 详情：动作按钮与关联对象触控目标
   await page.getByTestId('conflict-card-c_hero_001').click();
+  const detailLoading = page.getByTestId('conflict-detail-loading');
+  await expect(detailLoading).toBeVisible();
+  // role=status 内必须有可宣布中文文字，不得只剩旋转图标
+  await expect(detailLoading).toHaveAttribute('role', 'status');
+  await expect(detailLoading).toContainText('正在加载矛盾详情');
+  releaseDetailGate();
   await expect(page.getByTestId('conflict-detail')).toBeVisible();
-  expect((await measure('conflict-add-progress')).height).toBeGreaterThanOrEqual(44);
-  expect((await measure('conflict-mark-resolved')).height).toBeGreaterThanOrEqual(44);
+
+  // 列表进入详情后，重新检测 document 与手机框横向 overflow
+  const detailOverflow = await page.evaluate(() => {
+    const frame = document.getElementById('mobile-viewport');
+    return {
+      page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      frame: frame ? frame.scrollWidth - frame.clientWidth : 0,
+    };
+  });
+  expect(detailOverflow.page).toBeLessThanOrEqual(0);
+  expect(detailOverflow.frame).toBeLessThanOrEqual(0);
+
+  await expectTouchTarget(page, 'conflict-add-progress');
+  await expectTouchTarget(page, 'conflict-mark-resolved');
   const relatedPerson = page.getByTestId('conflict-related-person-p_hero_010');
   await expect(relatedPerson).toBeVisible();
   const relatedBox = await relatedPerson.boundingBox();
+  expect(relatedBox!.width).toBeGreaterThanOrEqual(44);
   expect(relatedBox!.height).toBeGreaterThanOrEqual(44);
 
   // Dialog：标题/说明/初始焦点/Escape/关闭后焦点恢复
@@ -764,12 +870,34 @@ test('390×844 直接 viewport：列表/详情无横向 overflow，触控目标 
     return Boolean(dialogEl && active && dialogEl.contains(active));
   })).toBe(true);
 
+  // 中文关闭按钮：role/name 定位且宽、高均 ≥44；shared primitive 默认英文 Close 不得继续暴露
+  const progressClose = dialog.getByRole('button', { name: '关闭添加调解进展对话框', exact: true });
+  await expect(progressClose).toBeVisible();
+  const progressCloseBox = await progressClose.boundingBox();
+  expect(progressCloseBox!.width).toBeGreaterThanOrEqual(44);
+  expect(progressCloseBox!.height).toBeGreaterThanOrEqual(44);
+  await expect(dialog.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
+
   await page.getByTestId('conflict-progress-input').fill('K02 探针进展记录');
   await page.keyboard.press('Escape');
   await expect(dialog).toHaveCount(0);
   // Escape 关闭后焦点恢复触发按钮；输入未提交，timeline 不出现该内容
   await expect(page.getByTestId('conflict-add-progress')).toBeFocused();
   await expect(page.getByTestId('conflict-timeline')).not.toContainText('K02 探针进展记录');
+
+  // 标记化解 Dialog：中文关闭按钮点击关闭，焦点恢复触发按钮
+  await page.getByTestId('conflict-mark-resolved').click();
+  const resolveDialog = page.getByTestId('conflict-resolve-dialog');
+  await expect(resolveDialog).toBeVisible();
+  const resolveClose = resolveDialog.getByRole('button', { name: '关闭标记已化解对话框', exact: true });
+  await expect(resolveClose).toBeVisible();
+  const resolveCloseBox = await resolveClose.boundingBox();
+  expect(resolveCloseBox!.width).toBeGreaterThanOrEqual(44);
+  expect(resolveCloseBox!.height).toBeGreaterThanOrEqual(44);
+  await expect(resolveDialog.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
+  await resolveClose.click();
+  await expect(resolveDialog).toHaveCount(0);
+  await expect(page.getByTestId('conflict-mark-resolved')).toBeFocused();
 
   await page.screenshot({ path: '/tmp/lingang-k02-enabled-390-detail.png' });
 
@@ -812,27 +940,6 @@ test.describe('hosted 桌面宿主', () => {
       expect(box.y + box.height, `${label} 下缘越界`).toBeLessThanOrEqual(frameBox!.y + frameBox!.height + 1);
     };
 
-    // vaul Drawer 打开有位移动画：toBeVisible 在动画开始即通过，边界量测必须等位移稳定，
-    // 连续两次采样一致才算 settled（真实收敛条件，不是固定 timeout）
-    const settledBox = async (locator: Locator, label: string) => {
-      let previous: { x: number; y: number; width: number; height: number } | null = null;
-      await expect.poll(async () => {
-        const box = await locator.boundingBox();
-        if (!box) {
-          previous = null;
-          return false;
-        }
-        const stable = previous !== null
-          && Math.abs(box.x - previous.x) < 0.5
-          && Math.abs(box.y - previous.y) < 0.5
-          && Math.abs(box.width - previous.width) < 0.5
-          && Math.abs(box.height - previous.height) < 0.5;
-        previous = box;
-        return stable;
-      }, { message: `${label} 位移动画未稳定` }).toBe(true);
-      return previous!;
-    };
-
     // 当事人 Drawer 不越出 375×812
     await page.getByTestId('conflict-party-add').click();
     const partyDrawer = page.getByTestId('conflict-party-drawer');
@@ -856,8 +963,9 @@ test.describe('hosted 桌面宿主', () => {
     await expect(page.getByTestId('conflict-party-confirm')).toContainText('确认关联 (0)');
     await page.getByTestId('conflict-party-search').fill('');
 
-    // Drawer 内触控目标（机构行 ≥44）
+    // Drawer 内触控目标（机构行宽、高均 ≥44）
     const orgRowBox = await page.getByTestId('conflict-party-org-org_wy').boundingBox();
+    expect(orgRowBox!.width).toBeGreaterThanOrEqual(44);
     expect(orgRowBox!.height).toBeGreaterThanOrEqual(44);
 
     // Escape 关闭 Drawer 并恢复焦点到触发按钮
@@ -872,25 +980,23 @@ test.describe('hosted 桌面宿主', () => {
     const gridDrawerBox = await settledBox(gridDrawer, 'grid-drawer');
     await expectInsideFrame(gridDrawerBox, 'grid-drawer');
     await expect(page.locator('[data-testid^="conflict-grid-option-"]')).toHaveCount(grids.length);
+    // 网格 options 为原生 radio：role/name 可定位，预选 g1 为 checked
+    await expect(gridDrawer.getByRole('radio', { name: g1.name, exact: true })).toBeChecked();
     const gridOptionBox = await page.getByTestId(`conflict-grid-option-${g1.id}`).boundingBox();
+    expect(gridOptionBox!.width).toBeGreaterThanOrEqual(44);
     expect(gridOptionBox!.height).toBeGreaterThanOrEqual(44);
     await page.keyboard.press('Escape');
     await expect(gridDrawer).toHaveCount(0);
     await expect(page.getByTestId('conflict-grid-trigger')).toBeFocused();
 
-    // 表单触控目标
-    const measure = async (testId: string) => {
-      const box = await page.getByTestId(testId).boundingBox();
-      expect(box, `${testId} 必须可量测`).toBeTruthy();
-      return box!;
-    };
-    expect((await measure('conflict-description')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-title')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-type-邻里纠纷')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-grid-trigger')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-location')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-party-add')).height).toBeGreaterThanOrEqual(44);
-    expect((await measure('conflict-submit')).height).toBeGreaterThanOrEqual(44);
+    // 表单触控目标（宽、高均 ≥44）
+    await expectTouchTarget(page, 'conflict-description');
+    await expectTouchTarget(page, 'conflict-title');
+    await expectTouchTarget(page, 'conflict-type-邻里纠纷');
+    await expectTouchTarget(page, 'conflict-grid-trigger');
+    await expectTouchTarget(page, 'conflict-location');
+    await expectTouchTarget(page, 'conflict-party-add');
+    await expectTouchTarget(page, 'conflict-submit');
 
     // 键盘 tab 顺序：返回 → 描述 → 标题 → 类型 radio
     await page.getByTestId('conflict-description').click();
@@ -901,22 +1007,103 @@ test.describe('hosted 桌面宿主', () => {
     await page.keyboard.press('Tab');
     await expect(page.getByTestId('conflict-title')).toBeFocused();
     await page.keyboard.press('Tab');
-    await expect(page.getByTestId('conflict-type-邻里纠纷')).toBeFocused();
-    // 焦点可见：focus-visible 环以 box-shadow 呈现
+    await expect(page.getByRole('radio', { name: '邻里纠纷', exact: true })).toBeFocused();
+    // 焦点可见：focus-visible 环呈现在包裹原生 radio 的 label 上（以 box-shadow 呈现）
     const focusRingVisible = await page.evaluate(() => {
       const active = document.activeElement as HTMLElement | null;
-      if (!active) {
+      const target = active?.closest('label') ?? active;
+      if (!target) {
         return false;
       }
-      const style = window.getComputedStyle(active);
+      const style = window.getComputedStyle(target);
       return style.boxShadow !== 'none' || style.outlineStyle !== 'none';
     });
     expect(focusRingVisible).toBe(true);
+
+    // 原生 radio 键盘模型：Arrow 键移动并选中、Space 选中聚焦项，不得只 click
+    await page.keyboard.press('ArrowDown');
+    await expect(page.getByRole('radio', { name: '家庭纠纷', exact: true })).toBeFocused();
+    await expect(page.getByRole('radio', { name: '家庭纠纷', exact: true })).toBeChecked();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.getByRole('radio', { name: '邻里纠纷', exact: true })).toBeChecked();
+    await page.getByRole('radio', { name: '其他', exact: true }).focus();
+    await page.keyboard.press('Space');
+    await expect(page.getByRole('radio', { name: '其他', exact: true })).toBeChecked();
 
     // 手机框内无横向 overflow
     const frameOverflow = await frame.evaluate((element) => element.scrollWidth - element.clientWidth);
     expect(frameOverflow).toBeLessThanOrEqual(0);
 
     await page.screenshot({ path: '/tmp/lingang-k02-enabled-hosted-form.png' });
+  });
+
+  test('375×812 手机框内实测详情页：两个 Dialog 与 overlay 不越框，中文关闭/Escape/焦点恢复', async ({ page }) => {
+    await page.goto('/mobile/conflict/c_hero_001');
+    await expect(page.getByTestId('conflict-detail')).toBeVisible();
+
+    const frame = page.locator('#mobile-viewport');
+    const frameBox = await frame.boundingBox();
+    expect(frameBox).toBeTruthy();
+    expect(frameBox!.width).toBeCloseTo(375, 0);
+    expect(frameBox!.height).toBeCloseTo(812, 0);
+
+    const expectInsideFrame = async (box: { x: number; y: number; width: number; height: number }, label: string) => {
+      expect(box.x, `${label} 左缘越界`).toBeGreaterThanOrEqual(frameBox!.x - 1);
+      expect(box.y, `${label} 上缘越界`).toBeGreaterThanOrEqual(frameBox!.y - 1);
+      expect(box.x + box.width, `${label} 右缘越界`).toBeLessThanOrEqual(frameBox!.x + frameBox!.width + 1);
+      expect(box.y + box.height, `${label} 下缘越界`).toBeLessThanOrEqual(frameBox!.y + frameBox!.height + 1);
+    };
+
+    // 详情页 document 与手机框均无横向 overflow
+    const detailOverflow = await page.evaluate(() => {
+      const frameEl = document.getElementById('mobile-viewport');
+      return {
+        page: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        frame: frameEl ? frameEl.scrollWidth - frameEl.clientWidth : 0,
+      };
+    });
+    expect(detailOverflow.page).toBeLessThanOrEqual(0);
+    expect(detailOverflow.frame).toBeLessThanOrEqual(0);
+
+    const overlay = page.locator('#mobile-viewport .bg-overlay');
+
+    // 添加进展 Dialog：Dialog 与 overlay 均不越手机框四边；Escape 关闭并恢复焦点
+    await page.getByTestId('conflict-add-progress').click();
+    const progressDialog = page.getByTestId('conflict-progress-dialog');
+    await expect(progressDialog).toBeVisible();
+    const progressDialogBox = await settledBox(progressDialog, 'progress-dialog');
+    await expectInsideFrame(progressDialogBox, 'progress-dialog');
+    await expect(overlay).toBeVisible();
+    const progressOverlayBox = await overlay.boundingBox();
+    expect(progressOverlayBox).toBeTruthy();
+    await expectInsideFrame(progressOverlayBox!, 'progress-overlay');
+    const progressClose = progressDialog.getByRole('button', { name: '关闭添加调解进展对话框', exact: true });
+    const progressCloseBox = await progressClose.boundingBox();
+    expect(progressCloseBox!.width).toBeGreaterThanOrEqual(44);
+    expect(progressCloseBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(progressDialog.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+    await expect(progressDialog).toHaveCount(0);
+    await expect(page.getByTestId('conflict-add-progress')).toBeFocused();
+
+    // 标记化解 Dialog：Dialog 与 overlay 均不越手机框四边；中文关闭按钮关闭并恢复焦点
+    await page.getByTestId('conflict-mark-resolved').click();
+    const resolveDialog = page.getByTestId('conflict-resolve-dialog');
+    await expect(resolveDialog).toBeVisible();
+    const resolveDialogBox = await settledBox(resolveDialog, 'resolve-dialog');
+    await expectInsideFrame(resolveDialogBox, 'resolve-dialog');
+    const resolveOverlayBox = await overlay.boundingBox();
+    expect(resolveOverlayBox).toBeTruthy();
+    await expectInsideFrame(resolveOverlayBox!, 'resolve-overlay');
+    const resolveClose = resolveDialog.getByRole('button', { name: '关闭标记已化解对话框', exact: true });
+    const resolveCloseBox = await resolveClose.boundingBox();
+    expect(resolveCloseBox!.width).toBeGreaterThanOrEqual(44);
+    expect(resolveCloseBox!.height).toBeGreaterThanOrEqual(44);
+    await expect(resolveDialog.getByRole('button', { name: 'Close', exact: true })).toHaveCount(0);
+    await resolveClose.click();
+    await expect(resolveDialog).toHaveCount(0);
+    await expect(page.getByTestId('conflict-mark-resolved')).toBeFocused();
+
+    await page.screenshot({ path: '/tmp/lingang-k02-enabled-hosted-detail.png' });
   });
 });

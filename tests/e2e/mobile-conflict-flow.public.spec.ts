@@ -22,7 +22,11 @@ function isBusinessMutation(url: string, method: string): boolean {
     return false;
   }
   const pathname = new URL(url).pathname;
-  return /^\/api\/(people|houses|visits|conflicts)(?:\/|$)/.test(pathname);
+  if (pathname !== '/api' && !pathname.startsWith('/api/')) {
+    return false;
+  }
+  // /api 下所有非安全方法都计入 spy；仅真正的 AI 端点除外
+  return pathname !== '/api/ai' && !pathname.startsWith('/api/ai/');
 }
 
 interface MutationLog {
@@ -410,6 +414,107 @@ test('session 居民路径：切网格往返不残留旧居民，context 关联�
   expect(mutations).toEqual({ requests: [], responses: [] });
 });
 
+test('public：session 写成功但显式读回失败——锁定 mutation、保留旧详情与 Dialog，重新读取后收束', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const target = all.items.find((item) => item.status === '调解中');
+  expect(target, 'seed 必须包含调解中纠纷').toBeTruthy();
+  const targetId = target!.id;
+  const mutations = trackBusinessMutations(page);
+
+  // 精确布置：仅针对显式读回的 conflict list GET 注入一次 500。
+  // session mutation 内部（requireSessionConflict）也要先读 seed list，该 GET 必须放行——
+  // 只有“session 写入已完成之后”的 GET 才是显式读回，不得泛化拦截
+  let armed = false;
+  let failReadback = false;
+  let readFailureGets = 0;
+  let listGetsAfterArm = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET' || !armed) {
+      await route.continue();
+      return;
+    }
+    listGetsAfterArm += 1;
+    const sessionWrites = (await readSessionSnapshot(page)).writes.length;
+    if (failReadback && sessionWrites > 0) {
+      readFailureGets += 1;
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'forced K02 readback failure' }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+
+  await page.goto(`/mobile/conflict/${targetId}`);
+  await expect(page.getByTestId('conflict-detail')).toBeVisible();
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  const timelineBefore = await page.getByTestId('conflict-timeline').innerText();
+  expect((await readSessionSnapshot(page)).writes).toEqual([]);
+
+  // 武装读回失败 + 精确 endpoint+status+文本 allowlist
+  armed = true;
+  failReadback = true;
+  allowResponse(/\/api\/conflicts$/, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, /\/api\/conflicts\?/);
+  allowConsoleError(/^Failed to reload conflict detail after mutation/);
+
+  await page.getByTestId('conflict-mark-resolved').click();
+  const dialog = page.getByTestId('conflict-resolve-dialog');
+  await expect(dialog).toBeVisible();
+  await page.getByTestId('conflict-resolve-confirm').click();
+
+  // session mutation 成功：一次 setItem 内原子新增 status+update 两个 event
+  await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+  const snapshot = await readSessionSnapshot(page);
+  const envelope = JSON.parse(snapshot.writes[0]) as SessionEnvelope;
+  expect(envelope.events.map((event) => event.action)).toEqual(['status', 'update']);
+  expect(envelope.events[0]).toMatchObject({ entity: 'conflict', action: 'status', targetId, payload: { status: '已化解' } });
+  expect(envelope.events[1]).toMatchObject({ entity: 'conflict', action: 'update', targetId });
+
+  // 显式读回 conflict GET 恰为一次：mutation 内部 seed 读 1 次 + 显式读回 1 次，
+  // 自身 subscribe 没有触发第二次 reload（否则此处会是 3）
+  await expect(dialog.getByRole('alert')).toContainText('写入成功，但最新详情读取失败');
+  expect(readFailureGets).toBe(1);
+  expect(listGetsAfterArm).toBe(2);
+
+  // Dialog 保持打开、旧状态与 timeline 原样保留、不得显示普通 mutation 成功
+  await expect(dialog).toBeVisible();
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  expect(await page.getByTestId('conflict-timeline').innerText()).toBe(timelineBefore);
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+
+  // mutation 被锁定：confirm 禁用；再次交互不得增加 session write、timeline event 或读回 GET
+  await expect(page.getByTestId('conflict-resolve-confirm')).toBeDisabled();
+  await page.getByTestId('conflict-resolve-confirm').click({ force: true });
+  expect((await readSessionSnapshot(page)).writes).toHaveLength(1);
+  expect(await page.getByTestId('conflict-timeline').innerText()).toBe(timelineBefore);
+  expect(listGetsAfterArm).toBe(2);
+
+  // 关闭再打开 Dialog 也不得清除锁
+  await page.getByTestId('conflict-resolve-dialog-close').click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByTestId('conflict-mark-resolved').click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole('alert')).toContainText('写入成功，但最新详情读取失败');
+  await expect(page.getByTestId('conflict-resolve-confirm')).toBeDisabled();
+
+  // 恢复 GET 后点击“重新读取”：只发生读取，无第二次 mutation、无第二次 session write
+  failReadback = false;
+  await page.getByTestId('conflict-resolve-reread').click();
+  await expect(dialog).toHaveCount(0);
+  // Dialog 收束并显示真实新状态与 timeline
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+  await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+  expect(listGetsAfterArm).toBe(3);
+  expect(readFailureGets).toBe(1);
+  expect((await readSessionSnapshot(page)).writes).toHaveLength(1);
+
+  // public 网络 mutation 仍为 0
+  expect(mutations).toEqual({ requests: [], responses: [] });
+});
+
 test('session 存储写失败时 fail closed：不显示成功、不产生 temp conflict', async ({ page, request }) => {
   const before = await readConflicts(request);
   const grids = await readGrids(request);
@@ -559,11 +664,12 @@ test('390×844：表单 Drawer 不越界、触控目标 ≥44、Escape 与焦点
   await expect(page.getByTestId('conflict-party-confirm')).toContainText('确认关联 (0)');
   await page.getByTestId('conflict-party-search').fill('');
 
-  // 居民行触控目标
+  // 居民行触控目标（宽、高均 ≥44）
   const residents = await readGridResidents(request, g1.id, 1);
   const residentRow = page.getByTestId(`conflict-party-resident-${residents[0].id}`);
   await expect(residentRow).toBeVisible();
   const residentRowBox = await residentRow.boundingBox();
+  expect(residentRowBox!.width).toBeGreaterThanOrEqual(44);
   expect(residentRowBox!.height).toBeGreaterThanOrEqual(44);
 
   await page.keyboard.press('Escape');
@@ -575,7 +681,10 @@ test('390×844：表单 Drawer 不越界、触控目标 ≥44、Escape 与焦点
   const gridOption = page.getByTestId(`conflict-grid-option-${g1.id}`);
   await expect(gridOption).toBeVisible();
   const optionBox = await gridOption.boundingBox();
+  expect(optionBox!.width).toBeGreaterThanOrEqual(44);
   expect(optionBox!.height).toBeGreaterThanOrEqual(44);
+  // 网格 options 为原生 radio：role/name 可定位，预选 g1 为 checked
+  await expect(page.getByRole('radio', { name: g1.name, exact: true })).toBeChecked();
   await page.keyboard.press('Escape');
   await expect(page.getByTestId('conflict-grid-trigger')).toBeFocused();
 

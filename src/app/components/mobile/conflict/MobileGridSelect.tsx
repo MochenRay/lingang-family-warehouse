@@ -106,6 +106,7 @@ export function MobileGridSelect({
         id={id}
         ref={triggerRef}
         data-testid="conflict-grid-trigger"
+        aria-label={`所属网格：${selectedGrid?.name ?? '未选择'}`}
         aria-haspopup="dialog"
         aria-expanded={isOpen}
         aria-invalid={ariaInvalid}
@@ -142,25 +143,29 @@ export function MobileGridSelect({
               {gridOptions.options.map((grid) => {
                 const isSelected = grid.id === selectedGridId;
                 return (
-                  <button
+                  <label
                     key={grid.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={isSelected}
                     data-testid={`conflict-grid-option-${grid.id}`}
-                    onClick={() => {
-                      onSelect(grid.id);
-                      setIsOpen(false);
-                    }}
-                    className={`flex min-h-[44px] w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all ${
+                    className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
                       isSelected
                         ? 'border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 shadow-sm'
-                        : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] hover:bg-[var(--color-neutral-02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]'
+                        : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] hover:bg-[var(--color-neutral-02)]'
                     }`}
                   >
+                    <input
+                      type="radio"
+                      name="conflict-grid"
+                      value={grid.id}
+                      checked={isSelected}
+                      onChange={() => {
+                        onSelect(grid.id);
+                        setIsOpen(false);
+                      }}
+                      className="sr-only"
+                    />
                     <span className="text-sm font-medium text-[var(--color-neutral-11)]">{grid.name}</span>
                     {isSelected && <Check className="h-4 w-4 shrink-0 text-[var(--color-brand-text)]" />}
-                  </button>
+                  </label>
                 );
               })}
             </div>
