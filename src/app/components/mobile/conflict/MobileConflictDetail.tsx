@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   MapPin,
   Users,
@@ -7,11 +7,14 @@ import {
   Loader2,
   BookOpen,
   ExternalLink,
+  RotateCcw,
+  X,
 } from 'lucide-react';
 import { Button } from '../../ui/button';
 import { Card, CardContent } from '../../ui/card';
 import { Badge } from '../../ui/badge';
 import { Textarea } from '../../ui/textarea';
+import { Label } from '../../ui/label';
 import {
   Dialog,
   DialogContent,
@@ -23,9 +26,14 @@ import {
   DialogDescription,
 } from '../../ui/dialog';
 import { MobileDetailHeader } from '../MobileDetailHeader';
-import { ConfirmDialog } from '../../patterns/ConfirmDialog';
-import { conflictRepository, type ConflictContext } from '../../../services/repositories/conflictRepository';
+import {
+  conflictFacade,
+  MobileConflictFacadeTargetNotFoundError,
+  type MobileConflictDetailResult,
+} from '../../../services/mobileSandbox/conflictFacade';
+import type { ConflictContext } from '../../../services/repositories/conflictRepository';
 import { mobileContextRepository } from '../../../services/repositories/mobileContextRepository';
+import type { MobileNavigateOptions } from '../mobileNavigation';
 import type { ConflictRecord } from '../../../types/core';
 import { toast } from 'sonner';
 import { getRiskLevelLabel } from '../../../utils/riskLevel';
@@ -34,8 +42,14 @@ import { useMobileSandbox } from '../MobileSandboxProvider';
 interface MobileConflictDetailProps {
   id: string;
   onBack: () => void;
-  onRouteChange?: (route: string) => void;
+  onRouteChange?: (route: string, options?: MobileNavigateOptions) => void;
 }
+
+type DetailPhase =
+  | { status: 'loading' }
+  | { status: 'error'; message: string }
+  | { status: 'not-found' }
+  | { status: 'ready' };
 
 interface PolicyCard {
   title: string;
@@ -51,8 +65,19 @@ interface ScriptCard {
   tips: string;
 }
 
-function getCurrentWorkerName() {
-  return mobileContextRepository.getCurrentWorkerName();
+// 与种子数据一致的本地业务时间格式（YYYY-MM-DD HH:mm:ss）
+function formatNow() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+}
+
+function isNotFoundError(error: unknown): boolean {
+  if (error instanceof MobileConflictFacadeTargetNotFoundError) {
+    return true;
+  }
+  // api.ts 只抛普通 Error；404 只能通过消息前缀识别，其他状态一律按真实错误处理
+  return error instanceof Error && /^API 404[:\s]/.test(error.message);
 }
 
 function buildPolicyCards(conflict: ConflictRecord, context: ConflictContext): PolicyCard[] {
@@ -160,63 +185,347 @@ function buildScriptCards(conflict: ConflictRecord, context: ConflictContext): S
   return cards.slice(0, 3);
 }
 
-async function loadConflictDetail(id: string) {
-  const conflict = await conflictRepository.getConflict(id);
-  if (!conflict) {
-    return null;
-  }
-  const context = await conflictRepository.getConflictContext(id);
-  return { conflict, context };
-}
-
 export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConflictDetailProps) {
-  const { canUseLegacyApiMutation } = useMobileSandbox();
+  const { mode, canMutate } = useMobileSandbox();
   const [conflict, setConflict] = useState<ConflictRecord | null>(null);
   const [context, setContext] = useState<ConflictContext | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [phase, setPhase] = useState<DetailPhase>({ status: 'loading' });
+  const [reloadToken, setReloadToken] = useState(0);
   const [progressContent, setProgressContent] = useState('');
+  const [progressError, setProgressError] = useState<string | null>(null);
   const [isSubmittingProgress, setIsSubmittingProgress] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [aiTab, setAiTab] = useState<'policy' | 'script'>('policy');
   const [resolveConfirmOpen, setResolveConfirmOpen] = useState(false);
+  const [resolveError, setResolveError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+  // mutation 已成功但读回失败时的锁定状态；锁定不随 Dialog 关闭而清除
+  const [readFailure, setReadFailure] = useState<{
+    path: 'progress' | 'resolve';
+    targetId: string;
+    mutationGeneration: number;
+  } | null>(null);
+  const [isReReading, setIsReReading] = useState(false);
 
-  const reloadConflict = async () => {
-    const next = await loadConflictDetail(id);
-    setConflict(next?.conflict ?? null);
-    setContext(next?.context ?? null);
-    return next;
-  };
+  // 所有详情异步读取共用单调 request generation；卸载、id 变化或新请求都使旧结果失效
+  const mountedRef = useRef(false);
+  const idRef = useRef(id);
+  idRef.current = id;
+  const requestGenRef = useRef(0);
+  // mutation generation 与请求 generation 独立：旧案件 mutation 不得读取或落地到新 id。
+  const mutationGenRef = useRef(0);
+  // 当前页面 UI mutation 锁：id 切换时可清，使 B 不受 A 的按钮/Dialog 状态影响。
+  const ownMutationRef = useRef<{ targetId: string; generation: number } | null>(null);
+  // 尚未 settle 的自身 mutation token：跨 id 保留，用于抑制 A 延迟 emit 对 B 的背景 reload。
+  // token 只能由对应 generation 的 mutation 流程删除，id effect 不得清空。
+  const pendingOwnMutationTokensRef = useRef<Map<number, string>>(new Map());
+  // 被自身 pending token 吞掉、尚未由更新读回覆盖的成功事件；版本用于避免旧读取
+  // 清掉在其执行期间新到达的 dirty 标记。
+  const dirtyTargetVersionsRef = useRef<Map<string, number>>(new Map());
+  const dirtyVersionRef = useRef(0);
+  const activeDirtyFlushVersionsRef = useRef<Map<string, number>>(new Map());
+  // 用户触发的 manual reread 也是同 target 的读占用；dirty flush 必须等它 settle。
+  const manualReadGenerationRef = useRef(0);
+  const activeManualReadTargetsRef = useRef<Map<string, number>>(new Map());
+  // UI submitting state 使用独立 token；旧 handler 的 finally 不得清除新操作状态。
+  const uiOperationGenerationRef = useRef(0);
+  const progressUiOperationRef = useRef<number | null>(null);
+  const resolveUiOperationRef = useRef<number | null>(null);
 
   useEffect(() => {
-    let active = true;
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+      requestGenRef.current += 1;
+      mutationGenRef.current += 1;
+      manualReadGenerationRef.current += 1;
+      uiOperationGenerationRef.current += 1;
+      ownMutationRef.current = null;
+      activeManualReadTargetsRef.current.clear();
+      progressUiOperationRef.current = null;
+      resolveUiOperationRef.current = null;
+    };
+  }, []);
 
-    const run = async () => {
-      setLoading(true);
-      try {
-        const next = await loadConflictDetail(id);
-        if (!active) {
-          return;
-        }
-        setConflict(next?.conflict ?? null);
-        setContext(next?.context ?? null);
-      } catch (error) {
+  // 同一 MobileConflictDetail 实例切换 id 时，立即使旧 mutation/readback 与其 UI 锁失效。
+  useEffect(() => {
+    requestGenRef.current += 1;
+    mutationGenRef.current += 1;
+    manualReadGenerationRef.current += 1;
+    uiOperationGenerationRef.current += 1;
+    ownMutationRef.current = null;
+    activeManualReadTargetsRef.current.clear();
+    progressUiOperationRef.current = null;
+    resolveUiOperationRef.current = null;
+    setReadFailure(null);
+    setIsReReading(false);
+    setIsSubmittingProgress(false);
+    setIsResolving(false);
+    setProgressContent('');
+    setProgressError(null);
+    setResolveError(null);
+    setIsDialogOpen(false);
+    setResolveConfirmOpen(false);
+  }, [id]);
+
+  // 常规详情读取（初始加载 / 重试 / 外部 facade change）：可更新 phase；
+  // 落地前同时校验 mounted、当前 id 与 generation，旧请求不得覆盖新数据。
+  const readDetail = useCallback(async (updatePhase: boolean): Promise<void> => {
+    const generation = ++requestGenRef.current;
+    const currentId = idRef.current;
+    const dirtyVersionAtStart = dirtyTargetVersionsRef.current.get(currentId);
+    if (updatePhase) {
+      setPhase({ status: 'loading' });
+    }
+    const isStale = () => (
+      !mountedRef.current || idRef.current !== currentId || requestGenRef.current !== generation
+    );
+    try {
+      const result = await conflictFacade.getConflictDetail(currentId);
+      if (isStale()) {
+        return;
+      }
+      if (
+        dirtyVersionAtStart !== undefined
+        && dirtyTargetVersionsRef.current.get(currentId) === dirtyVersionAtStart
+      ) {
+        dirtyTargetVersionsRef.current.delete(currentId);
+      }
+      if (!result) {
+        setConflict(null);
+        setContext(null);
+        setPhase({ status: 'not-found' });
+        return;
+      }
+      setConflict(result.conflict);
+      setContext(result.context);
+      setPhase({ status: 'ready' });
+    } catch (error) {
+      if (isStale()) {
+        return;
+      }
+      setConflict(null);
+      setContext(null);
+      if (isNotFoundError(error)) {
+        // not-found 是常规业务状态，不是错误，不打 error 日志
+        setPhase({ status: 'not-found' });
+      } else {
         console.error('Failed to load conflict detail', error);
-        if (active) {
-          setConflict(null);
-          setContext(null);
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
+        setPhase({
+          status: 'error',
+          message: error instanceof Error ? error.message : '纠纷详情加载失败',
+        });
+      }
+    }
+  }, []);
+
+  // mutation 后的显式读回：不得把 phase 改回 loading，不得卸载现有详情或 Dialog；
+  // undefined/not-found/异常一律按读回失败返回 null，过期返回 'stale' 不做任何落地。
+  const readBackAfterMutation = useCallback(async (
+    targetId: string,
+    mutationGeneration: number,
+  ): Promise<MobileConflictDetailResult | 'stale' | null> => {
+    const isMutationScopeStale = () => (
+      !mountedRef.current
+      || idRef.current !== targetId
+      || mutationGenRef.current !== mutationGeneration
+    );
+    // 必须在递增 request generation 或发 GET 前拦住旧案件 mutation。
+    if (isMutationScopeStale()) {
+      return 'stale';
+    }
+    const dirtyVersionAtStart = dirtyTargetVersionsRef.current.get(targetId);
+    const generation = ++requestGenRef.current;
+    const isStale = () => (
+      isMutationScopeStale() || requestGenRef.current !== generation
+    );
+    try {
+      const result = await conflictFacade.getConflictDetail(targetId);
+      if (isStale()) {
+        return 'stale';
+      }
+      if (
+        dirtyVersionAtStart !== undefined
+        && dirtyTargetVersionsRef.current.get(targetId) === dirtyVersionAtStart
+      ) {
+        dirtyTargetVersionsRef.current.delete(targetId);
+      }
+      return result ?? null;
+    } catch (error) {
+      if (isStale()) {
+        return 'stale';
+      }
+      console.error('Failed to reload conflict detail after mutation', error);
+      return null;
+    }
+  }, []);
+
+  // dirty flush 只在当前 target 没有更新 mutation/readback 时启动；因此旧 A1 不会
+  // 递增共享 request generation 去取消 A2。读取期间若又有新 dirty 版本到达，
+  // 当前读取不得清除它，完成后再顺序 flush 一次。
+  const flushDirtyTarget = (targetId: string): void => {
+    const dirtyVersion = dirtyTargetVersionsRef.current.get(targetId);
+    if (
+      dirtyVersion === undefined
+      || !mountedRef.current
+      || idRef.current !== targetId
+      || [...pendingOwnMutationTokensRef.current.values()].some((pendingTarget) => pendingTarget === targetId)
+      || activeManualReadTargetsRef.current.has(targetId)
+      || activeDirtyFlushVersionsRef.current.has(targetId)
+    ) {
+      return;
+    }
+    activeDirtyFlushVersionsRef.current.set(targetId, dirtyVersion);
+    void readDetail(false).finally(() => {
+      activeDirtyFlushVersionsRef.current.delete(targetId);
+      const latestDirtyVersion = dirtyTargetVersionsRef.current.get(targetId);
+      if (latestDirtyVersion !== undefined && latestDirtyVersion !== dirtyVersion) {
+        flushDirtyTarget(targetId);
+      }
+    });
+  };
+
+  // 每轮加载只调用一次 facade.getConflictDetail，由 facade 返回 conflict + context；
+  // session temp id 由 facade 内部处理，绝不直接请求 temp-ID API。
+  useEffect(() => {
+    if (mode === 'checking') {
+      return;
+    }
+
+    void readDetail(true);
+    const unsubscribe = conflictFacade.subscribe(() => {
+      // facade 未暴露 event payload；任一自身 mutation 尚未 settle 时，该同步 change
+      // 必属于当前组件发起流程的可能窗口，不得刷新当前（即使已从 A 切到 B）。
+      if (pendingOwnMutationTokensRef.current.size > 0) {
+        return;
+      }
+      void readDetail(true);
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [id, mode, reloadToken, readDetail]);
+
+  // addProgress 与 markResolved 共用同一套安全语义：
+  // 1) 调用前以 ref 同步标记自身 mutation；2) 成功后只显式读回一次；
+  // 3) mutation 失败与读回失败分开处理；4) 读回失败锁定两条 mutation 路径。
+  const runMutation = async (
+    path: 'progress' | 'resolve',
+    targetId: string,
+    mutate: () => Promise<unknown>,
+  ): Promise<void> => {
+    const mutationGeneration = ++mutationGenRef.current;
+    pendingOwnMutationTokensRef.current.set(mutationGeneration, targetId);
+    ownMutationRef.current = { targetId, generation: mutationGeneration };
+    const isMutationScopeStale = () => (
+      !mountedRef.current
+      || idRef.current !== targetId
+      || mutationGenRef.current !== mutationGeneration
+    );
+    const clearOwnMutation = () => {
+      if (ownMutationRef.current?.generation === mutationGeneration) {
+        ownMutationRef.current = null;
       }
     };
-
-    void run();
-    return () => {
-      active = false;
+    const settleOwnMutation = () => {
+      pendingOwnMutationTokensRef.current.delete(mutationGeneration);
+      clearOwnMutation();
     };
-  }, [id]);
+    try {
+      await mutate();
+    } catch (error) {
+      // mutation 本身失败：保留现有失败语义，可重新提交
+      settleOwnMutation();
+      // 自身失败不制造 dirty；若更旧成功事件已标脏，则在 A2 失败释放占用后收束。
+      flushDirtyTarget(targetId);
+      if (isMutationScopeStale()) {
+        return;
+      }
+      if (path === 'progress') {
+        console.error('Failed to add progress', error);
+        setProgressError(error instanceof Error ? error.message : '进展记录添加失败，请稍后重试');
+        toast.error('进展记录添加失败');
+      } else {
+        console.error('Failed to mark conflict resolved', error);
+        setResolveError(error instanceof Error ? error.message : '状态更新失败，请稍后重试');
+        toast.error('状态更新失败');
+      }
+      return;
+    }
+    if (isMutationScopeStale()) {
+      settleOwnMutation();
+      dirtyTargetVersionsRef.current.set(targetId, ++dirtyVersionRef.current);
+      flushDirtyTarget(targetId);
+      return;
+    }
+    const outcome = await readBackAfterMutation(targetId, mutationGeneration);
+    settleOwnMutation();
+    if (outcome === 'stale') {
+      flushDirtyTarget(targetId);
+      return;
+    }
+    if (!outcome) {
+      // mutation 已成功但读回失败：保持 phase=ready、保留旧 conflict/context 与 Dialog，
+      // 不显示普通成功；锁定 mutation，直到“重新读取”成功
+      setReadFailure({ path, targetId, mutationGeneration });
+      return;
+    }
+    setConflict(outcome.conflict);
+    setContext(outcome.context);
+    if (path === 'progress') {
+      setProgressContent('');
+      setIsDialogOpen(false);
+      toast.success('进展记录已添加');
+    } else {
+      setResolveConfirmOpen(false);
+      toast.success('状态已更新');
+    }
+    flushDirtyTarget(targetId);
+  };
+
+  // “重新读取”只允许调用 getConflictDetail：不得再次 mutation、追加 timeline 或写 sessionStorage
+  const handleReRead = async () => {
+    if (!readFailure || isReReading) {
+      return;
+    }
+    const failure = readFailure;
+    const manualReadGeneration = ++manualReadGenerationRef.current;
+    activeManualReadTargetsRef.current.set(failure.targetId, manualReadGeneration);
+    setIsReReading(true);
+    const outcome = await readBackAfterMutation(failure.targetId, failure.mutationGeneration);
+    if (activeManualReadTargetsRef.current.get(failure.targetId) !== manualReadGeneration) {
+      return;
+    }
+    activeManualReadTargetsRef.current.delete(failure.targetId);
+    if (outcome === 'stale') {
+      // 同 id 的更新请求若让本次读回过期，仍须恢复按钮；跨 id/unmount 则由路由 effect 清理。
+      if (
+        mountedRef.current
+        && idRef.current === failure.targetId
+        && mutationGenRef.current === failure.mutationGeneration
+      ) {
+        setIsReReading(false);
+      }
+      return;
+    }
+    if (outcome) {
+      setConflict(outcome.conflict);
+      setContext(outcome.context);
+      setReadFailure(null);
+      setProgressContent('');
+      setIsDialogOpen(false);
+      setResolveConfirmOpen(false);
+      // manual reread 成功先完成自身清锁，再顺序消费读取期间新到达的 dirty。
+      flushDirtyTarget(failure.targetId);
+    }
+    if (
+      mountedRef.current
+      && idRef.current === failure.targetId
+      && mutationGenRef.current === failure.mutationGeneration
+    ) {
+      setIsReReading(false);
+    }
+  };
 
   const relatedPolicies = useMemo(
     () => (conflict && context ? buildPolicyCards(conflict, context) : []),
@@ -228,93 +537,108 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   );
 
   const handleAddProgress = async () => {
-    if (!conflict || !progressContent.trim()) {
+    if (!conflict || !progressContent.trim() || isSubmittingProgress || readFailure || ownMutationRef.current) {
       return;
     }
 
+    const targetId = conflict.id;
+    const uiOperationGeneration = ++uiOperationGenerationRef.current;
+    progressUiOperationRef.current = uiOperationGeneration;
     setIsSubmittingProgress(true);
+    setProgressError(null);
     try {
-      const now = new Date().toLocaleString();
-      const nextTimeline = [
-        ...conflict.timeline,
-        {
-          date: now,
-          content: progressContent.trim(),
-          operator: getCurrentWorkerName(),
-        },
-      ];
-
-      await conflictRepository.updateConflict(conflict.id, {
-        timeline: nextTimeline,
-        updatedAt: now,
-      });
-
-      await reloadConflict();
-      setProgressContent('');
-      setIsDialogOpen(false);
-      toast.success('进展记录已添加');
-    } catch (error) {
-      console.error('Failed to add progress', error);
-      toast.error('进展记录添加失败');
+      await runMutation('progress', targetId, () => conflictFacade.addProgress(targetId, {
+        date: formatNow(),
+        content: progressContent.trim(),
+        operator: mobileContextRepository.getCurrentWorkerName(),
+      }));
     } finally {
-      setIsSubmittingProgress(false);
+      if (
+        mountedRef.current
+        && idRef.current === targetId
+        && progressUiOperationRef.current === uiOperationGeneration
+      ) {
+        progressUiOperationRef.current = null;
+        setIsSubmittingProgress(false);
+      }
     }
   };
 
   const handleMarkResolved = async () => {
-    if (!conflict) {
+    if (!conflict || isResolving || readFailure || ownMutationRef.current) {
       return;
     }
 
+    const targetId = conflict.id;
+    const uiOperationGeneration = ++uiOperationGenerationRef.current;
+    resolveUiOperationRef.current = uiOperationGeneration;
+    setIsResolving(true);
+    setResolveError(null);
     try {
-      const now = new Date().toLocaleString();
-      const nextTimeline = [
-        ...conflict.timeline,
-        {
-          date: now,
-          content: '网格员标记该纠纷已化解',
-          operator: getCurrentWorkerName(),
-        },
-      ];
-
-      await conflictRepository.updateConflict(conflict.id, {
-        status: '已化解',
-        updatedAt: now,
-        timeline: nextTimeline,
-      });
-
-      await reloadConflict();
-      toast.success('状态已更新');
-    } catch (error) {
-      console.error('Failed to mark conflict resolved', error);
-      toast.error('状态更新失败');
+      await runMutation('resolve', targetId, () => conflictFacade.markResolved(targetId, {
+        date: formatNow(),
+        content: '网格员标记该纠纷已化解',
+        operator: mobileContextRepository.getCurrentWorkerName(),
+      }));
+    } finally {
+      if (
+        mountedRef.current
+        && idRef.current === targetId
+        && resolveUiOperationRef.current === uiOperationGeneration
+      ) {
+        resolveUiOperationRef.current = null;
+        setIsResolving(false);
+      }
     }
   };
 
-  if (loading) {
+  if (mode === 'checking' || phase.status === 'loading') {
     return (
-      <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]">
+      <div className="flex h-full items-center justify-center bg-[var(--color-neutral-01)]" data-testid="conflict-detail-loading" role="status">
         <Loader2 className="w-8 h-8 text-[var(--color-brand-text)] animate-spin" />
+        <span className="sr-only">正在加载矛盾详情</span>
       </div>
     );
   }
 
-  if (!conflict || !context) {
+  if (phase.status === 'error') {
     return (
-      <div className="flex h-full flex-col items-center justify-center bg-[var(--color-neutral-01)] gap-4">
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[var(--color-neutral-01)] px-6" data-testid="conflict-detail-error">
+        <p role="alert" className="text-center text-sm text-[var(--color-status-error-text)]">
+          纠纷详情加载失败：{phase.message}
+        </p>
+        <div className="flex gap-3">
+          <button
+            type="button"
+            data-testid="conflict-detail-retry"
+            onClick={() => setReloadToken((token) => token + 1)}
+            className="inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--color-neutral-03)] px-4 text-sm text-[var(--color-neutral-10)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+          >
+            <RotateCcw className="w-4 h-4" />
+            重新加载
+          </button>
+          <Button variant="outline" className="min-h-[44px]" onClick={onBack}>返回</Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase.status === 'not-found' || !conflict || !context) {
+    return (
+      <div className="flex h-full flex-col items-center justify-center gap-4 bg-[var(--color-neutral-01)]" data-testid="conflict-detail-not-found">
         <p className="text-[var(--color-neutral-08)]">未找到记录</p>
-        <Button onClick={onBack}>返回</Button>
+        <Button className="min-h-[44px]" onClick={onBack}>返回</Button>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]">
+    <div className="flex flex-col h-full bg-[var(--color-neutral-01)]" data-testid="conflict-detail">
       <MobileDetailHeader
         title="纠纷详情"
         onBack={onBack}
         action={
-          <Badge className={conflict.status === '已化解' ? 'bg-[var(--color-status-success)] text-white border-0' : 'bg-[var(--color-status-warning)] text-white border-0'}>
+          <Badge data-testid="conflict-detail-status" className={conflict.status === '已化解' ? 'bg-[var(--color-status-success)] text-white border-0' : 'bg-[var(--color-status-warning)] text-white border-0'}>
             {conflict.status}
           </Badge>
         }
@@ -324,7 +648,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         <Card className="border-none shadow-sm">
           <CardContent className="p-4 space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-[var(--color-neutral-11)] mb-2">{conflict.title}</h2>
+              <h2 className="text-xl font-bold text-[var(--color-neutral-11)] mb-2" data-testid="conflict-detail-title">{conflict.title}</h2>
               <div className="flex items-center gap-2 text-xs text-[var(--color-neutral-08)] mb-4">
                 <span className="bg-[var(--color-neutral-02)] px-2 py-0.5 rounded text-[var(--color-neutral-10)]">{conflict.source}</span>
                 <span>•</span>
@@ -365,8 +689,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                     <button
                       key={person.id}
                       type="button"
+                      data-testid={`conflict-related-person-${person.id}`}
                       onClick={() => onRouteChange?.(`person-detail/${person.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 py-1 text-xs text-[var(--color-brand-text)] active:opacity-80"
+                      className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[var(--color-brand-primary)]/30 bg-[var(--color-brand-primary)]/10 px-3 text-xs text-[var(--color-brand-text)] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                     >
                       <Users className="w-3 h-3" />
                       {person.name}
@@ -376,8 +701,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                   {context.relatedHouse && (
                     <button
                       type="button"
-                      onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse.id}`)}
-                      className="inline-flex items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 py-1 text-xs text-[var(--color-status-success-text)] active:opacity-80"
+                      data-testid="conflict-related-house"
+                      onClick={() => onRouteChange?.(`house-detail/${context.relatedHouse!.id}`)}
+                      className="inline-flex min-h-[44px] items-center gap-1 rounded-full border border-[var(--color-status-success)]/35 bg-[var(--color-status-success-soft)] px-3 text-xs text-[var(--color-status-success-text)] active:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
                     >
                       <MapPin className="w-3 h-3" />
                       {context.relatedHouse.address}
@@ -413,8 +739,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
             <div className="flex bg-[var(--color-neutral-01)] rounded-lg p-0.5 mb-4">
               <button
+                type="button"
                 onClick={() => setAiTab('policy')}
-                className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
+                aria-pressed={aiTab === 'policy'}
+                className={`flex-1 min-h-[44px] text-xs font-medium rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] ${
                   aiTab === 'policy'
                     ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
@@ -423,8 +751,10 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                 关联政策法规
               </button>
               <button
+                type="button"
                 onClick={() => setAiTab('script')}
-                className={`flex-1 text-xs font-medium py-2 rounded-md transition-all ${
+                aria-pressed={aiTab === 'script'}
+                className={`flex-1 min-h-[44px] text-xs font-medium rounded-md transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)] ${
                   aiTab === 'script'
                     ? 'bg-[var(--color-neutral-02)] text-[var(--color-brand-text)] shadow-sm'
                     : 'text-[var(--color-neutral-08)] hover:text-[var(--color-neutral-10)]'
@@ -528,9 +858,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
         <div>
           <h3 className="text-sm font-bold text-[var(--color-neutral-11)] mb-3 ml-1">处理进度</h3>
-          <div className="space-y-4 pl-2">
+          <div className="space-y-4 pl-2" data-testid="conflict-timeline">
             {[...conflict.timeline].reverse().map((item, index) => (
-              <div key={`${item.date}-${index}`} className="relative pl-6 pb-2 border-l-2 border-[var(--color-neutral-03)] last:border-0">
+              <div key={`${item.date}-${index}`} data-testid="conflict-timeline-entry" className="relative pl-6 pb-2 border-l-2 border-[var(--color-neutral-03)] last:border-0">
                 <div className="absolute -left-[5px] top-0 w-2.5 h-2.5 rounded-full bg-[var(--color-brand-primary)] ring-4 ring-[var(--color-brand-primary)]/10" />
                 <div className="text-xs text-[var(--color-neutral-08)] mb-1 flex justify-between pr-2">
                   <span>{item.date}</span>
@@ -548,60 +878,146 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       </div>
 
       {conflict.status !== '已化解' && (
-        <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 flex gap-3 sticky bottom-0 shadow-lg">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild>
-              <Button
-                variant="outline"
-                className="flex-1 gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20"
-                disabled={!canUseLegacyApiMutation}
-              >
-                <MessageSquarePlus className="w-4 h-4" /> 添加进展
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[90%] rounded-xl">
-              <DialogHeader>
-                <DialogTitle>添加调解进展</DialogTitle>
-                <DialogDescription className="sr-only">
-                  输入最新的调解进展记录
-                </DialogDescription>
-              </DialogHeader>
-              <div className="py-4">
-                <Textarea
-                  placeholder="请输入最新的调解情况、走访记录等..."
-                  value={progressContent}
-                  onChange={(event) => setProgressContent(event.target.value)}
-                  className="min-h-[100px]"
-                />
-              </div>
-              <DialogFooter className="flex-row gap-2 justify-end">
-                <DialogClose asChild>
-                  <Button variant="ghost">取消</Button>
-                </DialogClose>
-                <Button onClick={handleAddProgress} disabled={isSubmittingProgress || !canUseLegacyApiMutation}>
-                  {isSubmittingProgress ? '提交中...' : '提交'}
+        <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 space-y-2 sticky bottom-0 shadow-lg">
+          <div className="flex gap-3">
+            <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setProgressError(null); }}>
+              <DialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  data-testid="conflict-add-progress"
+                  className="flex-1 min-h-[44px] gap-2 border-[var(--color-brand-primary)]/30 text-[var(--color-brand-text)] bg-[var(--color-brand-primary)]/10 hover:bg-[var(--color-brand-primary)]/20"
+                  disabled={!canMutate}
+                >
+                  <MessageSquarePlus className="w-4 h-4" /> 添加进展
                 </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-[90%] rounded-xl [&>button]:hidden" data-testid="conflict-progress-dialog">
+                <DialogHeader>
+                  <DialogTitle>添加调解进展</DialogTitle>
+                  <DialogDescription>
+                    记录最新的调解情况、走访结果或下一步安排，提交后将写入处理进度。
+                  </DialogDescription>
+                  {/* 局部隐藏 shared primitive 的默认英文 Close（见上方 [&>button]:hidden），
+                      以中文关闭按钮替代；Escape 与焦点恢复由 primitive 保留 */}
+                  <DialogClose asChild>
+                    <button
+                      type="button"
+                      aria-label="关闭添加调解进展对话框"
+                      data-testid="conflict-progress-dialog-close"
+                      className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </DialogClose>
+                </DialogHeader>
+                <div className="py-4 space-y-2">
+                  <Label htmlFor="conflict-progress-input" className="sr-only">进展内容</Label>
+                  <Textarea
+                    id="conflict-progress-input"
+                    data-testid="conflict-progress-input"
+                    placeholder="请输入最新的调解情况、走访记录等..."
+                    value={progressContent}
+                    onChange={(event) => { setProgressContent(event.target.value); setProgressError(null); }}
+                    className="min-h-[100px]"
+                  />
+                  {progressError && (
+                    <p role="alert" data-testid="conflict-progress-error" className="text-xs text-[var(--color-status-error-text)]">{progressError}</p>
+                  )}
+                  {readFailure && (
+                    <div role="alert" data-testid="conflict-progress-read-failure" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
+                      <p>写入成功，但最新详情读取失败。当前仍显示写入前详情，请点击“重新读取”获取最新状态。</p>
+                      <button
+                        type="button"
+                        data-testid="conflict-progress-reread"
+                        onClick={() => void handleReRead()}
+                        disabled={isReReading}
+                        className="mt-2 inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--color-status-error)]/40 px-4 text-[var(--color-status-error-text)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+                      >
+                        <RotateCcw className="h-4 w-4" />
+                        {isReReading ? '正在重新读取…' : '重新读取'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <DialogFooter className="flex-row gap-2 justify-end">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="min-h-[44px]" data-testid="conflict-progress-cancel">取消</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={handleAddProgress}
+                    data-testid="conflict-progress-submit"
+                    className="min-h-[44px]"
+                    disabled={isSubmittingProgress || !canMutate || !progressContent.trim() || Boolean(readFailure)}
+                  >
+                    {isSubmittingProgress ? '提交中...' : '提交'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
-          <Button
-            className="flex-1 gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
-            onClick={() => setResolveConfirmOpen(true)}
-            disabled={!canUseLegacyApiMutation}
-          >
-            <ShieldCheck className="w-4 h-4" /> 标记化解
-          </Button>
+            <Button
+              className="flex-1 min-h-[44px] gap-2 bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
+              data-testid="conflict-mark-resolved"
+              onClick={() => { setResolveError(null); setResolveConfirmOpen(true); }}
+              disabled={!canMutate || isResolving}
+            >
+              <ShieldCheck className="w-4 h-4" /> {isResolving ? '提交中...' : '标记化解'}
+            </Button>
 
-          {/* 化解确认弹窗（替代原生 confirm） */}
-          <ConfirmDialog
-            open={resolveConfirmOpen}
-            onOpenChange={setResolveConfirmOpen}
-            title="标记已化解"
-            description="确认将此纠纷标记为已化解吗？"
-            confirmText="标记化解"
-            onConfirm={() => void handleMarkResolved()}
-          />
+            <Dialog open={resolveConfirmOpen} onOpenChange={(open) => { setResolveConfirmOpen(open); if (!open) setResolveError(null); }}>
+              <DialogContent className="max-w-[90%] rounded-xl [&>button]:hidden" data-testid="conflict-resolve-dialog">
+                <DialogHeader>
+                  <DialogTitle>标记已化解</DialogTitle>
+                  <DialogDescription>
+                    确认将此纠纷标记为已化解吗？该操作会同步更新处理进度记录。
+                  </DialogDescription>
+                  <DialogClose asChild>
+                    <button
+                      type="button"
+                      aria-label="关闭标记已化解对话框"
+                      data-testid="conflict-resolve-dialog-close"
+                      className="absolute right-2 top-2 inline-flex h-11 w-11 items-center justify-center rounded-lg text-[var(--color-neutral-08)] hover:bg-[var(--color-neutral-02)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </DialogClose>
+                </DialogHeader>
+                {resolveError && (
+                  <div role="alert" data-testid="conflict-resolve-error" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
+                    {resolveError}
+                  </div>
+                )}
+                {readFailure && (
+                  <div role="alert" data-testid="conflict-resolve-read-failure" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
+                    <p>写入成功，但最新详情读取失败。当前仍显示写入前详情，请点击“重新读取”获取最新状态。</p>
+                    <button
+                      type="button"
+                      data-testid="conflict-resolve-reread"
+                      onClick={() => void handleReRead()}
+                      disabled={isReReading}
+                      className="mt-2 inline-flex min-h-[44px] items-center gap-1 rounded-lg border border-[var(--color-status-error)]/40 px-4 text-[var(--color-status-error-text)] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-primary)]"
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                      {isReReading ? '正在重新读取…' : '重新读取'}
+                    </button>
+                  </div>
+                )}
+                <DialogFooter className="flex-row gap-2 justify-end">
+                  <DialogClose asChild>
+                    <Button variant="ghost" className="min-h-[44px]" data-testid="conflict-resolve-cancel">取消</Button>
+                  </DialogClose>
+                  <Button
+                    onClick={() => void handleMarkResolved()}
+                    data-testid="conflict-resolve-confirm"
+                    className="min-h-[44px] bg-[var(--color-status-success)] hover:bg-[var(--color-status-success)]/90"
+                    disabled={isResolving || Boolean(readFailure)}
+                  >
+                    {isResolving ? '提交中...' : '标记化解'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
       )}
     </div>

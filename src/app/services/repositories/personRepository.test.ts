@@ -92,4 +92,19 @@ describe('personRepository', () => {
     await expect(write).rejects.toThrow('API 503: backend unavailable');
     expect(storage.getItem('app_data_people')).toBe('[]');
   });
+
+  it('supports an operation-local strict grid read without changing the desktop fallback default', async () => {
+    const localGrid = { id: 'grid-local', name: '本地网格' };
+    const storage = createMemoryStorage({ app_data_grids: JSON.stringify([localGrid]) });
+    installBrowserStorage(storage);
+    vi.stubEnv('VITE_DATA_MODE', 'auto');
+    const warning = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('grid backend unavailable', { status: 503 })));
+
+    await expect(personRepository.getGrids({ allowFallback: false })).rejects.toThrow(
+      'API 503: grid backend unavailable',
+    );
+    await expect(personRepository.getGrids()).resolves.toEqual([localGrid]);
+    expect(warning).toHaveBeenCalledOnce();
+  });
 });

@@ -15,6 +15,12 @@ import {
   assertMobilePersonUpdatePayload,
   assertMobileVisitCreatePayload,
 } from './personVisitPayloads';
+import {
+  ConflictPayloadValidationError,
+  assertMobileConflictCreatePayload,
+  assertMobileConflictStatusPayload,
+  assertMobileConflictUpdatePayload,
+} from './conflictPayloads';
 
 const ENTITY_ACTIONS: Record<MobileSandboxEntity, ReadonlySet<MobileSandboxAction>> = {
   person: new Set(['create', 'update', 'tombstone']),
@@ -199,7 +205,10 @@ function asStorePayloadValidator(validator: PayloadValidator): PayloadValidator 
     try {
       validator(value);
     } catch (error) {
-      if (error instanceof PersonVisitPayloadValidationError) {
+      if (
+        error instanceof PersonVisitPayloadValidationError
+        || error instanceof ConflictPayloadValidationError
+      ) {
         throw new MobileSessionStoreError(error.message);
       }
       throw error;
@@ -210,6 +219,9 @@ function asStorePayloadValidator(validator: PayloadValidator): PayloadValidator 
 const PERSON_CREATE_PAYLOAD = asStorePayloadValidator(assertMobilePersonCreatePayload);
 const PERSON_UPDATE_PAYLOAD = asStorePayloadValidator(assertMobilePersonUpdatePayload);
 const VISIT_CREATE_PAYLOAD = asStorePayloadValidator(assertMobileVisitCreatePayload);
+const CONFLICT_CREATE_PAYLOAD = asStorePayloadValidator(assertMobileConflictCreatePayload);
+const CONFLICT_UPDATE_PAYLOAD = asStorePayloadValidator(assertMobileConflictUpdatePayload);
+const CONFLICT_STATUS_PAYLOAD = asStorePayloadValidator(assertMobileConflictStatusPayload);
 
 const ENTITY_PAYLOAD_VALIDATORS: Record<
   MobileSandboxEntity,
@@ -223,9 +235,9 @@ const ENTITY_PAYLOAD_VALIDATORS: Record<
   house: { create: CREATE_PAYLOAD, update: UPDATE_PAYLOAD, tombstone: assertTombstonePayload },
   visit: { create: VISIT_CREATE_PAYLOAD, tombstone: assertTombstonePayload },
   conflict: {
-    create: CREATE_PAYLOAD,
-    update: UPDATE_PAYLOAD,
-    status: assertStatusPayload,
+    create: CONFLICT_CREATE_PAYLOAD,
+    update: CONFLICT_UPDATE_PAYLOAD,
+    status: CONFLICT_STATUS_PAYLOAD,
     tombstone: assertTombstonePayload,
   },
   patrolReport: {
