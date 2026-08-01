@@ -330,6 +330,9 @@ test('session 纯机构创建：0 业务 mutation，list/temp detail/context/rel
     window.localStorage.setItem('homedata.mobile.onboarding.dismissed', 'true');
   });
   const freshPage = await freshContext.newPage();
+  // fresh page 与主 page 共用同一 issues 集合与精确 allowlist：goto 前挂全量 watcher，
+  // console error / pageerror / requestfailed / 意外 4xx/5xx 均进入 afterEach 断言
+  attachIssueWatchers(freshPage);
   const freshMutations = trackBusinessMutations(freshPage);
   try {
     await freshPage.goto(`${appBaseUrl}/mobile/conflict`);

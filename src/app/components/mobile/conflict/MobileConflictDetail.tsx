@@ -626,11 +626,6 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
       {conflict.status !== '已化解' && (
         <div className="bg-[var(--color-neutral-01)] border-t border-[var(--color-neutral-03)] p-3 pb-8 md:pb-3 space-y-2 sticky bottom-0 shadow-lg">
-          {resolveError && (
-            <div role="alert" data-testid="conflict-resolve-error" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
-              {resolveError}
-            </div>
-          )}
           <div className="flex gap-3">
             <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if (!open) setProgressError(null); }}>
               <DialogTrigger asChild>
@@ -697,6 +692,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
                     确认将此纠纷标记为已化解吗？该操作会同步更新处理进度记录。
                   </DialogDescription>
                 </DialogHeader>
+                {resolveError && (
+                  <div role="alert" data-testid="conflict-resolve-error" className="rounded-lg border border-[var(--color-status-error)]/40 bg-[var(--color-status-error-soft)] px-3 py-2 text-xs text-[var(--color-status-error-text)]">
+                    {resolveError}
+                  </div>
+                )}
                 <DialogFooter className="flex-row gap-2 justify-end">
                   <DialogClose asChild>
                     <Button variant="ghost" className="min-h-[44px]" data-testid="conflict-resolve-cancel">取消</Button>

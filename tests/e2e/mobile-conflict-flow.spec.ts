@@ -6,6 +6,7 @@ import { expect, test, type APIRequestContext, type Locator, type Page } from '@
  * 覆盖：API 创建/列表/详情/context 真实读回、纯机构路径、当前网格居民路径、
  * 网格 loading/error/empty 与 retry、无 id/name/首项/默认地点静默兜底、
  * 切 grid 清旧居民并丢弃过期异步结果、失败矩阵不降级 session、
+ * 标记化解 PATCH 失败时 dialog 内可见真实错误且状态/timeline 不变、
  * create 后 replace/back/forward 不回已提交表单、双 viewport 视觉/交互探针。
  *
  * 只使用本文件内的局部 helper 与精确 allowlist，不改动任何 fixture/config。
@@ -351,10 +352,19 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   await expect.poll(() => readSessionRaw(page)).toBeNull();
 });
 
-test('网格 options 的 error/empty 状态禁提交并可真实重试恢复', async ({ page }) => {
+test('网格 options 的 loading/error/empty 状态禁提交并可真实重试恢复', async ({ page }) => {
   const mutations = trackBusinessMutations(page);
   let gridMode: 'error' | 'empty' | 'real' = 'error';
+  // 可控 gate 暂停首个 grids 响应，制造真实 loading 窗口（不用固定 timeout 假等）
+  let releaseGridGate!: () => void;
+  const gridGate = new Promise<void>((resolve) => {
+    releaseGridGate = resolve;
+  });
+  let gridGateOpen = false;
   await page.route(/\/api\/stats\/grids$/, async (route) => {
+    if (!gridGateOpen) {
+      await gridGate;
+    }
     if (gridMode === 'error') {
       await route.fulfill({
         status: 500,
@@ -379,7 +389,19 @@ test('网格 options 的 error/empty 状态禁提交并可真实重试恢复', a
   await page.goto('/mobile/conflict/new');
   await expect(page.getByTestId('conflict-form')).toBeVisible();
 
-  // error：明确错误态与重试，禁提交，不伪装为空、不回落首项
+  // loading：真实 loading UI 可见；禁提交；无 grid trigger、无 silent fallback、无业务 mutation
+  await expect(page.getByTestId('conflict-grid-loading')).toBeVisible();
+  await expect(page.getByTestId('conflict-submit')).toBeDisabled();
+  await expect(page.getByTestId('conflict-grid-trigger')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-grid-error')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-grid-empty')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-location')).toHaveValue('');
+  expect(mutations.requests).toEqual([]);
+
+  // 释放 gate 后进入 error：明确错误态与重试，禁提交，不伪装为空、不回落首项
+  gridMode = 'error';
+  gridGateOpen = true;
+  releaseGridGate();
   await expect(page.getByTestId('conflict-grid-error')).toBeVisible();
   await expect(page.getByTestId('conflict-grid-error').getByRole('alert')).toContainText('forced K02 grid failure');
   await expect(page.getByTestId('conflict-submit')).toBeDisabled();
@@ -553,6 +575,84 @@ test('mutation 失败矩阵：不降级 session、不产生 temp conflict、不�
   await expect(page.getByTestId('conflict-list')).toBeVisible();
   await page.getByTestId('conflict-search-input').fill(marker);
   await expect(page.getByTestId('conflict-list-empty')).toBeVisible();
+});
+
+test('标记化解 PATCH 500：dialog 保持打开、dialog 内真实错误可见、状态与 timeline 不变', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const target = all.items.find((item) => item.status === '调解中');
+  expect(target, 'seed 必须包含调解中纠纷').toBeTruthy();
+  const targetId = target!.id;
+
+  // 服务端基线：状态与 timeline 原样记录，用于事后比对
+  const beforeResponse = await request.get(`${apiBaseUrl}/conflicts/${targetId}`);
+  expect(beforeResponse.ok()).toBe(true);
+  const beforeDetail = await beforeResponse.json() as { status: string; timeline: unknown[] };
+  expect(beforeDetail.status).toBe('调解中');
+
+  // 精确 intercept 该案件 PATCH 为 500；GET 详情/context 不受影响
+  const patchPath = new RegExp(`/api/conflicts/${targetId}$`);
+  await page.route(patchPath, async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail: 'forced K02 resolve failure' }),
+    });
+  });
+  // 精确 endpoint+status/console allowlist；仅豁免人为注入的失败，
+  // 不据此判定通过——下方失败 UI 与不变状态才是断言主体
+  allowResponse(patchPath, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, patchPath);
+  allowConsoleError(/^Failed to mark conflict resolved Error: API 500: \{"detail":"forced K02 resolve failure"\}/);
+
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${targetId}`);
+  await expect(page.getByTestId('conflict-detail')).toBeVisible();
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  const timelineBefore = await page.getByTestId('conflict-timeline').innerText();
+
+  await page.getByTestId('conflict-mark-resolved').click();
+  const dialog = page.getByTestId('conflict-resolve-dialog');
+  await expect(dialog).toBeVisible();
+  await page.getByTestId('conflict-resolve-confirm').click();
+
+  // PATCH 500 后 dialog 保持打开，真实错误在 dialog 内以 role=alert 可见
+  await expect(dialog).toBeVisible();
+  const dialogError = dialog.getByTestId('conflict-resolve-error');
+  await expect(dialogError).toBeVisible();
+  await expect(dialog.getByRole('alert')).toContainText('API 500');
+
+  // 无成功 toast；状态仍为调解中；timeline 未新增“已化解”记录
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  await expect(page.getByTestId('conflict-timeline')).not.toContainText('已化解');
+  expect(await page.getByTestId('conflict-timeline').innerText()).toBe(timelineBefore);
+
+  // 不产生 session fallback
+  await expect.poll(() => readSessionRaw(page)).toBeNull();
+
+  // 取消关闭后清错误；重开 dialog 无残留
+  await page.getByTestId('conflict-resolve-cancel').click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByTestId('conflict-mark-resolved').click();
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByTestId('conflict-resolve-error')).toHaveCount(0);
+  await page.getByTestId('conflict-resolve-cancel').click();
+
+  // 服务端状态与 timeline 未变；唯一业务请求是被 mock 的失败 PATCH
+  const afterResponse = await request.get(`${apiBaseUrl}/conflicts/${targetId}`);
+  expect(afterResponse.ok()).toBe(true);
+  const afterDetail = await afterResponse.json() as { status: string; timeline: unknown[] };
+  expect(afterDetail.status).toBe(beforeDetail.status);
+  expect(afterDetail.timeline).toEqual(beforeDetail.timeline);
+  expect(mutations).toEqual({
+    requests: [`PATCH /api/conflicts/${targetId}`],
+    responses: [{ request: `PATCH /api/conflicts/${targetId}`, status: 500 }],
+  });
 });
 
 test('列表 error 不伪装为空且可重试；详情往返后 tab/搜索状态保持', async ({ page, request }) => {
