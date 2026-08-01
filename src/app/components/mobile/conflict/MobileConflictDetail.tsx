@@ -224,6 +224,13 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const dirtyTargetVersionsRef = useRef<Map<string, number>>(new Map());
   const dirtyVersionRef = useRef(0);
   const activeDirtyFlushVersionsRef = useRef<Map<string, number>>(new Map());
+  // 用户触发的 manual reread 也是同 target 的读占用；dirty flush 必须等它 settle。
+  const manualReadGenerationRef = useRef(0);
+  const activeManualReadTargetsRef = useRef<Map<string, number>>(new Map());
+  // UI submitting state 使用独立 token；旧 handler 的 finally 不得清除新操作状态。
+  const uiOperationGenerationRef = useRef(0);
+  const progressUiOperationRef = useRef<number | null>(null);
+  const resolveUiOperationRef = useRef<number | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -231,7 +238,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       mountedRef.current = false;
       requestGenRef.current += 1;
       mutationGenRef.current += 1;
+      manualReadGenerationRef.current += 1;
+      uiOperationGenerationRef.current += 1;
       ownMutationRef.current = null;
+      activeManualReadTargetsRef.current.clear();
+      progressUiOperationRef.current = null;
+      resolveUiOperationRef.current = null;
     };
   }, []);
 
@@ -239,7 +251,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   useEffect(() => {
     requestGenRef.current += 1;
     mutationGenRef.current += 1;
+    manualReadGenerationRef.current += 1;
+    uiOperationGenerationRef.current += 1;
     ownMutationRef.current = null;
+    activeManualReadTargetsRef.current.clear();
+    progressUiOperationRef.current = null;
+    resolveUiOperationRef.current = null;
     setReadFailure(null);
     setIsReReading(false);
     setIsSubmittingProgress(false);
@@ -353,6 +370,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       || !mountedRef.current
       || idRef.current !== targetId
       || [...pendingOwnMutationTokensRef.current.values()].some((pendingTarget) => pendingTarget === targetId)
+      || activeManualReadTargetsRef.current.has(targetId)
       || activeDirtyFlushVersionsRef.current.has(targetId)
     ) {
       return;
@@ -471,8 +489,14 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       return;
     }
     const failure = readFailure;
+    const manualReadGeneration = ++manualReadGenerationRef.current;
+    activeManualReadTargetsRef.current.set(failure.targetId, manualReadGeneration);
     setIsReReading(true);
     const outcome = await readBackAfterMutation(failure.targetId, failure.mutationGeneration);
+    if (activeManualReadTargetsRef.current.get(failure.targetId) !== manualReadGeneration) {
+      return;
+    }
+    activeManualReadTargetsRef.current.delete(failure.targetId);
     if (outcome === 'stale') {
       // 同 id 的更新请求若让本次读回过期，仍须恢复按钮；跨 id/unmount 则由路由 effect 清理。
       if (
@@ -491,6 +515,8 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       setProgressContent('');
       setIsDialogOpen(false);
       setResolveConfirmOpen(false);
+      // manual reread 成功先完成自身清锁，再顺序消费读取期间新到达的 dirty。
+      flushDirtyTarget(failure.targetId);
     }
     if (
       mountedRef.current
@@ -516,6 +542,8 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     }
 
     const targetId = conflict.id;
+    const uiOperationGeneration = ++uiOperationGenerationRef.current;
+    progressUiOperationRef.current = uiOperationGeneration;
     setIsSubmittingProgress(true);
     setProgressError(null);
     try {
@@ -525,7 +553,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         operator: mobileContextRepository.getCurrentWorkerName(),
       }));
     } finally {
-      if (mountedRef.current && idRef.current === targetId) {
+      if (
+        mountedRef.current
+        && idRef.current === targetId
+        && progressUiOperationRef.current === uiOperationGeneration
+      ) {
+        progressUiOperationRef.current = null;
         setIsSubmittingProgress(false);
       }
     }
@@ -537,6 +570,8 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     }
 
     const targetId = conflict.id;
+    const uiOperationGeneration = ++uiOperationGenerationRef.current;
+    resolveUiOperationRef.current = uiOperationGeneration;
     setIsResolving(true);
     setResolveError(null);
     try {
@@ -546,7 +581,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         operator: mobileContextRepository.getCurrentWorkerName(),
       }));
     } finally {
-      if (mountedRef.current && idRef.current === targetId) {
+      if (
+        mountedRef.current
+        && idRef.current === targetId
+        && resolveUiOperationRef.current === uiOperationGeneration
+      ) {
+        resolveUiOperationRef.current = null;
         setIsResolving(false);
       }
     }

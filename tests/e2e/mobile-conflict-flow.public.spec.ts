@@ -932,6 +932,223 @@ test('public：A2 mutation 失败后 A1 success，保留 A2 错误并自动收�
   }
 });
 
+test('public：manual reread pending 时 A1 success，dirty flush 必须等待并由 reread 正常清锁', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+
+  let releaseA1Seed: () => void = () => undefined;
+  const a1SeedGate = new Promise<void>((resolve) => {
+    releaseA1Seed = resolve;
+  });
+  let releaseManualRead: () => void = () => undefined;
+  const manualReadGate = new Promise<void>((resolve) => {
+    releaseManualRead = resolve;
+  });
+  let markA1SeedStarted!: () => void;
+  const a1SeedStarted = new Promise<void>((resolve) => {
+    markA1SeedStarted = resolve;
+  });
+  let markManualReadStarted!: () => void;
+  const manualReadStarted = new Promise<void>((resolve) => {
+    markManualReadStarted = resolve;
+  });
+  let conflictSeedGets = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (conflictSeedGets === 1) {
+      markA1SeedStarted();
+      await a1SeedGate;
+      await route.continue();
+      return;
+    }
+    if (conflictSeedGets === 5) {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'forced K02 A2 explicit readback failure before manual reread' }),
+      });
+      return;
+    }
+    if (conflictSeedGets === 6) {
+      markManualReadStarted();
+      await manualReadGate;
+    }
+    await route.continue();
+  });
+  allowResponse(/\/api\/conflicts$/, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, /\/api\/conflicts\?/);
+  allowConsoleError(/^Failed to reload conflict detail after mutation/);
+
+  try {
+    // A1 pending → B → A。
+    await page.getByTestId('conflict-mark-resolved').click();
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a1SeedStarted;
+    await pushConflictDetail(page, conflictB.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+    await pushConflictDetail(page, conflictA.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+    expect(conflictSeedGets, 'A1 seed + B baseline + A baseline').toBe(3);
+
+    // A2 写成功，但第 5 个 GET 的显式读回精确失败，形成诚实 readFailure 锁。
+    await page.getByTestId('conflict-mark-resolved').click();
+    const dialog = page.getByTestId('conflict-resolve-dialog');
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await expect(dialog.getByTestId('conflict-resolve-read-failure')).toBeVisible();
+    expect(conflictSeedGets, 'A2 mutation seed + 显式失败读回').toBe(5);
+    expect((await readSessionSnapshot(page)).writes).toHaveLength(1);
+
+    // 第 6 个 GET 为用户 manual reread，并保持 pending。
+    await page.getByTestId('conflict-resolve-reread').click();
+    await manualReadStarted;
+    await expect(page.getByTestId('conflict-resolve-reread')).toBeDisabled();
+    expect(conflictSeedGets).toBe(6);
+
+    // A1 此时成功并标脏；dirty flush 不得发第 7 个 GET 去取消 manual reread。
+    releaseA1Seed();
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(2);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    expect(conflictSeedGets, 'manual reread 占用期间 dirty flush 必须等待').toBe(6);
+
+    releaseManualRead();
+    await expect(dialog).toHaveCount(0);
+    await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+    await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+    await expect(page.getByRole('heading', { name: '已化解，转入观察', exact: true })).toBeVisible();
+    await expect.poll(() => conflictSeedGets, {
+      message: 'manual reread 收束后只允许一次有序 dirty flush',
+    }).toBe(7);
+
+    const snapshot = await readSessionSnapshot(page);
+    expect(snapshot.writes).toHaveLength(2);
+    const finalEnvelope = JSON.parse(snapshot.writes[1]) as SessionEnvelope;
+    expect(finalEnvelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+    ]);
+    await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+    await expect(page.getByText('状态已更新')).toHaveCount(0);
+    expect(mutations).toEqual({ requests: [], responses: [] });
+  } finally {
+    releaseA1Seed();
+    releaseManualRead();
+  }
+});
+
+test('public：A2 mutation pending 时 A1 old finally 不得提前解除提交态', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+
+  let releaseA1Seed: () => void = () => undefined;
+  const a1SeedGate = new Promise<void>((resolve) => {
+    releaseA1Seed = resolve;
+  });
+  let releaseA2Seed: () => void = () => undefined;
+  const a2SeedGate = new Promise<void>((resolve) => {
+    releaseA2Seed = resolve;
+  });
+  let markA1SeedStarted!: () => void;
+  const a1SeedStarted = new Promise<void>((resolve) => {
+    markA1SeedStarted = resolve;
+  });
+  let markA2SeedStarted!: () => void;
+  const a2SeedStarted = new Promise<void>((resolve) => {
+    markA2SeedStarted = resolve;
+  });
+  let conflictSeedGets = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (conflictSeedGets === 1) {
+      markA1SeedStarted();
+      await a1SeedGate;
+    } else if (conflictSeedGets === 4) {
+      markA2SeedStarted();
+      await a2SeedGate;
+    }
+    await route.continue();
+  });
+
+  try {
+    await page.getByTestId('conflict-mark-resolved').click();
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a1SeedStarted;
+    await pushConflictDetail(page, conflictB.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+    await pushConflictDetail(page, conflictA.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+    expect(conflictSeedGets).toBe(3);
+
+    // A2 占用新的 UI operation token，mutation seed 保持 pending。
+    await page.getByTestId('conflict-mark-resolved').click();
+    const a2Dialog = page.getByTestId('conflict-resolve-dialog');
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a2SeedStarted;
+    const markResolved = page.getByTestId('conflict-mark-resolved');
+    await expect(markResolved).toBeDisabled();
+    await expect(markResolved).toContainText('提交中...');
+
+    // A1 old handler 完成时，只能清自己的旧 UI token；A2 仍必须保持真实提交态。
+    releaseA1Seed();
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    await expect(markResolved).toBeDisabled();
+    await expect(markResolved).toContainText('提交中...');
+    await expect(a2Dialog).toBeVisible();
+
+    releaseA2Seed();
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(2);
+    await expect(a2Dialog).toHaveCount(0);
+    await expect(page.getByText('状态已更新')).toBeVisible();
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+    await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+    await expect(page.getByRole('heading', { name: '已化解，转入观察', exact: true })).toBeVisible();
+    expect(conflictSeedGets, 'A1/A2 seed、B/A baseline 与 A2 显式读回').toBe(5);
+
+    const snapshot = await readSessionSnapshot(page);
+    expect(snapshot.writes).toHaveLength(2);
+    const finalEnvelope = JSON.parse(snapshot.writes[1]) as SessionEnvelope;
+    expect(finalEnvelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+    ]);
+    await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+    await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+    expect(mutations).toEqual({ requests: [], responses: [] });
+  } finally {
+    releaseA1Seed();
+    releaseA2Seed();
+  }
+});
+
 test('session 存储写失败时 fail closed：不显示成功、不产生 temp conflict', async ({ page, request }) => {
   const before = await readConflicts(request);
   const grids = await readGrids(request);
