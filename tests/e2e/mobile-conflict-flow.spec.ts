@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { resolve } from 'node:path';
+import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
@@ -74,6 +76,7 @@ const issues: string[] = [];
 interface ConflictTruthSnapshot {
   conflicts: {
     ids: string[];
+    records: Array<{ id: string; title: string; status: string }>;
     idStatuses: Array<{ id: string; status: string }>;
     total: number;
     statusCounts: Record<string, number>;
@@ -91,6 +94,8 @@ interface ConflictTruthSnapshot {
 interface ConflictCleanupRegistration {
   marker: string;
   baseline: ConflictTruthSnapshot;
+  createdId?: string;
+  deletedIds?: string[];
 }
 
 const cleanupConflicts: ConflictCleanupRegistration[] = [];
@@ -159,6 +164,85 @@ interface SeedConflictList {
   total: number;
 }
 
+interface CleanupFixtureConflict {
+  id: string;
+  title: string;
+  status: string;
+}
+
+function createCleanupFixtureDatabase(databasePath: string, conflicts: CleanupFixtureConflict[]): void {
+  const pythonBin = process.env.PYTHON_BIN ?? 'python3';
+  const script = [
+    'import json, sqlite3, sys',
+    'connection = sqlite3.connect(sys.argv[1])',
+    'try:',
+    '    connection.execute("CREATE TABLE conflict_records (id TEXT PRIMARY KEY, title TEXT NOT NULL, status TEXT NOT NULL)")',
+    '    connection.executemany("INSERT INTO conflict_records (id, title, status) VALUES (?, ?, ?)", [(item["id"], item["title"], item["status"]) for item in json.loads(sys.argv[2])])',
+    '    connection.commit()',
+    'finally:',
+    '    connection.close()',
+  ].join('\n');
+  execFileSync(pythonBin, ['-c', script, databasePath, JSON.stringify(conflicts)]);
+}
+
+function readCleanupFixtureDatabase(databasePath: string): CleanupFixtureConflict[] {
+  const pythonBin = process.env.PYTHON_BIN ?? 'python3';
+  const script = [
+    'import json, sqlite3, sys',
+    'connection = sqlite3.connect(sys.argv[1])',
+    'try:',
+    '    rows = connection.execute("SELECT id, title, status FROM conflict_records ORDER BY id").fetchall()',
+    '    print(json.dumps([{"id": row[0], "title": row[1], "status": row[2]} for row in rows]))',
+    'finally:',
+    '    connection.close()',
+  ].join('\n');
+  return JSON.parse(execFileSync(pythonBin, ['-c', script, databasePath], { encoding: 'utf8' })) as CleanupFixtureConflict[];
+}
+
+function createCleanupTruthRequest(conflicts: CleanupFixtureConflict[]): APIRequestContext {
+  return {
+    get: async (url: string) => {
+      const payload = url.includes('/task-rules/projection')
+        ? { pending: [], completed: [], summary: { pending: 0, completed: 0 } }
+        : {
+            items: conflicts.map((conflict) => ({
+              ...conflict,
+              type: '邻里纠纷',
+              gridId: 'g1',
+              location: 'K02 cleanup fixture',
+            })),
+            total: conflicts.length,
+          };
+      return {
+        ok: () => true,
+        status: () => 200,
+        json: async () => payload,
+      };
+    },
+  } as unknown as APIRequestContext;
+}
+
+async function withCleanupFixtureDatabase<T>(
+  conflicts: CleanupFixtureConflict[],
+  run: (databasePath: string) => Promise<T>,
+): Promise<T> {
+  const directory = mkdtempSync(join(tmpdir(), 'k02-cleanup-ownership-'));
+  const databasePath = join(directory, 'fixture.db');
+  const originalDatabasePath = process.env.PLAYWRIGHT_DB_PATH;
+  createCleanupFixtureDatabase(databasePath, conflicts);
+  process.env.PLAYWRIGHT_DB_PATH = databasePath;
+  try {
+    return await run(databasePath);
+  } finally {
+    if (originalDatabasePath === undefined) {
+      delete process.env.PLAYWRIGHT_DB_PATH;
+    } else {
+      process.env.PLAYWRIGHT_DB_PATH = originalDatabasePath;
+    }
+    rmSync(directory, { recursive: true, force: true });
+  }
+}
+
 async function readConflicts(request: APIRequestContext): Promise<SeedConflictList> {
   const response = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
   expect(response.ok(), '读取矛盾种子列表必须成功').toBe(true);
@@ -194,9 +278,12 @@ async function readConflictTruth(request: APIRequestContext): Promise<ConflictTr
   return {
     conflicts: {
       ids: conflicts.items.map((conflict) => conflict.id).sort(),
+      records: conflicts.items
+        .map((conflict) => ({ id: conflict.id, title: conflict.title, status: conflict.status }))
+        .sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
       idStatuses: conflicts.items
         .map((conflict) => ({ id: conflict.id, status: conflict.status }))
-        .sort((left, right) => left.id.localeCompare(right.id)),
+        .sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0),
       total: conflicts.total,
       statusCounts: Object.fromEntries(Object.entries(statusCounts).sort(([left], [right]) => left.localeCompare(right))),
       resolved: conflicts.items.filter((conflict) => conflict.status === '已化解').length,
@@ -221,42 +308,125 @@ async function registerConflictCleanup(
 }
 
 // enabled 创建测试共用同一 SQLite，但产品没有 conflict DELETE API。
-// 仅在 test-harness 层对本文件生成的唯一 marker 做绑定参数物理删除，避免污染后续 dashboard/home truth。
-function deleteTestConflictsByMarker(marker: string): string[] {
-  if (!/^K02-API-(?:ORG|RES)-\d+$/.test(marker)) {
-    throw new Error(`K02 cleanup refused unsafe marker: ${marker}`);
+// test-harness 先由 API baseline delta 证明 ownership，再让 SQLite 在同一事务内核对 ID/status 并按精确 ID 删除。
+function deleteOwnedTestConflicts(
+  expectedCurrentIdStatuses: Array<{ id: string; status: string }>,
+  ownedIds: string[],
+): string[] {
+  if (ownedIds.some((id) => !/^conflict_[a-zA-Z0-9_-]+$/.test(id)) || new Set(ownedIds).size !== ownedIds.length) {
+    throw new Error(`K02 cleanup refused unsafe owned IDs: ${ownedIds.join(',')}`);
   }
   const configuredPath = process.env.PLAYWRIGHT_DB_PATH;
   if (!configuredPath) {
     throw new Error('K02 cleanup requires PLAYWRIGHT_DB_PATH');
   }
   const databasePath = resolve(configuredPath);
+  if (!existsSync(databasePath)) {
+    throw new Error(`K02 cleanup refused missing PLAYWRIGHT_DB_PATH: ${databasePath}`);
+  }
   const pythonBin = process.env.PYTHON_BIN ?? 'python3';
   const script = [
     'import json, sqlite3, sys',
-    'connection = sqlite3.connect(sys.argv[1], timeout=10)',
-    'connection.execute("PRAGMA busy_timeout = 10000")',
+    'connection = None',
     'try:',
-    '    rows = connection.execute("SELECT id FROM conflict_records WHERE id GLOB \'conflict_*\' AND instr(title, ?) > 0 ORDER BY id", (sys.argv[2],)).fetchall()',
-    '    cursor = connection.execute("DELETE FROM conflict_records WHERE id GLOB \'conflict_*\' AND instr(title, ?) > 0", (sys.argv[2],))',
+    '    connection = sqlite3.connect(sys.argv[1], timeout=10)',
+    '    connection.execute("PRAGMA busy_timeout = 10000")',
+    '    connection.execute("BEGIN IMMEDIATE")',
+    '    expected = json.loads(sys.argv[2])',
+    '    owned_ids = json.loads(sys.argv[3])',
+    '    rows = connection.execute("SELECT id, status FROM conflict_records ORDER BY id").fetchall()',
+    '    actual = [{"id": row[0], "status": row[1]} for row in rows]',
+    '    if actual != expected:',
+    '        connection.rollback()',
+    '        print(json.dumps({"error": "wrong-db", "actual": actual}))',
+    '        sys.exit(0)',
+    '    deleted = []',
+    '    for conflict_id in owned_ids:',
+    '        cursor = connection.execute("DELETE FROM conflict_records WHERE id = ?", (conflict_id,))',
+    '        if cursor.rowcount != 1:',
+    '            raise RuntimeError(f"owned conflict delete mismatch: {conflict_id} changes={cursor.rowcount}")',
+    '        deleted.append(conflict_id)',
     '    connection.commit()',
-    '    print(json.dumps({"ids": [row[0] for row in rows], "deleted": cursor.rowcount}))',
+    '    print(json.dumps({"ids": deleted}))',
+    'except Exception as error:',
+    '    if connection is not None:',
+    '        connection.rollback()',
+    '    print(json.dumps({"error": "preflight", "detail": str(error)}))',
     'finally:',
-    '    connection.close()',
+    '    if connection is not None:',
+    '        connection.close()',
   ].join('\n');
-  const output = execFileSync(pythonBin, ['-c', script, databasePath, marker], { encoding: 'utf8' }).trim();
-  const result = JSON.parse(output) as { ids: string[]; deleted: number };
-  if (result.deleted !== result.ids.length) {
-    throw new Error(`K02 cleanup delete mismatch for ${marker}: selected=${result.ids.length}, deleted=${result.deleted}`);
+  const output = execFileSync(pythonBin, [
+    '-c',
+    script,
+    databasePath,
+    JSON.stringify(expectedCurrentIdStatuses),
+    JSON.stringify(ownedIds),
+  ], { encoding: 'utf8' }).trim();
+  const result = JSON.parse(output) as { ids?: string[]; error?: string; detail?: string };
+  if (result.error === 'wrong-db') {
+    throw new Error('K02 cleanup refused wrong PLAYWRIGHT_DB_PATH: SQLite conflict IDs/status differ from current API truth');
+  }
+  if (result.error === 'preflight') {
+    throw new Error(`K02 cleanup refused PLAYWRIGHT_DB_PATH preflight: ${result.detail ?? 'unknown SQLite error'}`);
+  }
+  if (!result.ids || result.ids.length !== ownedIds.length) {
+    throw new Error(`K02 cleanup delete mismatch: expected=${ownedIds.join(',')}, deleted=${result.ids?.join(',') ?? 'none'}`);
   }
   return result.ids;
+}
+
+function bindCreatedConflictId(cleanup: ConflictCleanupRegistration, createdId: string): void {
+  if (!/^conflict_[0-9a-f]{12}$/.test(createdId)) {
+    throw new Error(`K02 cleanup refused invalid created ID: ${createdId}`);
+  }
+  if (cleanup.baseline.conflicts.ids.includes(createdId)) {
+    throw new Error(`K02 cleanup refused baseline created ID: ${createdId}`);
+  }
+  if (cleanup.createdId && cleanup.createdId !== createdId) {
+    throw new Error(`K02 cleanup refused created ID reassignment: ${cleanup.createdId} -> ${createdId}`);
+  }
+  if (cleanup.deletedIds !== undefined) {
+    throw new Error(`K02 cleanup refused late created ID binding: ${createdId}`);
+  }
+  cleanup.createdId = createdId;
+}
+
+function selectOwnedConflictIds(
+  cleanup: ConflictCleanupRegistration,
+  current: ConflictTruthSnapshot,
+): string[] {
+  if (!/^K02-API-(?:ORG|RES)-\d+$/.test(cleanup.marker)) {
+    throw new Error(`K02 cleanup refused unsafe marker: ${cleanup.marker}`);
+  }
+  const baselineIds = new Set(cleanup.baseline.conflicts.ids);
+  const candidateIds = current.conflicts.records
+    .filter((record) => !baselineIds.has(record.id) && record.title === `${cleanup.marker} 标题`)
+    .map((record) => record.id)
+    .sort();
+  if (cleanup.createdId && (candidateIds.length !== 1 || candidateIds[0] !== cleanup.createdId)) {
+    throw new Error(
+      `K02 cleanup refused ownership mismatch: created=${cleanup.createdId}, candidates=${candidateIds.join(',') || 'none'}`,
+    );
+  }
+  return candidateIds;
 }
 
 async function cleanupRegisteredConflict(
   request: APIRequestContext,
   cleanup: ConflictCleanupRegistration,
 ): Promise<string[]> {
-  const deletedIds = deleteTestConflictsByMarker(cleanup.marker);
+  if (cleanup.deletedIds !== undefined) {
+    const current = await readConflictTruth(request);
+    expect(current, `K02 cleanup 必须持续保持 ${cleanup.marker} 创建前的 conflict/task truth`).toEqual(cleanup.baseline);
+    return [];
+  }
+  const current = await readConflictTruth(request);
+  const ownedIds = selectOwnedConflictIds(cleanup, current);
+  const deletedIds = ownedIds.length > 0
+    ? deleteOwnedTestConflicts(current.conflicts.idStatuses, ownedIds)
+    : [];
+  cleanup.deletedIds = deletedIds;
   const after = await readConflictTruth(request);
   expect(after, `K02 cleanup 必须完全恢复 ${cleanup.marker} 创建前的 conflict/task truth`).toEqual(cleanup.baseline);
   return deletedIds;
@@ -369,12 +539,69 @@ test.afterEach(async ({ request }) => {
   }
 });
 
+test('cleanup ownership：baseline 中同 marker 记录不得成为删除候选', async () => {
+  const marker = `K02-API-ORG-${Date.now()}`;
+  const baselineRecord = {
+    id: 'conflict_baseline_same_marker',
+    title: `${marker} 标题`,
+    status: '调解中',
+  };
+  await withCleanupFixtureDatabase([baselineRecord], async (databasePath) => {
+    const truthRequest = createCleanupTruthRequest([baselineRecord]);
+    const cleanup: ConflictCleanupRegistration = {
+      marker,
+      baseline: await readConflictTruth(truthRequest),
+    };
+
+    const deletedIds = await cleanupRegisteredConflict(truthRequest, cleanup);
+
+    expect(deletedIds, 'baseline 已有 ID 不属于本轮 create ownership').toEqual([]);
+    expect(readCleanupFixtureDatabase(databasePath)).toEqual([baselineRecord]);
+  });
+});
+
+test('cleanup ownership：PLAYWRIGHT_DB_PATH 与 API truth 不一致时拒删且 0 change', async () => {
+  const marker = `K02-API-RES-${Date.now()}`;
+  const ownedRecord = {
+    id: 'conflict_owned_delta',
+    title: `${marker} 标题`,
+    status: '调解中',
+  };
+  const wrongDatabaseRecords = [
+    ownedRecord,
+    {
+      id: 'conflict_wrong_database_extra',
+      title: 'wrong database sentinel',
+      status: '已化解',
+    },
+  ];
+  await withCleanupFixtureDatabase(wrongDatabaseRecords, async (databasePath) => {
+    const baselineRequest = createCleanupTruthRequest([]);
+    const currentRequest = createCleanupTruthRequest([ownedRecord]);
+    const cleanup: ConflictCleanupRegistration = {
+      marker,
+      baseline: await readConflictTruth(baselineRequest),
+    };
+
+    let thrown: unknown;
+    try {
+      await cleanupRegisteredConflict(currentRequest, cleanup);
+    } catch (error) {
+      thrown = error;
+    }
+
+    expect(readCleanupFixtureDatabase(databasePath), 'wrong DB 必须在 DELETE 前保持原样').toEqual(wrongDatabaseRecords);
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).toContain('K02 cleanup refused wrong PLAYWRIGHT_DB_PATH');
+  });
+});
+
 test('api 模式：纯机构主体创建后经 API 真实读回，replace 后不回已提交表单', async ({ page, request }) => {
   const before = await readConflicts(request);
   const grids = await readGrids(request);
   const grid = grids.find((item) => item.id === 'g1') ?? grids[0];
   const marker = `K02-API-ORG-${Date.now()}`;
-  await registerConflictCleanup(request, marker);
+  const cleanup = await registerConflictCleanup(request, marker);
   const mutations = trackBusinessMutations(page);
 
   // mobile context 提供精确 grid id：允许作为初始化预选候选
@@ -411,6 +638,7 @@ test('api 模式：纯机构主体创建后经 API 真实读回，replace 后不
 
   await expect(page).toHaveURL(/\/mobile\/conflict\/conflict_[0-9a-f]{12}$/);
   const createdId = page.url().split('/').pop()!;
+  bindCreatedConflictId(cleanup, createdId);
   await expect(page.getByTestId('conflict-detail-title')).toHaveText(`${marker} 标题`);
   await expect(page.getByTestId('conflict-timeline')).toContainText('网格员上报纠纷');
   await expect(page.getByTestId('conflict-timeline')).toContainText('K02 验收网格员');
@@ -532,6 +760,7 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
 
   await expect(page).toHaveURL(/\/mobile\/conflict\/conflict_[0-9a-f]{12}$/);
   const createdId = page.url().split('/').pop()!;
+  bindCreatedConflictId(cleanup, createdId);
   await expect(page.getByTestId('conflict-detail-title')).toHaveText(`${marker} 标题`);
 
   const detailResponse = await request.get(`${apiBaseUrl}/conflicts/${createdId}`);
