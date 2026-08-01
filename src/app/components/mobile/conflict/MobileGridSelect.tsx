@@ -161,6 +161,19 @@ export function MobileGridSelect({
                         onSelect(grid.id);
                         setIsOpen(false);
                       }}
+                      onKeyDown={(event) => {
+                        if (event.key !== 'Home' && event.key !== 'End') {
+                          return;
+                        }
+                        event.preventDefault();
+                        const boundaryGrid = event.key === 'Home'
+                          ? gridOptions.options[0]
+                          : gridOptions.options[gridOptions.options.length - 1];
+                        if (boundaryGrid) {
+                          onSelect(boundaryGrid.id);
+                          setIsOpen(false);
+                        }
+                      }}
                       className="sr-only"
                     />
                     <span className="text-sm font-medium text-[var(--color-neutral-11)]">{grid.name}</span>

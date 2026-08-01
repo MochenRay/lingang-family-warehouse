@@ -733,6 +733,118 @@ test('标记化解 PATCH 500：dialog 保持打开、dialog 内真实错误可�
   });
 });
 
+test('mutation A 未完成时同组件切到 B：A 完成不得读取、落地、提示或锁定 B', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中' && item.id !== 'c_hero_001');
+  expect(processing.length, 'seed 必须至少提供两个非视觉探针案件的调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+
+  let releaseMutationA!: () => void;
+  const mutationAGate = new Promise<void>((resolve) => {
+    releaseMutationA = resolve;
+  });
+  let markMutationAStarted!: () => void;
+  const mutationAStarted = new Promise<void>((resolve) => {
+    markMutationAStarted = resolve;
+  });
+  let mutationARequests = 0;
+  const conflictAPath = new RegExp(`/api/conflicts/${conflictA.id}$`);
+  await page.route(conflictAPath, async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.continue();
+      return;
+    }
+    mutationARequests += 1;
+    markMutationAStarted();
+    await mutationAGate;
+    // mutation 返回成功即可复现组件代次；不写测试数据库，避免污染后续视觉探针。
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ id: conflictA.id, status: '已化解' }),
+    });
+  });
+
+  let releaseFirstBRead!: () => void;
+  const firstBReadGate = new Promise<void>((resolve) => {
+    releaseFirstBRead = resolve;
+  });
+  let markFirstBReadStarted!: () => void;
+  const firstBReadStarted = new Promise<void>((resolve) => {
+    markFirstBReadStarted = resolve;
+  });
+  let conflictBReads = 0;
+  const conflictBPath = new RegExp(`/api/conflicts/${conflictB.id}$`);
+  await page.route(conflictBPath, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictBReads += 1;
+    if (conflictBReads === 1) {
+      markFirstBReadStarted();
+      await firstBReadGate;
+      await route.continue();
+      return;
+    }
+    // 任何第二个 B GET 都只能来自 A 完成后的错误读回；精确失败使错误锁可观察。
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail: 'forced K02 stale mutation B read' }),
+    });
+  });
+  allowResponse(conflictBPath, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, conflictBPath);
+  allowConsoleError(/^Failed to reload conflict detail after mutation/);
+
+  const mutations = trackBusinessMutations(page);
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  await page.getByTestId('conflict-mark-resolved').click();
+  await page.getByTestId('conflict-resolve-confirm').click();
+  await mutationAStarted;
+
+  // 构造真实 popstate；MobileApp 会在同一树位置复用 MobileConflictDetail，仅替换 id prop。
+  await page.evaluate((targetId) => {
+    const mobileRoute = `conflict-detail/${targetId}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${targetId}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, conflictB.id);
+  await expect(page).toHaveURL(new RegExp(`/mobile/conflict/${conflictB.id}$`));
+  await firstBReadStarted;
+  expect(conflictBReads).toBe(1);
+
+  const mutationAResponse = page.waitForResponse((response) => (
+    conflictAPath.test(response.url()) && response.request().method() === 'PATCH'
+  ));
+  releaseMutationA();
+  await expect((await mutationAResponse).status()).toBe(200);
+  // 等两个渲染帧，让 A 的 async continuation 有机会完成；不用固定 timeout。
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+  releaseFirstBRead();
+
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+  await expect(page.getByTestId('conflict-mark-resolved')).toBeEnabled();
+  expect(mutationARequests).toBe(1);
+  expect(conflictBReads, 'B 只能有自身路由变化触发的一次正常详情读取').toBe(1);
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-dialog')).toHaveCount(0);
+  expect(mutations).toEqual({
+    requests: [`PATCH /api/conflicts/${conflictA.id}`],
+    responses: [{ request: `PATCH /api/conflicts/${conflictA.id}`, status: 200 }],
+  });
+});
+
 test('列表 error 不伪装为空且可重试；详情往返后 tab/搜索状态保持', async ({ page, request }) => {
   const all = await readConflicts(request);
   const resolved = all.items.find((item) => item.status === '已化解');
@@ -985,9 +1097,37 @@ test.describe('hosted 桌面宿主', () => {
     const gridOptionBox = await page.getByTestId(`conflict-grid-option-${g1.id}`).boundingBox();
     expect(gridOptionBox!.width).toBeGreaterThanOrEqual(44);
     expect(gridOptionBox!.height).toBeGreaterThanOrEqual(44);
-    await page.keyboard.press('Escape');
+    expect(grids.length, '网格键盘探针至少需要两个真实 option').toBeGreaterThan(1);
+    const g1Index = grids.findIndex((grid) => grid.id === g1.id);
+    const nextGrid = grids[(g1Index + 1) % grids.length];
+    const firstGrid = grids[0];
+    const lastGrid = grids[grids.length - 1];
+
+    // Arrow：原生 radio 从当前项移动并选择下一项，Drawer 收束且 trigger 名称同步。
+    await gridDrawer.getByRole('radio', { name: g1.name, exact: true }).focus();
+    await page.keyboard.press('ArrowDown');
     await expect(gridDrawer).toHaveCount(0);
-    await expect(page.getByTestId('conflict-grid-trigger')).toBeFocused();
+    await expect(page.getByRole('button', { name: `所属网格：${nextGrid.name}`, exact: true })).toBeFocused();
+
+    // Space：重新打开后聚焦未选 g1，Space 真实选择并收束。
+    await page.getByTestId('conflict-grid-trigger').click();
+    await page.getByRole('radio', { name: g1.name, exact: true }).focus();
+    await page.keyboard.press('Space');
+    await expect(gridDrawer).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `所属网格：${g1.name}`, exact: true })).toBeFocused();
+
+    // End/Home：保留首尾键模型；每次选择后 Drawer 收束并恢复 trigger 焦点。
+    await page.getByTestId('conflict-grid-trigger').click();
+    await page.getByRole('radio', { name: g1.name, exact: true }).focus();
+    await page.keyboard.press('End');
+    await expect(gridDrawer).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `所属网格：${lastGrid.name}`, exact: true })).toBeFocused();
+
+    await page.getByTestId('conflict-grid-trigger').click();
+    await page.getByRole('radio', { name: lastGrid.name, exact: true }).focus();
+    await page.keyboard.press('Home');
+    await expect(gridDrawer).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `所属网格：${firstGrid.name}`, exact: true })).toBeFocused();
 
     // 表单触控目标（宽、高均 ≥44）
     await expectTouchTarget(page, 'conflict-description');

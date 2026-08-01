@@ -200,7 +200,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const [resolveError, setResolveError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   // mutation 已成功但读回失败时的锁定状态；锁定不随 Dialog 关闭而清除
-  const [readFailure, setReadFailure] = useState<{ path: 'progress' | 'resolve' } | null>(null);
+  const [readFailure, setReadFailure] = useState<{
+    path: 'progress' | 'resolve';
+    targetId: string;
+    mutationGeneration: number;
+  } | null>(null);
   const [isReReading, setIsReReading] = useState(false);
 
   // 所有详情异步读取共用单调 request generation；卸载、id 变化或新请求都使旧结果失效
@@ -208,15 +212,36 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const idRef = useRef(id);
   idRef.current = id;
   const requestGenRef = useRef(0);
-  // 自身 mutation 同步标记：mutation 期间 facade subscribe event 一律抑制，不启动背景 reload
-  const ownMutationRef = useRef(false);
+  // mutation generation 与请求 generation 独立：旧案件 mutation 不得读取或落地到新 id。
+  const mutationGenRef = useRef(0);
+  // 自身 mutation 同步标记：mutation 期间 facade subscribe event 不启动背景 reload。
+  const ownMutationRef = useRef<{ targetId: string; generation: number } | null>(null);
 
   useEffect(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      requestGenRef.current += 1;
+      mutationGenRef.current += 1;
+      ownMutationRef.current = null;
     };
   }, []);
+
+  // 同一 MobileConflictDetail 实例切换 id 时，立即使旧 mutation/readback 与其 UI 锁失效。
+  useEffect(() => {
+    requestGenRef.current += 1;
+    mutationGenRef.current += 1;
+    ownMutationRef.current = null;
+    setReadFailure(null);
+    setIsReReading(false);
+    setIsSubmittingProgress(false);
+    setIsResolving(false);
+    setProgressContent('');
+    setProgressError(null);
+    setResolveError(null);
+    setIsDialogOpen(false);
+    setResolveConfirmOpen(false);
+  }, [id]);
 
   // 常规详情读取（初始加载 / 重试 / 外部 facade change）：可更新 phase；
   // 落地前同时校验 mounted、当前 id 与 generation，旧请求不得覆盖新数据。
@@ -264,14 +289,25 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
   // mutation 后的显式读回：不得把 phase 改回 loading，不得卸载现有详情或 Dialog；
   // undefined/not-found/异常一律按读回失败返回 null，过期返回 'stale' 不做任何落地。
-  const readBackAfterMutation = useCallback(async (): Promise<MobileConflictDetailResult | 'stale' | null> => {
+  const readBackAfterMutation = useCallback(async (
+    targetId: string,
+    mutationGeneration: number,
+  ): Promise<MobileConflictDetailResult | 'stale' | null> => {
+    const isMutationScopeStale = () => (
+      !mountedRef.current
+      || idRef.current !== targetId
+      || mutationGenRef.current !== mutationGeneration
+    );
+    // 必须在递增 request generation 或发 GET 前拦住旧案件 mutation。
+    if (isMutationScopeStale()) {
+      return 'stale';
+    }
     const generation = ++requestGenRef.current;
-    const currentId = idRef.current;
     const isStale = () => (
-      !mountedRef.current || idRef.current !== currentId || requestGenRef.current !== generation
+      isMutationScopeStale() || requestGenRef.current !== generation
     );
     try {
-      const result = await conflictFacade.getConflictDetail(currentId);
+      const result = await conflictFacade.getConflictDetail(targetId);
       if (isStale()) {
         return 'stale';
       }
@@ -295,7 +331,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     void readDetail(true);
     const unsubscribe = conflictFacade.subscribe(() => {
       // 自身 mutation 的 change event：显式读回已负责落地，不得启动背景 reload
-      if (ownMutationRef.current) {
+      const ownMutation = ownMutationRef.current;
+      if (
+        ownMutation
+        && ownMutation.targetId === idRef.current
+        && ownMutation.generation === mutationGenRef.current
+      ) {
         return;
       }
       void readDetail(true);
@@ -310,14 +351,29 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   // 3) mutation 失败与读回失败分开处理；4) 读回失败锁定两条 mutation 路径。
   const runMutation = async (
     path: 'progress' | 'resolve',
+    targetId: string,
     mutate: () => Promise<unknown>,
   ): Promise<void> => {
-    ownMutationRef.current = true;
+    const mutationGeneration = ++mutationGenRef.current;
+    ownMutationRef.current = { targetId, generation: mutationGeneration };
+    const isMutationScopeStale = () => (
+      !mountedRef.current
+      || idRef.current !== targetId
+      || mutationGenRef.current !== mutationGeneration
+    );
+    const clearOwnMutation = () => {
+      if (ownMutationRef.current?.generation === mutationGeneration) {
+        ownMutationRef.current = null;
+      }
+    };
     try {
       await mutate();
     } catch (error) {
       // mutation 本身失败：保留现有失败语义，可重新提交
-      ownMutationRef.current = false;
+      clearOwnMutation();
+      if (isMutationScopeStale()) {
+        return;
+      }
       if (path === 'progress') {
         console.error('Failed to add progress', error);
         setProgressError(error instanceof Error ? error.message : '进展记录添加失败，请稍后重试');
@@ -329,15 +385,19 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       }
       return;
     }
-    const outcome = await readBackAfterMutation();
-    ownMutationRef.current = false;
+    if (isMutationScopeStale()) {
+      clearOwnMutation();
+      return;
+    }
+    const outcome = await readBackAfterMutation(targetId, mutationGeneration);
+    clearOwnMutation();
     if (outcome === 'stale') {
       return;
     }
     if (!outcome) {
       // mutation 已成功但读回失败：保持 phase=ready、保留旧 conflict/context 与 Dialog，
       // 不显示普通成功；锁定 mutation，直到“重新读取”成功
-      setReadFailure({ path });
+      setReadFailure({ path, targetId, mutationGeneration });
       return;
     }
     setConflict(outcome.conflict);
@@ -357,9 +417,21 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     if (!readFailure || isReReading) {
       return;
     }
+    const failure = readFailure;
     setIsReReading(true);
-    const outcome = await readBackAfterMutation();
-    if (outcome !== 'stale' && outcome) {
+    const outcome = await readBackAfterMutation(failure.targetId, failure.mutationGeneration);
+    if (outcome === 'stale') {
+      // 同 id 的更新请求若让本次读回过期，仍须恢复按钮；跨 id/unmount 则由路由 effect 清理。
+      if (
+        mountedRef.current
+        && idRef.current === failure.targetId
+        && mutationGenRef.current === failure.mutationGeneration
+      ) {
+        setIsReReading(false);
+      }
+      return;
+    }
+    if (outcome) {
       setConflict(outcome.conflict);
       setContext(outcome.context);
       setReadFailure(null);
@@ -367,7 +439,13 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       setIsDialogOpen(false);
       setResolveConfirmOpen(false);
     }
-    setIsReReading(false);
+    if (
+      mountedRef.current
+      && idRef.current === failure.targetId
+      && mutationGenRef.current === failure.mutationGeneration
+    ) {
+      setIsReReading(false);
+    }
   };
 
   const relatedPolicies = useMemo(
@@ -380,38 +458,44 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   );
 
   const handleAddProgress = async () => {
-    if (!conflict || !progressContent.trim() || isSubmittingProgress || readFailure) {
+    if (!conflict || !progressContent.trim() || isSubmittingProgress || readFailure || ownMutationRef.current) {
       return;
     }
 
+    const targetId = conflict.id;
     setIsSubmittingProgress(true);
     setProgressError(null);
     try {
-      await runMutation('progress', () => conflictFacade.addProgress(conflict.id, {
+      await runMutation('progress', targetId, () => conflictFacade.addProgress(targetId, {
         date: formatNow(),
         content: progressContent.trim(),
         operator: mobileContextRepository.getCurrentWorkerName(),
       }));
     } finally {
-      setIsSubmittingProgress(false);
+      if (mountedRef.current && idRef.current === targetId) {
+        setIsSubmittingProgress(false);
+      }
     }
   };
 
   const handleMarkResolved = async () => {
-    if (!conflict || isResolving || readFailure) {
+    if (!conflict || isResolving || readFailure || ownMutationRef.current) {
       return;
     }
 
+    const targetId = conflict.id;
     setIsResolving(true);
     setResolveError(null);
     try {
-      await runMutation('resolve', () => conflictFacade.markResolved(conflict.id, {
+      await runMutation('resolve', targetId, () => conflictFacade.markResolved(targetId, {
         date: formatNow(),
         content: '网格员标记该纠纷已化解',
         operator: mobileContextRepository.getCurrentWorkerName(),
       }));
     } finally {
-      setIsResolving(false);
+      if (mountedRef.current && idRef.current === targetId) {
+        setIsResolving(false);
+      }
     }
   };
 
