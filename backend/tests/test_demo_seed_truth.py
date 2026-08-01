@@ -1,5 +1,5 @@
 from collections import Counter
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 
 from app.api.stats import (
     DEMOGRAPHICS_EDUCATION_ORDER,
@@ -163,3 +163,60 @@ def test_demo_current_residents_have_current_history_and_first_page_has_depth() 
         minimum = 3 if person.risk == "High" else 2 if person.risk == "Medium" else 1
         assert visits_by_person[person.id] >= minimum
         assert people_by_house[person.houseId] > 1 or bool(person.familyRelations)
+
+
+def test_demo_task_freshness_tracks_an_injected_future_reference_date() -> None:
+    baseline_bundle = build_demo_seed_bundle(
+        freshness_reference_date=date(2026, 7, 30),
+    )
+    reference_date = date(2035, 1, 17)
+    bundle = build_demo_seed_bundle(freshness_reference_date=reference_date)
+    fresh_date = (reference_date - timedelta(days=1)).isoformat()
+    overdue_date = (reference_date - timedelta(days=20)).isoformat()
+
+    fresh_visits = [
+        visit
+        for visit in bundle.visits
+        if visit.id.startswith("v_task_fresh_")
+    ]
+    baseline_fresh_visit_ids = {
+        visit.id
+        for visit in baseline_bundle.visits
+        if visit.id.startswith("v_task_fresh_")
+    }
+    assert len(fresh_visits) == 49
+    assert {visit.id for visit in fresh_visits} == baseline_fresh_visit_ids
+    assert {visit.date for visit in fresh_visits} == {fresh_date}
+
+    medium_grid_ids = {"g_zf_1", "g_fs_1", "g_mp_1"}
+    preserved_people = []
+    for grid_id in sorted(medium_grid_ids):
+        eligible = sorted(
+            (
+                person
+                for person in bundle.people
+                if person.gridId == grid_id
+                if person.risk == "High" or bool(person.careLabels)
+            ),
+            key=lambda person: person.id,
+        )
+        preserved = eligible[0]
+        preserved_people.append(preserved)
+        assert preserved.updatedAt == overdue_date
+
+        related_target_ids = {preserved.id, preserved.houseId}
+        related_visits = [
+            visit for visit in bundle.visits
+            if visit.targetId in related_target_ids
+        ]
+        assert related_visits
+        assert {visit.date for visit in related_visits} == {overdue_date}
+
+    assert len(preserved_people) == 3
+    assert bundle.counts() == baseline_bundle.counts()
+    assert [(conflict.id, conflict.status) for conflict in bundle.conflicts] == [
+        (conflict.id, conflict.status) for conflict in baseline_bundle.conflicts
+    ]
+    assert [(person.id, person.risk) for person in bundle.people] == [
+        (person.id, person.risk) for person in baseline_bundle.people
+    ]
