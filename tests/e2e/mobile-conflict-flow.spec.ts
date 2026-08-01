@@ -67,6 +67,7 @@ interface ConsoleAllowRule {
 const allowlist: AllowRule[] = [];
 const consoleAllowlist: ConsoleAllowRule[] = [];
 const issues: string[] = [];
+const cleanupConflictMarkers: string[] = [];
 
 function allowResponse(path: RegExp, statuses: number[]): void {
   allowlist.push({ path, statuses });
@@ -136,6 +137,34 @@ async function readConflicts(request: APIRequestContext): Promise<SeedConflictLi
   const response = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
   expect(response.ok(), '读取矛盾种子列表必须成功').toBe(true);
   return response.json() as Promise<SeedConflictList>;
+}
+
+// enabled 创建测试共用同一 SQLite；无 DELETE API 时以 status=已化解恢复等价 active-conflict 基线。
+// marker 查询放在 finally 内，即使创建后的任一断言失败，也能定位并收束已落库记录。
+async function resolveActiveConflictsByMarker(request: APIRequestContext, marker: string): Promise<void> {
+  const listResponse = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
+  if (!listResponse.ok()) {
+    throw new Error(`K02 cleanup list failed: ${listResponse.status()}`);
+  }
+  const list = await listResponse.json() as SeedConflictList;
+  const activeMatches = list.items.filter((item) => item.title.includes(marker) && item.status !== '已化解');
+  for (const conflict of activeMatches) {
+    const response = await request.patch(`${apiBaseUrl}/conflicts/${encodeURIComponent(conflict.id)}`, {
+      data: { status: '已化解' },
+    });
+    if (!response.ok()) {
+      throw new Error(`K02 cleanup PATCH ${conflict.id} failed: ${response.status()}`);
+    }
+  }
+  const verifyResponse = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
+  if (!verifyResponse.ok()) {
+    throw new Error(`K02 cleanup verify failed: ${verifyResponse.status()}`);
+  }
+  const verified = await verifyResponse.json() as SeedConflictList;
+  const remaining = verified.items.filter((item) => item.title.includes(marker) && item.status !== '已化解');
+  if (remaining.length > 0) {
+    throw new Error(`K02 cleanup left active conflicts: ${remaining.map((item) => item.id).join(',')}`);
+  }
 }
 
 interface SeedGrid {
@@ -209,6 +238,7 @@ test.beforeEach(async ({ page }) => {
   issues.length = 0;
   allowlist.length = 0;
   consoleAllowlist.length = 0;
+  cleanupConflictMarkers.length = 0;
   attachIssueWatchers(page);
   await page.addInitScript(() => {
     window.localStorage.setItem('homedata.mobile.onboarding.dismissed', 'true');
@@ -216,8 +246,14 @@ test.beforeEach(async ({ page }) => {
   });
 });
 
-test.afterEach(() => {
-  expect(issues, '不得出现 console error / pageerror / 意外请求失败或 4xx/5xx').toEqual([]);
+test.afterEach(async ({ request }) => {
+  try {
+    for (const marker of cleanupConflictMarkers) {
+      await resolveActiveConflictsByMarker(request, marker);
+    }
+  } finally {
+    expect(issues, '不得出现 console error / pageerror / 意外请求失败或 4xx/5xx').toEqual([]);
+  }
 });
 
 test('api 模式：纯机构主体创建后经 API 真实读回，replace 后不回已提交表单', async ({ page, request }) => {
@@ -225,6 +261,7 @@ test('api 模式：纯机构主体创建后经 API 真实读回，replace 后不
   const grids = await readGrids(request);
   const grid = grids.find((item) => item.id === 'g1') ?? grids[0];
   const marker = `K02-API-ORG-${Date.now()}`;
+  cleanupConflictMarkers.push(marker);
   const mutations = trackBusinessMutations(page);
 
   // mobile context 提供精确 grid id：允许作为初始化预选候选
@@ -326,6 +363,7 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   const residents = await readGridResidents(request, grid.id, 5);
   const resident = residents[0];
   const marker = `K02-API-RES-${Date.now()}`;
+  cleanupConflictMarkers.push(marker);
   const mutations = trackBusinessMutations(page);
 
   // context 只有名称、没有精确 id：不得预选任何网格
@@ -634,6 +672,8 @@ test('mutation 失败矩阵：不降级 session、不产生 temp conflict、不�
     await page.getByTestId('conflict-submit').click();
     // 必须显示真实失败 UI
     await expect(page.getByTestId('conflict-submit-error')).toBeVisible();
+    // inline role=alert 已完整承载错误；不得再堆叠会遮挡提交按钮的重复 toast。
+    await expect(page.getByText('上报失败', { exact: true })).toHaveCount(0);
     if (failure.status !== undefined) {
       await expect(page.getByTestId('conflict-submit-error')).toContainText(`API ${failure.status}`);
     }

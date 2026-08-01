@@ -146,7 +146,7 @@ export function MobileGridSelect({
                   <label
                     key={grid.id}
                     data-testid={`conflict-grid-option-${grid.id}`}
-                    className={`flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
+                    className={`relative flex min-h-[44px] w-full cursor-pointer items-center justify-between gap-3 rounded-xl border p-3 text-left transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
                       isSelected
                         ? 'border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/10 shadow-sm'
                         : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] hover:bg-[var(--color-neutral-02)]'
@@ -174,7 +174,7 @@ export function MobileGridSelect({
                           setIsOpen(false);
                         }
                       }}
-                      className="sr-only"
+                      className="absolute inset-0 z-10 m-0 h-full min-h-[44px] w-full min-w-[44px] cursor-pointer opacity-0"
                     />
                     <span className="text-sm font-medium text-[var(--color-neutral-11)]">{grid.name}</span>
                     {isSelected && <Check className="h-4 w-4 shrink-0 text-[var(--color-brand-text)]" />}

@@ -327,7 +327,6 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
     } catch (error) {
       console.error('Failed to submit conflict', error);
       setSubmitError(error instanceof Error ? error.message : '上报失败，请稍后重试');
-      toast.error('上报失败');
     } finally {
       setIsSubmitting(false);
     }
@@ -450,7 +449,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                 <label
                   key={type}
                   data-testid={`conflict-type-${type}`}
-                  className={`flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border text-sm font-medium transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
+                  className={`relative flex min-h-[44px] cursor-pointer items-center justify-center rounded-xl border text-sm font-medium transition-all has-[input:focus-visible]:ring-2 has-[input:focus-visible]:ring-[var(--color-brand-primary)] ${
                     isSelected
                       ? 'border-[var(--color-brand-primary)] bg-[var(--color-brand-primary)]/10 text-[var(--color-brand-text)]'
                       : 'border-[var(--color-neutral-03)] bg-[var(--color-neutral-01)] text-[var(--color-neutral-10)] hover:bg-[var(--color-neutral-02)]'
@@ -465,7 +464,7 @@ export function MobileConflictForm({ onBack, onRouteChange }: MobileConflictForm
                       setFormData((prev) => ({ ...prev, type }));
                       setFieldErrors((prev) => ({ ...prev, type: undefined }));
                     }}
-                    className="sr-only"
+                    className="absolute inset-0 z-10 m-0 h-full min-h-[44px] w-full min-w-[44px] cursor-pointer opacity-0"
                   />
                   {type}
                 </label>
