@@ -1,3 +1,6 @@
+import { execFileSync } from 'node:child_process';
+import { resolve } from 'node:path';
+
 import { expect, test, type APIRequestContext, type Locator, type Page } from '@playwright/test';
 
 /**
@@ -67,7 +70,30 @@ interface ConsoleAllowRule {
 const allowlist: AllowRule[] = [];
 const consoleAllowlist: ConsoleAllowRule[] = [];
 const issues: string[] = [];
-const cleanupConflictMarkers: string[] = [];
+
+interface ConflictTruthSnapshot {
+  conflicts: {
+    ids: string[];
+    idStatuses: Array<{ id: string; status: string }>;
+    total: number;
+    statusCounts: Record<string, number>;
+    resolved: number;
+    active: number;
+  };
+  taskProjection: {
+    pendingIds: string[];
+    completedIds: string[];
+    pending: number;
+    completed: number;
+  };
+}
+
+interface ConflictCleanupRegistration {
+  marker: string;
+  baseline: ConflictTruthSnapshot;
+}
+
+const cleanupConflicts: ConflictCleanupRegistration[] = [];
 
 function allowResponse(path: RegExp, statuses: number[]): void {
   allowlist.push({ path, statuses });
@@ -139,32 +165,101 @@ async function readConflicts(request: APIRequestContext): Promise<SeedConflictLi
   return response.json() as Promise<SeedConflictList>;
 }
 
-// enabled 创建测试共用同一 SQLite；无 DELETE API 时以 status=已化解恢复等价 active-conflict 基线。
-// marker 查询放在 finally 内，即使创建后的任一断言失败，也能定位并收束已落库记录。
-async function resolveActiveConflictsByMarker(request: APIRequestContext, marker: string): Promise<void> {
-  const listResponse = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
-  if (!listResponse.ok()) {
-    throw new Error(`K02 cleanup list failed: ${listResponse.status()}`);
+async function readConflictTruth(request: APIRequestContext): Promise<ConflictTruthSnapshot> {
+  const [conflictsResponse, projectionResponse] = await Promise.all([
+    request.get(`${apiBaseUrl}/conflicts?limit=500`),
+    request.get(`${apiBaseUrl}/task-rules/projection`),
+  ]);
+  if (!conflictsResponse.ok()) {
+    throw new Error(`K02 truth conflicts failed: ${conflictsResponse.status()}`);
   }
-  const list = await listResponse.json() as SeedConflictList;
-  const activeMatches = list.items.filter((item) => item.title.includes(marker) && item.status !== '已化解');
-  for (const conflict of activeMatches) {
-    const response = await request.patch(`${apiBaseUrl}/conflicts/${encodeURIComponent(conflict.id)}`, {
-      data: { status: '已化解' },
-    });
-    if (!response.ok()) {
-      throw new Error(`K02 cleanup PATCH ${conflict.id} failed: ${response.status()}`);
-    }
+  if (!projectionResponse.ok()) {
+    throw new Error(`K02 truth task projection failed: ${projectionResponse.status()}`);
   }
-  const verifyResponse = await request.get(`${apiBaseUrl}/conflicts?limit=500`);
-  if (!verifyResponse.ok()) {
-    throw new Error(`K02 cleanup verify failed: ${verifyResponse.status()}`);
+
+  const conflicts = await conflictsResponse.json() as SeedConflictList;
+  if (conflicts.items.length !== conflicts.total) {
+    throw new Error(`K02 truth requires a complete conflict snapshot: items=${conflicts.items.length}, total=${conflicts.total}`);
   }
-  const verified = await verifyResponse.json() as SeedConflictList;
-  const remaining = verified.items.filter((item) => item.title.includes(marker) && item.status !== '已化解');
-  if (remaining.length > 0) {
-    throw new Error(`K02 cleanup left active conflicts: ${remaining.map((item) => item.id).join(',')}`);
+  const projection = await projectionResponse.json() as {
+    pending: Array<{ id: string }>;
+    completed: Array<{ id: string }>;
+    summary: { pending: number; completed: number };
+  };
+  const statusCounts = conflicts.items.reduce<Record<string, number>>((counts, conflict) => {
+    counts[conflict.status] = (counts[conflict.status] ?? 0) + 1;
+    return counts;
+  }, {});
+
+  return {
+    conflicts: {
+      ids: conflicts.items.map((conflict) => conflict.id).sort(),
+      idStatuses: conflicts.items
+        .map((conflict) => ({ id: conflict.id, status: conflict.status }))
+        .sort((left, right) => left.id.localeCompare(right.id)),
+      total: conflicts.total,
+      statusCounts: Object.fromEntries(Object.entries(statusCounts).sort(([left], [right]) => left.localeCompare(right))),
+      resolved: conflicts.items.filter((conflict) => conflict.status === '已化解').length,
+      active: conflicts.items.filter((conflict) => conflict.status !== '已化解').length,
+    },
+    taskProjection: {
+      pendingIds: projection.pending.map((item) => item.id).sort(),
+      completedIds: projection.completed.map((item) => item.id).sort(),
+      pending: projection.summary.pending,
+      completed: projection.summary.completed,
+    },
+  };
+}
+
+async function registerConflictCleanup(
+  request: APIRequestContext,
+  marker: string,
+): Promise<ConflictCleanupRegistration> {
+  const registration = { marker, baseline: await readConflictTruth(request) };
+  cleanupConflicts.push(registration);
+  return registration;
+}
+
+// enabled 创建测试共用同一 SQLite，但产品没有 conflict DELETE API。
+// 仅在 test-harness 层对本文件生成的唯一 marker 做绑定参数物理删除，避免污染后续 dashboard/home truth。
+function deleteTestConflictsByMarker(marker: string): string[] {
+  if (!/^K02-API-(?:ORG|RES)-\d+$/.test(marker)) {
+    throw new Error(`K02 cleanup refused unsafe marker: ${marker}`);
   }
+  const configuredPath = process.env.PLAYWRIGHT_DB_PATH;
+  if (!configuredPath) {
+    throw new Error('K02 cleanup requires PLAYWRIGHT_DB_PATH');
+  }
+  const databasePath = resolve(configuredPath);
+  const pythonBin = process.env.PYTHON_BIN ?? 'python3';
+  const script = [
+    'import json, sqlite3, sys',
+    'connection = sqlite3.connect(sys.argv[1], timeout=10)',
+    'connection.execute("PRAGMA busy_timeout = 10000")',
+    'try:',
+    '    rows = connection.execute("SELECT id FROM conflict_records WHERE id GLOB \'conflict_*\' AND instr(title, ?) > 0 ORDER BY id", (sys.argv[2],)).fetchall()',
+    '    cursor = connection.execute("DELETE FROM conflict_records WHERE id GLOB \'conflict_*\' AND instr(title, ?) > 0", (sys.argv[2],))',
+    '    connection.commit()',
+    '    print(json.dumps({"ids": [row[0] for row in rows], "deleted": cursor.rowcount}))',
+    'finally:',
+    '    connection.close()',
+  ].join('\n');
+  const output = execFileSync(pythonBin, ['-c', script, databasePath, marker], { encoding: 'utf8' }).trim();
+  const result = JSON.parse(output) as { ids: string[]; deleted: number };
+  if (result.deleted !== result.ids.length) {
+    throw new Error(`K02 cleanup delete mismatch for ${marker}: selected=${result.ids.length}, deleted=${result.deleted}`);
+  }
+  return result.ids;
+}
+
+async function cleanupRegisteredConflict(
+  request: APIRequestContext,
+  cleanup: ConflictCleanupRegistration,
+): Promise<string[]> {
+  const deletedIds = deleteTestConflictsByMarker(cleanup.marker);
+  const after = await readConflictTruth(request);
+  expect(after, `K02 cleanup 必须完全恢复 ${cleanup.marker} 创建前的 conflict/task truth`).toEqual(cleanup.baseline);
+  return deletedIds;
 }
 
 interface SeedGrid {
@@ -234,11 +329,19 @@ async function expectTouchTarget(page: Page, testId: string) {
   return box!;
 }
 
+async function expectFocusableTouchTarget(locator: Locator, label: string) {
+  const box = await locator.boundingBox();
+  expect(box, `${label} 的实际 focusable input 必须可量测`).toBeTruthy();
+  expect(box!.width, `${label} 的实际 focusable input 宽度必须 ≥44`).toBeGreaterThanOrEqual(44);
+  expect(box!.height, `${label} 的实际 focusable input 高度必须 ≥44`).toBeGreaterThanOrEqual(44);
+  return box!;
+}
+
 test.beforeEach(async ({ page }) => {
   issues.length = 0;
   allowlist.length = 0;
   consoleAllowlist.length = 0;
-  cleanupConflictMarkers.length = 0;
+  cleanupConflicts.length = 0;
   attachIssueWatchers(page);
   await page.addInitScript(() => {
     window.localStorage.setItem('homedata.mobile.onboarding.dismissed', 'true');
@@ -247,12 +350,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.afterEach(async ({ request }) => {
-  try {
-    for (const marker of cleanupConflictMarkers) {
-      await resolveActiveConflictsByMarker(request, marker);
+  const errors: Error[] = [];
+  for (const cleanup of cleanupConflicts) {
+    try {
+      await cleanupRegisteredConflict(request, cleanup);
+    } catch (error) {
+      errors.push(error instanceof Error ? error : new Error(String(error)));
     }
-  } finally {
+  }
+  try {
     expect(issues, '不得出现 console error / pageerror / 意外请求失败或 4xx/5xx').toEqual([]);
+  } catch (error) {
+    errors.push(error instanceof Error ? error : new Error(String(error)));
+  }
+  if (errors.length > 0) {
+    const details = errors.map((error, index) => `${index + 1}. ${error.message}`).join('\n');
+    throw new AggregateError(errors, `K02 afterEach cleanup/watcher verification failed\n${details}`);
   }
 });
 
@@ -261,7 +374,7 @@ test('api 模式：纯机构主体创建后经 API 真实读回，replace 后不
   const grids = await readGrids(request);
   const grid = grids.find((item) => item.id === 'g1') ?? grids[0];
   const marker = `K02-API-ORG-${Date.now()}`;
-  cleanupConflictMarkers.push(marker);
+  await registerConflictCleanup(request, marker);
   const mutations = trackBusinessMutations(page);
 
   // mobile context 提供精确 grid id：允许作为初始化预选候选
@@ -363,7 +476,7 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   const residents = await readGridResidents(request, grid.id, 5);
   const resident = residents[0];
   const marker = `K02-API-RES-${Date.now()}`;
-  cleanupConflictMarkers.push(marker);
+  const cleanup = await registerConflictCleanup(request, marker);
   const mutations = trackBusinessMutations(page);
 
   // context 只有名称、没有精确 id：不得预选任何网格
@@ -383,7 +496,9 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   await page.getByTestId('conflict-grid-trigger').click();
   await expect(page.getByTestId(`conflict-grid-option-${grid.id}`)).toBeVisible();
   // 网格 options 为原生 radio，可按 role/name 定位
-  await expect(page.getByRole('radio', { name: grid.name, exact: true })).not.toBeChecked();
+  const gridRadio = page.getByRole('radio', { name: grid.name, exact: true });
+  await expect(gridRadio).not.toBeChecked();
+  await expectFocusableTouchTarget(gridRadio, `网格 ${grid.name}`);
   await page.getByTestId(`conflict-grid-option-${grid.id}`).click();
   await expect(page.getByTestId('conflict-grid-trigger')).toContainText(grid.name);
   // 切换后可访问名称同步为真实网格名
@@ -407,7 +522,9 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
   await page.getByTestId('conflict-title').fill(`${marker} 标题`);
   await page.getByTestId('conflict-type-邻里纠纷').click();
   // 纠纷类型为原生 radio，可按 role/name 断言选中态
-  await expect(page.getByRole('radio', { name: '邻里纠纷', exact: true })).toBeChecked();
+  const conflictTypeRadio = page.getByRole('radio', { name: '邻里纠纷', exact: true });
+  await expect(conflictTypeRadio).toBeChecked();
+  await expectFocusableTouchTarget(conflictTypeRadio, '纠纷类型 邻里纠纷');
   await page.getByTestId('conflict-location').fill('海梦苑 3 号楼 2 单元楼道');
 
   await expect(page.getByTestId('conflict-submit')).toBeEnabled();
@@ -429,6 +546,27 @@ test('api 模式：当前网格居民路径，无 id/name/首项/默认地点静
     responses: [{ request: 'POST /api/conflicts', status: 201 }],
   });
   await expect.poll(() => readSessionRaw(page)).toBeNull();
+
+  // 同一 SQLite 顺序回归：创建 → 物理 cleanup → dashboard/MobileHome 必须回到创建前真相。
+  const deletedIds = await cleanupRegisteredConflict(request, cleanup);
+  expect(deletedIds, '本轮只能删除刚创建的唯一 conflict ID').toEqual([createdId]);
+  const dashboardResponse = await request.get(`${apiBaseUrl}/stats/dashboard?range=month`);
+  expect(dashboardResponse.ok()).toBe(true);
+  const dashboard = await dashboardResponse.json() as {
+    conflictStats: { active: number; resolved: number };
+  };
+  expect(dashboard.conflictStats).toMatchObject({
+    active: cleanup.baseline.conflicts.active,
+    resolved: cleanup.baseline.conflicts.resolved,
+  });
+
+  await page.goto('/mobile');
+  await expect(page.getByText(`当前待化解矛盾 ${cleanup.baseline.conflicts.active} 起`, { exact: true })).toBeVisible();
+  await expect(page.getByText(`已化解 ${cleanup.baseline.conflicts.resolved} 起，可从矛盾调解链路继续跟进。`, { exact: true })).toBeVisible();
+  const formatHomeMetric = (value: number) => value >= 100 ? '99+' : String(value);
+  const homeMetrics = page.getByTestId('home-metric-value');
+  await expect(homeMetrics.nth(0)).toHaveText(formatHomeMetric(cleanup.baseline.taskProjection.pending));
+  await expect(homeMetrics.nth(1)).toHaveText(formatHomeMetric(cleanup.baseline.taskProjection.completed));
 });
 
 test('网格 options 的 loading/error/empty 状态禁提交并可真实重试恢复', async ({ page }) => {
