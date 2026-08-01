@@ -190,6 +190,20 @@ async function readSessionSnapshot(page: Page): Promise<SessionStorageSnapshot> 
   }), mobileSessionKey);
 }
 
+async function pushConflictDetail(page: Page, targetId: string): Promise<void> {
+  await page.evaluate((id) => {
+    const mobileRoute = `conflict-detail/${id}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${id}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, targetId);
+}
+
 // vaul Drawer 打开有位移动画：边界量测须等位移稳定（连续两次采样一致），不用固定 timeout
 async function settledBox(locator: Locator, label: string) {
   let previous: { x: number; y: number; width: number; height: number } | null = null;
@@ -717,6 +731,205 @@ test('public：A session mutation 在 A→B→A 后完成，当前 A 必须补�
   await expect(page.getByTestId('conflict-resolve-dialog')).toHaveCount(0);
   await expect(page.getByText('状态已更新')).toHaveCount(0);
   expect(mutations).toEqual({ requests: [], responses: [] });
+});
+
+test('public：A2 显式读回 pending 时 A1 success，不得取消 A2 收束语义', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+
+  let releaseA1Seed: () => void = () => undefined;
+  const a1SeedGate = new Promise<void>((resolve) => {
+    releaseA1Seed = resolve;
+  });
+  let releaseA2Readback: () => void = () => undefined;
+  const a2ReadbackGate = new Promise<void>((resolve) => {
+    releaseA2Readback = resolve;
+  });
+  let markA1SeedStarted!: () => void;
+  const a1SeedStarted = new Promise<void>((resolve) => {
+    markA1SeedStarted = resolve;
+  });
+  let markA2ReadbackStarted!: () => void;
+  const a2ReadbackStarted = new Promise<void>((resolve) => {
+    markA2ReadbackStarted = resolve;
+  });
+  let conflictSeedGets = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (conflictSeedGets === 1) {
+      markA1SeedStarted();
+      await a1SeedGate;
+    } else if (conflictSeedGets === 5) {
+      markA2ReadbackStarted();
+      await a2ReadbackGate;
+    }
+    await route.continue();
+  });
+
+  try {
+    // A1：暂停 session mutation 的 seed read。
+    await page.getByTestId('conflict-mark-resolved').click();
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a1SeedStarted;
+    expect(conflictSeedGets).toBe(1);
+
+    await pushConflictDetail(page, conflictB.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+    expect(conflictSeedGets, '第二个 GET 必须是 B baseline').toBe(2);
+
+    await pushConflictDetail(page, conflictA.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+    expect(conflictSeedGets, '第三个 GET 必须是返回 A baseline').toBe(3);
+
+    // A2：先成功写入第一笔 transaction，再暂停其显式读回。
+    await page.getByTestId('conflict-mark-resolved').click();
+    const a2Dialog = page.getByTestId('conflict-resolve-dialog');
+    await expect(a2Dialog).toBeVisible();
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a2ReadbackStarted;
+    expect(conflictSeedGets, '第四个 GET 为 A2 mutation seed，第五个为 A2 显式读回').toBe(5);
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+
+    // A1 此时才写入第二笔 transaction。旧 A1 catch-up 不得抢占 A2 readback generation。
+    releaseA1Seed();
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(2);
+    await page.evaluate(() => new Promise<void>((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+    releaseA2Readback();
+
+    await expect(a2Dialog).toHaveCount(0);
+    await expect(page.getByText('状态已更新')).toBeVisible();
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+    await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+    await expect(page.getByRole('heading', { name: '已化解，转入观察', exact: true })).toBeVisible();
+    await expect.poll(() => conflictSeedGets, {
+      message: 'GET 必须精确为 A1 seed、B/A baseline、A2 seed/readback 与一次有序 dirty flush',
+    }).toBe(6);
+
+    const snapshot = await readSessionSnapshot(page);
+    expect(snapshot.writes).toHaveLength(2);
+    const firstEnvelope = JSON.parse(snapshot.writes[0]) as SessionEnvelope;
+    const finalEnvelope = JSON.parse(snapshot.writes[1]) as SessionEnvelope;
+    expect(firstEnvelope.events.map((event) => event.action)).toEqual(['status', 'update']);
+    expect(finalEnvelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+    ]);
+    await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+    await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+    expect(mutations).toEqual({ requests: [], responses: [] });
+  } finally {
+    releaseA1Seed();
+    releaseA2Readback();
+  }
+});
+
+test('public：A2 mutation 失败后 A1 success，保留 A2 错误并自动收束 A1 truth', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+
+  let releaseA1Seed: () => void = () => undefined;
+  const a1SeedGate = new Promise<void>((resolve) => {
+    releaseA1Seed = resolve;
+  });
+  let markA1SeedStarted!: () => void;
+  const a1SeedStarted = new Promise<void>((resolve) => {
+    markA1SeedStarted = resolve;
+  });
+  let conflictSeedGets = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (conflictSeedGets === 1) {
+      markA1SeedStarted();
+      await a1SeedGate;
+    }
+    await route.continue();
+  });
+
+  try {
+    await page.getByTestId('conflict-mark-resolved').click();
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await a1SeedStarted;
+
+    await pushConflictDetail(page, conflictB.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+    await pushConflictDetail(page, conflictA.id);
+    await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+    expect(conflictSeedGets, 'A1 seed + B baseline + A baseline').toBe(3);
+
+    // 只让 A2 的下一次 session transaction 持久化失败；A1 随后仍可正常写入。
+    await page.evaluate((storageKey) => {
+      const originalSetItem = Storage.prototype.setItem;
+      let failNextTransaction = true;
+      Storage.prototype.setItem = function setItem(key: string, value: string): void {
+        if (this === window.sessionStorage && key === storageKey && failNextTransaction) {
+          failNextTransaction = false;
+          throw new DOMException('forced K02 A2 session failure', 'QuotaExceededError');
+        }
+        originalSetItem.call(this, key, value);
+      };
+    }, mobileSessionKey);
+    allowConsoleError(/^Failed to mark conflict resolved (MobileSessionStoreError|Error): Unable to persist mobile session data/);
+
+    await page.getByTestId('conflict-mark-resolved').click();
+    const a2Dialog = page.getByTestId('conflict-resolve-dialog');
+    await page.getByTestId('conflict-resolve-confirm').click();
+    await expect(a2Dialog.getByTestId('conflict-resolve-error')).toContainText('Unable to persist mobile session data');
+    await expect(page.getByText('状态更新失败')).toBeVisible();
+    expect(conflictSeedGets, '第四个 GET 必须是失败的 A2 mutation seed').toBe(4);
+    expect((await readSessionSnapshot(page)).writes).toEqual([]);
+
+    // A1 成功后，详情自动收束到 A1 的 session truth；已化解页面会卸载操作区，
+    // 但 A2 的真实失败 toast 仍须可见，不得被误报为成功。
+    releaseA1Seed();
+    await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+    await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+    await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+    await expect(page.getByRole('heading', { name: '已化解，转入观察', exact: true })).toBeVisible();
+    await expect(page.getByText('状态更新失败')).toBeVisible();
+    await expect(a2Dialog).toHaveCount(0);
+    expect(conflictSeedGets, '第五个 GET 必须是 A1 success 的有序 dirty flush').toBe(5);
+
+    const snapshot = await readSessionSnapshot(page);
+    expect(snapshot.writes).toHaveLength(1);
+    const envelope = JSON.parse(snapshot.writes[0]) as SessionEnvelope;
+    expect(envelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+      { action: 'status', targetId: conflictA.id },
+      { action: 'update', targetId: conflictA.id },
+    ]);
+    await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+    await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+    await expect(page.getByText('状态已更新')).toHaveCount(0);
+    expect(mutations).toEqual({ requests: [], responses: [] });
+  } finally {
+    releaseA1Seed();
+  }
 });
 
 test('session 存储写失败时 fail closed：不显示成功、不产生 temp conflict', async ({ page, request }) => {

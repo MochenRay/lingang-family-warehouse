@@ -218,7 +218,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const ownMutationRef = useRef<{ targetId: string; generation: number } | null>(null);
   // 尚未 settle 的自身 mutation token：跨 id 保留，用于抑制 A 延迟 emit 对 B 的背景 reload。
   // token 只能由对应 generation 的 mutation 流程删除，id effect 不得清空。
-  const pendingOwnMutationTokensRef = useRef<Set<number>>(new Set());
+  const pendingOwnMutationTokensRef = useRef<Map<number, string>>(new Map());
+  // 被自身 pending token 吞掉、尚未由更新读回覆盖的成功事件；版本用于避免旧读取
+  // 清掉在其执行期间新到达的 dirty 标记。
+  const dirtyTargetVersionsRef = useRef<Map<string, number>>(new Map());
+  const dirtyVersionRef = useRef(0);
+  const activeDirtyFlushVersionsRef = useRef<Map<string, number>>(new Map());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -251,6 +256,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const readDetail = useCallback(async (updatePhase: boolean): Promise<void> => {
     const generation = ++requestGenRef.current;
     const currentId = idRef.current;
+    const dirtyVersionAtStart = dirtyTargetVersionsRef.current.get(currentId);
     if (updatePhase) {
       setPhase({ status: 'loading' });
     }
@@ -261,6 +267,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       const result = await conflictFacade.getConflictDetail(currentId);
       if (isStale()) {
         return;
+      }
+      if (
+        dirtyVersionAtStart !== undefined
+        && dirtyTargetVersionsRef.current.get(currentId) === dirtyVersionAtStart
+      ) {
+        dirtyTargetVersionsRef.current.delete(currentId);
       }
       if (!result) {
         setConflict(null);
@@ -305,6 +317,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     if (isMutationScopeStale()) {
       return 'stale';
     }
+    const dirtyVersionAtStart = dirtyTargetVersionsRef.current.get(targetId);
     const generation = ++requestGenRef.current;
     const isStale = () => (
       isMutationScopeStale() || requestGenRef.current !== generation
@@ -313,6 +326,12 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       const result = await conflictFacade.getConflictDetail(targetId);
       if (isStale()) {
         return 'stale';
+      }
+      if (
+        dirtyVersionAtStart !== undefined
+        && dirtyTargetVersionsRef.current.get(targetId) === dirtyVersionAtStart
+      ) {
+        dirtyTargetVersionsRef.current.delete(targetId);
       }
       return result ?? null;
     } catch (error) {
@@ -323,6 +342,30 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       return null;
     }
   }, []);
+
+  // dirty flush 只在当前 target 没有更新 mutation/readback 时启动；因此旧 A1 不会
+  // 递增共享 request generation 去取消 A2。读取期间若又有新 dirty 版本到达，
+  // 当前读取不得清除它，完成后再顺序 flush 一次。
+  const flushDirtyTarget = (targetId: string): void => {
+    const dirtyVersion = dirtyTargetVersionsRef.current.get(targetId);
+    if (
+      dirtyVersion === undefined
+      || !mountedRef.current
+      || idRef.current !== targetId
+      || [...pendingOwnMutationTokensRef.current.values()].some((pendingTarget) => pendingTarget === targetId)
+      || activeDirtyFlushVersionsRef.current.has(targetId)
+    ) {
+      return;
+    }
+    activeDirtyFlushVersionsRef.current.set(targetId, dirtyVersion);
+    void readDetail(false).finally(() => {
+      activeDirtyFlushVersionsRef.current.delete(targetId);
+      const latestDirtyVersion = dirtyTargetVersionsRef.current.get(targetId);
+      if (latestDirtyVersion !== undefined && latestDirtyVersion !== dirtyVersion) {
+        flushDirtyTarget(targetId);
+      }
+    });
+  };
 
   // 每轮加载只调用一次 facade.getConflictDetail，由 facade 返回 conflict + context；
   // session temp id 由 facade 内部处理，绝不直接请求 temp-ID API。
@@ -354,7 +397,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     mutate: () => Promise<unknown>,
   ): Promise<void> => {
     const mutationGeneration = ++mutationGenRef.current;
-    pendingOwnMutationTokensRef.current.add(mutationGeneration);
+    pendingOwnMutationTokensRef.current.set(mutationGeneration, targetId);
     ownMutationRef.current = { targetId, generation: mutationGeneration };
     const isMutationScopeStale = () => (
       !mountedRef.current
@@ -375,6 +418,8 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     } catch (error) {
       // mutation 本身失败：保留现有失败语义，可重新提交
       settleOwnMutation();
+      // 自身失败不制造 dirty；若更旧成功事件已标脏，则在 A2 失败释放占用后收束。
+      flushDirtyTarget(targetId);
       if (isMutationScopeStale()) {
         return;
       }
@@ -391,16 +436,14 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     }
     if (isMutationScopeStale()) {
       settleOwnMutation();
-      // A→B→A：旧 A 的 session emit 曾被 pending token 抑制；若当前又回到 A，
-      // settle 后须补一次新的 generation-guarded read，使 detail/context 与 session 同源。
-      if (mountedRef.current && idRef.current === targetId) {
-        void readDetail(false);
-      }
+      dirtyTargetVersionsRef.current.set(targetId, ++dirtyVersionRef.current);
+      flushDirtyTarget(targetId);
       return;
     }
     const outcome = await readBackAfterMutation(targetId, mutationGeneration);
     settleOwnMutation();
     if (outcome === 'stale') {
+      flushDirtyTarget(targetId);
       return;
     }
     if (!outcome) {
@@ -419,6 +462,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       setResolveConfirmOpen(false);
       toast.success('状态已更新');
     }
+    flushDirtyTarget(targetId);
   };
 
   // “重新读取”只允许调用 getConflictDetail：不得再次 mutation、追加 timeline 或写 sessionStorage
