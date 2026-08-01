@@ -748,8 +748,16 @@ test('mutation A 未完成时同组件切到 B：A 完成不得读取、落地�
     markMutationAStarted = resolve;
   });
   let mutationARequests = 0;
+  let conflictAReadsAfterMutationStarted = 0;
   const conflictAPath = new RegExp(`/api/conflicts/${conflictA.id}$`);
   await page.route(conflictAPath, async (route) => {
+    if (route.request().method() === 'GET') {
+      if (mutationARequests > 0) {
+        conflictAReadsAfterMutationStarted += 1;
+      }
+      await route.continue();
+      return;
+    }
     if (route.request().method() !== 'PATCH') {
       await route.continue();
       return;
@@ -835,6 +843,7 @@ test('mutation A 未完成时同组件切到 B：A 完成不得读取、落地�
   await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
   await expect(page.getByTestId('conflict-mark-resolved')).toBeEnabled();
   expect(mutationARequests).toBe(1);
+  expect(conflictAReadsAfterMutationStarted, 'PATCH 开始后不得再为旧案件 A 发详情 GET').toBe(0);
   expect(conflictBReads, 'B 只能有自身路由变化触发的一次正常详情读取').toBe(1);
   await expect(page.getByText('状态已更新')).toHaveCount(0);
   await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
@@ -843,6 +852,75 @@ test('mutation A 未完成时同组件切到 B：A 完成不得读取、落地�
     requests: [`PATCH /api/conflicts/${conflictA.id}`],
     responses: [{ request: `PATCH /api/conflicts/${conflictA.id}`, status: 200 }],
   });
+});
+
+test('A 写成功读回失败后切到 B：A Dialog、disabled 与 readFailure 锁必须按 id 清除', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中' && item.id !== 'c_hero_001');
+  expect(processing.length, 'seed 必须至少提供两个非视觉探针案件的调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const conflictAPath = new RegExp(`/api/conflicts/${conflictA.id}$`);
+  let patchSucceeded = false;
+  let failedReadbacks = 0;
+  await page.route(conflictAPath, async (route) => {
+    if (route.request().method() === 'PATCH') {
+      patchSucceeded = true;
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ id: conflictA.id, status: '已化解' }),
+      });
+      return;
+    }
+    if (route.request().method() === 'GET' && patchSucceeded) {
+      failedReadbacks += 1;
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify({ detail: 'forced K02 A readback failure before route B' }),
+      });
+      return;
+    }
+    await route.continue();
+  });
+  allowResponse(conflictAPath, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, conflictAPath);
+  allowConsoleError(/^Failed to reload conflict detail after mutation/);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  await page.getByTestId('conflict-mark-resolved').click();
+  const dialogA = page.getByTestId('conflict-resolve-dialog');
+  await page.getByTestId('conflict-resolve-confirm').click();
+  await expect(dialogA.getByTestId('conflict-resolve-read-failure')).toBeVisible();
+  await expect(page.getByTestId('conflict-resolve-confirm')).toBeDisabled();
+  expect(failedReadbacks).toBe(1);
+
+  await page.evaluate((targetId) => {
+    const mobileRoute = `conflict-detail/${targetId}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${targetId}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, conflictB.id);
+
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+  await expect(page.getByTestId('conflict-resolve-dialog')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+
+  // B 可独立打开并操作自己的 Dialog，不受 A 的 disabled/readFailure 锁影响。
+  await page.getByTestId('conflict-mark-resolved').click();
+  const dialogB = page.getByTestId('conflict-resolve-dialog');
+  await expect(dialogB).toBeVisible();
+  await expect(page.getByTestId('conflict-resolve-confirm')).toBeEnabled();
+  await expect(dialogB.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+  await page.getByTestId('conflict-resolve-cancel').click();
+  await expect(dialogB).toHaveCount(0);
 });
 
 test('列表 error 不伪装为空且可重试；详情往返后 tab/搜索状态保持', async ({ page, request }) => {

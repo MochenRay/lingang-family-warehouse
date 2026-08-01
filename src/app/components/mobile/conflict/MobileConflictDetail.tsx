@@ -214,8 +214,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
   const requestGenRef = useRef(0);
   // mutation generation 与请求 generation 独立：旧案件 mutation 不得读取或落地到新 id。
   const mutationGenRef = useRef(0);
-  // 自身 mutation 同步标记：mutation 期间 facade subscribe event 不启动背景 reload。
+  // 当前页面 UI mutation 锁：id 切换时可清，使 B 不受 A 的按钮/Dialog 状态影响。
   const ownMutationRef = useRef<{ targetId: string; generation: number } | null>(null);
+  // 尚未 settle 的自身 mutation token：跨 id 保留，用于抑制 A 延迟 emit 对 B 的背景 reload。
+  // token 只能由对应 generation 的 mutation 流程删除，id effect 不得清空。
+  const pendingOwnMutationTokensRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
     mountedRef.current = true;
@@ -330,13 +333,9 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
 
     void readDetail(true);
     const unsubscribe = conflictFacade.subscribe(() => {
-      // 自身 mutation 的 change event：显式读回已负责落地，不得启动背景 reload
-      const ownMutation = ownMutationRef.current;
-      if (
-        ownMutation
-        && ownMutation.targetId === idRef.current
-        && ownMutation.generation === mutationGenRef.current
-      ) {
+      // facade 未暴露 event payload；任一自身 mutation 尚未 settle 时，该同步 change
+      // 必属于当前组件发起流程的可能窗口，不得刷新当前（即使已从 A 切到 B）。
+      if (pendingOwnMutationTokensRef.current.size > 0) {
         return;
       }
       void readDetail(true);
@@ -355,6 +354,7 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     mutate: () => Promise<unknown>,
   ): Promise<void> => {
     const mutationGeneration = ++mutationGenRef.current;
+    pendingOwnMutationTokensRef.current.add(mutationGeneration);
     ownMutationRef.current = { targetId, generation: mutationGeneration };
     const isMutationScopeStale = () => (
       !mountedRef.current
@@ -366,11 +366,15 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
         ownMutationRef.current = null;
       }
     };
+    const settleOwnMutation = () => {
+      pendingOwnMutationTokensRef.current.delete(mutationGeneration);
+      clearOwnMutation();
+    };
     try {
       await mutate();
     } catch (error) {
       // mutation 本身失败：保留现有失败语义，可重新提交
-      clearOwnMutation();
+      settleOwnMutation();
       if (isMutationScopeStale()) {
         return;
       }
@@ -386,11 +390,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
       return;
     }
     if (isMutationScopeStale()) {
-      clearOwnMutation();
+      settleOwnMutation();
       return;
     }
     const outcome = await readBackAfterMutation(targetId, mutationGeneration);
-    clearOwnMutation();
+    settleOwnMutation();
     if (outcome === 'stale') {
       return;
     }

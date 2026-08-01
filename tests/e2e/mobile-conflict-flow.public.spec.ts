@@ -515,6 +515,106 @@ test('public：session 写成功但显式读回失败——锁定 mutation、保
   expect(mutations).toEqual({ requests: [], responses: [] });
 });
 
+test('public：A session mutation 延迟到切换 B 后才 emit，B 不得额外 reload、报错或继承 A 锁', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  expect((await readSessionSnapshot(page)).writes).toEqual([]);
+
+  // 初始 A 已稳定后才安装 route：计数从 A mutation 的 seed read 开始。
+  let releaseMutationSeedRead!: () => void;
+  const mutationSeedGate = new Promise<void>((resolve) => {
+    releaseMutationSeedRead = resolve;
+  });
+  let markMutationSeedReadStarted!: () => void;
+  const mutationSeedReadStarted = new Promise<void>((resolve) => {
+    markMutationSeedReadStarted = resolve;
+  });
+  let conflictSeedGets = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (conflictSeedGets === 1) {
+      markMutationSeedReadStarted();
+      await mutationSeedGate;
+      await route.continue();
+      return;
+    }
+    if (conflictSeedGets === 2) {
+      // B 自身路由变化的正常详情读取。
+      await route.continue();
+      return;
+    }
+    // 第三个 GET 只能是 A append event 错误刷新 B；精确失败使全页 error 可证伪。
+    await route.fulfill({
+      status: 500,
+      contentType: 'application/json',
+      body: JSON.stringify({ detail: 'forced K02 stale session event B reload' }),
+    });
+  });
+  allowResponse(/\/api\/conflicts$/, [500]);
+  allowConsoleError(/^Failed to load resource: the server responded with a status of 500/, /\/api\/conflicts\?/);
+  allowConsoleError(/^Failed to load conflict detail Error: API 500/);
+
+  await page.getByTestId('conflict-mark-resolved').click();
+  await page.getByTestId('conflict-resolve-confirm').click();
+  await mutationSeedReadStarted;
+  expect(conflictSeedGets).toBe(1);
+
+  await page.evaluate((targetId) => {
+    const mobileRoute = `conflict-detail/${targetId}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${targetId}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, conflictB.id);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+  expect(conflictSeedGets).toBe(2);
+
+  // A 仍 pending 时，B 的当前页面 UI mutation 锁已独立，可正常操作自己的 Dialog。
+  await page.getByTestId('conflict-mark-resolved').click();
+  const dialogB = page.getByTestId('conflict-resolve-dialog');
+  await expect(dialogB).toBeVisible();
+  await expect(page.getByTestId('conflict-resolve-confirm')).toBeEnabled();
+  await page.getByTestId('conflict-resolve-cancel').click();
+
+  // A 此时才完成 session transaction 并同步 emit mobile-session-change。
+  releaseMutationSeedRead();
+  await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+  await page.evaluate(() => new Promise<void>((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  }));
+
+  expect(conflictSeedGets, 'A 的自身 session event 不得触发 B 的第三次 conflict seed GET').toBe(2);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+  await expect(page.getByTestId('conflict-detail-loading')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-dialog')).toHaveCount(0);
+
+  const snapshot = await readSessionSnapshot(page);
+  expect(snapshot.writes).toHaveLength(1);
+  const envelope = JSON.parse(snapshot.writes[0]) as SessionEnvelope;
+  expect(envelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+    { action: 'status', targetId: conflictA.id },
+    { action: 'update', targetId: conflictA.id },
+  ]);
+  expect(mutations).toEqual({ requests: [], responses: [] });
+});
+
 test('session 存储写失败时 fail closed：不显示成功、不产生 temp conflict', async ({ page, request }) => {
   const before = await readConflicts(request);
   const grids = await readGrids(request);
