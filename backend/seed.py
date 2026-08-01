@@ -34,7 +34,10 @@ RecordT = TypeVar("RecordT")
 CANONICAL_RESOLVED_CONFLICT_IDS = {"c_bg_004", "c_bg_005", "c_bg_010"}
 
 
-def build_demo_seed_bundle() -> DemoSeedBundle:
+def build_demo_seed_bundle(
+    *,
+    freshness_reference_date: date | None = None,
+) -> DemoSeedBundle:
     hero_bundle = build_hero_bundle()
 
     from app.demo_data.background_generator import build_background_bundle
@@ -46,7 +49,10 @@ def build_demo_seed_bundle() -> DemoSeedBundle:
     bundle.task_rules.extend(build_task_rule_records())
     _restore_canonical_conflict_statuses(bundle)
     _enforce_demo_consistency(bundle)
-    _rebalance_background_task_freshness(bundle)
+    _rebalance_background_task_freshness(
+        bundle,
+        reference_date=freshness_reference_date or date.today(),
+    )
     return bundle
 
 
@@ -154,8 +160,14 @@ def _enforce_demo_consistency(bundle: DemoSeedBundle) -> None:
             current.append(visit)
 
 
-def _rebalance_background_task_freshness(bundle: DemoSeedBundle) -> None:
+def _rebalance_background_task_freshness(
+    bundle: DemoSeedBundle,
+    *,
+    reference_date: date,
+) -> None:
     """Keep rule-generated overdue counts useful for severity demos instead of all-red noise."""
+    fresh_date = (reference_date - timedelta(days=1)).isoformat()
+    overdue_date = (reference_date - timedelta(days=20)).isoformat()
     background_grid_ids = set(REGION_GRID_BY_ID) - {"g1", "g2"}
     medium_grid_ids = {"g_zf_1", "g_fs_1", "g_mp_1"}
     people_by_grid: dict[str, list[Person]] = {}
@@ -165,7 +177,7 @@ def _rebalance_background_task_freshness(bundle: DemoSeedBundle) -> None:
 
     for conflict in bundle.conflicts:
         if conflict.gridId in background_grid_ids and conflict.status != "已化解":
-            conflict.updatedAt = "2026-07-29 10:00:00"
+            conflict.updatedAt = f"{fresh_date} 10:00:00"
 
     for grid_id in sorted(background_grid_ids):
         eligible = sorted(
@@ -196,11 +208,11 @@ def _rebalance_background_task_freshness(bundle: DemoSeedBundle) -> None:
                 visit.targetId in preserved_overdue_ids
                 or visit.targetId in preserved_house_ids
             ):
-                visit.date = "2026-07-10"
+                visit.date = overdue_date
 
         for person in eligible:
             if person.id in preserved_overdue_ids:
-                person.updatedAt = "2026-07-10"
+                person.updatedAt = overdue_date
                 continue
             bundle.visits.append(VisitRecord(
                 id=f"v_task_fresh_{person.id}",
@@ -208,7 +220,7 @@ def _rebalance_background_task_freshness(bundle: DemoSeedBundle) -> None:
                 targetType="person",
                 gridId=person.gridId,
                 visitorName=REGION_GRID_BY_ID[person.gridId].manager_name,
-                date="2026-07-29",
+                date=fresh_date,
                 content="完成近期风险与关爱对象复核，当前无需生成超期任务。",
                 images=[],
                 tags=["近期复核"],
