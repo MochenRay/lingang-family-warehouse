@@ -391,6 +391,11 @@ export function MobileConflictDetail({ id, onBack, onRouteChange }: MobileConfli
     }
     if (isMutationScopeStale()) {
       settleOwnMutation();
+      // A→B→A：旧 A 的 session emit 曾被 pending token 抑制；若当前又回到 A，
+      // settle 后须补一次新的 generation-guarded read，使 detail/context 与 session 同源。
+      if (mountedRef.current && idRef.current === targetId) {
+        void readDetail(false);
+      }
       return;
     }
     const outcome = await readBackAfterMutation(targetId, mutationGeneration);

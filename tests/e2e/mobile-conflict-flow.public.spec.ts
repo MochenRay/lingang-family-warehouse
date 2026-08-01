@@ -615,6 +615,110 @@ test('public：A session mutation 延迟到切换 B 后才 emit，B 不得额外
   expect(mutations).toEqual({ requests: [], responses: [] });
 });
 
+test('public：A session mutation 在 A→B→A 后完成，当前 A 必须补一次同源读回', async ({ page, request }) => {
+  const all = await readConflicts(request);
+  const processing = all.items.filter((item) => item.status === '调解中');
+  expect(processing.length, 'seed 必须至少提供两个调解中纠纷').toBeGreaterThanOrEqual(2);
+  const [conflictA, conflictB] = processing;
+  const mutations = trackBusinessMutations(page);
+
+  await page.goto(`/mobile/conflict/${conflictA.id}`);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  expect((await readSessionSnapshot(page)).writes).toEqual([]);
+
+  let releaseMutationSeedRead!: () => void;
+  const mutationSeedGate = new Promise<void>((resolve) => {
+    releaseMutationSeedRead = resolve;
+  });
+  let markMutationSeedReadStarted!: () => void;
+  const mutationSeedReadStarted = new Promise<void>((resolve) => {
+    markMutationSeedReadStarted = resolve;
+  });
+  let gateReleased = false;
+  let conflictSeedGets = 0;
+  let postSettleAReads = 0;
+  await page.route(/\/api\/conflicts\?/, async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    conflictSeedGets += 1;
+    if (gateReleased) {
+      postSettleAReads += 1;
+    }
+    if (conflictSeedGets === 1) {
+      markMutationSeedReadStarted();
+      await mutationSeedGate;
+    }
+    await route.continue();
+  });
+
+  await page.getByTestId('conflict-mark-resolved').click();
+  await page.getByTestId('conflict-resolve-confirm').click();
+  await mutationSeedReadStarted;
+  expect(conflictSeedGets, '第一个 GET 必须是暂停中的 A mutation seed read').toBe(1);
+
+  await page.evaluate((targetId) => {
+    const mobileRoute = `conflict-detail/${targetId}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${targetId}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, conflictB.id);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictB.title);
+  expect(conflictSeedGets, '第二个 GET 必须是 B 的 baseline detail read').toBe(2);
+
+  await page.evaluate((targetId) => {
+    const mobileRoute = `conflict-detail/${targetId}`;
+    const state = {
+      route: 'mobile',
+      mobileRoute,
+      mobileHistory: ['home', 'conflict', mobileRoute],
+      mobileDepth: 0,
+    };
+    window.history.pushState(state, '', `/mobile/conflict/${targetId}`);
+    window.dispatchEvent(new PopStateEvent('popstate', { state }));
+  }, conflictA.id);
+  await expect(page.getByTestId('conflict-detail-title')).toHaveText(conflictA.title);
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('调解中');
+  await expect(page.getByTestId('conflict-timeline')).not.toContainText('网格员标记该纠纷已化解');
+  expect(conflictSeedGets, '第三个 GET 必须是返回 A 的 baseline detail read').toBe(3);
+
+  // 旧 A 此时才写入单次 session transaction；subscribe emit 会被 pending token 吞掉，
+  // stale-success 分支必须在精确 settle 后为当前 A 主动补一次 generation-guarded read。
+  gateReleased = true;
+  releaseMutationSeedRead();
+  await expect.poll(async () => (await readSessionSnapshot(page)).writes.length).toBe(1);
+  await expect.poll(() => postSettleAReads, {
+    message: 'A→B→A 后旧 A 成功 settle 必须恰好启动一次当前 A 读回',
+  }).toBe(1);
+
+  await expect(page.getByTestId('conflict-detail-status')).toHaveText('已化解');
+  await expect(page.getByTestId('conflict-timeline')).toContainText('网格员标记该纠纷已化解');
+  await expect(page.getByRole('heading', { name: '已化解，转入观察', exact: true })).toBeVisible();
+  expect(conflictSeedGets, '总计应为 mutation seed + B baseline + A baseline + post-settle A read').toBe(4);
+  expect(postSettleAReads).toBe(1);
+
+  const snapshot = await readSessionSnapshot(page);
+  expect(snapshot.writes).toHaveLength(1);
+  const envelope = JSON.parse(snapshot.writes[0]) as SessionEnvelope;
+  expect(envelope.events.map((event) => ({ action: event.action, targetId: event.targetId }))).toEqual([
+    { action: 'status', targetId: conflictA.id },
+    { action: 'update', targetId: conflictA.id },
+  ]);
+  await expect(page.getByTestId('conflict-detail-loading')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-detail-error')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-read-failure')).toHaveCount(0);
+  await expect(page.getByTestId('conflict-resolve-dialog')).toHaveCount(0);
+  await expect(page.getByText('状态已更新')).toHaveCount(0);
+  expect(mutations).toEqual({ requests: [], responses: [] });
+});
+
 test('session 存储写失败时 fail closed：不显示成功、不产生 temp conflict', async ({ page, request }) => {
   const before = await readConflicts(request);
   const grids = await readGrids(request);
