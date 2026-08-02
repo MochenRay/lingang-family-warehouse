@@ -7,12 +7,16 @@ import {
   LogOut,
   ChevronRight,
   Award,
-  TrendingUp
+  TrendingUp,
+  Database,
+  RotateCcw,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
 import { MobileLayout } from './MobileLayout';
+import { useMobileSandbox } from './MobileSandboxProvider';
 import { mobileContextRepository } from '../../services/repositories/mobileContextRepository';
 
 interface MobileProfileProps {
@@ -22,6 +26,7 @@ interface MobileProfileProps {
 }
 
 export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileProfileProps) {
+  const { mode, reset } = useMobileSandbox();
   const [username] = useState(mobileContextRepository.getCurrentWorkerName() || '网格员张三');
   const [currentGrid, setCurrentGrid] = useState(() => {
     const saved = mobileContextRepository.getCurrentGridSelection();
@@ -63,6 +68,16 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
     { icon: BarChart3, label: '绩效排名', path: 'stats', color: 'text-[var(--color-status-success-text)]' },
     { icon: Bell, label: '消息通知', path: 'notices', badge: '3', color: 'text-[var(--color-status-warning-text)]' },
   ];
+
+  const resetSessionData = () => {
+    try {
+      reset();
+      toast.success('已清除本次浏览会话数据');
+    } catch (error) {
+      console.error('Failed to reset mobile session data', error);
+      toast.error('清除失败，请关闭当前标签页后重试');
+    }
+  };
 
   return (
     <MobileLayout currentRoute="profile" onRouteChange={onRouteChange} onExitMobile={onExitMobile}>
@@ -159,6 +174,30 @@ export function MobileProfile({ onRouteChange, onLogout, onExitMobile }: MobileP
               })}
             </CardContent>
           </Card>
+
+          {mode === 'session' && (
+            <Card className="bg-[var(--color-neutral-02)] border border-[var(--color-neutral-03)] shadow-sm">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[var(--color-neutral-03)] flex items-center justify-center text-[var(--color-brand-text)] shrink-0">
+                  <Database className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium text-[var(--color-neutral-10)]">演示会话数据</div>
+                  <div className="mt-0.5 text-xs text-[var(--color-neutral-08)]">清除本标签页内暂存的移动端操作</div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="min-h-11 shrink-0 px-3"
+                  data-testid="mobile-session-reset"
+                  onClick={resetSessionData}
+                >
+                  <RotateCcw className="w-4 h-4 mr-1.5" />
+                  清除
+                </Button>
+              </CardContent>
+            </Card>
+          )}
 
           {/* 退出登录 */}
           <Button

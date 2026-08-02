@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 const backendPort = Number(process.env.BACKEND_PORT ?? '18001');
 const apiBaseUrl = `http://127.0.0.1:${backendPort}/api`;
@@ -9,6 +9,14 @@ function isBusinessMutation(url: string, method: string): boolean {
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return false;
   const pathname = new URL(url).pathname;
   return /^\/api\/(people|houses|visits|conflicts)(?:\/|$)/.test(pathname);
+}
+
+async function expectSessionMode(page: Page): Promise<void> {
+  await expect.poll(() => page.evaluate(async () => {
+    const modulePath = '/src/app/services/mobileSandbox/mode.ts';
+    const { getActiveMobileSandboxMode } = await import(/* @vite-ignore */ modulePath);
+    return (await getActiveMobileSandboxMode()).mode;
+  })).toBe('session');
 }
 
 test.use({ viewport: { width: 390, height: 844 } });
@@ -30,7 +38,8 @@ test('public mobile resolves readonly mode before exposing session controls', as
 
   await page.goto('/mobile');
 
-  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+  await expectSessionMode(page);
+  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toHaveCount(0);
   await expect(page.getByText('正在确认当前演示环境的数据模式…', { exact: true })).toHaveCount(0);
 });
 
@@ -43,7 +52,7 @@ test('provider-to-mutation gate selects session without a business API request',
   });
 
   await page.goto('/mobile');
-  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+  await expectSessionMode(page);
 
   const result = await page.evaluate(async ({ endpoint }) => {
     const modulePath = '/src/app/services/mobileSandbox/mutation.ts';
@@ -82,7 +91,8 @@ test('checking and readonly keep an unmigrated API-only form disabled with zero 
   const submit = page.getByRole('button', { name: '提交审核' });
   await expect(page.getByText('正在确认当前演示环境的数据模式…', { exact: true })).toBeVisible();
   await expect(submit).toBeDisabled();
-  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+  await expectSessionMode(page);
+  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toHaveCount(0);
   await expect(submit).toBeDisabled();
 
   await page.getByPlaceholder('请输入或生成建议编号').fill('TEST-001');
@@ -102,7 +112,7 @@ test('readonly disables the remaining legacy create entry points until their fac
     { path: '/mobile/conflict/new', button: '提交上报' },
   ]) {
     await page.goto(entry.path);
-    await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+    await expectSessionMode(page);
     await expect(page.getByRole('button', { name: entry.button, exact: true })).toBeDisabled();
   }
 });
@@ -144,14 +154,16 @@ test('health timeout keeps mutation controls blocked', async ({ page }) => {
 });
 
 test('public reset removes only the versioned mobile session key', async ({ page }) => {
-  await page.goto('/mobile');
-  await expect(page.getByRole('button', { name: '清除' })).toBeVisible();
+  await page.goto('/mobile/profile');
+  await expectSessionMode(page);
+  const reset = page.getByTestId('mobile-session-reset');
+  await expect(reset).toBeVisible();
 
   await page.evaluate(() => {
     window.sessionStorage.setItem('lingang:mobile-sandbox:v1', JSON.stringify({ version: 1, events: [] }));
     window.sessionStorage.setItem('unrelated-session-value', 'preserve-me');
   });
-  await page.getByRole('button', { name: '清除' }).click();
+  await reset.click();
 
   await expect.poll(() => page.evaluate(() => ({
     mobile: window.sessionStorage.getItem('lingang:mobile-sandbox:v1'),
@@ -163,8 +175,10 @@ test('corrupt session data fails closed and remains resettable without a success
   await page.addInitScript(() => {
     window.sessionStorage.setItem('lingang:mobile-sandbox:v1', '{broken-json');
   });
-  await page.goto('/mobile');
-  await expect(page.getByRole('button', { name: '清除' })).toBeVisible();
+  await page.goto('/mobile/profile');
+  await expectSessionMode(page);
+  const reset = page.getByTestId('mobile-session-reset');
+  await expect(reset).toBeVisible();
 
   const errorName = await page.evaluate(async () => {
     const modulePath = '/src/app/services/mobileSandbox/store.ts';
@@ -179,7 +193,7 @@ test('corrupt session data fails closed and remains resettable without a success
   expect(errorName).toBe('MobileSessionStoreError');
   await expect(page.getByText('已清除本次浏览会话数据', { exact: true })).toHaveCount(0);
 
-  await page.getByRole('button', { name: '清除' }).click();
+  await reset.click();
   await expect.poll(() => page.evaluate(() => window.sessionStorage.getItem('lingang:mobile-sandbox:v1'))).toBeNull();
 });
 

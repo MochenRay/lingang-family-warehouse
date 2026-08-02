@@ -90,7 +90,7 @@ export function MobileVisitForm({ personId, onBack, onSaved }: MobileVisitFormPr
 
         const [visitData, policy] = await Promise.all([
           personVisitFacade.listVisits({ targetId: personId, targetType: 'person', limit: 20 }),
-          personVisitFacade.getPersonAiPolicy(personId),
+          personVisitFacade.getPersonAiPolicy(personId, personData),
         ]);
 
         if (!alive) {
