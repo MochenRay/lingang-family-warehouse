@@ -1,11 +1,10 @@
-import { AlertTriangle, Database, RotateCcw } from 'lucide-react';
-import { toast } from 'sonner';
+import { AlertTriangle } from 'lucide-react';
 import { useMobileSandbox } from './MobileSandboxProvider';
 
 export function MobileSandboxNotice() {
-  const { mode, reset } = useMobileSandbox();
+  const { mode } = useMobileSandbox();
 
-  if (mode === 'api') {
+  if (mode === 'api' || mode === 'session') {
     return null;
   }
 
@@ -25,27 +24,5 @@ export function MobileSandboxNotice() {
       </div>
     );
   }
-
-  return (
-    <div className="mx-4 my-2 flex items-center gap-2 rounded-lg border border-[var(--color-status-info)]/40 bg-[var(--color-status-info-soft)] px-3 py-2 text-xs text-[var(--color-status-info-text)]" role="status">
-      <Database className="h-4 w-4 shrink-0" />
-      <span className="flex-1">仅本次浏览会话可见，不写入服务器。</span>
-      <button
-        type="button"
-        className="inline-flex min-h-11 items-center gap-1 rounded-md px-2 font-medium underline underline-offset-2"
-        onClick={() => {
-          try {
-            reset();
-            toast.success('已清除本次浏览会话数据');
-          } catch (error) {
-            console.error('Failed to reset mobile session data', error);
-            toast.error('清除失败，请关闭当前标签页后重试');
-          }
-        }}
-      >
-        <RotateCcw className="h-3.5 w-3.5" />
-        清除
-      </button>
-    </div>
-  );
+  return null;
 }

@@ -252,7 +252,7 @@ test.afterEach(() => {
   expect(issues, '不得出现 console error / pageerror / 意外请求失败或 4xx/5xx').toEqual([]);
 });
 
-test('public：health 确认为 readonly，sandbox notice 可见', async ({ page, request }) => {
+test('public：health 确认为 readonly，常态 sandbox notice 隐藏', async ({ page, request }) => {
   const health = await request.get(`${apiBaseUrl}/health`);
   expect(health.status()).toBe(200);
   expect(health.headers()['cache-control']).toBe('no-store');
@@ -261,7 +261,7 @@ test('public：health 确认为 readonly，sandbox notice 可见', async ({ page
   const mutations = trackBusinessMutations(page);
   await page.goto('/mobile/conflict');
   await expect(page.getByTestId('conflict-list')).toBeVisible();
-  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。')).toBeVisible();
+  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。')).toHaveCount(0);
   expect(mutations).toEqual({ requests: [], responses: [] });
 });
 

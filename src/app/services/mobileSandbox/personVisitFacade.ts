@@ -26,7 +26,11 @@ import {
   createMobileSessionEvent,
   getMobileSessionEvents,
 } from './store';
-import { MOBILE_SANDBOX_CHANGE_EVENT, type MobileSandboxModeResult } from './types';
+import {
+  MOBILE_SANDBOX_CHANGE_EVENT,
+  type MobileSandboxModeResult,
+  type MobileSessionEventV1,
+} from './types';
 
 const VISIT_OUTLINE_PROMPT =
   '请依据已裁剪的对象上下文，生成本次入户走访提纲。只给出需核验事项、建议提问和闭环动作，不得推断未提供的隐私事实。';
@@ -230,30 +234,6 @@ function normalizePersonVisitInput(
   ) as MobilePersonVisitCreateInput;
 }
 
-async function fetchAllPeopleSeed(): Promise<Person[]> {
-  const response = await fetchAllListPages<Person>(async ({ limit, offset }) => (
-    assertListResponse(
-      await fetchJson<ApiListResponse<Person>>(
-        `/people${buildQueryString({ limit, offset })}`,
-      ),
-      'people',
-    )
-  ));
-  return response.items;
-}
-
-async function fetchAllVisitsSeed(): Promise<VisitRecord[]> {
-  const response = await fetchAllListPages<VisitRecord>(async ({ limit, offset }) => (
-    assertListResponse(
-      await fetchJson<ApiListResponse<VisitRecord>>(
-        `/visits${buildQueryString({ limit, offset, order: 'desc' })}`,
-      ),
-      'visits',
-    )
-  ));
-  return response.items;
-}
-
 function matchesPerson(person: Person, query: MobilePersonQuery): boolean {
   const keyword = (query.q ?? query.search ?? '').trim().toLocaleLowerCase();
   if (keyword) {
@@ -326,17 +306,114 @@ async function readMode(): Promise<MobileSandboxModeResult> {
   return getActiveMobileSandboxMode();
 }
 
+function isApiNotFound(error: unknown): boolean {
+  return error instanceof Error && error.message.startsWith('API 404:');
+}
+
+async function fetchOptionalJson<T>(path: string): Promise<T | undefined> {
+  try {
+    return await fetchJson<T>(path);
+  } catch (error) {
+    if (isApiNotFound(error)) {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
+async function fetchPeopleSeed(query: MobilePersonQuery): Promise<Person[]> {
+  // API 先按领域条件收窄；pagination 留到 overlay replay 后统一重算。
+  const { limit: _limit, offset: _offset, ...filters } = query;
+  return (await listPeopleApi(filters)).items;
+}
+
+async function fetchVisitsSeed(query: MobileVisitQuery): Promise<VisitRecord[]> {
+  // 只下载命中当前对象/筛选的 server baseline，避免每个详情页扫描全库。
+  const { limit: _limit, offset: _offset, ...filters } = query;
+  return (await listVisitsApi(filters)).items;
+}
+
+async function hydrateProjectionTargets<T extends { id: string }>(
+  seed: readonly T[],
+  events: readonly MobileSessionEventV1[],
+  entity: 'person' | 'visit',
+  fetchTarget: (targetId: string) => Promise<T | undefined>,
+): Promise<T[]> {
+  const knownTargets = new Set(seed.map((item) => item.id));
+  const createdTargets = new Set(
+    events.filter((event) => event.action === 'create').map((event) => event.targetId),
+  );
+  const missingTargets = [...new Set(
+    events
+      .filter((event) => event.action !== 'create')
+      .map((event) => event.targetId)
+      .filter((targetId) => !knownTargets.has(targetId) && !createdTargets.has(targetId)),
+  )];
+  if (missingTargets.length === 0) {
+    return [...seed];
+  }
+  // 事件可能把原本不命中筛选的对象移入结果；补取其 server baseline 后再 replay。
+  const hydrated = await Promise.all(missingTargets.map(async (targetId) => {
+    const current = await fetchTarget(targetId);
+    if (!current) {
+      throw new MobileFacadeTargetNotFoundError(entity, targetId);
+    }
+    return current;
+  }));
+  return [...seed, ...hydrated];
+}
+
 async function projectSessionPeople(query: MobilePersonQuery = {}): Promise<ApiListResponse<Person>> {
-  const seed = await fetchAllPeopleSeed();
-  const projected = applyMobileSessionEvents(seed, 'person', getMobileSessionEvents('person'));
+  const filteredSeed = await fetchPeopleSeed(query);
+  const events = getMobileSessionEvents('person');
+  const seed = await hydrateProjectionTargets(
+    filteredSeed,
+    events,
+    'person',
+    (targetId) => fetchOptionalJson<Person>(`/people/${encodeURIComponent(targetId)}`),
+  );
+  const projected = applyMobileSessionEvents(seed, 'person', events);
   return paginate(sortPeople(projected.filter((person) => matchesPerson(person, query))), query.limit, query.offset);
 }
 
 async function projectSessionVisits(query: MobileVisitQuery = {}): Promise<ApiListResponse<VisitRecord>> {
-  const seed = await fetchAllVisitsSeed();
-  const projected = applyMobileSessionEvents(seed, 'visit', getMobileSessionEvents('visit'));
+  const filteredSeed = await fetchVisitsSeed(query);
+  const events = getMobileSessionEvents('visit');
+  const seed = await hydrateProjectionTargets(
+    filteredSeed,
+    events,
+    'visit',
+    (targetId) => fetchOptionalJson<VisitRecord>(`/visits/${encodeURIComponent(targetId)}`),
+  );
+  const projected = applyMobileSessionEvents(seed, 'visit', events);
   const filtered = projected.filter((visit) => matchesVisit(visit, query));
   return paginate(sortVisits(filtered, query.order ?? 'desc'), query.limit, query.offset);
+}
+
+async function projectSessionPerson(id: string): Promise<Person | undefined> {
+  const events = getMobileSessionEvents('person').filter((event) => event.targetId === id);
+  const hasCreate = events.some((event) => event.action === 'create');
+  if (id.startsWith('session:person:') && !hasCreate) {
+    return undefined;
+  }
+  const current = hasCreate
+    ? undefined
+    : await fetchOptionalJson<Person>(`/people/${encodeURIComponent(id)}`);
+  const seed = current ? [current] : [];
+  return applyMobileSessionEvents(seed, 'person', events)[0];
+}
+
+async function projectSessionVisit(id: string): Promise<VisitRecord | undefined> {
+  const events = getMobileSessionEvents('visit').filter((event) => event.targetId === id);
+  const hasCreate = events.some((event) => event.action === 'create');
+  if (id.startsWith('session:visit:') && !hasCreate) {
+    return undefined;
+  }
+  const current = hasCreate
+    ? undefined
+    : await fetchOptionalJson<VisitRecord>(`/visits/${encodeURIComponent(id)}`);
+  const seed = current ? [current] : [];
+  return applyMobileSessionEvents(seed, 'visit', events)[0];
 }
 
 async function listPeopleApi(query: MobilePersonQuery): Promise<ApiListResponse<Person>> {
@@ -380,17 +457,19 @@ async function listVisitsApi(query: MobileVisitQuery): Promise<ApiListResponse<V
 }
 
 async function requireSessionPerson(id: string): Promise<Person> {
-  const person = (await projectSessionPeople()).items.find((item) => item.id === id);
+  const person = await projectSessionPerson(id);
   if (!person) {
     throw new MobileFacadeTargetNotFoundError('person', id);
   }
   return person;
 }
 
-async function resolvePersonAiPolicy(personId: string): Promise<PersonAiPolicy> {
+async function resolvePersonAiPolicy(personId: string, loadedPerson?: Person): Promise<PersonAiPolicy> {
   const mode = await readMode();
   if (mode.mode !== 'session') {
-    await fetchJson<Person>(`/people/${encodeURIComponent(personId)}`);
+    if (!loadedPerson) {
+      await fetchJson<Person>(`/people/${encodeURIComponent(personId)}`);
+    }
     return {
       allowed: true,
       contextId: personId,
@@ -400,7 +479,10 @@ async function resolvePersonAiPolicy(personId: string): Promise<PersonAiPolicy> 
     };
   }
 
-  const person = await requireSessionPerson(personId);
+  const person = loadedPerson ?? await requireSessionPerson(personId);
+  if (person.id !== personId) {
+    throw new MobileFacadeTargetNotFoundError('person', personId);
+  }
   if (person.id.startsWith('session:person:')) {
     return {
       allowed: false,
@@ -436,7 +518,7 @@ export const personVisitFacade = {
   async getPerson(id: string): Promise<Person | undefined> {
     const mode = await readMode();
     if (mode.mode === 'session') {
-      return (await projectSessionPeople()).items.find((person) => person.id === id);
+      return projectSessionPerson(id);
     }
     return fetchJson<Person>(`/people/${encodeURIComponent(id)}`);
   },
@@ -485,7 +567,7 @@ export const personVisitFacade = {
   async getVisit(id: string): Promise<VisitRecord | undefined> {
     const mode = await readMode();
     if (mode.mode === 'session') {
-      return (await projectSessionVisits()).items.find((visit) => visit.id === id);
+      return projectSessionVisit(id);
     }
     return fetchJson<VisitRecord>(`/visits/${encodeURIComponent(id)}`);
   },
@@ -543,8 +625,8 @@ export const personVisitFacade = {
     });
   },
 
-  async getPersonAiPolicy(personId: string): Promise<PersonAiPolicy> {
-    return resolvePersonAiPolicy(personId);
+  async getPersonAiPolicy(personId: string, loadedPerson?: Person): Promise<PersonAiPolicy> {
+    return resolvePersonAiPolicy(personId, loadedPerson);
   },
 
   async requestVisitOutline(personId: string): Promise<VisitOutlineResponse> {

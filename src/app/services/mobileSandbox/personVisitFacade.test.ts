@@ -106,78 +106,124 @@ describe('personVisitFacade', () => {
     vi.unstubAllGlobals();
   });
 
-  it('replays a complete API seed before filtering, sorting, paginating, and totaling', async () => {
+  it('uses target-filtered session seeds for the person detail and visit form read chain', async () => {
     activate({ mode: 'session' });
-    const seed = Array.from({ length: 501 }, (_value, index) => person({
-      id: `person-${String(index).padStart(3, '0')}`,
-      idCard: `310000199001${String(index).padStart(6, '0')}`,
-      name: `居民${index}`,
-      updatedAt: '2026-07-29 09:00',
-    }));
+    const currentPerson = person({ houseId: 'house-1' });
+    const currentVisit = visit();
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = new URL(String(input));
-      const offset = Number(url.searchParams.get('offset'));
-      const limit = Number(url.searchParams.get('limit'));
-      return Promise.resolve(json({ items: seed.slice(offset, offset + limit), total: seed.length }));
+      if (url.pathname.endsWith('/people/person-1')) {
+        return Promise.resolve(json(currentPerson));
+      }
+      if (url.pathname.endsWith('/people') && url.searchParams.get('houseId') === 'house-1') {
+        return Promise.resolve(json({ items: [currentPerson], total: 1 }));
+      }
+      if (url.pathname.endsWith('/visits') && url.searchParams.get('targetId') === 'person-1') {
+        return Promise.resolve(json({ items: [currentVisit], total: 1 }));
+      }
+      throw new Error(`Unexpected unfiltered mobile seed request: ${url.pathname}${url.search}`);
     });
     vi.stubGlobal('fetch', fetchMock);
 
-    const created = createMobileSessionEvent('person', 'create', '', {
-      gridId: 'grid-1',
-      name: '会话居民',
-      idCard: '310000199001010003',
-      gender: '男',
-      age: 28,
-      address: '临港新片区二号',
-      type: '流动',
-      tags: ['新采集'],
-      risk: 'Low',
-      updatedAt: '2026-07-31 12:00',
+    await expect(personVisitFacade.getPerson('person-1')).resolves.toEqual(currentPerson);
+    await expect(personVisitFacade.listPeople({ houseId: 'house-1', limit: 500 })).resolves.toEqual({
+      items: [currentPerson],
+      total: 1,
     });
-    const updated = createMobileSessionEvent('person', 'update', 'person-500', {
-      name: '会话更新居民',
-      updatedAt: '2026-07-31 13:00',
-    });
-    appendMobileSessionTransaction([created, updated], sessionStorage);
+    await expect(personVisitFacade.listVisits({
+      targetId: 'person-1',
+      targetType: 'person',
+      limit: 100,
+    })).resolves.toEqual({ items: [currentVisit], total: 1 });
 
-    const result = await personVisitFacade.listPeople({ q: '会话', limit: 1, offset: 0 });
-
-    expect(result.total).toBe(2);
-    expect(result.items).toHaveLength(1);
-    expect(result.items[0]).toMatchObject({ id: 'person-500', name: '会话更新居民' });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls.map((call) => new URL(String(call[0])).searchParams.get('offset'))).toEqual([
-      '0',
-      '500',
+    expect(fetchMock.mock.calls.map((call) => {
+      const url = new URL(String(call[0]));
+      return `${url.pathname}${url.search}`;
+    })).toEqual([
+      '/api/people/person-1',
+      '/api/people?houseId=house-1&limit=500&offset=0',
+      '/api/visits?order=desc&targetId=person-1&targetType=person&limit=500&offset=0',
     ]);
   });
 
-  it('loads every visit seed page before replaying a second-page tombstone', async () => {
+  it('hydrates an updated person omitted by the server filter before local replay', async () => {
     activate({ mode: 'session' });
-    const seed = Array.from({ length: 501 }, (_value, index) => visit({
-      id: `visit-${String(index).padStart(3, '0')}`,
-      targetId: index === 500 ? 'person-second-page' : 'person-other',
-      date: `2026-07-${String((index % 28) + 1).padStart(2, '0')} 09:00`,
-    }));
+    const resident = person({ id: 'person-resident', name: '会话原居民' });
+    const moving = person({ id: 'person-moving', name: '迁入前居民' });
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const url = new URL(String(input));
-      const offset = Number(url.searchParams.get('offset'));
-      const limit = Number(url.searchParams.get('limit'));
-      return Promise.resolve(json({ items: seed.slice(offset, offset + limit), total: seed.length }));
+      if (url.pathname.endsWith('/people') && url.searchParams.get('q') === '会话') {
+        return Promise.resolve(json({ items: [resident], total: 1 }));
+      }
+      if (url.pathname.endsWith('/people/person-moving')) {
+        return Promise.resolve(json(moving));
+      }
+      throw new Error(`Unexpected request: ${String(input)}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const updated = createMobileSessionEvent('person', 'update', moving.id, {
+      name: '会话迁入居民',
+      updatedAt: '2026-07-31 13:00',
+    });
+    appendMobileSessionTransaction([updated], sessionStorage);
+
+    const result = await personVisitFacade.listPeople({ q: '会话', limit: 10, offset: 0 });
+
+    expect(result.total).toBe(2);
+    expect(result.items.map((item) => item.id)).toEqual(['person-moving', 'person-resident']);
+    expect(result.items[0]).toMatchObject({ name: '会话迁入居民' });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock.mock.calls.map((call) => new URL(String(call[0])).pathname)).toEqual([
+      '/api/people',
+      '/api/people/person-moving',
+    ]);
+  });
+
+  it('uses a target-filtered visit seed before replaying a tombstone', async () => {
+    activate({ mode: 'session' });
+    const targetVisit = visit({ id: 'visit-target', targetId: 'person-target' });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      expect(url.searchParams.get('targetId')).toBe('person-target');
+      return Promise.resolve(json({ items: [targetVisit], total: 1 }));
     });
     vi.stubGlobal('fetch', fetchMock);
     appendMobileSessionTransaction([
-      createMobileSessionEvent('visit', 'tombstone', 'visit-500', null),
+      createMobileSessionEvent('visit', 'tombstone', targetVisit.id, null),
     ], sessionStorage);
 
-    const result = await personVisitFacade.listVisits({ targetId: 'person-second-page' });
+    const result = await personVisitFacade.listVisits({ targetId: 'person-target' });
 
     expect(result).toEqual({ items: [], total: 0 });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('hydrates an out-of-filter visit tombstone instead of skipping referential validation', async () => {
+    activate({ mode: 'session' });
+    const visibleVisit = visit({ id: 'visit-visible', targetId: 'person-visible' });
+    const hiddenVisit = visit({ id: 'visit-hidden', targetId: 'person-hidden' });
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/visits')) {
+        expect(url.searchParams.get('targetId')).toBe('person-visible');
+        return Promise.resolve(json({ items: [visibleVisit], total: 1 }));
+      }
+      if (url.pathname.endsWith('/visits/visit-hidden')) {
+        return Promise.resolve(json(hiddenVisit));
+      }
+      throw new Error(`Unexpected request: ${String(input)}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    appendMobileSessionTransaction([
+      createMobileSessionEvent('visit', 'tombstone', hiddenVisit.id, null),
+    ], sessionStorage);
+
+    await expect(personVisitFacade.listVisits({ targetId: 'person-visible' })).resolves.toEqual({
+      items: [visibleVisit],
+      total: 1,
+    });
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(fetchMock.mock.calls.map((call) => new URL(String(call[0])).searchParams.get('offset'))).toEqual([
-      '0',
-      '500',
-    ]);
   });
 
   it('fails the whole projection for an orphan update or a failed API seed', async () => {
@@ -194,11 +240,21 @@ describe('personVisitFacade', () => {
       version: 1,
       events: [orphan],
     }));
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ items: [person()], total: 1 })));
+    const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
+      const url = new URL(String(input));
+      if (url.pathname.endsWith('/people')) {
+        return Promise.resolve(json({ items: [person()], total: 1 }));
+      }
+      if (url.pathname.endsWith('/people/missing-person')) {
+        return Promise.resolve(json({ detail: 'missing' }, 404));
+      }
+      throw new Error(`Unexpected request: ${String(input)}`);
+    });
+    vi.stubGlobal('fetch', fetchMock);
 
-    await expect(personVisitFacade.listPeople()).rejects.toThrow('Unknown update target');
+    await expect(personVisitFacade.listPeople()).rejects.toBeInstanceOf(MobileFacadeTargetNotFoundError);
 
-    vi.mocked(fetch).mockRejectedValueOnce(new TypeError('seed network down'));
+    fetchMock.mockRejectedValueOnce(new TypeError('seed network down'));
     await expect(personVisitFacade.listPeople()).rejects.toThrow('seed network down');
   });
 
@@ -206,6 +262,9 @@ describe('personVisitFacade', () => {
     activate({ mode: 'session' });
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL) => {
       const pathname = new URL(String(input)).pathname;
+      if (pathname.endsWith('/people/person-1')) {
+        return Promise.resolve(json(person()));
+      }
       if (pathname.endsWith('/people')) {
         return Promise.resolve(json({ items: [person()], total: 1 }));
       }
@@ -269,7 +328,7 @@ describe('personVisitFacade', () => {
     deactivate?.();
     deactivate = undefined;
     activate({ mode: 'api' });
-    resolveSeed(json({ items: [person()], total: 1 }));
+    resolveSeed(json(person()));
 
     await expect(pending).rejects.toEqual(new MobileMutationBlockedError('mode-session-expired'));
     expect(sessionStorage.writeCount).toBe(0);
@@ -277,7 +336,7 @@ describe('personVisitFacade', () => {
 
   it('rejects a missing session person without writing an event', async () => {
     activate({ mode: 'session' });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ items: [person()], total: 1 })));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ detail: 'missing' }, 404)));
 
     await expect(personVisitFacade.updatePerson('missing-person', { name: '不存在' })).rejects.toBeInstanceOf(
       MobileFacadeTargetNotFoundError,
@@ -386,6 +445,9 @@ describe('personVisitFacade', () => {
     activate({ mode: 'session' });
     const fetchMock = vi.fn().mockImplementation((input: RequestInfo | URL, init?: RequestInit) => {
       const pathname = new URL(String(input)).pathname;
+      if (pathname.endsWith('/people/person-1')) {
+        return Promise.resolve(json(person()));
+      }
       if (pathname.endsWith('/people')) {
         return Promise.resolve(json({ items: [person()], total: 1 }));
       }

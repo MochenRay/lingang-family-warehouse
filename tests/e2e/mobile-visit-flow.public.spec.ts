@@ -330,6 +330,34 @@ test('public K01 exceptional and expanded states keep 44px touch targets', async
   }
 });
 
+test('public person detail, visit form, and back avoid unfiltered mobile seed scans', async ({ page, request }) => {
+  test.setTimeout(60_000);
+  const person = await readPerson(request, 'p_hero_020');
+  const unfilteredSeedReads: string[] = [];
+  page.on('request', (apiRequest) => {
+    if (apiRequest.method() !== 'GET') return;
+    const url = new URL(apiRequest.url());
+    if (url.pathname === '/api/people') {
+      const hasDomainFilter = ['q', 'search', 'gridId', 'houseId', 'type', 'risk', 'tag']
+        .some((key) => url.searchParams.has(key));
+      if (!hasDomainFilter) unfilteredSeedReads.push(`${url.pathname}${url.search}`);
+    }
+    if (url.pathname === '/api/visits' && !url.searchParams.has('targetId')) {
+      unfilteredSeedReads.push(`${url.pathname}${url.search}`);
+    }
+  });
+
+  await page.goto(`/mobile/person/${person.id}`);
+  await expect(page.getByText(person.name, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId('person-add-visit').click();
+  await expect(page.getByTestId('visit-purpose')).toBeVisible({ timeout: 20_000 });
+  await page.getByRole('button', { name: '返回', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/mobile/person/${person.id}$`));
+  await expect(page.getByText(person.name, { exact: true }).first()).toBeVisible({ timeout: 20_000 });
+
+  expect(unfilteredSeedReads).toEqual([]);
+});
+
 test('public conflict task keeps legacy completion disabled and emits zero business mutations', async ({ page, request }) => {
   const task = await getPendingConflictTask(request);
   const businessMutations: string[] = [];
@@ -341,7 +369,7 @@ test('public conflict task keeps legacy completion disabled and emits zero busin
 
   await page.goto(`/mobile/tasks/${task.id}`);
   await expect(page.getByText('任务详情', { exact: true })).toBeVisible({ timeout: 20_000 });
-  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toBeVisible();
+  await expect(page.getByText('仅本次浏览会话可见，不写入服务器。', { exact: true })).toHaveCount(0);
   await page.getByPlaceholder('请输入本次处理结果、发现的问题或后续安排...').fill('public readonly gate');
 
   const submit = page.getByRole('button', { name: '记录处置并完成', exact: true });
