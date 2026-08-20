@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET_ROOT="${1:-/Users/rayli/Desktop/homedata-web}"
+TARGET_ROOT="${1:-/Users/rayli/My Projects/homedata-web}"
 STAGING_DIR="$(mktemp -d "${TMPDIR:-/tmp}/homedata-web-sync.XXXXXX")"
 PROJECTION_TEMPLATE_DIR="${SCRIPT_DIR}/templates/homedata-web"
 README_TEMPLATE="${PROJECTION_TEMPLATE_DIR}/README.md"

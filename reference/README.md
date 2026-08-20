@@ -37,6 +37,6 @@
 
 - 项目执行现状：`/Users/rayli/AI-Shared/projects/LingangFamilyWarehouse/handover.md`
 - 阶段计划：`/Users/rayli/AI-Shared/projects/LingangFamilyWarehouse/plans/`
-- 验证证据：`/Users/rayli/Desktop/临港家庭数仓 /docs/phase1-verification.md`、`phase2-verification.md`、`phase3-verification.md`
+- 验证证据：[`phase1-verification.md`](../docs/phase1-verification.md)、[`phase2-verification.md`](../docs/phase2-verification.md)、[`phase3-verification.md`](../docs/phase3-verification.md)
 
 如果只是继续推进当前项目，不要再把本目录当作主计划来源。
