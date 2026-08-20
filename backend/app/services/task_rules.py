@@ -5,6 +5,7 @@ from typing import Any
 
 from sqlmodel import Session, select
 
+from app.config import get_settings
 from app.models.conflict import ConflictRecord
 from app.models.house import House
 from app.models.person import Person
@@ -16,6 +17,11 @@ from app.schemas.task_rule import (
     TaskProjectionSummaryRead,
     TaskRuleRead,
 )
+
+
+def _now() -> datetime:
+    reference_time = get_settings().effective_test_reference_time
+    return reference_time.replace(tzinfo=None) if reference_time else datetime.now()
 
 
 def parse_datetime(value: str | None) -> datetime | None:
@@ -50,7 +56,7 @@ def days_since(value: str | None) -> int:
     parsed = parse_datetime(value)
     if parsed is None:
         return 10_000
-    return max((datetime.now() - parsed).days, 0)
+    return max((_now() - parsed).days, 0)
 
 
 def summarize_content(content: str, max_length: int = 72) -> str:
@@ -161,7 +167,7 @@ def _build_person_task(rule: TaskRule, person: Person, latest_visit: VisitRecord
         urgent=urgent,
         description="，".join([item for item in signals if item]),
         assignedBy=str(rule.action.get("assignedBy", "系统规则")),
-        deadline=to_datetime_string((parse_datetime(deadline_base) or datetime.now()) + timedelta(days=deadline_days)),
+        deadline=to_datetime_string((parse_datetime(deadline_base) or _now()) + timedelta(days=deadline_days)),
         status="pending",
         statusLabel=str(rule.action.get("statusLabel", "待处理")),
         personId=person.id,
@@ -218,7 +224,7 @@ def _build_pending_conflict_tasks(rule: TaskRule | None, conflicts: list[Conflic
                 urgent=urgent,
                 description=summarize_content(conflict.description, 72),
                 assignedBy=str(rule.action.get("assignedBy", conflict.source)),
-                deadline=to_datetime_string((parse_datetime(conflict.updatedAt or conflict.createdAt) or datetime.now()) + timedelta(days=deadline_days)),
+                deadline=to_datetime_string((parse_datetime(conflict.updatedAt or conflict.createdAt) or _now()) + timedelta(days=deadline_days)),
                 status="pending",
                 statusLabel="回访超期" if idle_days >= overdue_after_days else str(rule.action.get("statusLabel", "待跟进")),
                 conflictId=conflict.id,
@@ -312,7 +318,7 @@ def build_task_projection(session: Session, grid_id: str | None = None) -> TaskP
     pending = sorted(
         [*pending_conflict_tasks, *pending_person_tasks],
         key=lambda item: (
-            0 if (parse_datetime(item.deadline) or datetime.max) < datetime.now() else 1,
+            0 if (parse_datetime(item.deadline) or datetime.max) < _now() else 1,
             0 if item.urgent else 1,
             parse_datetime(item.deadline) or datetime.max,
             item.id,
@@ -328,7 +334,7 @@ def build_task_projection(session: Session, grid_id: str | None = None) -> TaskP
         reverse=True,
     )
 
-    overdue = sum(1 for item in pending if (parse_datetime(item.deadline) or datetime.max) < datetime.now())
+    overdue = sum(1 for item in pending if (parse_datetime(item.deadline) or datetime.max) < _now())
     total = len(pending) + len(completed)
     summary = TaskProjectionSummaryRead(
         pending=len(pending),

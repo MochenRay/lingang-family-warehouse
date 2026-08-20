@@ -2,6 +2,8 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { defineConfig, devices } from '@playwright/test';
 
+import { CANONICAL_PERFORMANCE_PROFILE } from './tests/performance/budget';
+
 const frontendPort = Number(process.env.PERF_FRONTEND_PORT ?? '15343');
 const backendPort = Number(process.env.PERF_BACKEND_PORT ?? '18070');
 const frontendUrl = `http://127.0.0.1:${frontendPort}`;
@@ -36,6 +38,7 @@ export default defineConfig({
         FRONTEND_PORT: String(frontendPort),
         PLAYWRIGHT_DB_PATH: playwrightDbPath,
         PYTHON_BIN: pythonBin,
+        TEST_REFERENCE_TIME: CANONICAL_PERFORMANCE_PROFILE.fixedTime,
       },
       reuseExistingServer: false,
       timeout: 120_000,

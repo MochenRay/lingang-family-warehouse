@@ -13,6 +13,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
+from app.config import get_settings
 from app.database import engine, init_database
 from app.demo_data import DemoSeedBundle
 from app.demo_data.hero_cases import build_hero_bundle
@@ -53,6 +54,7 @@ def build_demo_seed_bundle(
         bundle,
         reference_date=freshness_reference_date or date.today(),
     )
+    _enforce_first_page_depth(bundle)
     return bundle
 
 
@@ -66,13 +68,8 @@ def _restore_canonical_conflict_statuses(bundle: DemoSeedBundle) -> None:
 
 
 def _enforce_demo_consistency(bundle: DemoSeedBundle) -> None:
-    """Keep detail pages logically complete without disturbing recent migration totals."""
+    """Keep housing histories logically complete without changing migration totals."""
     houses_by_id = {house.id: house for house in bundle.houses}
-    people_by_house: dict[str, list[Person]] = {}
-    for person in bundle.people:
-        if person.houseId:
-            people_by_house.setdefault(person.houseId, []).append(person)
-
     histories_by_house: dict[str, list[HousingHistory]] = {}
     for history in bundle.housing_histories:
         histories_by_house.setdefault(history.houseId, []).append(history)
@@ -105,6 +102,14 @@ def _enforce_demo_consistency(bundle: DemoSeedBundle) -> None:
         )
         bundle.housing_histories.append(history)
         histories_by_house.setdefault(person.houseId, []).append(history)
+
+
+def _enforce_first_page_depth(bundle: DemoSeedBundle) -> None:
+    """Keep the final date-sorted first page useful after freshness rebalancing."""
+    people_by_house: dict[str, list[Person]] = {}
+    for person in bundle.people:
+        if person.houseId:
+            people_by_house.setdefault(person.houseId, []).append(person)
 
     first_page = sorted(
         bundle.people,
@@ -262,7 +267,10 @@ def summarize_hero_cases(bundle: DemoSeedBundle) -> dict[str, int]:
 
 def main() -> None:
     init_database()
-    bundle = build_demo_seed_bundle()
+    reference_time = get_settings().effective_test_reference_time
+    bundle = build_demo_seed_bundle(
+        freshness_reference_date=reference_time.date() if reference_time else None,
+    )
     hero_coverage = summarize_hero_cases(bundle)
 
     with Session(engine) as session:

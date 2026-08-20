@@ -6,6 +6,7 @@ from zoneinfo import ZoneInfo
 
 from sqlmodel import Session, select
 
+from app.config import get_settings
 from app.models.conflict import ConflictRecord
 from app.models.house import House
 from app.models.person import Person
@@ -106,7 +107,7 @@ def normalize_tag_name(value: str) -> str:
 
 
 def _now() -> datetime:
-    return datetime.now(SHANGHAI)
+    return get_settings().effective_test_reference_time or datetime.now(SHANGHAI)
 
 
 def _now_string() -> str:

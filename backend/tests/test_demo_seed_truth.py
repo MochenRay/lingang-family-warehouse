@@ -153,7 +153,9 @@ def test_demo_current_residents_have_current_history_and_first_page_has_depth() 
     visits_by_person = Counter(
         visit.targetId for visit in bundle.visits if visit.targetType == "person"
     )
-    people_by_house = Counter(person.houseId for person in bundle.people if person.houseId)
+    people_by_house = Counter(
+        person.houseId for person in bundle.people if person.houseId
+    )
     first_page = sorted(
         bundle.people,
         key=lambda person: (person.updatedAt, person.id),
@@ -220,3 +222,17 @@ def test_demo_task_freshness_tracks_an_injected_future_reference_date() -> None:
     assert [(person.id, person.risk) for person in bundle.people] == [
         (person.id, person.risk) for person in baseline_bundle.people
     ]
+
+    visits_by_person = Counter(
+        visit.targetId for visit in bundle.visits if visit.targetType == "person"
+    )
+    people_by_house = Counter(person.houseId for person in bundle.people if person.houseId)
+    first_page = sorted(
+        bundle.people,
+        key=lambda person: (person.updatedAt, person.id),
+        reverse=True,
+    )[:20]
+    for person in first_page:
+        minimum = 3 if person.risk == "High" else 2 if person.risk == "Medium" else 1
+        assert visits_by_person[person.id] >= minimum
+        assert people_by_house[person.houseId] > 1 or bool(person.familyRelations)
