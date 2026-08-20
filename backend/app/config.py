@@ -1,5 +1,7 @@
+from datetime import datetime
 from functools import lru_cache
 from typing import Literal
+from zoneinfo import ZoneInfo
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -10,6 +12,10 @@ class Settings(BaseSettings):
     app_env: str = Field(default="development", alias="APP_ENV")
     app_version: str = "0.1.0"
     api_prefix: str = "/api"
+    test_reference_time: datetime | None = Field(
+        default=None,
+        alias="TEST_REFERENCE_TIME",
+    )
 
     database_url: str = Field(
         default="postgresql+psycopg://postgres:postgres@localhost:5432/lingang_family_warehouse",
@@ -78,6 +84,17 @@ class Settings(BaseSettings):
         if self.app_env.strip().lower() in {"development", "test", "local"}:
             return "enabled"
         return "readonly"
+
+    @property
+    def effective_test_reference_time(self) -> datetime | None:
+        if self.test_reference_time is None:
+            return None
+        if self.app_env.strip().lower() not in {"development", "test", "local"}:
+            raise RuntimeError("TEST_REFERENCE_TIME is only allowed in non-production environments")
+        shanghai = ZoneInfo("Asia/Shanghai")
+        if self.test_reference_time.tzinfo is None:
+            return self.test_reference_time.replace(tzinfo=shanghai)
+        return self.test_reference_time.astimezone(shanghai)
 
     @property
     def sqlalchemy_database_url(self) -> str:

@@ -13,6 +13,7 @@ CURRENT_DIR = Path(__file__).resolve().parent
 if str(CURRENT_DIR) not in sys.path:
     sys.path.insert(0, str(CURRENT_DIR))
 
+from app.config import get_settings
 from app.database import engine, init_database
 from app.demo_data import DemoSeedBundle
 from app.demo_data.hero_cases import build_hero_bundle
@@ -266,7 +267,10 @@ def summarize_hero_cases(bundle: DemoSeedBundle) -> dict[str, int]:
 
 def main() -> None:
     init_database()
-    bundle = build_demo_seed_bundle()
+    reference_time = get_settings().effective_test_reference_time
+    bundle = build_demo_seed_bundle(
+        freshness_reference_date=reference_time.date() if reference_time else None,
+    )
     hero_coverage = summarize_hero_cases(bundle)
 
     with Session(engine) as session:
