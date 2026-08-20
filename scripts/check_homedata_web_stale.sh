@@ -4,7 +4,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET_ROOT="${1:-/Users/rayli/Desktop/homedata-web}"
+TARGET_ROOT="${1:-/Users/rayli/My Projects/homedata-web}"
 SYNC_FILE="${TARGET_ROOT}/SYNC_SOURCE.json"
 
 if [[ ! -d "${TARGET_ROOT}/.git" ]]; then

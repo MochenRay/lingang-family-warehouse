@@ -28,7 +28,7 @@
 在全栈真相层仓库里执行：
 
 ```bash
-bash scripts/sync_homedata_web.sh /Users/rayli/Desktop/homedata-web
+bash scripts/sync_homedata_web.sh '/Users/rayli/My Projects/homedata-web'
 ```
 
 ### 同步规则
@@ -44,7 +44,7 @@ bash scripts/sync_homedata_web.sh /Users/rayli/Desktop/homedata-web
 每次同步后，在全栈真相层仓库执行：
 
 ```bash
-bash scripts/check_homedata_web_stale.sh /Users/rayli/Desktop/homedata-web
+bash scripts/check_homedata_web_stale.sh '/Users/rayli/My Projects/homedata-web'
 ```
 
 通过时会输出：
@@ -56,7 +56,7 @@ OK: homedata-web is synced to <source-sha>
 如果真相层存在未提交改动，脚本会默认失败；这是有意设计，避免把“本地脏工作区”误判成发布仓已同步。只做咨询式检查时可临时加：
 
 ```bash
-ALLOW_DIRTY_SOURCE=1 bash scripts/check_homedata_web_stale.sh /Users/rayli/Desktop/homedata-web
+ALLOW_DIRTY_SOURCE=1 bash scripts/check_homedata_web_stale.sh '/Users/rayli/My Projects/homedata-web'
 ```
 
 ### 白名单
