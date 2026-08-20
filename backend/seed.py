@@ -53,6 +53,7 @@ def build_demo_seed_bundle(
         bundle,
         reference_date=freshness_reference_date or date.today(),
     )
+    _enforce_first_page_depth(bundle)
     return bundle
 
 
@@ -66,13 +67,8 @@ def _restore_canonical_conflict_statuses(bundle: DemoSeedBundle) -> None:
 
 
 def _enforce_demo_consistency(bundle: DemoSeedBundle) -> None:
-    """Keep detail pages logically complete without disturbing recent migration totals."""
+    """Keep housing histories logically complete without changing migration totals."""
     houses_by_id = {house.id: house for house in bundle.houses}
-    people_by_house: dict[str, list[Person]] = {}
-    for person in bundle.people:
-        if person.houseId:
-            people_by_house.setdefault(person.houseId, []).append(person)
-
     histories_by_house: dict[str, list[HousingHistory]] = {}
     for history in bundle.housing_histories:
         histories_by_house.setdefault(history.houseId, []).append(history)
@@ -105,6 +101,14 @@ def _enforce_demo_consistency(bundle: DemoSeedBundle) -> None:
         )
         bundle.housing_histories.append(history)
         histories_by_house.setdefault(person.houseId, []).append(history)
+
+
+def _enforce_first_page_depth(bundle: DemoSeedBundle) -> None:
+    """Keep the final date-sorted first page useful after freshness rebalancing."""
+    people_by_house: dict[str, list[Person]] = {}
+    for person in bundle.people:
+        if person.houseId:
+            people_by_house.setdefault(person.houseId, []).append(person)
 
     first_page = sorted(
         bundle.people,
